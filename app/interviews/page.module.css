@@ -255,48 +255,247 @@
   margin: 0 0 0.75rem 0;
 }
 
-/* Card Actions */
-.cardActions {
+/* Status Badges */
+.statusBadge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.statusScheduled {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusConfirmed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* Card info rows (phone, location) */
+.cardInfoRow {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0 0 0.35rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.infoLink {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.infoLink:hover {
+  text-decoration: underline;
+}
+
+/* Primary actions row */
+.primaryActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Secondary actions row */
+.secondaryActions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+/* Shared base for all card buttons */
+.btnConfirm,
+.btnCalendar,
+.btnMessage,
+.btnSecondary,
+.btnCancel,
+.btnComplete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: none;
+  white-space: nowrap;
+}
+
+/* Confirm — green fill */
+.btnConfirm {
+  background: #22c55e;
+  color: white;
+}
+
+.btnConfirm:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.btnConfirm:disabled,
+.btnConfirming {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Calendar — yellow */
+.btnCalendar {
+  background: #FFE500;
+  color: #1a1a1a;
+}
+
+.btnCalendar:hover {
+  background: #e6cf00;
+}
+
+/* Message — dark */
+.btnMessage {
+  background: #1a1a1a;
+  color: white;
+}
+
+.btnMessage:hover {
+  background: #333;
+}
+
+/* Secondary — outline */
+.btnSecondary {
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btnSecondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* Cancel — red outline */
+.btnCancel {
+  background: white;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+}
+
+.btnCancel:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.btnCancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mark Completed — gray outline */
+.btnComplete {
+  background: white;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.btnComplete:hover {
+  background: #f9fafb;
+}
+
+/* Follow-up prompt */
+.followUpBox {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.followUpTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #15803d;
+  margin: 0 0 0.625rem 0;
+}
+
+.followUpBtns {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
 
-.actionPrimary {
+.followUpOffer,
+.followUpReject,
+.followUpPipeline {
   display: inline-flex;
   align-items: center;
-  padding: 0.4rem 1rem;
-  background: #1a1a1a;
-  color: white;
+  padding: 0.4rem 0.875rem;
   border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background 0.2s;
-}
-
-.actionPrimary:hover {
-  background: #333;
-}
-
-.actionSecondary {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.4rem 1rem;
-  background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  text-decoration: none;
+  border: none;
   transition: all 0.2s;
 }
 
-.actionSecondary:hover {
+.followUpOffer {
+  background: #22c55e;
+  color: white;
+}
+
+.followUpOffer:hover {
+  background: #16a34a;
+}
+
+.followUpReject {
+  background: white;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+}
+
+.followUpReject:hover {
+  background: #fef2f2;
+}
+
+.followUpPipeline {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.followUpPipeline:hover {
+  background: #e2e8f0;
+}
+
+/* Notes textarea */
+.notesArea {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: #374151;
+  resize: none;
   background: #f9fafb;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.notesArea:focus {
+  outline: none;
   border-color: #9ca3af;
+  background: white;
+}
+
+.notesArea::placeholder {
+  color: #9ca3af;
 }
 
 /* Past Interviews */
@@ -403,5 +602,21 @@
 
   .pastCard {
     flex-wrap: wrap;
+  }
+
+  .primaryActions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .secondaryActions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btnSecondary,
+  .btnCancel,
+  .btnComplete {
+    width: auto;
   }
 }

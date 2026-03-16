@@ -8,6 +8,8 @@ import { newApplicationEmail } from '@/emails/new-application'
 import { applicationStatusEmail } from '@/emails/application-status'
 import { interviewScheduledEmail } from '@/emails/interview-scheduled'
 import { interviewRescheduledEmail } from '@/emails/interview-rescheduled'
+import { interviewConfirmedEmail } from '@/emails/interview-confirmed'
+import { interviewCancelledEmail } from '@/emails/interview-cancelled'
 import { trialEndingEmail } from '@/emails/trial-ending'
 import { newMessageEmail } from '@/emails/new-message'
 import { passwordResetEmail } from '@/emails/password-reset'
@@ -72,6 +74,12 @@ export async function POST(req: Request) {
         break
       case 'interview_rescheduled':
         email = interviewRescheduledEmail(data.companyName, data.jobTitle, data.candidateName, data.date, data.time, data.interviewType)
+        break
+      case 'interview_confirmed':
+        email = interviewConfirmedEmail(data.companyName, data.jobTitle, data.candidateName, data.date, data.time, data.interviewType)
+        break
+      case 'interview_cancelled':
+        email = interviewCancelledEmail(data.companyName, data.jobTitle, data.candidateName, data.date)
         break
       case 'trial_ending':
         email = trialEndingEmail(data.companyName, data.daysLeft)
