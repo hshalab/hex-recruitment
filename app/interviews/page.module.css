@@ -1,0 +1,407 @@
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 4rem;
+  color: #666;
+}
+
+/* Page Header */
+.pageHeader {
+  margin-bottom: 1.5rem;
+}
+
+.pageTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 0.25rem 0;
+}
+
+.pageSubtitle {
+  font-size: 1rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Stats Bar */
+.statsBar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background: #1a1a1a;
+  border-radius: 10px;
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.statNum {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #FFE500;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.emptyIcon {
+  font-size: 3.5rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.emptyTitle {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem 0;
+}
+
+.emptyText {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+}
+
+.emptyLink {
+  display: inline-block;
+  padding: 0.6rem 1.5rem;
+  background: #1a1a1a;
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.emptyLink:hover {
+  background: #333;
+}
+
+/* Schedule List */
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Date Group */
+.dateGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dateHeader {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #374151;
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Interview Cards */
+.interviewCards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.interviewCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: box-shadow 0.2s;
+}
+
+.interviewCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+}
+
+.cardConfirmed {
+  border-left: 3px solid #22c55e;
+}
+
+/* Avatar */
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f0f0f0;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Card Body */
+.cardBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.cardNameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.candidateName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.confirmedBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* Type Badges */
+.typeBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.typeInPerson {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.typeVideo {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.typePhone {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.cardJobTitle {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin: 0 0 0.25rem 0;
+}
+
+.cardTime {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0 0 0.75rem 0;
+}
+
+/* Card Actions */
+.cardActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.actionPrimary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  background: #1a1a1a;
+  color: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.actionPrimary:hover {
+  background: #333;
+}
+
+.actionSecondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.actionSecondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* Past Interviews */
+.pastSection {
+  margin-top: 2.5rem;
+  border-top: 2px solid #e5e7eb;
+  padding-top: 1.5rem;
+}
+
+.pastToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.pastToggle:hover {
+  color: #1a1a1a;
+}
+
+.chevron {
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.chevronUp {
+  transform: rotate(180deg);
+}
+
+.pastList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.pastCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.pastBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.pastMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.pastStatusBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.pastCompleted {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.pastCancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem 1rem 3rem;
+  }
+
+  .statsBar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cardTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pastMeta {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+  }
+
+  .pastCard {
+    flex-wrap: wrap;
+  }
+}
