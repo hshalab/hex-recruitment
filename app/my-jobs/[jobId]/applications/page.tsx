@@ -684,15 +684,24 @@ export default function JobApplicationsPage() {
                       >
                         View Profile
                       </Link>
-                      {application.status === 'interviewing' && application.candidateCv && (
-                        <a
-                          href={application.candidateCv}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.viewProfileLink}
-                        >
-                          View CV
-                        </a>
+                      {application.status === 'interviewing' && (
+                        application.candidateCv ? (
+                          <a
+                            href={application.candidateCv}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.viewProfileLink}
+                          >
+                            View CV
+                          </a>
+                        ) : (
+                          <span
+                            className={`${styles.viewProfileLink} ${styles.viewCvDisabled}`}
+                            title="No CV uploaded"
+                          >
+                            View CV
+                          </span>
+                        )
                       )}
                     </div>
                   </div>
