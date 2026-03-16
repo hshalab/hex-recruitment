@@ -748,6 +748,12 @@ export default function JobApplicationsPage() {
                           >
                             Cancel Interview
                           </button>
+                          <button
+                            className={styles.rejectInterviewBtn}
+                            onClick={() => updateApplicationStatus(application.id, 'rejected')}
+                          >
+                            Reject
+                          </button>
                         </div>
                       )}
                     </div>
@@ -837,67 +843,109 @@ export default function JobApplicationsPage() {
                   )}
 
                   {/* Action Bar */}
-                  <div className={styles.actionBar}>
-                    {application.candidateEmail && (
-                      <a
-                        href={`mailto:${application.candidateEmail}`}
-                        className={styles.barBtn}
-                      >
-                        Email
-                      </a>
-                    )}
-                    {application.candidateCv && (
-                      <a
-                        href={application.candidateCv}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.barBtn}
-                      >
-                        View CV
-                      </a>
-                    )}
-                    <button
-                      className={styles.barBtnCalendar}
-                      onClick={() => handleScheduleInterview(application)}
-                    >
-                      {application.interview ? 'Reschedule' : 'Schedule Interview'}
-                    </button>
-                    {['interviewing', 'offered'].includes(application.status) && !application.offer && (
+                  {application.status === 'interviewing' ? (
+                    <>
+                      <div className={styles.actionBar}>
+                        <Link
+                          href={`/candidates/${application.candidateId}`}
+                          className={styles.barBtn}
+                        >
+                          View Profile
+                        </Link>
+                        {application.candidateCv && (
+                          <a
+                            href={application.candidateCv}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.barBtn}
+                          >
+                            View CV
+                          </a>
+                        )}
+                        <button
+                          className={styles.barBtn}
+                          onClick={() => router.push(`/messages?candidate=${application.candidateId}`)}
+                        >
+                          Message Candidate
+                        </button>
+                      </div>
+                      {!application.offer && (
+                        <div className={styles.makeOfferRow}>
+                          <button
+                            className={styles.makeOfferCta}
+                            onClick={() => {
+                              setOfferApplication(application)
+                              setOfferModalOpen(true)
+                            }}
+                          >
+                            Make Offer
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className={styles.actionBar}>
+                      {application.candidateEmail && (
+                        <a
+                          href={`mailto:${application.candidateEmail}`}
+                          className={styles.barBtn}
+                        >
+                          Email
+                        </a>
+                      )}
+                      {application.candidateCv && (
+                        <a
+                          href={application.candidateCv}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.barBtn}
+                        >
+                          View CV
+                        </a>
+                      )}
                       <button
-                        className={styles.barBtnOffer}
-                        onClick={() => {
-                          setOfferApplication(application)
-                          setOfferModalOpen(true)
-                        }}
+                        className={styles.barBtnCalendar}
+                        onClick={() => handleScheduleInterview(application)}
                       >
-                        Make Offer
+                        {application.interview ? 'Reschedule' : 'Schedule Interview'}
                       </button>
-                    )}
-                    {['pending', 'reviewing'].includes(application.status) && (
-                      <button
-                        className={styles.barBtnShortlist}
-                        onClick={() => handleShortlist(application)}
-                      >
-                        Shortlist
-                      </button>
-                    )}
-                    {!['hired', 'rejected'].includes(application.status) && (
-                      <button
-                        className={styles.barBtnReject}
-                        onClick={() => updateApplicationStatus(application.id, 'rejected')}
-                      >
-                        Reject
-                      </button>
-                    )}
-                    {(application.status === 'hired' || application.status === 'rejected') && (
-                      <button
-                        className={styles.barBtnReset}
-                        onClick={() => updateApplicationStatus(application.id, 'pending')}
-                      >
-                        Reset Status
-                      </button>
-                    )}
-                  </div>
+                      {['interviewing', 'offered'].includes(application.status) && !application.offer && (
+                        <button
+                          className={styles.barBtnOffer}
+                          onClick={() => {
+                            setOfferApplication(application)
+                            setOfferModalOpen(true)
+                          }}
+                        >
+                          Make Offer
+                        </button>
+                      )}
+                      {['pending', 'reviewing'].includes(application.status) && (
+                        <button
+                          className={styles.barBtnShortlist}
+                          onClick={() => handleShortlist(application)}
+                        >
+                          Shortlist
+                        </button>
+                      )}
+                      {!['hired', 'rejected'].includes(application.status) && (
+                        <button
+                          className={styles.barBtnReject}
+                          onClick={() => updateApplicationStatus(application.id, 'rejected')}
+                        >
+                          Reject
+                        </button>
+                      )}
+                      {(application.status === 'hired' || application.status === 'rejected') && (
+                        <button
+                          className={styles.barBtnReset}
+                          onClick={() => updateApplicationStatus(application.id, 'pending')}
+                        >
+                          Reset Status
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
