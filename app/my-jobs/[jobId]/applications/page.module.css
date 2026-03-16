@@ -293,9 +293,12 @@
   margin: 0;
 }
 
-/* View Profile (top right) */
+/* Profile actions (top right) */
 .profileLinkSection {
   flex-shrink: 0;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
 }
 
 .viewProfileLink {

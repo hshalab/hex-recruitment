@@ -676,7 +676,7 @@ export default function JobApplicationsPage() {
                       </p>
                     </div>
 
-                    {/* View Profile (top right) */}
+                    {/* Profile actions (top right) */}
                     <div className={styles.profileLinkSection}>
                       <Link
                         href={`/candidates/${application.candidateId}`}
@@ -684,6 +684,16 @@ export default function JobApplicationsPage() {
                       >
                         View Profile
                       </Link>
+                      {application.status === 'interviewing' && application.candidateCv && (
+                        <a
+                          href={application.candidateCv}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.viewProfileLink}
+                        >
+                          View CV
+                        </a>
+                      )}
                     </div>
                   </div>
 
@@ -846,20 +856,12 @@ export default function JobApplicationsPage() {
                   {application.status === 'interviewing' ? (
                     <>
                       <div className={styles.actionBar}>
-                        <Link
-                          href={`/candidates/${application.candidateId}`}
-                          className={styles.barBtn}
-                        >
-                          View Profile
-                        </Link>
-                        {application.candidateCv && (
+                        {application.candidateEmail && (
                           <a
-                            href={application.candidateCv}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            href={`mailto:${application.candidateEmail}`}
                             className={styles.barBtn}
                           >
-                            View CV
+                            Email Candidate
                           </a>
                         )}
                         <button
