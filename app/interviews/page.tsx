@@ -24,6 +24,7 @@ interface InterviewItem {
   interviewType: string
   durationMinutes: number
   locationOrLink: string | null
+  meetingLink: string | null
   calendarLink: string | null
   notes: string | null
   status: string
@@ -184,6 +185,7 @@ export default function InterviewsPage() {
         interviewType: i.interview_type,
         durationMinutes: i.duration_minutes,
         locationOrLink: i.location_or_link || null,
+        meetingLink: i.meeting_link || null,
         calendarLink: i.calendar_link || null,
         notes: i.notes || null,
         status: i.status,
@@ -479,17 +481,21 @@ export default function InterviewsPage() {
                               </a>
                             </p>
                           )}
-                          {interview.interviewType === 'video' && interview.locationOrLink && (
+                          {interview.interviewType === 'video' && (
                             <p className={styles.cardInfoRow}>
                               <span className={styles.infoIcon}>🎥</span>
-                              <a
-                                href={interview.locationOrLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={styles.infoLink}
-                              >
-                                Join Video Call
-                              </a>
+                              {interview.meetingLink ? (
+                                <a
+                                  href={interview.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={styles.infoLink}
+                                >
+                                  Join Video Call
+                                </a>
+                              ) : (
+                                <span className={styles.infoMuted}>No meeting link added</span>
+                              )}
                             </p>
                           )}
 
@@ -620,6 +626,7 @@ export default function InterviewsPage() {
           candidateName={rescheduleTarget.candidateName}
           candidateEmail={rescheduleTarget.candidateEmail}
           existingInterviewId={rescheduleTarget.interviewId}
+          existingMeetingLink={rescheduleTarget.meetingLink ?? undefined}
           onSuccess={() => {
             setRescheduleTarget(null)
             loadInterviews()

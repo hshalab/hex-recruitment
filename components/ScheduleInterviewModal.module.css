@@ -90,6 +90,13 @@
   color: var(--text-gray);
 }
 
+.helperText {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin: 0.35rem 0 0 0;
+  line-height: 1.4;
+}
+
 .input {
   width: 100%;
   padding: 0.75rem;

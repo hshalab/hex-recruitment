@@ -22,6 +22,7 @@ interface ScheduleInterviewModalProps {
   candidateEmail?: string
   jobLocation?: string
   existingInterviewId?: string
+  existingMeetingLink?: string
   onSuccess: () => void
 }
 
@@ -36,12 +37,14 @@ export default function ScheduleInterviewModal({
   candidateName,
   candidateEmail,
   existingInterviewId,
+  existingMeetingLink,
   onSuccess,
 }: ScheduleInterviewModalProps) {
   const [interviewDate, setInterviewDate] = useState('')
   const [interviewTime, setInterviewTime] = useState('')
   const [duration, setDuration] = useState(30)
   const [interviewType, setInterviewType] = useState('in-person')
+  const [meetingLink, setMeetingLink] = useState(existingMeetingLink || '')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -120,6 +123,7 @@ export default function ScheduleInterviewModal({
         duration_minutes: duration,
         interview_type: interviewType,
         location_or_link: interviewTypeLabel,
+        meeting_link: interviewType === 'video' ? (meetingLink.trim() || null) : null,
         notes: notes.trim() || null,
         status: 'scheduled',
       })
@@ -135,18 +139,20 @@ export default function ScheduleInterviewModal({
       let notificationTitle: string
       let notificationMessage: string
 
+      const trimmedMeetingLink = interviewType === 'video' ? meetingLink.trim() : ''
+
       if (isReschedule) {
         const firstName = candidateName.split(' ')[0]
-        messageContent = [
+        const rescheduleLines = [
           `Hi ${firstName}, I wanted to let you know your interview for ${jobTitle} has been rescheduled.`,
           '',
           `Your new interview is on ${formattedDate} at ${interviewTime} (${interviewTypeLabel}).`,
-          '',
-          'Please let me know if you have any questions.',
-          '',
-          'Best regards,',
-          company,
-        ].join('\n')
+        ]
+        if (trimmedMeetingLink) {
+          rescheduleLines.push('', `Join the video call here: ${trimmedMeetingLink}`)
+        }
+        rescheduleLines.push('', 'Please let me know if you have any questions.', '', 'Best regards,', company)
+        messageContent = rescheduleLines.join('\n')
         notificationTitle = 'Interview Rescheduled'
         notificationMessage = `${company} has rescheduled your interview for ${jobTitle}. New date: ${formattedDate} at ${interviewTime}.`
       } else {
@@ -159,6 +165,9 @@ export default function ScheduleInterviewModal({
           `Time: ${interviewTime}`,
           `Type: ${interviewTypeLabel}`,
         ]
+        if (trimmedMeetingLink) {
+          messageLines.push('', `Join the video call here: ${trimmedMeetingLink}`)
+        }
         if (notes.trim()) {
           messageLines.push('', notes.trim())
         }
@@ -188,7 +197,15 @@ export default function ScheduleInterviewModal({
             body: JSON.stringify({
               to: candidateEmail,
               type: 'interview_rescheduled',
-              data: { companyName: company, jobTitle, candidateName, date: formattedDate, time: interviewTime, interviewType: interviewTypeLabel },
+              data: {
+                companyName: company,
+                jobTitle,
+                candidateName,
+                date: formattedDate,
+                time: interviewTime,
+                interviewType: interviewTypeLabel,
+                meetingLink: trimmedMeetingLink || undefined,
+              },
             }),
           }).catch((err: unknown) => console.error('Error sending reschedule email:', err))
         } else {
@@ -198,7 +215,14 @@ export default function ScheduleInterviewModal({
             body: JSON.stringify({
               to: candidateEmail,
               type: 'interview_scheduled',
-              data: { companyName: company, jobTitle, date: formattedDate, time: interviewTime, notes: notes.trim() || undefined },
+              data: {
+                companyName: company,
+                jobTitle,
+                date: formattedDate,
+                time: interviewTime,
+                notes: notes.trim() || undefined,
+                meetingLink: trimmedMeetingLink || undefined,
+              },
             }),
           }).catch(() => {})
         }
@@ -266,6 +290,7 @@ export default function ScheduleInterviewModal({
       setInterviewTime('')
       setDuration(30)
       setInterviewType('in-person')
+      setMeetingLink('')
       setNotes('')
     } catch (err) {
       console.error('Error sending interview invite:', err)
@@ -339,6 +364,25 @@ export default function ScheduleInterviewModal({
               ))}
             </select>
           </div>
+
+          {interviewType === 'video' && (
+            <div className={styles.field}>
+              <label htmlFor="meetingLink" className={styles.fieldLabel}>
+                Meeting link <span className={styles.optional}>(Optional)</span>
+              </label>
+              <input
+                type="url"
+                id="meetingLink"
+                value={meetingLink}
+                onChange={(e) => setMeetingLink(e.target.value)}
+                placeholder="Paste your Google Meet link here (e.g. https://meet.google.com/xxx-xxxx-xxx)"
+                className={styles.input}
+              />
+              <p className={styles.helperText}>
+                Create your Google Calendar event first — it will automatically generate a Meet link. Copy and paste it here.
+              </p>
+            </div>
+          )}
 
           <div className={styles.field}>
             <label htmlFor="notes" className={styles.fieldLabel}>

@@ -7,6 +7,7 @@ export function interviewRescheduledEmail(
   newDate: string,
   newTime: string,
   interviewType: string,
+  meetingLink?: string,
 ): { subject: string; html: string } {
   const subject = `Your interview has been rescheduled — ${jobTitle} at ${companyName}`
   const firstName = candidateName.split(' ')[0]
@@ -33,6 +34,17 @@ export function interviewRescheduledEmail(
         </td>
       </tr>
     </table>
+    ${meetingLink ? `
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
+      <tr>
+        <td style="text-align:center;">
+          <a href="${meetingLink}" target="_blank" style="display:inline-block;padding:12px 28px;background:#1a73e8;color:white;font-size:15px;font-weight:700;border-radius:8px;text-decoration:none;">
+            🎥 Join Video Call
+          </a>
+        </td>
+      </tr>
+    </table>
+    ` : ''}
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
       If you have any questions, please contact ${companyName} directly via your Hex messages inbox.
     </p>

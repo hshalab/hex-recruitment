@@ -5,7 +5,8 @@ export function interviewScheduledEmail(
   jobTitle: string,
   date: string,
   time: string,
-  notes?: string
+  notes?: string,
+  meetingLink?: string,
 ): { subject: string; html: string } {
   const subject = `Interview scheduled with ${companyName}`
 
@@ -28,6 +29,17 @@ export function interviewScheduledEmail(
         </td>
       </tr>
     </table>
+    ${meetingLink ? `
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
+      <tr>
+        <td style="text-align:center;">
+          <a href="${meetingLink}" target="_blank" style="display:inline-block;padding:12px 28px;background:#1a73e8;color:white;font-size:15px;font-weight:700;border-radius:8px;text-decoration:none;">
+            🎥 Join Video Call
+          </a>
+        </td>
+      </tr>
+    </table>
+    ` : ''}
     ${notes ? `
     <p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#334155;">Notes from the employer</p>
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;background:#f8fafc;padding:12px 16px;border-radius:8px;border-left:3px solid #FFE500;">
