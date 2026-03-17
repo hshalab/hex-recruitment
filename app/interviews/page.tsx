@@ -24,6 +24,7 @@ interface InterviewItem {
   interviewType: string
   durationMinutes: number
   locationOrLink: string | null
+  calendarLink: string | null
   notes: string | null
   status: string
 }
@@ -40,7 +41,6 @@ const TYPE_BADGE_CLASS: Record<string, string> = {
   'phone': styles.typePhone,
 }
 
-// Sends a Hex message to a candidate, finding or creating a conversation
 async function sendHexMessage(params: {
   senderId: string
   senderName: string
@@ -112,9 +112,7 @@ export default function InterviewsPage() {
   const [past, setPast] = useState<InterviewItem[]>([])
   const [pastExpanded, setPastExpanded] = useState(false)
   const [rescheduleTarget, setRescheduleTarget] = useState<InterviewItem | null>(null)
-  const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
-  const [followUpId, setFollowUpId] = useState<string | null>(null)
   const [localNotes, setLocalNotes] = useState<Record<string, string>>({})
 
   useEffect(() => { loadInterviews() }, [])
@@ -128,7 +126,6 @@ export default function InterviewsPage() {
     const eid = session.user.id
     setEmployerId(eid)
 
-    // Fetch company name from employer profile
     const { data: empProfile } = await supabase
       .from('employer_profiles')
       .select('company_name')
@@ -187,12 +184,12 @@ export default function InterviewsPage() {
         interviewType: i.interview_type,
         durationMinutes: i.duration_minutes,
         locationOrLink: i.location_or_link || null,
+        calendarLink: i.calendar_link || null,
         notes: i.notes || null,
         status: i.status,
       }
     })
 
-    // Seed local notes from fetched data
     const notesInit: Record<string, string> = {}
     mapped.forEach(i => { notesInit[i.interviewId] = i.notes || '' })
     setLocalNotes(notesInit)
@@ -230,11 +227,11 @@ export default function InterviewsPage() {
     return `${h}:${String(minutes).padStart(2, '0')} ${ampm}`
   }
 
-  const formatCardDate = (dateStr: string, timeStr: string) => {
+  const formatCardDate = (dateStr: string, timeStr: string, durationMinutes: number) => {
     const [year, month, day] = dateStr.split('-').map(Number)
     const date = new Date(year, month - 1, day)
     const dayStr = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-    return `${dayStr} at ${formatTime(timeStr)}`
+    return `${dayStr} at ${formatTime(timeStr)} · ${durationMinutes} min`
   }
 
   const formatLongDate = (dateStr: string) => {
@@ -242,12 +239,6 @@ export default function InterviewsPage() {
     return new Date(year, month - 1, day).toLocaleDateString('en-GB', {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     })
-  }
-
-  const isPastDateTime = (dateStr: string, timeStr: string) => {
-    const [y, mo, d] = dateStr.split('-').map(Number)
-    const [h, mi] = timeStr.split(':').map(Number)
-    return new Date(y, mo - 1, d, h, mi) < new Date()
   }
 
   const buildCalendarUrl = (interview: InterviewItem) => {
@@ -263,84 +254,11 @@ export default function InterviewsPage() {
       `&text=${encodeURIComponent(`Interview - ${interview.jobTitle}`)}` +
       `&details=${encodeURIComponent(`Interview with ${interview.candidateName} for ${interview.jobTitle}`)}` +
       `&dates=${fmt(start)}/${fmt(end)}` +
-      `&location=${encodeURIComponent(TYPE_LABELS[interview.interviewType] || interview.interviewType)}`
+      `&location=${encodeURIComponent(interview.locationOrLink || TYPE_LABELS[interview.interviewType] || interview.interviewType)}`
     )
   }
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
-
-  const handleConfirmInterview = async (interview: InterviewItem) => {
-    setConfirmingId(interview.interviewId)
-    try {
-      await supabase
-        .from('interviews')
-        .update({ status: 'confirmed' })
-        .eq('id', interview.interviewId)
-
-      const formattedDate = formatLongDate(interview.interviewDate)
-      const formattedTime = formatTime(interview.interviewTime)
-
-      // In-app notification
-      const { error: notifConfirmErr } = await supabase.from('notifications').insert({
-        user_id: interview.candidateId,
-        title: 'Interview Confirmed',
-        message: `Your interview for ${interview.jobTitle} at ${companyName} has been confirmed for ${formattedDate} at ${formattedTime}.`,
-        type: 'application_update',
-        read: false,
-        related_id: interview.applicationId,
-        related_type: 'application',
-      })
-      if (notifConfirmErr) console.error('Notification error:', notifConfirmErr)
-
-      // Hex message
-      await sendHexMessage({
-        senderId: employerId,
-        senderName: companyName,
-        recipientId: interview.candidateId,
-        recipientName: interview.candidateName,
-        jobId: interview.jobId,
-        jobTitle: interview.jobTitle,
-        content: [
-          `Hi ${interview.candidateName.split(' ')[0]}, your interview for ${interview.jobTitle} has been confirmed.`,
-          '',
-          `Date: ${formattedDate}`,
-          `Time: ${formattedTime}`,
-          `Type: ${TYPE_LABELS[interview.interviewType] || interview.interviewType}`,
-          '',
-          'Best regards,',
-          companyName,
-        ].join('\n'),
-      })
-
-      // Email (fire & forget)
-      if (interview.candidateEmail) {
-        fetch('/api/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: interview.candidateEmail,
-            type: 'interview_confirmed',
-            data: {
-              companyName,
-              jobTitle: interview.jobTitle,
-              candidateName: interview.candidateName,
-              date: formattedDate,
-              time: formattedTime,
-              interviewType: TYPE_LABELS[interview.interviewType] || interview.interviewType,
-            },
-          }),
-        }).catch(() => {})
-      }
-
-      setUpcoming(prev =>
-        prev.map(i => i.interviewId === interview.interviewId ? { ...i, status: 'confirmed' } : i)
-      )
-    } catch (err) {
-      console.error('Error confirming interview:', err)
-    } finally {
-      setConfirmingId(null)
-    }
-  }
 
   const handleCancelInterview = async (interview: InterviewItem) => {
     const confirmed = window.confirm(
@@ -357,7 +275,6 @@ export default function InterviewsPage() {
 
       const formattedDate = formatLongDate(interview.interviewDate)
 
-      // In-app notification
       const { error: notifCancelErr } = await supabase.from('notifications').insert({
         user_id: interview.candidateId,
         title: 'Interview Cancelled',
@@ -369,7 +286,6 @@ export default function InterviewsPage() {
       })
       if (notifCancelErr) console.error('Notification error:', notifCancelErr)
 
-      // Hex message
       await sendHexMessage({
         senderId: employerId,
         senderName: companyName,
@@ -380,14 +296,13 @@ export default function InterviewsPage() {
         content: [
           `Hi ${interview.candidateName.split(' ')[0]}, we need to let you know that your interview for ${interview.jobTitle} scheduled for ${formattedDate} has been cancelled.`,
           '',
-          'If you have any questions, please don\'t hesitate to get in touch.',
+          "If you have any questions, please don't hesitate to get in touch.",
           '',
           'Best regards,',
           companyName,
         ].join('\n'),
       })
 
-      // Email (fire & forget)
       if (interview.candidateEmail) {
         fetch('/api/email/send', {
           method: 'POST',
@@ -412,70 +327,6 @@ export default function InterviewsPage() {
       console.error('Error cancelling interview:', err)
     } finally {
       setCancellingId(null)
-    }
-  }
-
-  const handleMarkCompleted = (interview: InterviewItem) => {
-    setFollowUpId(interview.interviewId)
-  }
-
-  const handleFollowUpAction = async (
-    interview: InterviewItem,
-    action: 'offer' | 'reject' | 'pipeline'
-  ) => {
-    try {
-      await supabase
-        .from('interviews')
-        .update({ status: 'completed' })
-        .eq('id', interview.interviewId)
-
-      if (action === 'reject') {
-        await supabase
-          .from('job_applications')
-          .update({ status: 'rejected', status_updated_at: new Date().toISOString() })
-          .eq('id', interview.applicationId)
-
-        const { error: notifRejectErr } = await supabase.from('notifications').insert({
-          user_id: interview.candidateId,
-          title: 'Application Update',
-          message: `Your application for ${interview.jobTitle} at ${companyName} was not selected to move forward.`,
-          type: 'application_update',
-          read: false,
-          related_id: interview.applicationId,
-          related_type: 'application',
-        })
-        if (notifRejectErr) console.error('Notification error:', notifRejectErr)
-
-        if (interview.candidateEmail) {
-          fetch('/api/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: interview.candidateEmail,
-              type: 'application_status',
-              data: { status: 'rejected', companyName, jobTitle: interview.jobTitle },
-            }),
-          }).catch(() => {})
-        }
-      } else if (action === 'pipeline') {
-        await supabase
-          .from('job_applications')
-          .update({ status: 'reviewing', status_updated_at: new Date().toISOString() })
-          .eq('id', interview.applicationId)
-      }
-      // 'offer' → navigate to application page where employer clicks Make Offer
-
-      const completed = { ...interview, status: 'completed' }
-      setUpcoming(prev => prev.filter(i => i.interviewId !== interview.interviewId))
-      setPast(prev => [completed, ...prev])
-      setFollowUpId(null)
-      setPastExpanded(true)
-
-      if (action === 'offer') {
-        router.push(`/my-jobs/${interview.jobId}/applications`)
-      }
-    } catch (err) {
-      console.error('Error completing interview:', err)
     }
   }
 
@@ -568,154 +419,82 @@ export default function InterviewsPage() {
                 <h2 className={styles.dateHeader}>{formatGroupHeader(dateKey)}</h2>
                 <div className={styles.interviewCards}>
                   {items.map(interview => {
-                    const isConfirming = confirmingId === interview.interviewId
                     const isCancelling = cancellingId === interview.interviewId
-                    const showFollowUp = followUpId === interview.interviewId
-                    const canMarkComplete = isPastDateTime(interview.interviewDate, interview.interviewTime)
+                    const calendarHref = interview.calendarLink || buildCalendarUrl(interview)
+                    const calendarLabel = interview.calendarLink ? 'View in Google Calendar' : 'Add to Google Calendar'
 
                     return (
-                      <div
-                        key={interview.interviewId}
-                        className={`${styles.interviewCard} ${interview.status === 'confirmed' ? styles.cardConfirmed : ''}`}
-                      >
-                        {/* Avatar */}
-                        <div className={styles.avatar}>
-                          {interview.candidatePhoto ? (
-                            <img src={interview.candidatePhoto} alt={interview.candidateName} className={styles.avatarImg} />
-                          ) : (
-                            <div className={styles.avatarPlaceholder}>{getInitials(interview.candidateName)}</div>
-                          )}
-                        </div>
+                      <div key={interview.interviewId} className={styles.interviewCard}>
 
-                        {/* Card Body */}
-                        <div className={styles.cardBody}>
-
-                          {/* Top row: name + status badge + type badge */}
-                          <div className={styles.cardTop}>
-                            <div className={styles.cardNameRow}>
-                              <span className={styles.candidateName}>{interview.candidateName}</span>
+                        {/* Card Header: name/job/badges left, photo right */}
+                        <div className={styles.cardHeader}>
+                          <div className={styles.cardHeaderLeft}>
+                            <span className={styles.candidateName}>{interview.candidateName}</span>
+                            <p className={styles.cardJobTitle}>{interview.jobTitle}</p>
+                            <div className={styles.badgeRow}>
+                              <span className={`${styles.typeBadge} ${TYPE_BADGE_CLASS[interview.interviewType] || ''}`}>
+                                {TYPE_LABELS[interview.interviewType] || interview.interviewType}
+                              </span>
                               <span className={`${styles.statusBadge} ${interview.status === 'confirmed' ? styles.statusConfirmed : styles.statusScheduled}`}>
-                                {interview.status === 'confirmed' ? '✓ Confirmed' : 'Pending Confirmation'}
+                                {interview.status === 'confirmed' ? '✓ Confirmed' : 'Pending'}
                               </span>
                             </div>
-                            <span className={`${styles.typeBadge} ${TYPE_BADGE_CLASS[interview.interviewType] || ''}`}>
-                              {TYPE_LABELS[interview.interviewType] || interview.interviewType}
-                            </span>
                           </div>
+                          <div className={styles.cardPhoto}>
+                            {interview.candidatePhoto ? (
+                              <img src={interview.candidatePhoto} alt={interview.candidateName} className={styles.cardPhotoImg} />
+                            ) : (
+                              <div className={styles.cardPhotoPlaceholder}>{getInitials(interview.candidateName)}</div>
+                            )}
+                          </div>
+                        </div>
 
-                          {/* Job title */}
-                          <p className={styles.cardJobTitle}>{interview.jobTitle}</p>
+                        {/* Card Details */}
+                        <div className={styles.cardDetails}>
 
                           {/* Date + time + duration */}
-                          <p className={styles.cardTime}>
-                            🕐 {formatCardDate(interview.interviewDate, interview.interviewTime)} · {interview.durationMinutes} min
+                          <p className={styles.cardInfoRow}>
+                            <span className={styles.infoIcon}>🕐</span>
+                            {formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}
                           </p>
 
                           {/* Phone */}
                           {interview.candidatePhone && (
                             <p className={styles.cardInfoRow}>
-                              📞 <a href={`tel:${interview.candidatePhone}`} className={styles.infoLink}>{interview.candidatePhone}</a>
+                              <span className={styles.infoIcon}>📞</span>
+                              <a href={`tel:${interview.candidatePhone}`} className={styles.infoLink}>{interview.candidatePhone}</a>
                             </p>
                           )}
 
-                          {/* Location or video link */}
-                          {interview.locationOrLink && interview.interviewType === 'video' && interview.locationOrLink.startsWith('http') && (
+                          {/* Location / video link */}
+                          {interview.interviewType === 'in-person' && interview.locationOrLink && (
                             <p className={styles.cardInfoRow}>
-                              🎥 <a href={interview.locationOrLink} target="_blank" rel="noopener noreferrer" className={styles.infoLink}>Join Video Call</a>
+                              <span className={styles.infoIcon}>📍</span>
+                              <a
+                                href={`https://www.google.com/maps/search/${encodeURIComponent(interview.locationOrLink)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.infoLink}
+                              >
+                                {interview.locationOrLink}
+                              </a>
                             </p>
                           )}
-                          {interview.locationOrLink && interview.interviewType !== 'video' && !interview.locationOrLink.startsWith('http') && (
-                            <p className={styles.cardInfoRow}>📍 {interview.locationOrLink}</p>
+                          {interview.interviewType === 'video' && interview.locationOrLink && (
+                            <p className={styles.cardInfoRow}>
+                              <span className={styles.infoIcon}>🎥</span>
+                              <a
+                                href={interview.locationOrLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.infoLink}
+                              >
+                                Join Video Call
+                              </a>
+                            </p>
                           )}
 
-                          {/* Follow-up prompt (shown after Mark as Completed click) */}
-                          {showFollowUp ? (
-                            <div className={styles.followUpBox}>
-                              <p className={styles.followUpTitle}>What&apos;s your next step?</p>
-                              <div className={styles.followUpBtns}>
-                                <button
-                                  className={styles.followUpOffer}
-                                  onClick={() => handleFollowUpAction(interview, 'offer')}
-                                >
-                                  Make Offer
-                                </button>
-                                <button
-                                  className={styles.followUpReject}
-                                  onClick={() => handleFollowUpAction(interview, 'reject')}
-                                >
-                                  Reject
-                                </button>
-                                <button
-                                  className={styles.followUpPipeline}
-                                  onClick={() => handleFollowUpAction(interview, 'pipeline')}
-                                >
-                                  Keep in Pipeline
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              {/* Row 1 — Primary actions */}
-                              <div className={styles.primaryActions}>
-                                {interview.status === 'scheduled' && (
-                                  <button
-                                    className={`${styles.btnConfirm} ${isConfirming ? styles.btnConfirming : ''}`}
-                                    onClick={() => handleConfirmInterview(interview)}
-                                    disabled={isConfirming}
-                                  >
-                                    {isConfirming ? 'Confirming...' : 'Confirm Interview'}
-                                  </button>
-                                )}
-                                <a
-                                  href={buildCalendarUrl(interview)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={styles.btnCalendar}
-                                >
-                                  Add to Calendar
-                                </a>
-                                <button
-                                  className={styles.btnMessage}
-                                  onClick={() => router.push(`/messages?candidate=${interview.candidateId}`)}
-                                >
-                                  Message
-                                </button>
-                              </div>
-
-                              {/* Row 2 — Secondary actions */}
-                              <div className={styles.secondaryActions}>
-                                <Link
-                                  href={`/my-jobs/${interview.jobId}/applications`}
-                                  className={styles.btnSecondary}
-                                >
-                                  View Application
-                                </Link>
-                                <button
-                                  className={styles.btnSecondary}
-                                  onClick={() => setRescheduleTarget(interview)}
-                                >
-                                  Reschedule
-                                </button>
-                                <button
-                                  className={styles.btnCancel}
-                                  onClick={() => handleCancelInterview(interview)}
-                                  disabled={isCancelling}
-                                >
-                                  {isCancelling ? 'Cancelling...' : 'Cancel'}
-                                </button>
-                                {canMarkComplete && (
-                                  <button
-                                    className={styles.btnComplete}
-                                    onClick={() => handleMarkCompleted(interview)}
-                                  >
-                                    Mark Completed
-                                  </button>
-                                )}
-                              </div>
-                            </>
-                          )}
-
-                          {/* Notes textarea */}
+                          {/* Notes */}
                           <textarea
                             className={styles.notesArea}
                             placeholder="Add interview notes..."
@@ -725,6 +504,56 @@ export default function InterviewsPage() {
                             rows={2}
                           />
                         </div>
+
+                        {/* Row 1: Message, Email, View Application */}
+                        <div className={styles.btnRow}>
+                          <button
+                            className={styles.btnNavy}
+                            onClick={() => router.push(`/messages?candidate=${interview.candidateId}`)}
+                          >
+                            Message Candidate
+                          </button>
+                          <a
+                            href={`mailto:${interview.candidateEmail}`}
+                            className={styles.btnNavy}
+                          >
+                            Email Candidate
+                          </a>
+                          <Link
+                            href={`/my-jobs/${interview.jobId}/applications`}
+                            className={styles.btnNavy}
+                          >
+                            View Application
+                          </Link>
+                        </div>
+
+                        {/* Row 2: Reschedule, Cancel */}
+                        <div className={styles.btnRow}>
+                          <button
+                            className={styles.btnYellow}
+                            onClick={() => setRescheduleTarget(interview)}
+                          >
+                            Reschedule
+                          </button>
+                          <button
+                            className={styles.btnRedOutline}
+                            onClick={() => handleCancelInterview(interview)}
+                            disabled={isCancelling}
+                          >
+                            {isCancelling ? 'Cancelling...' : 'Cancel Interview'}
+                          </button>
+                        </div>
+
+                        {/* Row 3: Calendar (full width) */}
+                        <a
+                          href={calendarHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${styles.btnYellow} ${styles.btnFullWidth}`}
+                        >
+                          📅 {calendarLabel}
+                        </a>
+
                       </div>
                     )
                   })}
@@ -746,23 +575,26 @@ export default function InterviewsPage() {
               <div className={styles.pastList}>
                 {past.map(interview => (
                   <div key={interview.interviewId} className={styles.pastCard}>
-                    <div className={styles.avatar}>
+                    <div className={styles.pastPhoto}>
                       {interview.candidatePhoto ? (
-                        <img src={interview.candidatePhoto} alt={interview.candidateName} className={styles.avatarImg} />
+                        <img src={interview.candidatePhoto} alt={interview.candidateName} className={styles.cardPhotoImg} />
                       ) : (
-                        <div className={styles.avatarPlaceholder}>{getInitials(interview.candidateName)}</div>
+                        <div className={styles.cardPhotoPlaceholder}>{getInitials(interview.candidateName)}</div>
                       )}
                     </div>
                     <div className={styles.pastBody}>
                       <span className={styles.candidateName}>{interview.candidateName}</span>
                       <p className={styles.cardJobTitle}>{interview.jobTitle}</p>
-                      <p className={styles.cardTime}>{formatCardDate(interview.interviewDate, interview.interviewTime)}</p>
+                      <p className={styles.cardInfoRow}>
+                        <span className={styles.infoIcon}>🕐</span>
+                        {formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}
+                      </p>
                     </div>
                     <div className={styles.pastMeta}>
                       <span className={`${styles.pastStatusBadge} ${interview.status === 'completed' ? styles.pastCompleted : styles.pastCancelled}`}>
                         {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
                       </span>
-                      <Link href={`/my-jobs/${interview.jobId}/applications`} className={styles.btnSecondary}>
+                      <Link href={`/my-jobs/${interview.jobId}/applications`} className={styles.btnNavy} style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}>
                         View Application
                       </Link>
                     </div>
