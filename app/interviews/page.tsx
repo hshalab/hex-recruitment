@@ -467,21 +467,17 @@ export default function InterviewsPage() {
                               </a>
                             </p>
                           )}
-                          {interview.interviewType === 'video' && (
+                          {interview.interviewType === 'video' && interview.meetingLink && (
                             <p className={styles.cardInfoRow}>
                               <span className={styles.infoIcon}>🎥</span>
-                              {interview.meetingLink ? (
-                                <a
-                                  href={interview.meetingLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={styles.infoLink}
-                                >
-                                  Join Video Call
-                                </a>
-                              ) : (
-                                <span className={styles.infoMuted}>No meeting link added</span>
-                              )}
+                              <a
+                                href={interview.meetingLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.infoLink}
+                              >
+                                Join Video Call
+                              </a>
                             </p>
                           )}
 
