@@ -119,7 +119,7 @@
   margin-bottom: 1.5rem;
   background: var(--dark-gray);
   border-radius: 10px;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
 }
 
 .statsSmall {
@@ -128,7 +128,7 @@
   margin-bottom: 1.5rem;
   background: var(--dark-gray);
   border-radius: 10px;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
 }
 
 .statItem {
@@ -140,13 +140,13 @@
 }
 
 .statNumber {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--primary-yellow);
 }
 
 .statLabel {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -491,11 +491,21 @@
 /* Card Footer */
 .cardFooter {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   border-top: 1px solid var(--border-gray);
   background: var(--light-gray);
+}
+
+.footerBtnRow {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.footerBtnRow > button {
+  flex: 1;
 }
 
 .viewApplicationsBtn,
@@ -509,6 +519,7 @@
   color: var(--dark-gray);
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%;
 }
 
 .viewApplicationsBtn:hover,
@@ -595,6 +606,7 @@
   color: #d4a017;
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%;
 }
 
 .boostBtn:hover {
@@ -731,7 +743,6 @@
 
   .cardFooter {
     padding: 0.5rem 0.75rem;
-    flex-direction: column;
   }
 
   .jobMeta {
@@ -739,15 +750,9 @@
     gap: 0.35rem;
   }
 
-  .viewApplicationsBtn,
-  .viewJobBtn,
-  .editBtn,
-  .pauseBtn,
-  .activateBtn,
   .deleteBtn,
   .withdrawBtn,
-  .archiveBtn,
-  .boostBtn {
+  .archiveBtn {
     width: 100%;
     text-align: center;
   }

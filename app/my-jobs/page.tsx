@@ -751,10 +751,10 @@ function MyJobsContent() {
                                 <span className={styles.locationIcon}>📍</span>
                                 {job.location}
                               </span>
+                              {job.category && (
+                                <span className={styles.categoryTag}>{job.category}</span>
+                              )}
                             </div>
-                            {job.category && (
-                              <span className={styles.categoryTag}>{job.category}</span>
-                            )}
                           </div>
                         </div>
                         <span className={`${styles.statusBadge} ${status.className}`}>
@@ -895,18 +895,20 @@ function MyJobsContent() {
                             >
                               {jobBoosts[job.id] ? '⚡ Boosted' : '⚡ Boost'}
                             </button>
-                            <button
-                              className={styles.editBtn}
-                              onClick={() => router.push(`/post-job?edit=${job.id}`)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className={job.status === 'active' ? styles.pauseBtn : styles.activateBtn}
-                              onClick={() => handleToggleJobStatus(job.id)}
-                            >
-                              {job.status === 'active' ? 'Pause' : 'Activate'}
-                            </button>
+                            <div className={styles.footerBtnRow}>
+                              <button
+                                className={styles.editBtn}
+                                onClick={() => router.push(`/post-job?edit=${job.id}`)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className={job.status === 'active' ? styles.pauseBtn : styles.activateBtn}
+                                onClick={() => handleToggleJobStatus(job.id)}
+                              >
+                                {job.status === 'active' ? 'Pause' : 'Activate'}
+                              </button>
+                            </div>
                             <button
                               className={styles.deleteBtn}
                               onClick={() => handleDeleteJob(job.id)}
