@@ -277,7 +277,7 @@
 
 .infoLink {
   color: #2563eb;
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .infoLink:hover {
@@ -300,7 +300,7 @@
   gap: 0.3rem;
   font-size: 0.8rem;
   color: #6b7280;
-  text-decoration: none;
+  text-decoration: underline;
   margin-top: 0.25rem;
   transition: color 0.15s;
 }
