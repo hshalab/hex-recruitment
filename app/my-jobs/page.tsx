@@ -732,34 +732,32 @@ function MyJobsContent() {
                   return (
                     <div key={job.id} className={styles.jobCard}>
                       <div className={styles.cardHeader}>
-                        <div className={styles.cardHeaderLeft}>
-                          <CompanyLogo
-                            src={job.companyLogo}
-                            alt={job.company}
-                            className={styles.companyLogo}
-                          />
-                          <div className={styles.jobInfo}>
-                            <h3 className={styles.jobTitle}>{job.title}</h3>
-                            <div className={styles.jobKeyInfo}>
-                              <span className={styles.salaryBadge}>
-                                {formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}
-                              </span>
-                              <span className={styles.typeBadge}>
-                                {job.employmentType.join(', ')}
-                              </span>
-                              <span className={styles.jobLocation}>
-                                <span className={styles.locationIcon}>📍</span>
-                                {job.location}
-                              </span>
-                              {job.category && (
-                                <span className={styles.categoryTag}>{job.category}</span>
-                              )}
-                            </div>
+                        <div className={styles.jobInfo}>
+                          <h3 className={styles.jobTitle}>{job.title}</h3>
+                          <p className={styles.jobLocationLine}>
+                            <span className={styles.locationIcon}>📍</span>
+                            {job.location}
+                          </p>
+                          <div className={styles.jobKeyInfo}>
+                            <span className={styles.salaryBadge}>
+                              {formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}
+                            </span>
+                            <span className={styles.typeBadge}>
+                              {job.employmentType.join(', ')}
+                            </span>
+                            {job.category && (
+                              <span className={styles.categoryTag}>{job.category}</span>
+                            )}
+                            <span className={`${styles.statusBadge} ${status.className}`}>
+                              {status.label}
+                            </span>
                           </div>
                         </div>
-                        <span className={`${styles.statusBadge} ${status.className}`}>
-                          {status.label}
-                        </span>
+                        <CompanyLogo
+                          src={job.companyLogo}
+                          alt={job.company}
+                          className={styles.companyLogo}
+                        />
                       </div>
 
                       <div className={styles.cardBody}>
@@ -790,11 +788,6 @@ function MyJobsContent() {
                               )}
                             </span>
                           </div>
-                        )}
-                        {job.description && (
-                          <p className={styles.jobDescription}>
-                            {truncateText(job.description, 80)}
-                          </p>
                         )}
                         <div className={styles.jobMeta}>
                           <div className={styles.metaItem}>
@@ -832,12 +825,20 @@ function MyJobsContent() {
                       <div className={styles.cardFooter}>
                         {job.status === 'archived' ? (
                           <>
-                            <button
-                              className={styles.viewApplicationsBtn}
-                              onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
-                            >
-                              View Applications
-                            </button>
+                            <div className={styles.footerBtnRow}>
+                              <button
+                                className={styles.viewApplicationsBtn}
+                                onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
+                              >
+                                View Applications
+                              </button>
+                              <button
+                                className={styles.viewJobOutlineBtn}
+                                onClick={() => router.push(`/jobs?id=${job.id}`)}
+                              >
+                                View Job
+                              </button>
+                            </div>
                             <button
                               className={styles.activateBtn}
                               onClick={() => handleReactivateJob(job.id)}
@@ -853,12 +854,20 @@ function MyJobsContent() {
                           </>
                         ) : job.status === 'filled' ? (
                           <>
-                            <button
-                              className={styles.viewApplicationsBtn}
-                              onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
-                            >
-                              View Applications
-                            </button>
+                            <div className={styles.footerBtnRow}>
+                              <button
+                                className={styles.viewApplicationsBtn}
+                                onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
+                              >
+                                View Applications
+                              </button>
+                              <button
+                                className={styles.viewJobOutlineBtn}
+                                onClick={() => router.push(`/jobs?id=${job.id}`)}
+                              >
+                                View Job
+                              </button>
+                            </div>
                             <button
                               className={styles.activateBtn}
                               onClick={() => handleReactivateJob(job.id)}
@@ -880,12 +889,20 @@ function MyJobsContent() {
                           </>
                         ) : (
                           <>
-                            <button
-                              className={styles.viewApplicationsBtn}
-                              onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
-                            >
-                              View Applications
-                            </button>
+                            <div className={styles.footerBtnRow}>
+                              <button
+                                className={styles.viewApplicationsBtn}
+                                onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
+                              >
+                                View Applications
+                              </button>
+                              <button
+                                className={styles.viewJobOutlineBtn}
+                                onClick={() => router.push(`/jobs?id=${job.id}`)}
+                              >
+                                View Job
+                              </button>
+                            </div>
                             <button
                               className={`${styles.boostBtn} ${jobBoosts[job.id] ? styles.boostBtnActive : ''}`}
                               onClick={() => {
