@@ -421,7 +421,6 @@ export default function InterviewsPage() {
                   {items.map(interview => {
                     const isCancelling = cancellingId === interview.interviewId
                     const calendarHref = interview.calendarLink || buildCalendarUrl(interview)
-                    const calendarLabel = interview.calendarLink ? 'View in Google Calendar' : 'Add to Google Calendar'
 
                     return (
                       <div key={interview.interviewId} className={styles.interviewCard}>
@@ -505,7 +504,7 @@ export default function InterviewsPage() {
                           />
                         </div>
 
-                        {/* Row 1: Message, Email, View Application */}
+                        {/* Row 1: Message, Email — equal width */}
                         <div className={styles.btnRow}>
                           <button
                             className={styles.btnNavy}
@@ -519,18 +518,30 @@ export default function InterviewsPage() {
                           >
                             Email Candidate
                           </a>
-                          <Link
-                            href={`/my-jobs/${interview.jobId}/applications`}
-                            className={styles.btnNavy}
-                          >
-                            View Application
-                          </Link>
                         </div>
 
-                        {/* Row 2: Reschedule, Cancel */}
+                        {/* Row 2: View Application — full width */}
+                        <Link
+                          href={`/my-jobs/${interview.jobId}/applications`}
+                          className={`${styles.btnNavy} ${styles.btnFullWidth}`}
+                        >
+                          View Application
+                        </Link>
+
+                        {/* Row 3: Calendar — full width */}
+                        <a
+                          href={calendarHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${styles.btnYellow} ${styles.btnFullWidth}`}
+                        >
+                          📅 View in Google Calendar
+                        </a>
+
+                        {/* Row 4: Reschedule, Cancel — red outline, equal width */}
                         <div className={styles.btnRow}>
                           <button
-                            className={styles.btnYellow}
+                            className={styles.btnRedOutline}
                             onClick={() => setRescheduleTarget(interview)}
                           >
                             Reschedule
@@ -543,16 +554,6 @@ export default function InterviewsPage() {
                             {isCancelling ? 'Cancelling...' : 'Cancel Interview'}
                           </button>
                         </div>
-
-                        {/* Row 3: Calendar (full width) */}
-                        <a
-                          href={calendarHref}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`${styles.btnYellow} ${styles.btnFullWidth}`}
-                        >
-                          📅 {calendarLabel}
-                        </a>
 
                       </div>
                     )
