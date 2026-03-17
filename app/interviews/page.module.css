@@ -228,8 +228,8 @@
 
 /* Candidate Photo (square, rounded corners) */
 .cardPhoto {
-  width: 68px;
-  height: 68px;
+  width: 78px;
+  height: 78px;
   border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
@@ -287,6 +287,27 @@
 .infoMuted {
   color: #9ca3af;
   font-style: italic;
+}
+
+.infoDateTime {
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.keepLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-decoration: none;
+  margin-top: 0.25rem;
+  transition: color 0.15s;
+}
+
+.keepLink:hover {
+  color: #374151;
+  text-decoration: underline;
 }
 
 /* Notes textarea */
@@ -490,8 +511,8 @@
   }
 
   .cardPhoto {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
   }
 
   .btnRow {

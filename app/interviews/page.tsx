@@ -114,7 +114,6 @@ export default function InterviewsPage() {
   const [pastExpanded, setPastExpanded] = useState(false)
   const [rescheduleTarget, setRescheduleTarget] = useState<InterviewItem | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
-  const [localNotes, setLocalNotes] = useState<Record<string, string>>({})
 
   useEffect(() => { loadInterviews() }, [])
 
@@ -191,10 +190,6 @@ export default function InterviewsPage() {
         status: i.status,
       }
     })
-
-    const notesInit: Record<string, string> = {}
-    mapped.forEach(i => { notesInit[i.interviewId] = i.notes || '' })
-    setLocalNotes(notesInit)
 
     const upcomingItems = mapped.filter(i => ['scheduled', 'confirmed'].includes(i.status))
     const pastItems = mapped
@@ -332,15 +327,6 @@ export default function InterviewsPage() {
     }
   }
 
-  const handleNoteBlur = async (interviewId: string) => {
-    const notes = localNotes[interviewId] ?? ''
-    const { error: notesErr } = await supabase
-      .from('interviews')
-      .update({ notes })
-      .eq('id', interviewId)
-    if (notesErr) console.error('Error saving notes:', notesErr)
-  }
-
   // ─── Stats ──────────────────────────────────────────────────────────────────
 
   const todayObj = new Date(); todayObj.setHours(0, 0, 0, 0)
@@ -456,7 +442,7 @@ export default function InterviewsPage() {
                           {/* Date + time + duration */}
                           <p className={styles.cardInfoRow}>
                             <span className={styles.infoIcon}>🕐</span>
-                            {formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}
+                            <span className={styles.infoDateTime}>{formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}</span>
                           </p>
 
                           {/* Phone */}
@@ -499,15 +485,15 @@ export default function InterviewsPage() {
                             </p>
                           )}
 
-                          {/* Notes */}
-                          <textarea
-                            className={styles.notesArea}
-                            placeholder="Add interview notes..."
-                            value={localNotes[interview.interviewId] ?? ''}
-                            onChange={e => setLocalNotes(prev => ({ ...prev, [interview.interviewId]: e.target.value }))}
-                            onBlur={() => handleNoteBlur(interview.interviewId)}
-                            rows={2}
-                          />
+                          {/* Google Keep link */}
+                          <a
+                            href="https://keep.google.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.keepLink}
+                          >
+                            📝 Open Google Keep for notes
+                          </a>
                         </div>
 
                         {/* Row 1: Message, Email — equal width */}
