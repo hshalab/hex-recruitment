@@ -807,6 +807,11 @@ function MyJobsContent() {
                             <span className={styles.metaIcon}>👁️</span>
                             <span>{job.viewCount} views</span>
                           </div>
+                        </div>
+                        <div className={styles.cardMetaRow}>
+                          <span className={`${styles.statusBadge} ${job.status === 'active' ? styles.statusActiveGreen : status.className}`}>
+                            {status.label}
+                          </span>
                           <Link
                             href={`/employer/analytics/${job.id}`}
                             className={styles.analyticsLink}
@@ -818,11 +823,6 @@ function MyJobsContent() {
                             </svg>
                             View Analytics
                           </Link>
-                        </div>
-                        <div className={styles.cardStatusRow}>
-                          <span className={`${styles.statusBadge} ${job.status === 'active' ? styles.statusActiveGreen : status.className}`}>
-                            {status.label}
-                          </span>
                         </div>
                       </div>
 

@@ -259,7 +259,7 @@
 .jobLocationLine {
   font-size: 0.85rem;
   color: var(--text-gray);
-  margin: 0.5rem 0 0 0;
+  margin: 0;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -453,8 +453,10 @@
   gap: 0.75rem;
 }
 
-.cardStatusRow {
-  margin-top: 0.5rem;
+.cardMetaRow {
+  display: flex;
+  align-items: center;
+  margin-top: 0.35rem;
 }
 
 .metaItem {
