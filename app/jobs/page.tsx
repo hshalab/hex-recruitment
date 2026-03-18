@@ -212,6 +212,7 @@ function JobsPageContent() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
+  const viewIncrementedForRef = useRef<string | null>(null)
 
   // Apply flow state
   const [showApplyModal, setShowApplyModal] = useState(false)
@@ -303,6 +304,17 @@ function JobsPageContent() {
     }
     checkExistingApplication()
   }, [selectedJob?.id])
+
+  // Increment job views counter for candidate users
+  useEffect(() => {
+    if (!selectedJob || !currentUserRole || currentUserRole === 'employer') return
+    // Only increment once per job selection (reset when selectedJob changes)
+    if (viewIncrementedForRef.current === selectedJob.id) return
+    viewIncrementedForRef.current = selectedJob.id
+    supabase.rpc('increment_job_views', { p_job_id: selectedJob.id }).then(({ error }) => {
+      if (error) console.error('[Views] increment_job_views failed:', error.message)
+    })
+  }, [selectedJob?.id, currentUserRole])
 
   // Detect mobile for layout switch
   useEffect(() => {
