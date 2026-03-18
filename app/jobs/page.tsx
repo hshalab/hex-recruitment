@@ -305,32 +305,6 @@ function JobsPageContent() {
     checkExistingApplication()
   }, [selectedJob?.id])
 
-  // Increment job views counter for candidate users
-  useEffect(() => {
-    console.log('[Views] effect fired — selectedJob:', selectedJob?.id, '| currentUserRole:', currentUserRole)
-    if (!selectedJob || !currentUserRole) {
-      console.log('[Views] skipped — missing selectedJob or currentUserRole')
-      return
-    }
-    if (currentUserRole !== 'employee') {
-      console.log('[Views] skipped — role is not employee, got:', currentUserRole)
-      return
-    }
-    if (viewIncrementedForRef.current === selectedJob.id) {
-      console.log('[Views] skipped — already incremented for job', selectedJob.id)
-      return
-    }
-    viewIncrementedForRef.current = selectedJob.id
-    console.log('[Views] calling increment_job_views for job', selectedJob.id, 'with role', currentUserRole)
-    supabase.rpc('increment_job_views', { p_job_id: selectedJob.id }).then(({ error }) => {
-      if (error) {
-        console.error('[Views] increment_job_views failed:', error.message)
-      } else {
-        console.log('[Views] increment_job_views success for job', selectedJob.id)
-      }
-    })
-  }, [selectedJob?.id, currentUserRole])
-
   // Detect mobile for layout switch
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -424,13 +398,23 @@ function JobsPageContent() {
       const job = jobs.find(j => j.id === jobId)
       if (job) {
         setSelectedJob(job)
+        // Track view for candidates navigating directly via URL (?id=)
+        // Uses ref to prevent double-increment if selectJob already fired (mobile)
+        if (currentUserRole === 'employee' && viewIncrementedForRef.current !== job.id) {
+          viewIncrementedForRef.current = job.id
+          console.log('[Views] URL-based: incrementing view for job', job.id)
+          supabase.rpc('increment_job_views', { p_job_id: job.id }).then(({ error }) => {
+            if (error) console.error('[Views] increment failed:', error.message)
+            else console.log('[Views] success for job', job.id)
+          })
+        }
       }
     } else if (!isMobile && !selectedJob) {
       // Don't clear selection on desktop - keep current or auto-select will handle
     } else if (isMobile) {
       setSelectedJob(null)
     }
-  }, [searchParams, jobs, isLoggedIn, router, isMobile])
+  }, [searchParams, jobs, isLoggedIn, router, isMobile, currentUserRole])
 
   const toggleFilter = (category: keyof Filters, value: string) => {
     setFilters(prev => {
@@ -585,6 +569,15 @@ function JobsPageContent() {
   // Job selection handlers
   const selectJob = async (job: Job) => {
     trackJobView(job.id, 'search')
+    // Increment view counter for candidate users who explicitly click a job
+    if (currentUserRole === 'employee' && viewIncrementedForRef.current !== job.id) {
+      viewIncrementedForRef.current = job.id
+      console.log('[Views] click: incrementing view for job', job.id)
+      supabase.rpc('increment_job_views', { p_job_id: job.id }).then(({ error }) => {
+        if (error) console.error('[Views] increment failed:', error.message)
+        else console.log('[Views] success for job', job.id)
+      })
+    }
     if (isMobile) {
       // Mobile: check auth then open modal
       let loggedIn = isLoggedIn
