@@ -741,9 +741,6 @@ function MyJobsContent() {
                             <span className={styles.typeBadge}>
                               {job.employmentType.join(', ')}
                             </span>
-                            <span className={`${styles.statusBadge} ${status.className}`}>
-                              {status.label}
-                            </span>
                           </div>
                           <a
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`}
@@ -821,6 +818,11 @@ function MyJobsContent() {
                             </svg>
                             View Analytics
                           </Link>
+                        </div>
+                        <div className={styles.cardStatusRow}>
+                          <span className={`${styles.statusBadge} ${job.status === 'active' ? styles.statusActiveGreen : status.className}`}>
+                            {status.label}
+                          </span>
                         </div>
                       </div>
 
