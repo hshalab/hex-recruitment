@@ -312,8 +312,8 @@ function JobsPageContent() {
       console.log('[Views] skipped — missing selectedJob or currentUserRole')
       return
     }
-    if (currentUserRole === 'employer') {
-      console.log('[Views] skipped — user is employer')
+    if (currentUserRole !== 'employee') {
+      console.log('[Views] skipped — role is not employee, got:', currentUserRole)
       return
     }
     if (viewIncrementedForRef.current === selectedJob.id) {
