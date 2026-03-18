@@ -263,9 +263,16 @@
   font-size: 0.85rem;
   color: var(--text-gray);
   margin: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.jobLocationLine:hover {
+  color: #2563eb;
+  text-decoration: underline;
 }
 
 .jobKeyInfo {
@@ -273,6 +280,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
+}
+
+.jobKeyInfo .statusBadge {
+  margin-left: auto;
 }
 
 .salaryBadge {
@@ -592,44 +603,41 @@
 .deleteBtn {
   padding: 0.375rem 0.875rem;
   background: transparent;
-  border: 1px solid var(--border-gray);
+  border: 1px solid rgba(220, 38, 38, 0.35);
   border-radius: 5px;
   font-size: 0.8rem;
   font-weight: 500;
-  color: var(--text-gray);
+  color: #dc2626;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .deleteBtn:hover {
-  border-color: #ef4444;
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.05);
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.05);
 }
 
 .boostBtn {
   padding: 0.375rem 0.875rem;
   background: transparent;
-  border: 1px solid #d4a017;
+  border: 1.5px solid var(--primary-yellow);
   border-radius: 5px;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #d4a017;
+  color: #92660a;
   cursor: pointer;
   transition: all 0.2s;
   width: 100%;
 }
 
 .boostBtn:hover {
-  background: rgba(212, 160, 23, 0.08);
-  border-color: #b8860b;
-  color: #b8860b;
+  background: rgba(255, 229, 0, 0.12);
 }
 
 .boostBtnActive {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: #FFD700;
-  color: #b8860b;
+  background: rgba(255, 229, 0, 0.12);
+  border-color: var(--primary-yellow);
+  color: #92660a;
 }
 
 .boostStatus {

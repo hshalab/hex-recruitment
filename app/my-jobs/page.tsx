@@ -734,10 +734,6 @@ function MyJobsContent() {
                       <div className={styles.cardHeader}>
                         <div className={styles.jobInfo}>
                           <h3 className={styles.jobTitle}>{job.title}</h3>
-                          <p className={styles.jobLocationLine}>
-                            <span className={styles.locationIcon}>📍</span>
-                            {job.location}
-                          </p>
                           <div className={styles.jobKeyInfo}>
                             <span className={styles.salaryBadge}>
                               {formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}
@@ -745,13 +741,19 @@ function MyJobsContent() {
                             <span className={styles.typeBadge}>
                               {job.employmentType.join(', ')}
                             </span>
-                            {job.category && (
-                              <span className={styles.categoryTag}>{job.category}</span>
-                            )}
                             <span className={`${styles.statusBadge} ${status.className}`}>
                               {status.label}
                             </span>
                           </div>
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.jobLocationLine}
+                          >
+                            <span className={styles.locationIcon}>📍</span>
+                            {job.location}
+                          </a>
                         </div>
                         <CompanyLogo
                           src={job.companyLogo}
