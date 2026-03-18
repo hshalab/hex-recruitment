@@ -115,39 +115,37 @@
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
+  gap: 1rem;
   margin-bottom: 1.5rem;
-  background: var(--dark-gray);
-  border-radius: 10px;
-  padding: 0.5rem 0.75rem;
 }
 
 .statsSmall {
   display: flex;
   justify-content: flex-start;
   margin-bottom: 1.5rem;
-  background: var(--dark-gray);
-  border-radius: 10px;
-  padding: 0.5rem 0.75rem;
 }
 
 .statItem {
+  background: #1a1a1a;
+  border-radius: 8px;
+  padding: 0.625rem 0.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.1rem;
-  text-align: center;
+  gap: 0.15rem;
 }
 
 .statNumber {
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  color: var(--primary-yellow);
+  color: #FFE500;
+  line-height: 1;
 }
 
 .statLabel {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #9ca3af;
+  text-align: center;
 }
 
 /* Empty State */
@@ -251,7 +249,7 @@
 }
 
 .jobTitle {
-  font-size: 1.3rem;
+  font-size: 1.45rem;
   font-weight: 700;
   color: var(--dark-gray);
   margin: 0;
@@ -261,7 +259,7 @@
 .jobLocationLine {
   font-size: 0.85rem;
   color: var(--text-gray);
-  margin: 0;
+  margin: 0.5rem 0 0 0;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -288,10 +286,10 @@
 .salaryBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.4rem;
+  padding: 0.08rem 0.35rem;
   background: #1e293b;
   color: #FFE500;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   border-radius: 4px;
 }
@@ -299,10 +297,10 @@
 .typeBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.4rem;
+  padding: 0.08rem 0.35rem;
   background: #1e293b;
   color: #FFE500;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   border-radius: 4px;
 }
@@ -433,7 +431,7 @@
 
 /* Card Body */
 .cardBody {
-  padding: 0.5rem 1rem 0.625rem;
+  padding: 0 1rem 0.625rem;
   overflow: hidden;
 }
 
@@ -731,7 +729,7 @@
   }
 
   .cardHeader {
-    padding: 0.75rem;
+    padding: 0.75rem 0.75rem 0;
   }
 
   .companyLogo {
