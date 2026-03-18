@@ -307,12 +307,27 @@ function JobsPageContent() {
 
   // Increment job views counter for candidate users
   useEffect(() => {
-    if (!selectedJob || !currentUserRole || currentUserRole === 'employer') return
-    // Only increment once per job selection (reset when selectedJob changes)
-    if (viewIncrementedForRef.current === selectedJob.id) return
+    console.log('[Views] effect fired — selectedJob:', selectedJob?.id, '| currentUserRole:', currentUserRole)
+    if (!selectedJob || !currentUserRole) {
+      console.log('[Views] skipped — missing selectedJob or currentUserRole')
+      return
+    }
+    if (currentUserRole === 'employer') {
+      console.log('[Views] skipped — user is employer')
+      return
+    }
+    if (viewIncrementedForRef.current === selectedJob.id) {
+      console.log('[Views] skipped — already incremented for job', selectedJob.id)
+      return
+    }
     viewIncrementedForRef.current = selectedJob.id
+    console.log('[Views] calling increment_job_views for job', selectedJob.id, 'with role', currentUserRole)
     supabase.rpc('increment_job_views', { p_job_id: selectedJob.id }).then(({ error }) => {
-      if (error) console.error('[Views] increment_job_views failed:', error.message)
+      if (error) {
+        console.error('[Views] increment_job_views failed:', error.message)
+      } else {
+        console.log('[Views] increment_job_views success for job', selectedJob.id)
+      }
     })
   }, [selectedJob?.id, currentUserRole])
 
