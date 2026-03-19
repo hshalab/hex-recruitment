@@ -287,7 +287,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.08rem 0.35rem;
-  background: #1e293b;
+  background: var(--dark-gray);
   color: #FFE500;
   font-size: 0.7rem;
   font-weight: 600;
@@ -298,7 +298,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.08rem 0.35rem;
-  background: #1e293b;
+  background: var(--dark-gray);
   color: #FFE500;
   font-size: 0.7rem;
   font-weight: 600;
