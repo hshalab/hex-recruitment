@@ -128,7 +128,7 @@
 .statItem {
   background: var(--dark-gray);
   border-radius: 8px;
-  padding: 0.35rem 0.5rem;
+  padding: 0.4rem 0.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -136,14 +136,14 @@
 }
 
 .statNumber {
-  font-size: 1.35rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #FFE500;
   line-height: 1;
 }
 
 .statLabel {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   color: #9ca3af;
   text-align: center;
 }
