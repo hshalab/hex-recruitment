@@ -177,7 +177,7 @@ export default function EmployerDashboardPage() {
       try {
         const { data: jobs } = await supabase
           .from('jobs')
-          .select('id, title, status, view_count, posted_at')
+          .select('id, title, status, views, posted_at')
           .eq('employer_id', userId)
           .order('posted_at', { ascending: false })
 
@@ -185,7 +185,7 @@ export default function EmployerDashboardPage() {
           setTotalJobs(jobs.length)
           setActiveJobs(jobs.filter(j => j.status === 'active').length)
 
-          const views = jobs.reduce((sum: number, j: any) => sum + (j.view_count || 0), 0)
+          const views = jobs.reduce((sum: number, j: any) => sum + (j.views || 0), 0)
           setTotalViews(views)
 
           // Compute "new jobs this week" badge
