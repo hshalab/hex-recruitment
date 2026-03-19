@@ -518,6 +518,16 @@
   flex: 1;
 }
 
+.btnGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+.btnGrid > button {
+  width: 100%;
+}
+
 .viewApplicationsBtn,
 .viewJobBtn {
   padding: 0.375rem 0.875rem;
@@ -631,7 +641,6 @@
   color: #92660a;
   cursor: pointer;
   transition: all 0.2s;
-  width: 100%;
 }
 
 .boostBtn:hover {

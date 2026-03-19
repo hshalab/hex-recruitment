@@ -892,21 +892,19 @@ function MyJobsContent() {
                             </button>
                           </>
                         ) : (
-                          <>
-                            <div className={styles.footerBtnRow}>
-                              <button
-                                className={styles.viewApplicationsBtn}
-                                onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
-                              >
-                                View Applications
-                              </button>
-                              <button
-                                className={styles.viewJobOutlineBtn}
-                                onClick={() => router.push(`/jobs?id=${job.id}`)}
-                              >
-                                View Job
-                              </button>
-                            </div>
+                          <div className={styles.btnGrid}>
+                            <button
+                              className={styles.viewApplicationsBtn}
+                              onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
+                            >
+                              View Applications
+                            </button>
+                            <button
+                              className={styles.viewJobOutlineBtn}
+                              onClick={() => router.push(`/jobs?id=${job.id}`)}
+                            >
+                              View Job
+                            </button>
                             <button
                               className={`${styles.boostBtn} ${jobBoosts[job.id] ? styles.boostBtnActive : ''}`}
                               onClick={() => {
@@ -916,27 +914,25 @@ function MyJobsContent() {
                             >
                               {jobBoosts[job.id] ? '⚡ Boosted' : '⚡ Boost'}
                             </button>
-                            <div className={styles.footerBtnRow}>
-                              <button
-                                className={styles.editBtn}
-                                onClick={() => router.push(`/post-job?edit=${job.id}`)}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                className={job.status === 'active' ? styles.pauseBtn : styles.activateBtn}
-                                onClick={() => handleToggleJobStatus(job.id)}
-                              >
-                                {job.status === 'active' ? 'Pause' : 'Activate'}
-                              </button>
-                            </div>
+                            <button
+                              className={styles.editBtn}
+                              onClick={() => router.push(`/post-job?edit=${job.id}`)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className={job.status === 'active' ? styles.pauseBtn : styles.activateBtn}
+                              onClick={() => handleToggleJobStatus(job.id)}
+                            >
+                              {job.status === 'active' ? 'Pause' : 'Activate'}
+                            </button>
                             <button
                               className={styles.deleteBtn}
                               onClick={() => handleDeleteJob(job.id)}
                             >
                               Delete
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>
