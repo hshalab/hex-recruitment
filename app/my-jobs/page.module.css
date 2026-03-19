@@ -289,8 +289,8 @@
   padding: 0;
   background: none;
   color: var(--dark-gray);
-  font-size: 0.65rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 400;
 }
 
 .typeBadge {
@@ -299,8 +299,8 @@
   padding: 0;
   background: none;
   color: var(--dark-gray);
-  font-size: 0.65rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 400;
 }
 
 .categoryTag {
