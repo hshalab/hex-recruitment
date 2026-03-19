@@ -104,7 +104,7 @@ function MyJobsContent() {
           location: row.location || '',
           postedDate: row.posted_at ? new Date(row.posted_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           applicationCount: 0,
-          viewCount: row.view_count || 0,
+          viewCount: row.views || 0,
           status: (row.status === 'expired' ? 'closed' : row.status) as PostedJob['status'],
           salaryMin: Number(row.salary_min),
           salaryMax: Number(row.salary_max),
