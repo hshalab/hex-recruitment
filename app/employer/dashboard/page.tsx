@@ -142,9 +142,9 @@ export default function EmployerDashboardPage() {
           { id: '5', candidate_name: 'Olivia Davis', job_title: 'Waitress', status: 'rejected', created_at: new Date(Date.now() - 8 * 86400000).toISOString() },
         ])
         setJobsData([
-          { id: 'j1', title: 'Head Chef', status: 'active', view_count: 84, application_count: 12 },
-          { id: 'j2', title: 'Sous Chef', status: 'active', view_count: 67, application_count: 9 },
-          { id: 'j3', title: 'Pastry Chef', status: 'active', view_count: 52, application_count: 7 },
+          { id: 'j1', title: 'Head Chef', status: 'active', views: 84, application_count: 12 },
+          { id: 'j2', title: 'Sous Chef', status: 'active', views: 67, application_count: 9 },
+          { id: 'j3', title: 'Pastry Chef', status: 'active', views: 52, application_count: 7 },
         ])
         setLoading(false)
         return
@@ -483,7 +483,7 @@ export default function EmployerDashboardPage() {
                           </div>
                           <div className={styles.jobItemStats}>
                             <div className={styles.jobItemStat}>
-                              <span className={styles.jobItemStatNum}>{job.view_count || 0}</span>
+                              <span className={styles.jobItemStatNum}>{job.views || 0}</span>
                               <span className={styles.jobItemStatLabel}>Views</span>
                             </div>
                             <div className={styles.jobItemStat}>
