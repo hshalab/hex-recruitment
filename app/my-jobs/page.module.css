@@ -695,7 +695,7 @@
   color: #374151;
 }
 
-/* Desktop — compact card layout */
+/* Desktop — compact card layout (medium: 2 cols, large: 3 cols) */
 @media (min-width: 768px) {
   .jobsList {
     display: grid;
@@ -740,6 +740,12 @@
   .archiveBtn {
     padding: 0.25rem 0.625rem;
     font-size: 0.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .jobsList {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
