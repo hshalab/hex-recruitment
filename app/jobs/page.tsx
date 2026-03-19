@@ -400,12 +400,18 @@ function JobsPageContent() {
         setSelectedJob(job)
         // Track view for candidates navigating directly via URL (?id=)
         // Uses ref to prevent double-increment if selectJob already fired (mobile)
-        if (currentUserRole === 'employee' && viewIncrementedForRef.current !== job.id) {
+        console.log('[Views] URL-based job selected — job:', job.id, '| currentUserRole:', currentUserRole, '| alreadyTracked:', viewIncrementedForRef.current)
+        if (currentUserRole !== 'employee') {
+          console.log('[Views] URL-based skipped — role is not employee, got:', currentUserRole)
+        } else if (viewIncrementedForRef.current === job.id) {
+          console.log('[Views] URL-based skipped — already incremented for job', job.id)
+        } else {
           viewIncrementedForRef.current = job.id
-          console.log('[Views] URL-based: incrementing view for job', job.id)
-          supabase.rpc('increment_job_views', { p_job_id: job.id }).then(({ error }) => {
-            if (error) console.error('[Views] increment failed:', error.message)
-            else console.log('[Views] success for job', job.id)
+          console.log('[Views] URL-based: calling increment_job_views RPC for job', job.id)
+          supabase.rpc('increment_job_views', { p_job_id: job.id }).then(({ data, error, status, statusText }) => {
+            console.log('[Views] RPC response — status:', status, '| statusText:', statusText, '| data:', data, '| error:', error)
+            if (error) console.error('[Views] RPC error details:', error.code, error.message, error.details, error.hint)
+            else console.log('[Views] increment success for job', job.id)
           })
         }
       }
@@ -570,12 +576,18 @@ function JobsPageContent() {
   const selectJob = async (job: Job) => {
     trackJobView(job.id, 'search')
     // Increment view counter for candidate users who explicitly click a job
-    if (currentUserRole === 'employee' && viewIncrementedForRef.current !== job.id) {
+    console.log('[Views] selectJob fired — job:', job.id, '| currentUserRole:', currentUserRole, '| alreadyTracked:', viewIncrementedForRef.current)
+    if (currentUserRole !== 'employee') {
+      console.log('[Views] selectJob skipped — role is not employee, got:', currentUserRole)
+    } else if (viewIncrementedForRef.current === job.id) {
+      console.log('[Views] selectJob skipped — already incremented for job', job.id)
+    } else {
       viewIncrementedForRef.current = job.id
-      console.log('[Views] click: incrementing view for job', job.id)
-      supabase.rpc('increment_job_views', { p_job_id: job.id }).then(({ error }) => {
-        if (error) console.error('[Views] increment failed:', error.message)
-        else console.log('[Views] success for job', job.id)
+      console.log('[Views] selectJob: calling increment_job_views RPC for job', job.id)
+      supabase.rpc('increment_job_views', { p_job_id: job.id }).then(({ data, error, status, statusText }) => {
+        console.log('[Views] RPC response — status:', status, '| statusText:', statusText, '| data:', data, '| error:', error)
+        if (error) console.error('[Views] RPC error details:', error.code, error.message, error.details, error.hint)
+        else console.log('[Views] increment success for job', job.id)
       })
     }
     if (isMobile) {
