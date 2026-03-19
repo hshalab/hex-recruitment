@@ -286,23 +286,21 @@
 .salaryBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.3rem;
-  background: #374151;
+  padding: 0;
+  background: none;
   color: #FFE500;
   font-size: 0.65rem;
   font-weight: 600;
-  border-radius: 4px;
 }
 
 .typeBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.3rem;
-  background: #374151;
+  padding: 0;
+  background: none;
   color: #FFE500;
   font-size: 0.65rem;
   font-weight: 600;
-  border-radius: 4px;
 }
 
 .categoryTag {
