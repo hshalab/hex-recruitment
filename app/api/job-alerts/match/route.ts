@@ -29,15 +29,13 @@ export async function POST(request: NextRequest) {
 
     const job = supabaseJobToJob(jobRow)
 
-    // 2. Fetch all active instant alerts
+    // 2. Fetch all active alerts (regardless of frequency)
     const { data: alertRows, error: alertError } = await adminSupabase
       .from('job_alerts')
       .select('*')
       .eq('is_active', true)
-      .eq('frequency', 'instant')
 
     if (alertError) {
-      console.error('Error fetching alerts:', alertError)
       return NextResponse.json({ error: 'Failed to fetch alerts' }, { status: 500 })
     }
 
@@ -80,7 +78,7 @@ export async function POST(request: NextRequest) {
         .insert(notifications)
 
       if (notifError) {
-        console.error('Error creating alert notifications:', notifError)
+        // Notification insert failed — non-blocking
       }
     }
 
@@ -88,8 +86,7 @@ export async function POST(request: NextRequest) {
       matched: notifications.length,
       alertsChecked: alerts.length,
     })
-  } catch (error) {
-    console.error('Job alert matching error:', error)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

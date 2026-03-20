@@ -1,5 +1,28 @@
 import { Job } from './mockJobs'
 
+const SECTOR_KEY_TO_LABEL: Record<string, string> = {
+  hospitality: 'Hospitality Tourism & Sport',
+  accountancy: 'Accountancy Banking & Finance',
+  business: 'Business Consulting & Management',
+  charity: 'Charity & Voluntary Work',
+  creative: 'Creative Arts & Design',
+  digital: 'Digital & Information Technology',
+  energy: 'Energy & Utilities',
+  engineering: 'Engineering & Manufacturing',
+  environment: 'Environment & Agriculture',
+  healthcare: 'Healthcare & Social Care',
+  law: 'Law & Legal Services',
+  marketing: 'Marketing Advertising & PR',
+  media: 'Media & Internet',
+  property: 'Property & Construction',
+  public: 'Public Services & Administration',
+  recruitment: 'Recruitment & HR',
+  retail: 'Retail & Sales',
+  science: 'Science & Pharmaceuticals',
+  teaching: 'Teaching & Education',
+  transport: 'Transport & Logistics',
+}
+
 // ─── Job Alert Types ─────────────────────────────────────────────
 
 export interface JobAlert {
@@ -56,9 +79,10 @@ export function supabaseRowToJobAlert(row: any): JobAlert {
  * Empty criteria arrays are treated as "match anything" for that dimension.
  */
 export function jobMatchesAlert(job: Job, alert: JobAlert): boolean {
-  // 1. Sector match
+  // 1. Sector match (normalise key → label)
   if (alert.sectors.length > 0) {
-    if (!alert.sectors.includes(job.category)) {
+    const jobSectorLabel = SECTOR_KEY_TO_LABEL[job.category] || job.category
+    if (!alert.sectors.includes(jobSectorLabel)) {
       return false
     }
   }
@@ -74,12 +98,14 @@ export function jobMatchesAlert(job: Job, alert: JobAlert): boolean {
     if (!locationMatch) return false
   }
 
-  // 3. Salary overlap
+  // 3. Salary overlap (normalise hourly → annual using 2080 hours/year)
+  const annualMin = job.salaryPeriod === 'hour' ? job.salaryMin * 2080 : job.salaryMin
+  const annualMax = job.salaryPeriod === 'hour' ? job.salaryMax * 2080 : job.salaryMax
   if (alert.min_salary !== null && alert.min_salary > 0) {
-    if (job.salaryMax < alert.min_salary) return false
+    if (annualMax < alert.min_salary) return false
   }
   if (alert.max_salary !== null && alert.max_salary > 0) {
-    if (job.salaryMin > alert.max_salary) return false
+    if (annualMin > alert.max_salary) return false
   }
 
   // 4. Job type match (at least one overlap)
