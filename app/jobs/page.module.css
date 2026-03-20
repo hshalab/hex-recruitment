@@ -716,6 +716,20 @@
   line-height: 1.5;
 }
 
+.listCardExpiry {
+  font-size: 0.7rem;
+  color: #dc2626;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.detailExpiry {
+  font-size: 0.82rem;
+  color: #dc2626;
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
 .listCardStamp {
   position: absolute;
   top: 50%;

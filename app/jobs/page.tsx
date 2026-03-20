@@ -1080,6 +1080,13 @@ function JobsPageContent() {
                     <p className={styles.listCardCompany}>{job.company}</p>
                     <p className={styles.listCardLocation}>{job.location}{job.area ? `, ${job.area}` : ''}</p>
                     <p className={styles.listCardSalary}>{formatSalary(job)}</p>
+                    {job.expiresDate && (() => {
+                      const daysLeft = Math.ceil((new Date(job.expiresDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                      if (daysLeft <= 7 && daysLeft >= 0) {
+                        return <p className={styles.listCardExpiry}>⏰ Closes in {daysLeft === 0 ? 'today' : `${daysLeft} day${daysLeft === 1 ? '' : 's'}`}</p>
+                      }
+                      return null
+                    })()}
                   </div>
                   {boostedJobIds.has(job.id) && (
                     <span className={styles.listCardFeaturedBadge}>⚡ Featured</span>
@@ -1133,6 +1140,13 @@ function JobsPageContent() {
                         : `${selectedJob.location}, ${selectedJob.area}`}
                     </a>
                     <p className={styles.detailSalary}>{formatSalaryFull(selectedJob)}</p>
+                    {selectedJob.expiresDate && (() => {
+                      const daysLeft = Math.ceil((new Date(selectedJob.expiresDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                      if (daysLeft <= 7 && daysLeft >= 0) {
+                        return <p className={styles.detailExpiry}>⏰ Closes in {daysLeft === 0 ? 'today' : `${daysLeft} day${daysLeft === 1 ? '' : 's'}`}</p>
+                      }
+                      return null
+                    })()}
                     <div className={styles.detailBadges}>
                       {Array.isArray(selectedJob.employmentType)
                         ? selectedJob.employmentType.map((type, i) => (
