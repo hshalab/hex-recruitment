@@ -185,8 +185,8 @@ const getJobSector = (job: { title: string; category?: string }): string => {
   if (['scientist', 'research', 'laboratory', 'lab tech', 'biolog', 'chemist', 'physicist'].some(k => titleLower.includes(k)))
     return 'science'
 
-  // Default to hospitality since most legacy mock data is hospitality
-  return 'hospitality'
+  // Default to business for unrecognised titles
+  return 'business'
 }
 
 function JobsPageContent() {
@@ -400,19 +400,13 @@ function JobsPageContent() {
         setSelectedJob(job)
         // Track view for candidates navigating directly via URL (?id=)
         // Uses ref to prevent double-increment if selectJob already fired (mobile)
-        console.log('[Views] URL-based job selected — job:', job.id, '| currentUserRole:', currentUserRole, '| alreadyTracked:', viewIncrementedForRef.current)
         if (currentUserRole !== 'employee') {
-          console.log('[Views] URL-based skipped — role is not employee, got:', currentUserRole)
+          // Skip view tracking for non-candidates
         } else if (viewIncrementedForRef.current === job.id) {
-          console.log('[Views] URL-based skipped — already incremented for job', job.id)
+          // Already tracked for this job
         } else {
           viewIncrementedForRef.current = job.id
-          console.log('[Views] URL-based: calling increment_job_views RPC for job', job.id)
-          supabase.rpc('increment_job_views', { p_job_id: job.id }).then(({ data, error, status, statusText }) => {
-            console.log('[Views] RPC response — status:', status, '| statusText:', statusText, '| data:', data, '| error:', error)
-            if (error) console.error('[Views] RPC error details:', error.code, error.message, error.details, error.hint)
-            else console.log('[Views] increment success for job', job.id)
-          })
+          supabase.rpc('increment_job_views', { p_job_id: job.id })
         }
       }
     } else if (!isMobile && !selectedJob) {
@@ -576,19 +570,13 @@ function JobsPageContent() {
   const selectJob = async (job: Job) => {
     trackJobView(job.id, 'search')
     // Increment view counter for candidate users who explicitly click a job
-    console.log('[Views] selectJob fired — job:', job.id, '| currentUserRole:', currentUserRole, '| alreadyTracked:', viewIncrementedForRef.current)
     if (currentUserRole !== 'employee') {
-      console.log('[Views] selectJob skipped — role is not employee, got:', currentUserRole)
+      // Skip view tracking for non-candidates
     } else if (viewIncrementedForRef.current === job.id) {
-      console.log('[Views] selectJob skipped — already incremented for job', job.id)
+      // Already tracked for this job
     } else {
       viewIncrementedForRef.current = job.id
-      console.log('[Views] selectJob: calling increment_job_views RPC for job', job.id)
-      supabase.rpc('increment_job_views', { p_job_id: job.id }).then(({ data, error, status, statusText }) => {
-        console.log('[Views] RPC response — status:', status, '| statusText:', statusText, '| data:', data, '| error:', error)
-        if (error) console.error('[Views] RPC error details:', error.code, error.message, error.details, error.hint)
-        else console.log('[Views] increment success for job', job.id)
-      })
+      supabase.rpc('increment_job_views', { p_job_id: job.id })
     }
     if (isMobile) {
       // Mobile: check auth then open modal
@@ -763,26 +751,45 @@ function JobsPageContent() {
 
           const employerName = employerProfile?.company_name || selectedJob.company
 
-          const { data: convData, error: convError } = await supabase
+          // Check for existing conversation before creating a new one
+          const { data: existingConv } = await supabase
             .from('conversations')
-            .insert({
-              participant_1: session.user.id,
-              participant_2: selectedJob.employerId,
-              participant_1_name: candidateName,
-              participant_1_role: 'candidate',
-              participant_2_name: employerName,
-              participant_2_role: 'employer',
-              participant_2_company: selectedJob.company,
-              related_job_id: selectedJob.id,
-              related_job_title: selectedJob.title,
-              last_message: autoMessage,
-              last_message_at: new Date().toISOString(),
-            })
-            .select()
-            .single()
+            .select('id')
+            .or(`and(participant_1.eq.${session.user.id},participant_2.eq.${selectedJob.employerId}),and(participant_1.eq.${selectedJob.employerId},participant_2.eq.${session.user.id})`)
+            .eq('related_job_id', selectedJob.id)
+            .maybeSingle()
 
-          if (convError) {
-            console.warn('Failed to create conversation:', convError.message)
+          let convData = existingConv
+
+          if (!convData) {
+            const { data: newConv, error: convError } = await supabase
+              .from('conversations')
+              .insert({
+                participant_1: session.user.id,
+                participant_2: selectedJob.employerId,
+                participant_1_name: candidateName,
+                participant_1_role: 'candidate',
+                participant_2_name: employerName,
+                participant_2_role: 'employer',
+                participant_2_company: selectedJob.company,
+                related_job_id: selectedJob.id,
+                related_job_title: selectedJob.title,
+                last_message: autoMessage,
+                last_message_at: new Date().toISOString(),
+              })
+              .select()
+              .single()
+
+            if (convError) {
+              console.warn('Failed to create conversation:', convError.message)
+            }
+            convData = newConv
+          } else {
+            // Update existing conversation with latest message
+            await supabase
+              .from('conversations')
+              .update({ last_message: autoMessage, last_message_at: new Date().toISOString() })
+              .eq('id', convData.id)
           }
 
           if (convData) {
@@ -1292,6 +1299,7 @@ function JobsPageContent() {
                       onChange={(e) => setCoverLetter(e.target.value)}
                       placeholder="Tell the employer why you're a great fit for this role..."
                       rows={6}
+                      style={{ fontSize: '1rem' }}
                     />
                   </div>
                   <div className={styles.applyCvSection}>
