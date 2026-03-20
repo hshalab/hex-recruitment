@@ -188,6 +188,13 @@
   background: var(--hover-yellow);
 }
 
+.previewBtn { padding: 0.5rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 8px; background: white; font-size: 0.82rem; font-weight: 500; color: #6b7280; cursor: pointer; transition: all 0.2s; }
+.previewBtn:hover { border-color: #94a3b8; color: #374151; }
+.previewBtnActive { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+.previewBanner { background: #1a1a1a; color: white; padding: 0.875rem 1.25rem; border-radius: 10px; font-size: 0.875rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+.previewBannerClose { background: rgba(255,255,255,0.15); border: none; color: white; padding: 0.35rem 0.875rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+.previewBannerClose:hover { background: rgba(255,255,255,0.25); }
+
 /* Profile Grid */
 .profileGrid {
   display: grid;

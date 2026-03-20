@@ -50,6 +50,7 @@ export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [profileData, setProfileData] = useState<any>(null)
   const [editMode, setEditMode] = useState(false)
+  const [employerPreview, setEmployerPreview] = useState(false)
 
   const loadProfile = async () => {
     try {
@@ -312,6 +313,12 @@ export default function ProfilePage() {
               </div>
             </div>
             <button
+              className={`${styles.previewBtn} ${employerPreview ? styles.previewBtnActive : ''}`}
+              onClick={() => setEmployerPreview(p => !p)}
+            >
+              {employerPreview ? '👁 Viewing as employer' : '👁 Preview as employer'}
+            </button>
+            <button
               className={styles.editBtn}
               onClick={() => setEditMode(true)}
             >
@@ -319,6 +326,13 @@ export default function ProfilePage() {
             </button>
           </div>
         </div>
+
+        {employerPreview && (
+          <div className={styles.previewBanner}>
+            👁 Employer preview — this is what recruiters see on your profile. Private fields are hidden.
+            <button className={styles.previewBannerClose} onClick={() => setEmployerPreview(false)}>Exit preview</button>
+          </div>
+        )}
 
         <div className={styles.profileGrid}>
           {/* Left Column */}
@@ -436,6 +450,7 @@ export default function ProfilePage() {
           {/* Right Column */}
           <div className={styles.sideCol}>
             {/* Contact Information */}
+            {!employerPreview && (
             <div className={styles.sideCard}>
               <h3 className={styles.sideCardTitle}>Contact Information</h3>
               <div className={styles.contactList}>
@@ -473,6 +488,7 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
+            )}
 
             {/* Personal Details */}
             <div className={styles.sideCard}>
@@ -607,7 +623,7 @@ export default function ProfilePage() {
             )}
 
             {/* Bank Details (private) */}
-            {(profileData?.bankName || profileData?.sortCode || profileData?.accountNumber) && (
+            {!employerPreview && (profileData?.bankName || profileData?.sortCode || profileData?.accountNumber) && (
               <div className={styles.sideCard}>
                 <h3 className={styles.sideCardTitle}>Bank Details</h3>
                 <div className={styles.bankPrivateNote}>
