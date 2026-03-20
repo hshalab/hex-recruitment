@@ -429,6 +429,8 @@ export default function EmployerDashboardPage() {
                 </div>
 
                 {applications.length > 0 ? (
+                  <>
+                  <p className={styles.previewLabel}>Showing {recentApps.length} of {totalApplications} applications</p>
                   <div className={styles.recentApps}>
                     {recentApps.map(app => (
                       <Link href={`/my-jobs/${app.job_id}/applications`} key={app.id} className={styles.appCard}>
@@ -445,6 +447,7 @@ export default function EmployerDashboardPage() {
                       </Link>
                     ))}
                   </div>
+                  </>
                 ) : (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128196;</div>

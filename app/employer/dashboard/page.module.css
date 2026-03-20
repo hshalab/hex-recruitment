@@ -350,6 +350,12 @@
   letter-spacing: 0.03em;
 }
 
+.previewLabel {
+  font-size: 0.75rem;
+  color: var(--text-gray);
+  margin: 0.5rem 0 0.25rem;
+}
+
 /* ── Recent applications list ────────────────────────── */
 .recentApps {
   display: flex;
@@ -787,7 +793,7 @@
   .pipelineStage { width: auto; padding: 0.35rem 0; }
   .pipelineCount { min-width: 0; height: 22px; font-size: 0.7rem; padding: 0 0.35rem; }
   .pipelineCountActive { transform: none; box-shadow: none; }
-  .pipelineLabel { font-size: 0.48rem; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pipelineLabel { font-size: 0.6rem; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* Grid & cards */
   .grid { gap: 1rem; }
@@ -830,6 +836,9 @@
   .statNumber { font-size: 1.35rem; }
   .statCard::after { font-size: 2rem; }
 
-  /* Pipeline: 3 per row on very small screens */
+  /* Pipeline: 3 per row on very small screens — hide labels, show counts only */
   .pipeline { grid-template-columns: repeat(3, 1fr); }
+  .pipelineLabel { display: none; }
+
+  .previewLabel { font-size: 0.7rem; }
 }
