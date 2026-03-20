@@ -15,8 +15,6 @@ import {
 } from 'lucide-react'
 import styles from './page.module.css'
 
-type ConnectionStatus = 'none' | 'pending' | 'accepted' | 'declined'
-
 interface VisibilitySettings {
   show_email: boolean
   show_phone: boolean
@@ -93,10 +91,6 @@ export default function CandidateDetailPage() {
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [isEmployer, setIsEmployer] = useState(false)
   const [showContact, setShowContact] = useState(false)
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('none')
-  const [showConnectionModal, setShowConnectionModal] = useState(false)
-  const [connectionMessage, setConnectionMessage] = useState('')
-  const [sendingRequest, setSendingRequest] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -133,24 +127,6 @@ export default function CandidateDetailPage() {
     }
     checkAuth()
   }, [router, candidateId])
-
-  const handleSendConnectionRequest = () => {
-    setSendingRequest(true)
-    setTimeout(() => {
-      setConnectionStatus('pending')
-      setShowConnectionModal(false)
-      setConnectionMessage('')
-      setSendingRequest(false)
-      const sentRequests = JSON.parse(localStorage.getItem('sentConnectionRequests') || '[]')
-      sentRequests.push({
-        candidateId,
-        candidateName: candidate?.fullName,
-        message: connectionMessage,
-        sentAt: new Date().toISOString()
-      })
-      localStorage.setItem('sentConnectionRequests', JSON.stringify(sentRequests))
-    }, 1000)
-  }
 
   // Loading
   if (checkingAuth) {
@@ -473,25 +449,12 @@ export default function CandidateDetailPage() {
             <div className={styles.sidebarSticky}>
               {/* Actions Card */}
               <div className={styles.actionsCard}>
-                <h3 className={styles.actionsTitle}>Connect with {candidate.fullName.split(' ')[0]}</h3>
+                <h3 className={styles.actionsTitle}>Contact {candidate.fullName.split(' ')[0]}</h3>
 
-                {connectionStatus === 'none' && (
-                  <button className={styles.connectBtn} onClick={() => setShowConnectionModal(true)}>
-                    <MessageSquare size={18} />
-                    Send Connection Request
-                  </button>
-                )}
-                {connectionStatus === 'pending' && (
-                  <div className={styles.connectionPending}>
-                    ⏳ Connection Request Pending
-                  </div>
-                )}
-                {connectionStatus === 'accepted' && (
-                  <Link href="/messages" className={styles.messageBtn}>
-                    <MessageSquare size={18} />
-                    Send Message
-                  </Link>
-                )}
+                <Link href={`/messages?candidate=${candidateId}`} className={styles.connectBtn}>
+                  <MessageSquare size={18} />
+                  Message
+                </Link>
 
                 <div className={styles.actionRow}>
                   {hasAnyContact ? (
@@ -639,57 +602,15 @@ export default function CandidateDetailPage() {
 
       {/* Mobile Action Bar */}
       <div className={styles.mobileActionBar}>
-        <button
-          className={styles.mobileActionBtn}
-          onClick={() => connectionStatus === 'none' ? setShowConnectionModal(true) : undefined}
-        >
-          {connectionStatus === 'pending' ? 'Request Pending' : 'Connect'}
-        </button>
+        <Link href={`/messages?candidate=${candidateId}`} className={styles.mobileActionBtn}>
+          Message
+        </Link>
         {visibility.show_cv && candidate.cvUrl && (
           <a href={candidate.cvUrl} target="_blank" rel="noopener noreferrer" download>
             <button className={styles.mobileActionBtnOutline}>Download CV</button>
           </a>
         )}
       </div>
-
-      {/* Connection Request Modal */}
-      {showConnectionModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowConnectionModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Connect with {candidate.fullName}</h2>
-              <button className={styles.modalClose} onClick={() => setShowConnectionModal(false)}>×</button>
-            </div>
-            <div className={styles.modalBody}>
-              <p className={styles.modalDescription}>
-                Send a connection request to start a conversation. Include a personalized message to improve your chances of getting a response.
-              </p>
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>Message (optional)</label>
-                <textarea
-                  className={styles.modalTextarea}
-                  placeholder={`Hi ${candidate.fullName.split(' ')[0]}, I came across your profile and would love to discuss an opportunity...`}
-                  value={connectionMessage}
-                  onChange={(e) => setConnectionMessage(e.target.value)}
-                  rows={4}
-                  maxLength={500}
-                />
-                <span className={styles.charCount}>{connectionMessage.length}/500</span>
-              </div>
-            </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.modalCancelBtn} onClick={() => setShowConnectionModal(false)}>Cancel</button>
-              <button
-                className={styles.modalSendBtn}
-                onClick={handleSendConnectionRequest}
-                disabled={sendingRequest}
-              >
-                {sendingRequest ? 'Sending...' : 'Send Request'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   )
 }

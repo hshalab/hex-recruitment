@@ -1135,7 +1135,7 @@
   }
 
   .sidebar {
-    display: none;
+    order: -1;
   }
 
   .mobileActionBar {
