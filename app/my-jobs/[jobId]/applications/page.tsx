@@ -46,6 +46,7 @@ export default function JobApplicationsPage() {
   const [offerModalOpen, setOfferModalOpen] = useState(false)
   const [offerApplication, setOfferApplication] = useState<Application | null>(null)
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'shortlisted' | 'interviewing' | 'offers' | 'hired'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const [expandedLetters, setExpandedLetters] = useState(new Set<string>())
 
   useEffect(() => {
@@ -589,27 +590,41 @@ export default function JobApplicationsPage() {
 
         {/* Filter Tabs */}
         {applications.length > 0 && (
-          <div className={styles.tabBar}>
-            {([
-              { key: 'all', label: 'All', count: applications.length },
-              { key: 'pending', label: 'Pending Review', count: applications.filter(a => ['pending', 'reviewing'].includes(a.status)).length },
-              { key: 'shortlisted', label: 'Shortlisted', count: applications.filter(a => a.status === 'shortlisted').length },
-              { key: 'interviewing', label: 'Interviewing', count: applications.filter(a => a.status === 'interviewing').length },
-              { key: 'offers', label: 'Offers', count: applications.filter(a => a.status === 'offered').length },
-              { key: 'hired', label: 'Hired', count: applications.filter(a => a.status === 'hired').length },
-            ] as const).map(tab => (
-              <button
-                key={tab.key}
-                className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
-                onClick={() => setActiveTab(tab.key)}
-              >
-                {tab.label}
-                <span className={`${styles.tabCount} ${activeTab === tab.key ? styles.tabCountActive : ''}`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
+          <>
+            <div className={styles.tabBar}>
+              {([
+                { key: 'all', label: 'All', count: applications.length },
+                { key: 'pending', label: 'Pending Review', count: applications.filter(a => ['pending', 'reviewing'].includes(a.status)).length },
+                { key: 'shortlisted', label: 'Shortlisted', count: applications.filter(a => a.status === 'shortlisted').length },
+                { key: 'interviewing', label: 'Interviewing', count: applications.filter(a => a.status === 'interviewing').length },
+                { key: 'offers', label: 'Offers', count: applications.filter(a => a.status === 'offered').length },
+                { key: 'hired', label: 'Hired', count: applications.filter(a => a.status === 'hired').length },
+              ] as const).map(tab => (
+                <button
+                  key={tab.key}
+                  className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
+                  onClick={() => setActiveTab(tab.key)}
+                >
+                  {tab.label}
+                  <span className={`${styles.tabCount} ${activeTab === tab.key ? styles.tabCountActive : ''}`}>
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className={styles.searchRow}>
+              <input
+                type="text"
+                placeholder="Search by candidate name..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className={styles.candidateSearch}
+              />
+              {searchQuery && (
+                <button className={styles.searchClear} onClick={() => setSearchQuery('')}>&times;</button>
+              )}
+            </div>
+          </>
         )}
 
         {/* Applications List */}
@@ -640,6 +655,7 @@ export default function JobApplicationsPage() {
           <div className={styles.applicationsList}>
             {applications
               .filter(a => {
+                if (searchQuery && !a.candidateName.toLowerCase().includes(searchQuery.toLowerCase())) return false
                 if (activeTab === 'all') return true
                 if (activeTab === 'pending') return ['pending', 'reviewing'].includes(a.status)
                 if (activeTab === 'shortlisted') return a.status === 'shortlisted'
