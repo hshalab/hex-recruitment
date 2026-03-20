@@ -259,10 +259,10 @@
 .candidateInfo {
   flex: 1;
   min-width: 0;
-  text-align: center;
+  text-align: left;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .candidateName {
@@ -352,6 +352,21 @@
   margin: 0;
   line-height: 1.5;
   font-style: italic;
+}
+
+.coverLetterToggle {
+  margin-top: 0.35rem;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #3b82f6;
+  cursor: pointer;
+}
+
+.coverLetterToggle:hover {
+  text-decoration: underline;
 }
 
 /* Action Bar */

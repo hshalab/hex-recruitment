@@ -46,6 +46,7 @@ export default function JobApplicationsPage() {
   const [offerModalOpen, setOfferModalOpen] = useState(false)
   const [offerApplication, setOfferApplication] = useState<Application | null>(null)
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'shortlisted' | 'interviewing' | 'offers' | 'hired'>('all')
+  const [expandedLetters, setExpandedLetters] = useState(new Set<string>())
 
   useEffect(() => {
     const checkAuthAndLoadData = async () => {
@@ -77,9 +78,9 @@ export default function JobApplicationsPage() {
             .update({ viewed_at: new Date().toISOString() })
             .in('id', unviewedIds)
 
-          // Send "Application Viewed" notifications to candidates
-          for (const row of unviewedRows) {
-            await supabase.from('notifications').insert({
+          // Send "Application Viewed" notifications to candidates (batch insert)
+          await supabase.from('notifications').insert(
+            unviewedRows.map((row: any) => ({
               user_id: row.candidate_id,
               type: 'application_update',
               title: 'Application Viewed',
@@ -87,8 +88,8 @@ export default function JobApplicationsPage() {
               read: false,
               related_id: row.id,
               related_type: 'application',
-            })
-          }
+            }))
+          )
         }
 
         // Fetch candidate profiles for all applicants
@@ -307,10 +308,15 @@ export default function JobApplicationsPage() {
   const updateApplicationStatus = async (applicationId: string, newStatus: Application['status']) => {
     const application = applications.find(a => a.id === applicationId)
 
-    await supabase
+    const { error: updateError } = await supabase
       .from('job_applications')
       .update({ status: newStatus, status_updated_at: new Date().toISOString() })
       .eq('id', applicationId)
+
+    if (updateError) {
+      alert('Failed to update status. Please try again.')
+      return
+    }
 
     // Send explicit notification for rejection (no generic trigger)
     if (newStatus === 'rejected' && application) {
@@ -684,24 +690,22 @@ export default function JobApplicationsPage() {
                       >
                         View Profile
                       </Link>
-                      {application.status === 'interviewing' && (
-                        application.candidateCv ? (
-                          <a
-                            href={application.candidateCv}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.viewProfileLink}
-                          >
-                            View CV
-                          </a>
-                        ) : (
-                          <span
-                            className={`${styles.viewProfileLink} ${styles.viewCvDisabled}`}
-                            title="No CV uploaded"
-                          >
-                            View CV
-                          </span>
-                        )
+                      {application.candidateCv ? (
+                        <a
+                          href={application.candidateCv}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.viewProfileLink}
+                        >
+                          View CV
+                        </a>
+                      ) : (
+                        <span
+                          className={`${styles.viewProfileLink} ${styles.viewCvDisabled}`}
+                          title="No CV uploaded"
+                        >
+                          View CV
+                        </span>
                       )}
                     </div>
                   </div>
@@ -854,10 +858,29 @@ export default function JobApplicationsPage() {
                     <div className={styles.coverLetterSection}>
                       <h4 className={styles.coverLetterTitle}>Cover Letter</h4>
                       <p className={styles.coverLetterText}>
-                        {application.coverLetter.length > 200
+                        {application.coverLetter.length > 200 && !expandedLetters.has(application.id)
                           ? application.coverLetter.slice(0, 200) + '...'
                           : application.coverLetter}
                       </p>
+                      {application.coverLetter.length > 200 && (
+                        expandedLetters.has(application.id) ? (
+                          <button
+                            type="button"
+                            className={styles.coverLetterToggle}
+                            onClick={() => setExpandedLetters(prev => { const s = new Set(prev); s.delete(application.id); return s })}
+                          >
+                            Read less
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.coverLetterToggle}
+                            onClick={() => setExpandedLetters(prev => new Set(prev).add(application.id))}
+                          >
+                            Read more
+                          </button>
+                        )
+                      )}
                     </div>
                   )}
 
