@@ -114,6 +114,7 @@ export default function InterviewsPage() {
   const [pastExpanded, setPastExpanded] = useState(false)
   const [rescheduleTarget, setRescheduleTarget] = useState<InterviewItem | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [notesMap, setNotesMap] = useState<Record<string, string>>({})
 
   useEffect(() => { loadInterviews() }, [])
 
@@ -196,6 +197,10 @@ export default function InterviewsPage() {
       .filter(i => ['completed', 'cancelled', 'rescheduled'].includes(i.status))
       .sort((a, b) => b.interviewDate.localeCompare(a.interviewDate))
 
+    const initialNotes: Record<string, string> = {}
+    mapped.forEach(i => { initialNotes[i.interviewId] = i.notes || '' })
+    setNotesMap(initialNotes)
+
     setUpcoming(upcomingItems)
     setPast(pastItems)
     setLoading(false)
@@ -251,8 +256,13 @@ export default function InterviewsPage() {
       `&text=${encodeURIComponent(`Interview - ${interview.jobTitle}`)}` +
       `&details=${encodeURIComponent(`Interview with ${interview.candidateName} for ${interview.jobTitle}`)}` +
       `&dates=${fmt(start)}/${fmt(end)}` +
-      `&location=${encodeURIComponent(interview.locationOrLink || TYPE_LABELS[interview.interviewType] || interview.interviewType)}`
+      `&location=${encodeURIComponent(interview.locationOrLink || TYPE_LABELS[interview.interviewType] || interview.interviewType)}` +
+      `&ctz=Europe%2FLondon`
     )
+  }
+
+  const handleNoteBlur = async (interviewId: string, value: string) => {
+    await supabase.from('interviews').update({ notes: value }).eq('id', interviewId)
   }
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
@@ -319,7 +329,7 @@ export default function InterviewsPage() {
 
       const cancelled = { ...interview, status: 'cancelled' }
       setUpcoming(prev => prev.filter(i => i.interviewId !== interview.interviewId))
-      setPast(prev => [cancelled, ...prev])
+      setPast(prev => [...prev, cancelled].sort((a, b) => b.interviewDate.localeCompare(a.interviewDate)))
     } catch (err) {
       console.error('Error cancelling interview:', err)
     } finally {
@@ -481,15 +491,15 @@ export default function InterviewsPage() {
                             </p>
                           )}
 
-                          {/* Google Keep link */}
-                          <a
-                            href="https://keep.google.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.keepLink}
-                          >
-                            📝 Open Google Keep for notes
-                          </a>
+                          {/* Inline notes */}
+                          <textarea
+                            className={styles.notesArea}
+                            rows={2}
+                            placeholder="Add notes..."
+                            value={notesMap[interview.interviewId] ?? ''}
+                            onChange={e => setNotesMap(prev => ({ ...prev, [interview.interviewId]: e.target.value }))}
+                            onBlur={e => handleNoteBlur(interview.interviewId, e.target.value)}
+                          />
                         </div>
 
                         {/* Row 1: Message, Email — equal width */}
