@@ -80,6 +80,16 @@ export default function JobDetailPage() {
     checkAuthAndDuplicate()
   }, [job?.id])
 
+  useEffect(() => {
+    if (!showShareMenu) return
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('[data-share-wrapper]')) setShowShareMenu(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showShareMenu])
+
   const handleShare = async (method: 'copy' | 'email' | 'whatsapp') => {
     if (!job) return
     trackClickEvent(job.id, 'share_click')
@@ -472,7 +482,7 @@ export default function JobDetailPage() {
                   >
                     {checkSaved(job.id) ? '★ Saved' : '☆ Save Job'}
                   </button>
-                  <div className={styles.shareWrapper}>
+                  <div className={styles.shareWrapper} data-share-wrapper>
                     <button
                       className={styles.actionBtn}
                       onClick={() => setShowShareMenu(!showShareMenu)}
