@@ -403,7 +403,7 @@ function PostJobContent() {
         setUndoState(snap)
         setDescView('editor')
         setShowUndo(true)
-        setTimeout(() => setShowUndo(false), 10000)
+        setTimeout(() => setShowUndo(false), 30000)
       }
     } catch {
       setEnhanceError('Failed to connect to AI service.')
@@ -442,6 +442,24 @@ function PostJobContent() {
 
     if (!formData.salaryMin || !formData.salaryMax) {
       setError('Please enter a salary range')
+      setLoading(false)
+      return
+    }
+
+    if (parseInt(formData.salaryMin) > parseInt(formData.salaryMax)) {
+      setError('Minimum salary cannot be higher than maximum salary')
+      setLoading(false)
+      return
+    }
+
+    if (descView === 'guided' && !guidedHasContent) {
+      setError('Please add a job description before posting')
+      setLoading(false)
+      return
+    }
+
+    if (descView === 'editor' && !descriptionHasContent(formData.description)) {
+      setError('Please add a job description before posting')
       setLoading(false)
       return
     }
@@ -1047,22 +1065,21 @@ function PostJobContent() {
                   />
                 </div>
 
-                {guidedHasContent && (
-                  <div className={styles.enhanceRow}>
-                    <button
-                      type="button"
-                      className={styles.enhanceBtn}
-                      onClick={handleEnhanceDescription}
-                      disabled={enhancing}
-                    >
-                      {enhancing ? (
-                        <><span className={styles.enhanceSpinner} />Enhancing...</>
-                      ) : (
-                        <>✨ Enhance with AI</>
-                      )}
-                    </button>
-                  </div>
-                )}
+                <div className={styles.enhanceRow}>
+                  <button
+                    type="button"
+                    className={styles.enhanceBtn}
+                    onClick={handleEnhanceDescription}
+                    disabled={!guidedHasContent || enhancing}
+                    style={!guidedHasContent ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                  >
+                    {enhancing ? (
+                      <><span className={styles.enhanceSpinner} />Enhancing...</>
+                    ) : (
+                      <>✨ Enhance with AI</>
+                    )}
+                  </button>
+                </div>
 
                 {enhanceError && <p className={styles.enhanceError}>{enhanceError}</p>}
 
@@ -1102,22 +1119,21 @@ function PostJobContent() {
                   onChange={(html) => setFormData(prev => ({ ...prev, description: html }))}
                   placeholder="Describe the role, day-to-day responsibilities, the team, and what success looks like in this position..."
                 />
-                {descriptionHasContent(formData.description) && (
-                  <div className={styles.enhanceRow}>
-                    <button
-                      type="button"
-                      className={styles.enhanceBtn}
-                      onClick={handleEnhanceDescription}
-                      disabled={enhancing}
-                    >
-                      {enhancing ? (
-                        <><span className={styles.enhanceSpinner} />Enhancing...</>
-                      ) : (
-                        <>✨ Enhance with AI</>
-                      )}
-                    </button>
-                  </div>
-                )}
+                <div className={styles.enhanceRow}>
+                  <button
+                    type="button"
+                    className={styles.enhanceBtn}
+                    onClick={handleEnhanceDescription}
+                    disabled={!descriptionHasContent(formData.description) || enhancing}
+                    style={!descriptionHasContent(formData.description) ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                  >
+                    {enhancing ? (
+                      <><span className={styles.enhanceSpinner} />Enhancing...</>
+                    ) : (
+                      <>✨ Enhance with AI</>
+                    )}
+                  </button>
+                </div>
                 {enhanceError && <p className={styles.enhanceError}>{enhanceError}</p>}
                 <p className={styles.helperText}>
                   A short summary will be auto-generated for job cards from the first 150 characters
