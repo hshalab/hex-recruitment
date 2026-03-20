@@ -168,7 +168,11 @@ export default function JobAlertsPage() {
 
   const handleCreateOrUpdate = async () => {
     if (!formData.alert_name.trim()) {
-      setError('Please enter an alert name')
+      setError('Please enter a name for this alert')
+      return
+    }
+    if (formData.min_salary && formData.max_salary && parseInt(formData.min_salary) > parseInt(formData.max_salary)) {
+      setError('Minimum salary cannot be higher than maximum salary')
       return
     }
     if (!user) return

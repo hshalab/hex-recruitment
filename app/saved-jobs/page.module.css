@@ -169,6 +169,12 @@
   margin: 0.15rem 0 0;
 }
 
+.listCardExpired {
+  font-size: 0.72rem;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
 .listCardTags {
   display: flex;
   flex-wrap: wrap;

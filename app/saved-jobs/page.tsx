@@ -254,6 +254,9 @@ export default function SavedJobsPage() {
                     {savedTimestamps[job.id] && (
                       <p className={styles.listCardSavedAt}>{formatSavedDate(savedTimestamps[job.id])}</p>
                     )}
+                    {job.status && job.status !== 'active' && (
+                      <p className={styles.listCardExpired}>This job may no longer be available</p>
+                    )}
                   </div>
                   {shortlistedJobIds.has(job.id) && (
                     <span className={styles.listCardStamp}>SHORTLISTED</span>

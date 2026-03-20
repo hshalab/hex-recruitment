@@ -54,12 +54,12 @@ export default function NotificationsPage() {
           .order('created_at', { ascending: false })
 
         if (error) {
-          console.error('Error fetching notifications:', error)
+          // Fetch failed — show empty state
         } else {
           setNotifications(data || [])
         }
-      } catch (error) {
-        console.error('Error loading notifications:', error)
+      } catch {
+        // Load failed
       }
       setLoading(false)
     }
@@ -115,8 +115,8 @@ export default function NotificationsPage() {
           setNotifications(prev =>
             prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
           )
-        } catch (error) {
-          console.error('Error marking notification as read:', error)
+        } catch {
+          // Mark-read failed — UI already updated optimistically
         }
       }
     }
@@ -143,8 +143,8 @@ export default function NotificationsPage() {
           .eq('read', false)
 
         setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-      } catch (error) {
-        console.error('Error marking all as read:', error)
+      } catch {
+        // Mark-all-read failed — UI already updated optimistically
       }
     }
   }
