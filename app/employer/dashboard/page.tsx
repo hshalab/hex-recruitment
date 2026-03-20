@@ -296,6 +296,13 @@ export default function EmployerDashboardPage() {
       .slice(0, 3)
   , [conversations])
 
+  const staleApplications = useMemo(() => {
+    const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000
+    return applications.filter(a =>
+      a.status === 'pending' && new Date(a.created_at || a.appliedAt || '').getTime() < cutoff
+    ).length
+  }, [applications])
+
   const dateInfo = formatDate()
 
   // ── Loading state ───────────────────────────────────────
@@ -359,6 +366,17 @@ export default function EmployerDashboardPage() {
             {dateInfo.full}
           </div>
         </div>
+
+        {/* ── STALE APPLICATIONS NUDGE ────────────────── */}
+        {staleApplications > 0 && (
+          <div className={styles.staleNudge}>
+            <span className={styles.staleNudgeIcon}>⏳</span>
+            <div className={styles.staleNudgeText}>
+              <strong>{staleApplications} application{staleApplications !== 1 ? 's' : ''}</strong> {staleApplications !== 1 ? 'have' : 'has'} been waiting for review for over 2 weeks.
+            </div>
+            <Link href="/my-jobs" className={styles.staleNudgeLink}>Review now →</Link>
+          </div>
+        )}
 
         {/* ── STATS ROW ──────────────────────────────────── */}
         <div className={styles.statsRow}>
