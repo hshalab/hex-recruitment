@@ -69,6 +69,7 @@ export default function CompanySettingsPage() {
   const [logoUploadError, setLogoUploadError] = useState('')
   const [logoFileName, setLogoFileName] = useState('')
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [isDirty, setIsDirty] = useState(false)
 
   const [formData, setFormData] = useState<CompanyFormData>({
     companyName: '',
@@ -263,9 +264,21 @@ export default function CompanySettingsPage() {
     loadCompanyData()
   }, [router])
 
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    setIsDirty(true)
     setMessage(null)
   }
 
@@ -279,6 +292,7 @@ export default function CompanySettingsPage() {
       postcode: address.postcode,
     }))
     setAddressFound(true)
+    setIsDirty(true)
   }
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -315,6 +329,7 @@ export default function CompanySettingsPage() {
 
       setFormData(prev => ({ ...prev, logoUrl: dataUrl }))
       setLogoFileName(file.name)
+      setIsDirty(true)
     } catch {
       setLogoUploadError('Failed to process logo image.')
     } finally {
@@ -364,6 +379,8 @@ export default function CompanySettingsPage() {
           description: formData.description,
         }))
         setMessage({ type: 'success', text: 'Company profile saved successfully!' })
+        setIsDirty(false)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
         // Get current session
         const { data: { session } } = await supabase.auth.getSession()
@@ -450,6 +467,8 @@ export default function CompanySettingsPage() {
         })
 
         setMessage({ type: 'success', text: 'Company profile saved successfully!' })
+        setIsDirty(false)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
       }
     } catch (error: any) {
       console.error('Error saving profile:', error)
@@ -531,7 +550,7 @@ export default function CompanySettingsPage() {
                   <button
                     type="button"
                     className={styles.removeLogoBtn}
-                    onClick={() => { setFormData(prev => ({ ...prev, logoUrl: '' })); setLogoFileName('') }}
+                    onClick={() => { setFormData(prev => ({ ...prev, logoUrl: '' })); setLogoFileName(''); setIsDirty(true) }}
                   >
                     Remove
                   </button>
