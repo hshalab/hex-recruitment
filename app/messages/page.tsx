@@ -441,125 +441,60 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className={styles.tabs}>
-            <button
-              className={`${styles.tab} ${activeTab === 'messages' ? styles.active : ''}`}
-              onClick={() => setActiveTab('messages')}
-            >
-              Chats
-              {totalUnreadCount > 0 && <span className={styles.tabBadge}>{totalUnreadCount}</span>}
-            </button>
-            <button
-              className={`${styles.tab} ${activeTab === 'requests' ? styles.active : ''}`}
-              onClick={() => setActiveTab('requests')}
-            >
-              Requests
-              {pendingRequests.length > 0 && (
-                <span className={styles.tabBadge}>{pendingRequests.length}</span>
-              )}
-            </button>
+          {/* Conversations */}
+          <div className={styles.conversationsList}>
+            {filteredConversations.length === 0 ? (
+              <div className={styles.emptyState}>
+                <span className={styles.emptyIcon}>💬</span>
+                <h3 className={styles.emptyTitle}>No conversations yet</h3>
+                <p className={styles.emptyText}>
+                  Connect with candidates to start chatting
+                </p>
+              </div>
+            ) : (
+              filteredConversations.map(conversation => (
+                <div
+                  key={conversation.id}
+                  className={`${styles.conversationItem} ${
+                    selectedConversation?.id === conversation.id ? styles.active : ''
+                  } ${conversation.unreadCount > 0 ? styles.unread : ''}`}
+                  onClick={() => handleSelectConversation(conversation)}
+                >
+                  <div className={styles.avatar}>
+                    {conversation.participantProfilePicture ? (
+                      <img
+                        src={conversation.participantProfilePicture}
+                        alt={conversation.participantName}
+                        className={styles.avatarImg}
+                      />
+                    ) : (
+                      getInitials(conversation.participantName)
+                    )}
+                    {conversation.isOnline && <span className={styles.onlineIndicator} />}
+                  </div>
+                  <div className={styles.conversationInfo}>
+                    <div className={styles.conversationHeader}>
+                      <span className={styles.conversationName}>
+                        {conversation.participantName}
+                      </span>
+                      <span className={styles.conversationTime}>
+                        {formatRelativeTime(conversation.lastMessageAt)}
+                      </span>
+                    </div>
+                    <p className={styles.conversationRole}>
+                      {conversation.participantJobTitle || conversation.participantCompany}
+                    </p>
+                    <p className={styles.conversationPreview}>
+                      {conversation.lastMessage}
+                    </p>
+                  </div>
+                  {conversation.unreadCount > 0 && (
+                    <span className={styles.unreadBadge}>{conversation.unreadCount}</span>
+                  )}
+                </div>
+              ))
+            )}
           </div>
-
-          {/* Content based on active tab */}
-          {activeTab === 'messages' ? (
-            <div className={styles.conversationsList}>
-              {filteredConversations.length === 0 ? (
-                <div className={styles.emptyState}>
-                  <span className={styles.emptyIcon}>💬</span>
-                  <h3 className={styles.emptyTitle}>No conversations yet</h3>
-                  <p className={styles.emptyText}>
-                    Connect with candidates to start chatting
-                  </p>
-                </div>
-              ) : (
-                filteredConversations.map(conversation => (
-                  <div
-                    key={conversation.id}
-                    className={`${styles.conversationItem} ${
-                      selectedConversation?.id === conversation.id ? styles.active : ''
-                    } ${conversation.unreadCount > 0 ? styles.unread : ''}`}
-                    onClick={() => handleSelectConversation(conversation)}
-                  >
-                    <div className={styles.avatar}>
-                      {conversation.participantProfilePicture ? (
-                        <img
-                          src={conversation.participantProfilePicture}
-                          alt={conversation.participantName}
-                          className={styles.avatarImg}
-                        />
-                      ) : (
-                        getInitials(conversation.participantName)
-                      )}
-                      {conversation.isOnline && <span className={styles.onlineIndicator} />}
-                    </div>
-                    <div className={styles.conversationInfo}>
-                      <div className={styles.conversationHeader}>
-                        <span className={styles.conversationName}>
-                          {conversation.participantName}
-                        </span>
-                        <span className={styles.conversationTime}>
-                          {formatRelativeTime(conversation.lastMessageAt)}
-                        </span>
-                      </div>
-                      <p className={styles.conversationRole}>
-                        {conversation.participantJobTitle || conversation.participantCompany}
-                      </p>
-                      <p className={styles.conversationPreview}>
-                        {conversation.lastMessage}
-                      </p>
-                    </div>
-                    {conversation.unreadCount > 0 && (
-                      <span className={styles.unreadBadge}>{conversation.unreadCount}</span>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          ) : (
-            <div className={styles.conversationsList}>
-              {pendingRequests.length === 0 ? (
-                <div className={styles.emptyState}>
-                  <span className={styles.emptyIcon}>📩</span>
-                  <h3 className={styles.emptyTitle}>No pending requests</h3>
-                  <p className={styles.emptyText}>
-                    Connection requests will appear here
-                  </p>
-                </div>
-              ) : (
-                pendingRequests.map(request => (
-                  <div key={request.id} className={styles.requestItem}>
-                    <div className={styles.requestHeader}>
-                      <div className={styles.avatar}>
-                        {getInitials(request.employerName)}
-                      </div>
-                      <div className={styles.requestInfo}>
-                        <span className={styles.requestName}>{request.employerName}</span>
-                        <span className={styles.requestRole}>{request.employerCompany}</span>
-                      </div>
-                    </div>
-                    {request.message && (
-                      <p className={styles.requestMessage}>{request.message}</p>
-                    )}
-                    <div className={styles.requestActions}>
-                      <button
-                        className={styles.acceptBtn}
-                        onClick={() => acceptRequest(request.id)}
-                      >
-                        Accept
-                      </button>
-                      <button
-                        className={styles.declineBtn}
-                        onClick={() => declineRequest(request.id)}
-                      >
-                        Decline
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
         </div>
 
         {/* Chat Panel */}
@@ -597,12 +532,6 @@ export default function MessagesPage() {
                 </div>
               </div>
               <div className={styles.chatHeaderActions}>
-                <button className={styles.headerActionBtn} title="View profile">
-                  👤
-                </button>
-                <button className={styles.headerActionBtn} title="More options">
-                  ⋮
-                </button>
               </div>
             </div>
 
@@ -667,9 +596,6 @@ export default function MessagesPage() {
                     rows={1}
                   />
                   <div className={styles.inputActions}>
-                    <button type="button" className={styles.attachBtn} title="Attach file">
-                      📎
-                    </button>
                   </div>
                 </div>
                 <button
