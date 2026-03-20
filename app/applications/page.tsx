@@ -328,7 +328,10 @@ export default function MyJobsPage() {
         prev.map(app => app.id === appId ? { ...app, status: 'withdrawn' } : app)
       )
     } catch {
-      // Fail silently
+      alert('Failed to withdraw application. Please try again.')
+      setWithdrawingId(null)
+      setShowConfirm(null)
+      return
     }
     setWithdrawingId(null)
     setShowConfirm(null)
@@ -429,9 +432,12 @@ export default function MyJobsPage() {
                             </div>
                             <div className={styles.interviewCardBody}>
                               {application.interview ? (
-                                <>
+                                (() => {
+                                  const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
+                                  const interviewDateObj = new Date(y, m - 1, d)
+                                  return <>
                                   <span className={styles.interviewCardDate}>
-                                    {new Date(application.interview.interviewDate).toLocaleDateString('en-GB', {
+                                    {interviewDateObj.toLocaleDateString('en-GB', {
                                       weekday: 'long',
                                       day: 'numeric',
                                       month: 'long',
@@ -442,6 +448,7 @@ export default function MyJobsPage() {
                                     {application.interview.interviewTime}
                                   </span>
                                 </>
+                                })()
                               ) : (
                                 <span className={styles.interviewCardDate}>Date pending</span>
                               )}
@@ -456,6 +463,7 @@ export default function MyJobsPage() {
                       </div>
 
                       {/* Status Stepper */}
+                      <p style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0.5rem 0 0.2rem' }}>Application status</p>
                       <div className={styles.stepper}>
                         {getStepperSteps(application).map((step, i, arr) => (
                           <div
@@ -517,12 +525,15 @@ export default function MyJobsPage() {
                           <div className={styles.interviewDetails}>
                             <p className={styles.interviewDate}>
                               <strong>Date:</strong>{' '}
-                              {new Date(application.interview.interviewDate).toLocaleDateString('en-GB', {
-                                weekday: 'long',
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })}{' '}
+                              {(() => {
+                                const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
+                                return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
+                                  weekday: 'long',
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric',
+                                })
+                              })()}{' '}
                               at {application.interview.interviewTime}
                             </p>
                             <p className={styles.interviewType}>
