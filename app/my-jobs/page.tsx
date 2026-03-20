@@ -266,13 +266,6 @@ function MyJobsContent() {
     checkAuth()
   }, [router])
 
-  const getApplicationStatus = (appliedAt: string): AppliedJob['status'] => {
-    const daysAgo = Math.floor((Date.now() - new Date(appliedAt).getTime()) / (1000 * 60 * 60 * 24))
-    if (daysAgo < 3) return 'pending'
-    if (daysAgo < 7) return 'reviewing'
-    return 'reviewing'
-  }
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-GB', {
@@ -331,21 +324,44 @@ function MyJobsContent() {
     return labels[status] || { label: status, className: '' }
   }
 
-  const handleDeleteJob = (jobId: string) => {
-    // In a real app, this would make an API call
-    if (confirm('Are you sure you want to delete this job posting?')) {
+  const handleDeleteJob = async (jobId: string) => {
+    if (!confirm('Are you sure you want to delete this job posting?')) return
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ status: 'archived' })
+        .eq('id', jobId)
+      if (error) {
+        console.error('Error deleting job:', error)
+        alert('Failed to delete job. Please try again.')
+        return
+      }
       setPostedJobs(prev => prev.filter(job => job.id !== jobId))
+      await refreshJobs()
+    } catch (err) {
+      console.error('Error deleting job:', err)
     }
   }
 
-  const handleToggleJobStatus = (jobId: string) => {
-    setPostedJobs(prev => prev.map(job => {
-      if (job.id === jobId) {
-        const newStatus = job.status === 'active' ? 'paused' : 'active'
-        return { ...job, status: newStatus }
+  const handleToggleJobStatus = async (jobId: string) => {
+    const job = postedJobs.find(j => j.id === jobId)
+    if (!job) return
+    const newStatus = job.status === 'active' ? 'paused' : 'active'
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ status: newStatus })
+        .eq('id', jobId)
+      if (error) {
+        console.error('Error updating job status:', error)
+        alert('Failed to update job status. Please try again.')
+        return
       }
-      return job
-    }))
+      setPostedJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: newStatus as PostedJob['status'] } : j))
+      await refreshJobs()
+    } catch (err) {
+      console.error('Error updating job status:', err)
+    }
   }
 
   const handleReactivateJob = async (jobId: string) => {
@@ -542,6 +558,14 @@ function MyJobsContent() {
     // Still hiring: jobs in the 'default' category (no interviewing/offered/hired applications)
     const stillHiring = postedJobs.filter(j => getJobCategory(j) === 'default').length
 
+    const counts = {
+      active: postedJobs.filter(j => getJobCategory(j) === 'default').length,
+      interviewing: postedJobs.filter(j => getJobCategory(j) === 'interviewing').length,
+      offers: postedJobs.filter(j => getJobCategory(j) === 'offers').length,
+      hired: postedJobs.filter(j => getJobCategory(j) === 'hired').length,
+      archived: postedJobs.filter(j => getJobCategory(j) === 'archived').length,
+    }
+
     return {
       filtered,
       nextInterviewMap,
@@ -555,6 +579,7 @@ function MyJobsContent() {
       interviewingCandidates,
       hiredCandidates,
       stillHiring,
+      counts,
     }
   }, [postedJobs, activeTab, rawInterviews, rawOffers, appCountsByJob])
 
@@ -616,6 +641,33 @@ function MyJobsContent() {
               </Link>
             )}
           </div>
+
+          {postedJobs.length > 0 && (
+            <div className={styles.filterTabs}>
+              {([
+                { key: 'all', label: 'All Jobs' },
+                { key: 'active', label: 'Active' },
+                { key: 'interviewing', label: 'Interviewing' },
+                { key: 'offers', label: 'Offers' },
+                { key: 'hired', label: 'Hired' },
+                { key: 'archived', label: 'Archived' },
+              ] as const).map(tab => (
+                <button
+                  key={tab.key}
+                  className={`${styles.filterTab} ${activeTab === tab.key ? styles.filterTabActive : ''}`}
+                  onClick={() => router.push(`/my-jobs?filter=${tab.key}`)}
+                >
+                  {tab.label}
+                  {tab.key !== 'all' && viewData.counts[tab.key] > 0 && (
+                    <span className={styles.filterTabCount}>{viewData.counts[tab.key]}</span>
+                  )}
+                  {tab.key === 'all' && (
+                    <span className={styles.filterTabCount}>{postedJobs.length}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
 
           {postedJobs.length > 0 && (
             <div className={styles.searchBar}>

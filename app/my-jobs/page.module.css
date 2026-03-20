@@ -57,6 +57,72 @@
   transform: translateY(-2px);
 }
 
+/* Filter Tab Nav */
+.filterTabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.filterTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.filterTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  border: 1.5px solid var(--border-gray);
+  background: white;
+  color: var(--text-gray);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.filterTab:hover {
+  border-color: var(--dark-gray);
+  color: var(--dark-gray);
+}
+
+.filterTabActive {
+  background: var(--dark-gray);
+  border-color: var(--dark-gray);
+  color: white;
+}
+
+.filterTabActive:hover {
+  background: var(--dark-gray);
+  color: white;
+}
+
+.filterTabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.25rem;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.2);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.filterTabActive .filterTabCount {
+  background: rgba(255,255,255,0.25);
+}
+
 /* Search Bar */
 .searchBar {
   display: flex;
@@ -828,10 +894,5 @@
     gap: 0.35rem;
   }
 
-  .deleteBtn,
-  .withdrawBtn,
-  .archiveBtn {
-    width: 100%;
-    text-align: center;
-  }
+  /* deleteBtn/withdrawBtn/archiveBtn stay in 2-col btnGrid — no override needed */
 }
