@@ -412,6 +412,16 @@
   font-weight: 600;
 }
 
+/* Similar Jobs */
+.similarJobsList { display: flex; flex-direction: column; gap: 0.5rem; }
+.similarJobCard { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: inherit; transition: all 0.2s; }
+.similarJobCard:hover { background: #f8fafc; border-color: #cbd5e1; transform: translateX(2px); }
+.similarJobInfo { flex: 1; min-width: 0; }
+.similarJobTitle { font-size: 0.9rem; font-weight: 600; color: #1a1a1a; margin: 0 0 0.2rem; }
+.similarJobCompany { font-size: 0.8rem; color: #6b7280; margin: 0 0 0.15rem; }
+.similarJobMeta { font-size: 0.75rem; color: #9ca3af; margin: 0; }
+.similarJobArrow { color: #cbd5e1; font-size: 1rem; flex-shrink: 0; margin-left: 0.75rem; }
+
 /* Additional Info */
 .additionalInfo {
   display: flex;

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -171,6 +171,13 @@ export default function JobDetailPage() {
     }
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationString)}`
   }
+
+  const similarJobs = useMemo(() => {
+    if (!job) return []
+    return jobs
+      .filter(j => j.id !== job.id && j.status === 'active' && j.category === job.category)
+      .slice(0, 4)
+  }, [job, jobs])
 
   // Loading state
   if (jobsLoading) {
@@ -443,6 +450,25 @@ export default function JobDetailPage() {
               <div className={styles.section}>
                 <h2 className={styles.sectionTitle}>About {job.company}</h2>
                 <p className={styles.companyDescription}>{job.companyDescription}</p>
+              </div>
+            )}
+
+            {/* Similar Jobs */}
+            {similarJobs.length > 0 && (
+              <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>Similar Jobs</h2>
+                <div className={styles.similarJobsList}>
+                  {similarJobs.map(sj => (
+                    <Link key={sj.id} href={`/job/${sj.id}`} className={styles.similarJobCard}>
+                      <div className={styles.similarJobInfo}>
+                        <p className={styles.similarJobTitle}>{sj.title}</p>
+                        <p className={styles.similarJobCompany}>{sj.company}</p>
+                        <p className={styles.similarJobMeta}>{sj.location} · {sj.salaryPeriod === 'hour' ? `£${sj.salaryMin}-£${sj.salaryMax}/hr` : `£${Math.round(sj.salaryMin/1000)}k-£${Math.round(sj.salaryMax/1000)}k`}</p>
+                      </div>
+                      <span className={styles.similarJobArrow}>→</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
 
