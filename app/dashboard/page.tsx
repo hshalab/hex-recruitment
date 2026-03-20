@@ -649,6 +649,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {completionPct < 80 && (
+          <div className={styles.onboardingBanner}>
+            <div className={styles.onboardingLeft}>
+              <h3 className={styles.onboardingTitle}>Complete your profile to get found by employers</h3>
+              <p className={styles.onboardingSubtitle}>{missingFields.length} thing{missingFields.length !== 1 ? 's' : ''} still to add:</p>
+              <div className={styles.onboardingItems}>
+                {missingFields.slice(0, 4).map(f => (
+                  <a key={f.key} href={f.link} className={styles.onboardingItem}>
+                    <span className={styles.onboardingItemDot} />
+                    {f.label}
+                  </a>
+                ))}
+                {missingFields.length > 4 && <span className={styles.onboardingMore}>+{missingFields.length - 4} more</span>}
+              </div>
+            </div>
+            <div className={styles.onboardingProgress}>
+              <span className={styles.onboardingPct}>{completionPct}%</span>
+              <span className={styles.onboardingPctLabel}>complete</span>
+            </div>
+          </div>
+        )}
+
         <div className={styles.grid}>
           {/* ════════════════════ LEFT COLUMN ═════════════════ */}
           <div className={styles.colLeft}>
