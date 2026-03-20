@@ -190,8 +190,8 @@ export default function CVBuilderPage() {
         }
 
         setUserId(uid)
-      } catch (err) {
-        console.error('Load error:', err)
+      } catch {
+        // Load failed — loading state handled in finally
       } finally {
         setLoading(false)
       }
@@ -224,8 +224,7 @@ export default function CVBuilderPage() {
       }
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
-    } catch (err) {
-      console.error('Save error:', err)
+    } catch {
       alert('Failed to save CV. Please try again.')
     } finally {
       setSaving(false)
@@ -235,10 +234,10 @@ export default function CVBuilderPage() {
   // Auto-save on step change
   useEffect(() => {
     if (!loading && userId) {
-      const timeout = setTimeout(saveCV, 1500)
+      const timeout = setTimeout(saveCV, 8000)
       return () => clearTimeout(timeout)
     }
-  }, [cvData, loading, userId, saveCV])
+  }, [cvData, currentStep, loading, userId, saveCV])
 
   // AI Assist
   const openAiModal = (type: 'summary' | 'experience', expIndex?: number) => {
@@ -486,8 +485,7 @@ export default function CVBuilderPage() {
       // Download
       const fileName = pd.fullName ? `${pd.fullName.replace(/\s+/g, '_')}_CV.pdf` : 'My_CV.pdf'
       pdf.save(fileName)
-    } catch (err) {
-      console.error('PDF export error:', err)
+    } catch {
       alert('Failed to export PDF. Please try again.')
     } finally {
       setExporting(false)
