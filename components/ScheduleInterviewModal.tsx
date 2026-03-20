@@ -48,8 +48,33 @@ export default function ScheduleInterviewModal({
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [conflictWarning, setConflictWarning] = useState('')
 
   const interviewTypeLabel = INTERVIEW_TYPES.find(t => t.value === interviewType)?.label ?? 'In-Person'
+
+  const checkConflict = async (date: string, time: string) => {
+    if (!date || !time) { setConflictWarning(''); return }
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const { data: existing } = await supabase
+        .from('interviews')
+        .select('interview_date, interview_time, candidate_id')
+        .eq('employer_id', session.user.id)
+        .eq('interview_date', date)
+        .in('status', ['scheduled', 'confirmed'])
+      if (existing && existing.length > 0) {
+        const clash = existing.find(i => i.interview_time === time && i.candidate_id !== candidateId)
+        if (clash) {
+          setConflictWarning(`⚠️ You already have an interview scheduled at this time on ${date}. You can still proceed but consider rescheduling.`)
+        } else {
+          setConflictWarning('')
+        }
+      } else {
+        setConflictWarning('')
+      }
+    } catch { setConflictWarning('') }
+  }
 
   const handleOpenCalendar = () => {
     const title = jobTitle ? `Interview - ${jobTitle}` : 'Interview'
@@ -321,7 +346,7 @@ export default function ScheduleInterviewModal({
                 type="date"
                 id="interviewDate"
                 value={interviewDate}
-                onChange={(e) => setInterviewDate(e.target.value)}
+                onChange={(e) => { setInterviewDate(e.target.value); checkConflict(e.target.value, interviewTime) }}
                 className={styles.input}
               />
             </div>
@@ -331,7 +356,7 @@ export default function ScheduleInterviewModal({
                 type="time"
                 id="interviewTime"
                 value={interviewTime}
-                onChange={(e) => setInterviewTime(e.target.value)}
+                onChange={(e) => { setInterviewTime(e.target.value); checkConflict(interviewDate, e.target.value) }}
                 className={styles.input}
               />
             </div>
@@ -399,6 +424,12 @@ export default function ScheduleInterviewModal({
           </div>
 
           {error && <div className={styles.error}>{error}</div>}
+
+          {conflictWarning && (
+            <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: '8px', padding: '0.75rem 1rem', fontSize: '0.85rem', color: '#856404', marginBottom: '0.75rem' }}>
+              {conflictWarning}
+            </div>
+          )}
 
           <div className={styles.formActions}>
             <button
