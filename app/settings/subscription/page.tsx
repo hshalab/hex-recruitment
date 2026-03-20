@@ -309,6 +309,23 @@ export default function SubscriptionSettingsPage() {
     }
   }
 
+  const handleManageBilling = async () => {
+    try {
+      const res = await fetch('/api/stripe/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        setMessage({ type: 'error', text: 'Could not open billing portal. Please try again.' })
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Could not open billing portal. Please try again.' })
+    }
+  }
+
   if (loading) {
     return (
       <main>
@@ -493,6 +510,9 @@ export default function SubscriptionSettingsPage() {
                     <Link href="/settings/subscription/payment" className={styles.updatePaymentBtn}>
                       Update Payment Method
                     </Link>
+                    <button className={styles.manageBillingBtn} onClick={handleManageBilling}>
+                      Manage Billing & Invoices
+                    </button>
                     <button className={styles.cancelSubBtn} onClick={() => setShowCancelModal(true)}>
                       Cancel Subscription
                     </button>

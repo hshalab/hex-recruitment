@@ -310,6 +310,27 @@
   background: var(--hover-yellow);
 }
 
+.manageBillingBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: white;
+  color: var(--dark-gray);
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.manageBillingBtn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
 /* Payment Method Card */
 .section {
   background: white;
