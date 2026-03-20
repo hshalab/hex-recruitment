@@ -206,7 +206,7 @@
 
 .viewsHeader {
   display: grid;
-  grid-template-columns: 1fr 100px 100px;
+  grid-template-columns: 1fr 1fr 100px 100px;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   font-size: 0.7rem;
@@ -219,7 +219,7 @@
 
 .viewsRow {
   display: grid;
-  grid-template-columns: 1fr 100px 100px;
+  grid-template-columns: 1fr 1fr 100px 100px;
   gap: 0.5rem;
   padding: 0.625rem 0.75rem;
   font-size: 0.85rem;
@@ -361,7 +361,7 @@
 
   .viewsHeader,
   .viewsRow {
-    grid-template-columns: 1fr 80px 80px;
+    grid-template-columns: 1fr 1fr 80px 80px;
   }
 }
 

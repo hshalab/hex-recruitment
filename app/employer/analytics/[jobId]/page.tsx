@@ -171,12 +171,13 @@ function JobAnalyticsContent() {
     const conversionRate = totalApps > 0 && totalViews > 0
       ? ((totalApps / totalViews) * 100).toFixed(1)
       : '0.0'
-    const ctr = totalViews > 0 && totalImpressions > 0
-      ? ((totalViews / totalImpressions) * 100).toFixed(1)
-      : totalViews > 0 ? '-' : '0.0'
+    const totalClicks = clickEvents.length
+    const ctr = totalClicks > 0 && totalImpressions > 0
+      ? ((totalClicks / totalImpressions) * 100).toFixed(1)
+      : totalImpressions > 0 ? '0.0' : '-'
 
     return { totalViews, uniqueViews, totalApps, totalImpressions, conversionRate, ctr }
-  }, [views, applications, impressions, job])
+  }, [views, applications, impressions, clickEvents, job])
 
   // Daily views & applications line chart
   const dailyData = useMemo(() => {
@@ -325,7 +326,7 @@ function JobAnalyticsContent() {
           </div>
           <div className={styles.summaryCard}>
             <div className={styles.summaryValue}>{summary.ctr}{summary.ctr !== '-' && <span className={styles.summaryUnit}>%</span>}</div>
-            <div className={styles.summaryLabel}>Click-through Rate</div>
+            <div className={styles.summaryLabel}>CTR (clicks/impressions)</div>
           </div>
         </div>
 
@@ -413,12 +414,14 @@ function JobAnalyticsContent() {
             <div className={styles.viewsList}>
               <div className={styles.viewsHeader}>
                 <span>Time</span>
+                <span>Viewer</span>
                 <span>Source</span>
                 <span>Device</span>
               </div>
               {recentViews.map((view, i) => (
                 <div key={view.id || i} className={styles.viewsRow}>
                   <span className={styles.viewsTime}>{formatRelativeTime(view.viewed_at)}</span>
+                  <span>{view.viewer_id ? 'Registered User' : 'Anonymous'}</span>
                   <span className={styles.viewsSource}>
                     {view.source ? (
                       <span className={styles.sourceTag} style={{ background: SOURCE_COLORS[view.source] || '#64748b' }}>
