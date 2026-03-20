@@ -404,6 +404,33 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+
+            {/* Education */}
+            {profileData?.education?.filter((edu: any) => edu.institution || edu.qualification).length > 0 && (
+              <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>Education</h2>
+                <div className={styles.workHistory}>
+                  {profileData.education.filter((edu: any) => edu.institution || edu.qualification).map((edu: any, index: number) => (
+                    <div key={index} className={styles.workItem}>
+                      <div className={styles.workTimeline}>
+                        <div className={styles.workDot}></div>
+                        {index < profileData.education.filter((e: any) => e.institution || e.qualification).length - 1 && <div className={styles.workLine}></div>}
+                      </div>
+                      <div className={styles.workContent}>
+                        <h3 className={styles.workRole}>{edu.qualification}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}</h3>
+                        <p className={styles.workCompany}>{edu.institution}</p>
+                        {(edu.startDate || edu.endDate) && (
+                          <p className={styles.workDates}>
+                            {edu.startDate || '?'} — {edu.inProgress ? 'In Progress' : (edu.endDate || 'Present')}
+                          </p>
+                        )}
+                        {edu.grade && <p className={styles.workDesc}>Grade: {edu.grade}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Column */}
@@ -603,7 +630,7 @@ export default function ProfilePage() {
                   {profileData.sortCode && (
                     <div className={styles.detailItem}>
                       <span className={styles.detailLabel}>Sort Code</span>
-                      <span className={styles.detailValue}>{profileData.sortCode}</span>
+                      <span className={styles.detailValue}>••-••-{profileData.sortCode.slice(-2)}</span>
                     </div>
                   )}
                   {profileData.accountNumber && (
