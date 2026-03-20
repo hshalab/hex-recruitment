@@ -166,7 +166,7 @@ const getCandidateSector = (candidate: { jobTitle: string }): string => {
   if (['manager', 'head', 'supervisor', 'director', 'consultant'].some(k => titleLower.includes(k)))
     return 'business'
 
-  return 'hospitality'
+  return 'business'
 }
 
 function getAvailabilityColor(availability: string): string {
@@ -253,19 +253,6 @@ function CandidatesContent() {
 
   const clearAllFilters = () => setFilters(emptyFilters())
 
-  // Load candidates from Supabase
-  useEffect(() => {
-    const fetchCandidates = async () => {
-      const { data, error } = await supabase
-        .from('candidate_profiles')
-        .select('*')
-      if (!error && data) {
-        setAllCandidates(data.map(supabaseProfileToCandidate))
-      }
-    }
-    fetchCandidates()
-  }, [])
-
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -297,6 +284,15 @@ function CandidatesContent() {
         setHasSubscription(false)
         setCheckingAuth(false)
         return
+      }
+
+      // Fetch candidates only after auth + subscription confirmed
+      const { data, error } = await supabase
+        .from('candidate_profiles')
+        .select('*')
+        .limit(200)
+      if (!error && data) {
+        setAllCandidates(data.map(supabaseProfileToCandidate))
       }
 
       setCheckingAuth(false)
@@ -690,7 +686,7 @@ function CandidatesContent() {
 
                   {/* Action Buttons */}
                   <div className={styles.detailActions}>
-                    <Link href={`/candidates/${selectedCandidate.id}`} className={styles.detailActionBtnPrimary}>
+                    <Link href={`/messages?candidate=${selectedCandidate.id}`} className={styles.detailActionBtnPrimary}>
                       <MessageSquare size={16} />
                       Message
                     </Link>
