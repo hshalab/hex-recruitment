@@ -92,6 +92,7 @@ export default function AnalyticsContent() {
   const [applications, setApplications] = useState<any[]>([])
   const [interviews, setInterviews] = useState<any[]>([])
   const [offers, setOffers] = useState<any[]>([])
+  const [applyStarts, setApplyStarts] = useState<any[]>([])
   const [jobViews, setJobViews] = useState<any[]>([])
   const [clickEvents, setClickEvents] = useState<any[]>([])
   const [impressions, setImpressions] = useState<any[]>([])
@@ -274,6 +275,13 @@ export default function AnalyticsContent() {
         setClickEvents(clickResult.data || [])
         setImpressions(impressionResult.data || [])
 
+        // Step 4b: Fetch apply_starts for funnel analysis
+        const { data: applyStartsData } = await supabase
+          .from('apply_starts')
+          .select('id, job_id, candidate_id, started_at')
+          .in('job_id', jobIds)
+        setApplyStarts(applyStartsData || [])
+
         // Step 5: Fetch candidate profiles for applicants
         const candidateIds = Array.from(new Set((appsResult.data || []).map((a: any) => a.candidate_id).filter(Boolean)))
         if (candidateIds.length > 0) {
@@ -444,6 +452,12 @@ export default function AnalyticsContent() {
       ? Math.round((acceptedOffers / totalOffers) * 100)
       : null
 
+    const totalStarts = applyStarts.length
+    const totalCompleted = totalApplications
+    const applyCompletionRate = totalStarts > 0
+      ? Math.round((totalCompleted / totalStarts) * 100)
+      : null
+
     return {
       activeJobs,
       totalApplications,
@@ -454,6 +468,9 @@ export default function AnalyticsContent() {
       offerAcceptanceRate,
       totalOffers,
       acceptedOffers,
+      applyCompletionRate,
+      totalStarts,
+      totalCompleted,
       changes: dateRange !== 'all' ? {
         applications: calcChange(totalApplications, prevApps),
         hires: calcChange(hires, prevHires),
@@ -461,7 +478,7 @@ export default function AnalyticsContent() {
         conversion: calcChange(parseFloat(conversionRate), prevConversion),
       } : null,
     }
-  }, [jobs, filteredApps, filteredViews, prevPeriodApps, prevPeriodViews, dateRange, offers])
+  }, [jobs, filteredApps, filteredViews, prevPeriodApps, prevPeriodViews, dateRange, offers, applyStarts])
 
   // Traffic Overview chart data (Views + Impressions)
   const trafficChartData = useMemo(() => {
@@ -3003,6 +3020,21 @@ export default function AnalyticsContent() {
             <div className={styles.cardLabel}>Offer Acceptance</div>
             {metrics.totalOffers > 0 && (
               <div className={styles.cardSub}>{metrics.acceptedOffers} of {metrics.totalOffers} accepted</div>
+            )}
+          </div>
+          <div className={styles.overviewCard}>
+            <div className={styles.cardIcon}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+            </div>
+            <div className={styles.cardValue}>
+              {metrics.applyCompletionRate !== null ? `${Math.min(metrics.applyCompletionRate, 100)}%` : '–'}
+            </div>
+            <div className={styles.cardLabel}>Apply Completion</div>
+            {metrics.totalStarts > 0 && (
+              <div className={styles.cardSub}>{metrics.totalCompleted} of {metrics.totalStarts} started</div>
             )}
           </div>
         </div>
