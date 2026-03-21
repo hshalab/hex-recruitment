@@ -1,0 +1,189 @@
+.page {
+  min-height: 100vh;
+  background: #0f0f0f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+}
+
+.inner {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo {
+  display: inline-flex;
+  margin-bottom: 2rem;
+  text-decoration: none;
+}
+
+.headline {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 700;
+  color: white;
+  text-align: center;
+  margin: 0 0 0.75rem;
+  line-height: 1.15;
+}
+
+.subheadline {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+  max-width: 420px;
+}
+
+/* Spots counter */
+.spotsCounter {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 2rem;
+}
+
+.spotsText {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #FFD700;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.spotsBar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.spotsBarFill {
+  height: 100%;
+  background: #FFD700;
+  border-radius: 999px;
+  transition: width 0.8s ease;
+  min-width: 4px;
+}
+
+/* Form card */
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.35rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: #FFD700;
+}
+
+.submitBtn {
+  width: 100%;
+  height: 48px;
+  background: #FFD700;
+  color: #0f0f0f;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.15s;
+}
+
+.submitBtn:hover {
+  background: #f5cc00;
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  font-size: 0.82rem;
+  color: #dc2626;
+  margin: 0.75rem 0 0;
+  text-align: center;
+}
+
+.fine {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0.875rem 0 0;
+}
+
+/* Success state */
+.success {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.successTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f0f0f;
+  margin: 0 0 0.5rem;
+}
+
+.successText {
+  font-size: 0.95rem;
+  color: #475569;
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.shareLabel {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0 0.75rem;
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.6rem 1.25rem;
+  background: #0f0f0f;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.copyBtn:hover {
+  background: #1a1a1a;
+}
