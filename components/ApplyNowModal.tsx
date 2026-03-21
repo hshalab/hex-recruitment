@@ -57,6 +57,14 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
         setCvFileName(data?.cv_file_name ?? null)
         setLoadingCv(false)
       }
+
+      // Track apply start
+      if (session?.user?.id && job?.id) {
+        supabase.from('apply_starts').insert({
+          job_id: job.id,
+          candidate_id: session.user.id,
+        }).then(() => {})  // fire and forget, no await needed
+      }
     }
     fetchCv()
     return () => { cancelled = true }
