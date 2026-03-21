@@ -122,6 +122,7 @@ function PostJobContent() {
         .eq('user_id', session.user.id)
         .single()
 
+      // Free launch employers have status 'active' so they pass this gate
       if (subData && (subData.subscription_status === 'active' || subData.subscription_status === 'trialing')) {
         setHasSubscription(true)
       } else {

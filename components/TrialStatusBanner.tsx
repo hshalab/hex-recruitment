@@ -65,11 +65,14 @@ export default function TrialStatusBanner({ userType: propUserType }: TrialStatu
           // Check employer_subscriptions for trial/subscription status
           const { data: sub } = await supabase
             .from('employer_subscriptions')
-            .select('subscription_status, trial_ends_at')
+            .select('subscription_status, trial_ends_at, subscription_tier')
             .eq('user_id', session.user.id)
             .maybeSingle()
 
           if (sub) {
+            // Free launch employers: never show trial/expiry warnings
+            if (sub.subscription_tier === 'free') return
+
             const accountStatus = sub.subscription_status === 'trialing' ? 'trial'
               : sub.subscription_status === 'active' ? 'active'
               : 'expired'

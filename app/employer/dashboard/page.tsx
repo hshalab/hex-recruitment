@@ -95,6 +95,8 @@ export default function EmployerDashboardPage() {
   const [companyName, setCompanyName] = useState('')
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
   const [companyDescription, setCompanyDescription] = useState('')
+  const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null)
+  const [freeUntil, setFreeUntil] = useState<string | null>(null)
   const [dismissChecklist, setDismissChecklist] = useState(false)
 
   // Stats
@@ -177,6 +179,21 @@ export default function EmployerDashboardPage() {
           setCompanyDescription(empProfile.description)
         }
       } catch { /* employer_profiles may not exist */ }
+
+      // Fetch subscription tier
+      try {
+        const { data: subData } = await supabase
+          .from('employer_subscriptions')
+          .select('subscription_tier, current_period_end, trial_ends_at')
+          .eq('user_id', userId)
+          .maybeSingle()
+        if (subData) {
+          setSubscriptionTier(subData.subscription_tier || null)
+          if (subData.subscription_tier === 'free') {
+            setFreeUntil(subData.current_period_end || subData.trial_ends_at || null)
+          }
+        }
+      } catch { /* subscription table may not exist */ }
 
       // Fetch employer's jobs
       try {
@@ -362,8 +379,19 @@ export default function EmployerDashboardPage() {
             </div>
             <div className={styles.welcomeText}>
               <h1>{getGreeting()}, {displayName.split(' ')[0]}</h1>
-              <p className={styles.companyLabel}>{companyName}</p>
-              <p className={styles.welcomeSub}>Here&apos;s what&apos;s happening with your jobs today</p>
+              <p className={styles.companyLabel}>
+                {companyName}
+                {subscriptionTier && (
+                  <span style={{ marginLeft: '0.5rem', fontSize: '0.72rem', fontWeight: 600, color: subscriptionTier === 'free' ? '#d97706' : '#16a34a', background: subscriptionTier === 'free' ? '#fffbeb' : '#f0fdf4', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                    {subscriptionTier === 'free' ? 'Free Launch — 12 months' : subscriptionTier === 'professional' ? 'Professional Plan' : 'Standard Plan'}
+                  </span>
+                )}
+              </p>
+              <p className={styles.welcomeSub}>
+                {subscriptionTier === 'free' && freeUntil
+                  ? `Free access until ${new Date(freeUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                  : 'Here\u0027s what\u0027s happening with your jobs today'}
+              </p>
             </div>
           </div>
           <div className={styles.welcomeDate}>
