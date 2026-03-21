@@ -146,7 +146,7 @@ export default function Home() {
             <Link href="/jobs" className={styles.ctaPrimary}>
               Find a Job
             </Link>
-            <Link href="/subscribe" className={styles.ctaSecondary}>
+            <Link href="/register/employer-free" className={styles.ctaSecondary}>
               Hire Talent
             </Link>
           </div>
@@ -360,7 +360,7 @@ export default function Home() {
             <Link href="/jobs" className={styles.ctaPrimary}>
               Browse Jobs
             </Link>
-            <Link href="/subscribe" className={styles.ctaSecondary}>
+            <Link href="/register/employer-free" className={styles.ctaSecondary}>
               Start Hiring
             </Link>
           </div>
