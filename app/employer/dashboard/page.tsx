@@ -94,6 +94,8 @@ export default function EmployerDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [companyName, setCompanyName] = useState('')
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
+  const [companyDescription, setCompanyDescription] = useState('')
+  const [dismissChecklist, setDismissChecklist] = useState(false)
 
   // Stats
   const [totalJobs, setTotalJobs] = useState(0)
@@ -163,13 +165,16 @@ export default function EmployerDashboardPage() {
       try {
         const { data: empProfile } = await supabase
           .from('employer_profiles')
-          .select('logo_url')
+          .select('logo_url, description')
           .eq('user_id', userId)
           .maybeSingle()
         if (empProfile?.logo_url) {
           setCompanyLogo(empProfile.logo_url)
         } else if (session.user.user_metadata?.logo_url) {
           setCompanyLogo(session.user.user_metadata.logo_url)
+        }
+        if (empProfile?.description) {
+          setCompanyDescription(empProfile.description)
         }
       } catch { /* employer_profiles may not exist */ }
 
@@ -366,6 +371,39 @@ export default function EmployerDashboardPage() {
             {dateInfo.full}
           </div>
         </div>
+
+        {/* ── GETTING STARTED CHECKLIST ───────────────── */}
+        {totalJobs === 0 && !dismissChecklist && (() => {
+          const hasLogo = !!companyLogo
+          const hasJob = totalJobs > 0
+          const hasDescription = companyDescription.length > 50
+          const completed = [hasLogo, hasJob, hasDescription].filter(Boolean).length
+          return (
+            <div className={styles.checklistCard}>
+              <button className={styles.checklistDismiss} onClick={() => setDismissChecklist(true)} aria-label="Dismiss">×</button>
+              <h3 className={styles.checklistHeading}>Get started with Hex</h3>
+              <p className={styles.checklistSub}>Complete these steps to start finding great candidates</p>
+              <div className={styles.checklistItems}>
+                <div className={styles.checklistItem}>
+                  <span className={`${styles.checklistDot} ${hasLogo ? styles.checklistDotDone : ''}`} />
+                  <span className={styles.checklistLabel}>Add your company logo</span>
+                  {!hasLogo && <Link href="/settings/company" className={styles.checklistAction}>Add logo →</Link>}
+                </div>
+                <div className={styles.checklistItem}>
+                  <span className={`${styles.checklistDot} ${hasJob ? styles.checklistDotDone : ''}`} />
+                  <span className={styles.checklistLabel}>Post your first job</span>
+                  {!hasJob && <Link href="/post-job" className={styles.checklistAction}>Post a job →</Link>}
+                </div>
+                <div className={styles.checklistItem}>
+                  <span className={`${styles.checklistDot} ${hasDescription ? styles.checklistDotDone : ''}`} />
+                  <span className={styles.checklistLabel}>Complete your company profile</span>
+                  {!hasDescription && <Link href="/settings/company" className={styles.checklistAction}>Complete profile →</Link>}
+                </div>
+              </div>
+              <p className={styles.checklistProgress}>{completed} of 3 steps complete</p>
+            </div>
+          )
+        })()}
 
         {/* ── STALE APPLICATIONS NUDGE ────────────────── */}
         {staleApplications > 0 && (
