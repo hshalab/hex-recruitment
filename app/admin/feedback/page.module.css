@@ -1,0 +1,145 @@
+.container {
+  padding: 2rem;
+  max-width: 900px;
+}
+
+.heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 1.5rem;
+}
+
+.loadingText {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* Stats */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.statCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.statValue {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Filter Pills */
+.filterRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.filterPill {
+  padding: 0.35rem 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: white;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filterPill:hover {
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.filterPillActive {
+  background: #0f172a;
+  color: white;
+  border-color: #0f172a;
+}
+
+/* Feedback List */
+.feedbackList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.feedbackCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.feedbackTop {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pagePill {
+  font-size: 0.7rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.feedbackTime {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-left: auto;
+}
+
+.feedbackComment {
+  font-size: 0.9rem;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.feedbackNoComment {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-style: italic;
+  margin: 0;
+}
+
+.empty {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  padding: 3rem 0;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+}
