@@ -72,6 +72,15 @@
   color: var(--primary-yellow);
 }
 
+.heroEyebrow {
+  color: #FFD700;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 0.75rem;
+}
+
 .heroTitle {
   font-size: 3.25rem;
   font-weight: 900;

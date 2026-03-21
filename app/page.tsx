@@ -127,6 +127,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={styles.heroInner}>
+          <p className={styles.heroEyebrow}>Introducing Hex</p>
           <h1 className={styles.heroTitle}>
             Hire great people.<br />No agency fees.<br />Post unlimited jobs free.
           </h1>
