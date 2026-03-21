@@ -438,6 +438,12 @@ export default function AnalyticsContent() {
       return ((current - previous) / previous) * 100
     }
 
+    const totalOffers = offers.length
+    const acceptedOffers = offers.filter(o => o.status === 'accepted').length
+    const offerAcceptanceRate = totalOffers > 0
+      ? Math.round((acceptedOffers / totalOffers) * 100)
+      : null
+
     return {
       activeJobs,
       totalApplications,
@@ -445,6 +451,9 @@ export default function AnalyticsContent() {
       avgTimeToHireMs,
       conversionRate,
       totalViews,
+      offerAcceptanceRate,
+      totalOffers,
+      acceptedOffers,
       changes: dateRange !== 'all' ? {
         applications: calcChange(totalApplications, prevApps),
         hires: calcChange(hires, prevHires),
@@ -452,7 +461,7 @@ export default function AnalyticsContent() {
         conversion: calcChange(parseFloat(conversionRate), prevConversion),
       } : null,
     }
-  }, [jobs, filteredApps, filteredViews, prevPeriodApps, prevPeriodViews, dateRange])
+  }, [jobs, filteredApps, filteredViews, prevPeriodApps, prevPeriodViews, dateRange, offers])
 
   // Traffic Overview chart data (Views + Impressions)
   const trafficChartData = useMemo(() => {
@@ -2954,6 +2963,21 @@ export default function AnalyticsContent() {
             <div className={styles.cardLabel}>Retention Rate</div>
             {retentionData && retentionData.totalHired > 0 && (
               <div className={styles.cardSub}>{retentionData.totalRetained} of {retentionData.totalHired} retained</div>
+            )}
+          </div>
+          <div className={styles.overviewCard}>
+            <div className={styles.cardIcon}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <div className={styles.cardValue}>
+              {metrics.offerAcceptanceRate !== null ? `${metrics.offerAcceptanceRate}%` : '–'}
+            </div>
+            <div className={styles.cardLabel}>Offer Acceptance</div>
+            {metrics.totalOffers > 0 && (
+              <div className={styles.cardSub}>{metrics.acceptedOffers} of {metrics.totalOffers} accepted</div>
             )}
           </div>
         </div>
