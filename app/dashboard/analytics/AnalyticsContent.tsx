@@ -2939,6 +2939,23 @@ export default function AnalyticsContent() {
             <div className={styles.cardValue}>{formatTimeToHire(metrics.avgTimeToHireMs)}</div>
             <div className={styles.cardLabel}>Avg Time to Hire</div>
           </div>
+          <div className={styles.overviewCard}>
+            <div className={styles.cardIcon}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <div className={styles.cardValue}>
+              {retentionData?.retentionRate !== null && retentionData?.retentionRate !== undefined ? `${retentionData.retentionRate}%` : '–'}
+            </div>
+            <div className={styles.cardLabel}>Retention Rate</div>
+            {retentionData && retentionData.totalHired > 0 && (
+              <div className={styles.cardSub}>{retentionData.totalRetained} of {retentionData.totalHired} retained</div>
+            )}
+          </div>
         </div>
 
         {/* AI Insights Summary */}

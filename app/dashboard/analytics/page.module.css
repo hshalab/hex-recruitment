@@ -245,6 +245,12 @@
   margin-top: 0.25rem;
 }
 
+.cardSub {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
 /* Percentage Change Indicators */
 .cardChange {
   font-size: 0.75rem;
