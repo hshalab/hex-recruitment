@@ -570,6 +570,31 @@ export default function AnalyticsContent() {
       .sort((a, b) => b.value - a.value)
   }, [filteredViews])
 
+  // Source of Hire — which channels produced actual hires
+  const sourceOfHireData = useMemo(() => {
+    const HIRED_STATUSES = ['hired', 'retained', 'left']
+    const hiredApps = filteredApps.filter(a => HIRED_STATUSES.includes(a.status))
+    if (hiredApps.length === 0) return null
+
+    const sourceCounts: Record<string, number> = {}
+    hiredApps.forEach((a: any) => {
+      const matchingView = filteredViews.find(
+        (v: any) => v.job_id === a.job_id && v.viewer_id === a.candidate_id
+      )
+      const source = matchingView?.source || 'direct'
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1
+    })
+
+    return Object.entries(sourceCounts)
+      .map(([key, value]) => ({
+        name: SOURCE_DISPLAY_NAMES[key] || key.charAt(0).toUpperCase() + key.slice(1),
+        value,
+        color: SOURCE_COLORS[key] || '#64748b',
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6)
+  }, [filteredApps, filteredViews])
+
   // Device breakdown data
   const deviceData = useMemo(() => {
     const hasDeviceData = filteredViews.some(v => v.device_type)
@@ -3423,6 +3448,36 @@ export default function AnalyticsContent() {
                 </div>
               )}
         </div>
+        )}
+
+        {/* Source of Hire */}
+        {activeTab === 'traffic' && (
+          <div className={styles.sectionCard} style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <h2 className={styles.sectionTitle} style={{ margin: 0 }}>Source of Hire</h2>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 1rem' }}>Which channels your hires actually came from</p>
+            {mounted && sourceOfHireData ? (
+              <ResponsiveContainer width="100%" height={Math.max(160, sourceOfHireData.length * 40)}>
+                <BarChart data={sourceOfHireData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} width={110} />
+                  <Tooltip
+                    contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#1e293b', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    formatter={(value: any) => [`${value} hire${value !== 1 ? 's' : ''}`]}
+                  />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    {sourceOfHireData.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className={styles.chartEmpty}>No hire data yet</div>
+            )}
+          </div>
         )}
 
         {/* Salary Insights Section */}
