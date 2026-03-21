@@ -128,26 +128,26 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroInner}>
           <h1 className={styles.heroTitle}>
-            Where Talent Meets<br />Opportunity
+            Hire great people.<br />No agency fees. No per-listing costs.
           </h1>
           <p className={styles.heroSubtitle}>
-            Connecting UK employers with qualified candidates across every sector.
-            From hospitality to healthcare, tech to teaching — find your perfect match.
+            Post jobs, search candidates, manage your pipeline, schedule interviews —
+            one platform, all UK sectors. Free for the first 100 employers.
           </p>
           <div className={styles.spotsCounter}>
             <div className={styles.spotsBar}>
               <div className={styles.spotsBarFill} style={{ width: `${Math.min((employerCount ?? 0) / 100 * 100, 100)}%` }} />
             </div>
             <p className={styles.spotsText}>
-              <span className={styles.spotsFree}>{employerCount ?? '—'} of 100</span> free employer spots claimed — <span className={styles.spotsFree}>join free today</span>
+              <span className={styles.spotsFree}>{employerCount ?? '—'} of 100</span> free spots claimed — <span className={styles.spotsFree}>12 months free, no card needed</span>
             </p>
           </div>
           <div className={styles.heroCtas}>
-            <Link href="/jobs" className={styles.ctaPrimary}>
-              Find a Job
+            <Link href="/register/employer-free" className={styles.ctaPrimary}>
+              Claim your free spot →
             </Link>
-            <Link href="/register/employer-free" className={styles.ctaSecondary}>
-              Hire Talent
+            <Link href="/jobs" className={styles.ctaSecondary}>
+              Browse jobs (free for candidates)
             </Link>
           </div>
         </div>
@@ -178,159 +178,109 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works */}
+      {/* How It Works — employer focused */}
       <section className={`${styles.howItWorks} ${styles.scrollReveal}`} data-reveal>
         <div className={styles.sectionInner}>
-          <h2 className={styles.sectionTitle}>How It Works</h2>
-          <p className={styles.sectionSubtitle}>Get started in minutes — whether you're hiring or looking for work</p>
+          <h2 className={styles.sectionTitle}>Post a job in 3 minutes. Get applicants the same day.</h2>
+          <p className={styles.sectionSubtitle}>No agencies, no long contracts — just a simple hiring toolkit</p>
 
           <div className={`${styles.stepsGrid} ${styles.staggerChildren}`} data-reveal>
             <div className={styles.step}>
               <div className={styles.stepNumber}>1</div>
-              <h3 className={styles.stepTitle}>Create Your Profile</h3>
-              <p className={styles.stepText}>Sign up as a job seeker or employer. It takes less than 2 minutes.</p>
+              <h3 className={styles.stepTitle}>Post your job</h3>
+              <p className={styles.stepText}>Describe the role, set the salary, and publish. It goes live across all UK sectors instantly.</p>
             </div>
             <div className={styles.step}>
               <div className={styles.stepNumber}>2</div>
-              <h3 className={styles.stepTitle}>Search & Filter</h3>
-              <p className={styles.stepText}>Browse jobs or candidates by sector, location, and availability.</p>
+              <h3 className={styles.stepTitle}>Review candidates</h3>
+              <p className={styles.stepText}>Applications arrive in your dashboard. View CVs, shortlist, and message candidates directly.</p>
             </div>
             <div className={styles.step}>
               <div className={styles.stepNumber}>3</div>
-              <h3 className={styles.stepTitle}>Connect & Hire</h3>
-              <p className={styles.stepText}>Apply to jobs or contact candidates directly. It's that simple.</p>
+              <h3 className={styles.stepTitle}>Interview & hire</h3>
+              <p className={styles.stepText}>Schedule interviews, send offers, and manage your entire pipeline — all in one place.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* What You Get — free launch offer */}
       <section className={`${styles.benefits} ${styles.scrollReveal}`} data-reveal>
         <div className={styles.sectionInner}>
-          <h2 className={styles.sectionTitle}>Simple, Transparent Pricing</h2>
-          <p className={styles.sectionSubtitle}>Choose the plan that works for you</p>
+          <h2 className={styles.sectionTitle}>Everything you need to hire — free for 12 months</h2>
+          <p className={styles.sectionSubtitle}>The first 100 employers get the full platform. No card. No catch.</p>
           <div className={`${styles.benefitsGrid} ${styles.staggerChildren}`} data-reveal>
-            {/* Free - Job Seekers */}
             <div className={styles.benefitCard}>
-              <div className={styles.benefitIcon}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-              </div>
-              <h3 className={styles.benefitTitle}>Free</h3>
-              <p className={styles.benefitSubhead}>For Job Seekers</p>
-              <div className={styles.priceTag}>
-                <span className={styles.priceAmount}>£0</span>
-                <span className={styles.pricePeriod}>/forever</span>
-              </div>
-              <ul className={styles.benefitList}>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Completely free — no hidden costs</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Browse thousands of UK jobs</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Create a profile and get noticed</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Apply directly with one click</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Track your applications</span>
-                </li>
-              </ul>
-              <Link href="/register/employee" className={styles.benefitBtn}>
-                Create Free Profile
-              </Link>
-            </div>
-
-            {/* Standard - Employers */}
-            <div className={`${styles.benefitCard} ${styles.benefitCardHighlight}`}>
               <div className={styles.benefitIcon}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
                   <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                 </svg>
               </div>
-              <h3 className={styles.benefitTitle}>Standard</h3>
-              <p className={styles.benefitSubhead}>For Employers</p>
-              <div className={styles.priceTag}>
-                <span className={styles.priceAmount}>£29.99</span>
-                <span className={styles.pricePeriod}>/month</span>
-              </div>
-              <ul className={styles.benefitList}>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>14-day free trial — no card required</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Up to 3 active jobs at a time</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Browse and contact candidates</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Manage applications in dashboard</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>1 week cancellation notice</span>
-                </li>
-              </ul>
-              <Link href="/subscribe" className={styles.benefitBtnHighlight}>
-                Start Free 14-Day Trial
-              </Link>
+              <h3 className={styles.benefitTitle}>Post unlimited jobs</h3>
+              <p className={styles.stepText}>Publish across all 20 UK sectors. Jobs go live instantly and reach candidates searching in your area.</p>
             </div>
-
-            {/* Professional - Employers */}
-            <div className={`${styles.benefitCard} ${styles.benefitCardPro}`}>
-              <div className={styles.benefitBadge}>Most Popular</div>
+            <div className={styles.benefitCard}>
               <div className={styles.benefitIcon}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
               </div>
-              <h3 className={styles.benefitTitle}>Professional</h3>
-              <p className={styles.benefitSubhead}>For Growing Teams</p>
-              <div className={styles.priceTag}>
-                <span className={styles.priceAmount}>£59.99</span>
-                <span className={styles.pricePeriod}>/month</span>
+              <h3 className={styles.benefitTitle}>Search candidates directly</h3>
+              <p className={styles.stepText}>Browse profiles by skills, location, and availability. Message candidates before they even apply.</p>
+            </div>
+            <div className={styles.benefitCard}>
+              <div className={styles.benefitIcon}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
               </div>
-              <ul className={styles.benefitList}>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>14-day free trial — no card required</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Unlimited job listings</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Priority candidate access</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Advanced analytics dashboard</span>
-                </li>
-                <li>
-                  <span className={styles.checkIcon}>&#10003;</span>
-                  <span>Dedicated account support</span>
-                </li>
-              </ul>
-              <Link href="/subscribe" className={styles.benefitBtnHighlight}>
-                Start Free 14-Day Trial
-              </Link>
+              <h3 className={styles.benefitTitle}>Manage your full pipeline</h3>
+              <p className={styles.stepText}>Track applications, schedule interviews, send offers, and hire — all from one dashboard. No spreadsheets.</p>
+            </div>
+            <div className={styles.benefitCard}>
+              <div className={styles.benefitIcon}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10" />
+                  <line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+              </div>
+              <h3 className={styles.benefitTitle}>Analytics that show what works</h3>
+              <p className={styles.stepText}>See which jobs get views, where candidates come from, and how your hiring funnel performs.</p>
+            </div>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <Link href="/register/employer-free" className={styles.ctaPrimary}>
+              Claim your free spot →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Objection Handling */}
+      <section className={`${styles.howItWorks} ${styles.scrollReveal}`} data-reveal>
+        <div className={styles.sectionInner}>
+          <h2 className={styles.sectionTitle}>Why employers switch to Hex</h2>
+          <div className={`${styles.stepsGrid} ${styles.staggerChildren}`} data-reveal>
+            <div className={styles.step}>
+              <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
+              <h3 className={styles.stepTitle}>No agency fees</h3>
+              <p className={styles.stepText}>Agencies charge 15-25% of salary per hire. Hex gives you the same tools for a flat subscription — free for the first 100.</p>
+            </div>
+            <div className={styles.step}>
+              <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
+              <h3 className={styles.stepTitle}>No CV black holes</h3>
+              <p className={styles.stepText}>On Indeed and Reed, candidates apply and never hear back. On Hex, you manage every application with a clear pipeline and direct messaging.</p>
+            </div>
+            <div className={styles.step}>
+              <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
+              <h3 className={styles.stepTitle}>No per-listing costs</h3>
+              <p className={styles.stepText}>Other boards charge per job post. On Hex, post as many jobs as you need — included in your account.</p>
             </div>
           </div>
         </div>
@@ -352,16 +302,20 @@ export default function Home() {
       {/* Final CTA */}
       <section className={`${styles.finalCta} ${styles.scrollReveal}`} data-reveal>
         <div className={styles.sectionInner}>
-          <h2 className={styles.finalCtaTitle}>Ready to Get Started?</h2>
+          <h2 className={styles.finalCtaTitle}>
+            {100 - (employerCount ?? 0) > 0
+              ? `Only ${100 - (employerCount ?? 0)} free spots left`
+              : 'Join Hex today'}
+          </h2>
           <p className={styles.finalCtaText}>
-            Join thousands of professionals and employers already using Hex.
+            12 months free. All features. No card needed. Once the 100 spots fill up, new employers pay from day one.
           </p>
           <div className={styles.heroCtas}>
-            <Link href="/jobs" className={styles.ctaPrimary}>
-              Browse Jobs
+            <Link href="/register/employer-free" className={styles.ctaPrimary}>
+              Claim your free spot →
             </Link>
-            <Link href="/register/employer-free" className={styles.ctaSecondary}>
-              Start Hiring
+            <Link href="/jobs" className={styles.ctaSecondary}>
+              Or browse jobs as a candidate
             </Link>
           </div>
         </div>
