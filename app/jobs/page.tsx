@@ -848,7 +848,7 @@ function JobsPageContent() {
   }
 
   return (
-    <main>
+    <main style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <Header />
 
       <div className={styles.pageHeader}>
