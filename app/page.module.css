@@ -89,6 +89,39 @@
   line-height: 1.7;
 }
 
+.spotsCounter {
+  margin: 1.25rem auto 1.5rem;
+  max-width: 420px;
+}
+
+.spotsBar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.spotsBarFill {
+  height: 100%;
+  background: #FFD700;
+  border-radius: 999px;
+  transition: width 0.8s ease;
+  min-width: 4px;
+}
+
+.spotsText {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.9);
+  margin: 0;
+}
+
+.spotsFree {
+  color: #FFD700;
+  font-weight: 600;
+}
+
 .heroCtas {
   display: flex;
   justify-content: center;

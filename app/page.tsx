@@ -40,6 +40,7 @@ export default function Home() {
   const [authRedirecting, setAuthRedirecting] = useState(false)
   const [jobsTarget, setJobsTarget] = useState(500)
   const [candidatesTarget, setCandidatesTarget] = useState(1000)
+  const [employerCount, setEmployerCount] = useState<number | null>(null)
 
   // Redirect logged-in users to their dashboard (non-blocking — page renders immediately)
   useEffect(() => {
@@ -63,6 +64,11 @@ export default function Home() {
     supabase.from('candidate_profiles').select('id', { count: 'exact', head: true }).then(({ count, error }) => {
       if (!error && count && count > 50) setCandidatesTarget(count)
     })
+
+    fetch('/api/stats')
+      .then(r => r.json())
+      .then(d => setEmployerCount(d.employerCount ?? 0))
+      .catch(() => {})
   }, [])
 
   // Observe stats bar
@@ -128,6 +134,14 @@ export default function Home() {
             Connecting UK employers with qualified candidates across every sector.
             From hospitality to healthcare, tech to teaching — find your perfect match.
           </p>
+          <div className={styles.spotsCounter}>
+            <div className={styles.spotsBar}>
+              <div className={styles.spotsBarFill} style={{ width: `${Math.min((employerCount ?? 0) / 100 * 100, 100)}%` }} />
+            </div>
+            <p className={styles.spotsText}>
+              <span className={styles.spotsFree}>{employerCount ?? '—'} of 100</span> free employer spots claimed — <span className={styles.spotsFree}>join free today</span>
+            </p>
+          </div>
           <div className={styles.heroCtas}>
             <Link href="/jobs" className={styles.ctaPrimary}>
               Find a Job
