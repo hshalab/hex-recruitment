@@ -1,3 +1,4 @@
+import FeedbackWidget from '@/components/FeedbackWidget'
 import type { Metadata } from 'next'
 import { Inter, Dancing_Script } from 'next/font/google'
 import { Providers } from './providers'
@@ -76,7 +77,10 @@ export default function RootLayout({
   return (
     <html lang="en-GB">
       <body className={`${inter.className} ${dancingScript.variable}`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <FeedbackWidget />
+        </Providers>
       </body>
     </html>
   )
