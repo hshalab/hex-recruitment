@@ -128,7 +128,7 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroInner}>
           <h1 className={styles.heroTitle}>
-            Hire great people.<br />No agency fees. Post unlimited jobs free.
+            Hire great people.<br />No agency fees.<br />Post unlimited jobs free.
           </h1>
           <p className={styles.heroSubtitle}>
             Post jobs, search candidates, manage your pipeline, schedule interviews —
