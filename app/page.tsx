@@ -38,8 +38,8 @@ export default function Home() {
   const statsRef = useRef<HTMLElement>(null)
   const [statsVisible, setStatsVisible] = useState(false)
   const [authRedirecting, setAuthRedirecting] = useState(false)
-  const [jobsTarget, setJobsTarget] = useState(500)
-  const [candidatesTarget, setCandidatesTarget] = useState(1000)
+  const [jobsTarget, setJobsTarget] = useState(0)
+  const [candidatesTarget, setCandidatesTarget] = useState(0)
   const [employerCount, setEmployerCount] = useState<number | null>(null)
 
   // Redirect logged-in users to their dashboard (non-blocking — page renders immediately)
@@ -58,11 +58,11 @@ export default function Home() {
   // Fetch real counts from DB, use fallbacks if too low or on error
   useEffect(() => {
     supabase.from('jobs').select('id', { count: 'exact', head: true }).then(({ count, error }) => {
-      if (!error && count && count > 50) setJobsTarget(count)
+      if (!error && count !== null) setJobsTarget(count)
     })
 
     supabase.from('candidate_profiles').select('id', { count: 'exact', head: true }).then(({ count, error }) => {
-      if (!error && count && count > 50) setCandidatesTarget(count)
+      if (!error && count !== null) setCandidatesTarget(count)
     })
 
     fetch('/api/stats')
