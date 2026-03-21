@@ -51,8 +51,7 @@ export default function RegisterEmployerFreePage() {
       const spotsRes = await fetch('/api/check-spots')
       const spotsData = await spotsRes.json()
       if (spotsData.isFull) {
-        setError('Sorry — all 100 free spots have been claimed. Join the waitlist at /waitlist')
-        setLoading(false)
+        router.push('/waitlist?reason=full')
         return
       }
     } catch {

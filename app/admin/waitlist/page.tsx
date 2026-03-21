@@ -36,6 +36,8 @@ export default function AdminWaitlistPage() {
   const [entries, setEntries] = useState<WaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [freeSpotsClaimed, setFreeSpotsClaimed] = useState(0)
+  const [spotsRemaining, setSpotsRemaining] = useState(100)
 
   useEffect(() => {
     if (!token) return
@@ -45,7 +47,13 @@ export default function AdminWaitlistPage() {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await res.json()
-      if (Array.isArray(data)) setEntries(data)
+      if (data.entries && Array.isArray(data.entries)) {
+        setEntries(data.entries)
+        setFreeSpotsClaimed(data.freeSpotsClaimed ?? 0)
+        setSpotsRemaining(data.spotsRemaining ?? 100)
+      } else if (Array.isArray(data)) {
+        setEntries(data)
+      }
       setLoading(false)
     }
     fetchData()
@@ -104,8 +112,9 @@ export default function AdminWaitlistPage() {
       <h1 className={styles.pageTitle}>Waitlist</h1>
 
       <div className={styles.statsGrid}>
-        <StatsCard title="Total Signups" value={stats.total} icon="📋" />
-        <StatsCard title="This Week" value={stats.thisWeek} icon="📅" color="#16a34a" />
+        <StatsCard title="Waitlist Signups" value={stats.total} icon="📋" />
+        <StatsCard title="Free Spots Claimed" value={freeSpotsClaimed} icon="🎉" color="#d97706" />
+        <StatsCard title="Spots Remaining" value={spotsRemaining} icon="🔓" color={spotsRemaining > 0 ? '#16a34a' : '#dc2626'} />
       </div>
 
       <AdminTable

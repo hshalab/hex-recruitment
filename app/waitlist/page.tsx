@@ -1,11 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import HoneycombLogo from '@/components/HoneycombLogo'
 import styles from './page.module.css'
 
 export default function WaitlistPage() {
+  return (
+    <Suspense>
+      <WaitlistContent />
+    </Suspense>
+  )
+}
+
+function WaitlistContent() {
+  const searchParams = useSearchParams()
+  const isFull = searchParams.get('reason') === 'full'
   const [name, setName] = useState('')
   const [company, setCompany] = useState('')
   const [email, setEmail] = useState('')
@@ -64,8 +75,15 @@ export default function WaitlistPage() {
           <HoneycombLogo size={36} color="#FFD700" />
         </Link>
 
+        {/* Full banner */}
+        {isFull && (
+          <div className={styles.fullBanner}>
+            All 100 free spots have been claimed — but you can join the waitlist and we&apos;ll let you know if any open up.
+          </div>
+        )}
+
         {/* Headline */}
-        <h1 className={styles.headline}>Get 12 months free — before we launch</h1>
+        <h1 className={styles.headline}>{isFull ? 'Join the waitlist' : 'Get 12 months free — before we launch'}</h1>
 
         {/* Subheadline */}
         <p className={styles.subheadline}>
