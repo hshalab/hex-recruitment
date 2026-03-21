@@ -63,6 +63,14 @@ function EmployeeLoginPageContent() {
       return
     }
 
+    if (!rememberMe) {
+      sessionStorage.setItem('hex_session_volatile', '1')
+      localStorage.setItem('hex_prev_volatile', '1')
+    } else {
+      sessionStorage.removeItem('hex_session_volatile')
+      localStorage.removeItem('hex_prev_volatile')
+    }
+
     router.push(postLoginRedirect)
   }
 
