@@ -18,6 +18,13 @@ const planDetails: Record<string, { name: string; price: number }> = {
 
 function RegisterEmployerPageContent() {
   const router = useRouter()
+
+  // TODO: remove this redirect when free slots are full
+  // Launch phase: all employers register via free flow
+  useEffect(() => {
+    router.replace('/register/employer-free')
+  }, [router])
+
   const searchParams = useSearchParams()
   const plan = searchParams.get('plan')
 
