@@ -46,6 +46,19 @@ export default function RegisterEmployerFreePage() {
 
     setLoading(true)
 
+    // Check if free spots are still available
+    try {
+      const spotsRes = await fetch('/api/check-spots')
+      const spotsData = await spotsRes.json()
+      if (spotsData.isFull) {
+        setError('Sorry — all 100 free spots have been claimed. Join the waitlist at /waitlist')
+        setLoading(false)
+        return
+      }
+    } catch {
+      // If check fails, proceed anyway — server-side uniqueness will catch duplicates
+    }
+
     try {
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({

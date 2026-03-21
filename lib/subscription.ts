@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { DEV_MODE, getMockUser, getSubscriptionStatus } from './mockAuth'
 
-export type SubscriptionTier = 'standard' | 'professional' | null
+export type SubscriptionTier = 'standard' | 'professional' | 'free' | null
 export type SubscriptionStatus = 'inactive' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid'
 
 export interface UserSubscription {
@@ -100,6 +100,9 @@ export function hasFeatureAccess(
 ): boolean {
   if (!subscription.isActive) return false
 
+  // Free launch tier gets full access (same as professional)
+  if (subscription.tier === 'free') return true
+
   // Check if it's a "professional only" feature
   if ((GATED_FEATURES.professional as readonly string[]).includes(feature)) {
     return subscription.tier === 'professional'
@@ -117,6 +120,7 @@ export function hasFeatureAccess(
  * Get the maximum number of active jobs allowed for the subscription tier
  */
 export function getMaxActiveJobs(tier: SubscriptionTier): number {
+  if (tier === 'free') return Infinity
   if (tier === 'professional') return Infinity
   if (tier === 'standard') return 3
   return 0
