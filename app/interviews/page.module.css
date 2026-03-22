@@ -1,116 +1,152 @@
+/* ─── Container ─────────────────────────────────────────────────────────── */
 .container {
-  max-width: 860px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  padding: 1.5rem 1.5rem 4rem;
 }
 
 .loading {
   text-align: center;
   padding: 4rem;
-  color: #666;
+  color: var(--text-gray);
 }
 
-/* Page Header */
-.pageHeader {
-  margin-bottom: 1.5rem;
-}
+/* ─── Page Header ──────────────────────────────────────────────────────── */
+.pageHeader { margin-bottom: 1.25rem; }
 
 .pageTitle {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 0.25rem 0;
+  color: var(--text-dark);
+  margin: 0 0 0.2rem 0;
 }
 
 .pageSubtitle {
-  font-size: 1rem;
-  color: #6b7280;
+  font-size: 0.9rem;
+  color: var(--text-gray);
   margin: 0;
 }
 
-/* Stats Bar */
+/* ─── Stats Bar ────────────────────────────────────────────────────────── */
 .statsBar {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 }
 
 .statCard {
-  background: var(--dark-gray, #0f172a);
-  border-radius: 8px;
-  padding: 0.75rem 0.5rem;
+  background: var(--dark-gray);
+  border-radius: 10px;
+  padding: 0.875rem 1.25rem;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
-  border: 1px solid rgba(255,255,255,0.06);
+  gap: 1rem;
+  border-left: 3px solid #FFE500;
 }
 
 .statNum {
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #FFE500;
   line-height: 1;
 }
 
 .statLabel {
-  font-size: 0.72rem;
-  color: #9ca3af;
-  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-/* Empty State */
+/* ─── Filter Tabs ──────────────────────────────────────────────────────── */
+.filterTabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-gray);
+}
+
+.filterTab {
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid var(--border-gray);
+  background: transparent;
+  color: var(--text-gray);
+  transition: all 0.15s;
+}
+
+.filterTab:hover {
+  border-color: var(--text-gray);
+  color: var(--text-dark);
+}
+
+.filterTabActive {
+  background: var(--dark-gray);
+  color: var(--white);
+  border-color: var(--dark-gray);
+}
+
+.filterTabActive:hover {
+  background: var(--dark-gray);
+  color: var(--white);
+  border-color: var(--dark-gray);
+}
+
+.filterTabCount {
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-left: 0.25rem;
+  opacity: 0.7;
+}
+
+/* ─── Empty State ──────────────────────────────────────────────────────── */
 .emptyState {
   text-align: center;
   padding: 4rem 2rem;
-  background: #f8f9fa;
+  background: var(--light-gray);
   border-radius: 12px;
 }
 
-.emptyIcon {
-  font-size: 3.5rem;
-  display: block;
-  margin-bottom: 1rem;
-}
+.emptyIcon { font-size: 3rem; display: block; margin-bottom: 0.75rem; }
 
 .emptyTitle {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-dark);
   margin: 0 0 0.5rem 0;
 }
 
 .emptyText {
-  font-size: 0.95rem;
-  color: #6b7280;
-  margin: 0 0 1.5rem 0;
+  font-size: 0.9rem;
+  color: var(--text-gray);
+  margin: 0 0 1.25rem 0;
 }
 
 .emptyLink {
   display: inline-block;
-  padding: 0.6rem 1.5rem;
-  background: #1a1a1a;
-  color: white;
+  padding: 0.5rem 1.25rem;
+  background: var(--dark-gray);
+  color: var(--white);
   border-radius: 8px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   text-decoration: none;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
-.emptyLink:hover {
-  background: #333;
-}
+.emptyLink:hover { background: #1e293b; }
 
-/* Schedule List */
+/* ─── Schedule List ────────────────────────────────────────────────────── */
 .scheduleList {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
-/* Date Group */
+/* ─── Date Group ───────────────────────────────────────────────────────── */
 .dateGroup {
   display: flex;
   flex-direction: column;
@@ -118,130 +154,108 @@
 }
 
 .dateHeader {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: #374151;
-  margin: 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
+  color: var(--text-gray);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-gray);
+  margin: 0 0 0.25rem 0;
 }
 
-/* Interview Cards */
+/* ─── Interview Card Grid ──────────────────────────────────────────────── */
 .interviewCards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.875rem;
+  gap: 0.75rem;
 }
 
 .interviewCard {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--white);
+  border: 1px solid var(--border-gray);
   border-radius: 12px;
-  padding: 1rem;
+  padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
-  transition: box-shadow 0.2s;
+  gap: 0.75rem;
+  transition: box-shadow 0.15s, border-color 0.15s;
 }
 
 .interviewCard:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border-color: #d1d5db;
 }
 
-/* Card Header: name/job/badges left, photo right */
+/* ─── Card Header ──────────────────────────────────────────────────────── */
 .cardHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
-.cardHeaderLeft {
-  flex: 1;
-  min-width: 0;
-}
+.cardHeaderLeft { flex: 1; min-width: 0; }
 
 .candidateName {
   display: block;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 0.15rem;
+  color: var(--text-dark);
+  margin-bottom: 0.1rem;
 }
 
 .cardJobTitle {
-  font-size: 0.8rem;
-  color: #6b7280;
-  margin: 0 0 0.4rem 0;
+  font-size: 0.78rem;
+  color: var(--text-gray);
+  margin: 0 0 0.35rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .badgeRow {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   flex-wrap: wrap;
 }
 
-/* Type Badges */
+/* ─── Badges ───────────────────────────────────────────────────────────── */
 .typeBadge {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  padding: 3px 9px;
+  padding: 2px 8px;
   border-radius: 999px;
   white-space: nowrap;
 }
 
-.typeInPerson {
-  background: #fef3c7;
-  color: #92400e;
-}
+.typeInPerson { background: #fef3c7; color: #92400e; }
+.typeVideo { background: #dbeafe; color: #1d4ed8; }
+.typePhone { background: #f3e8ff; color: #7e22ce; }
 
-.typeVideo {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.typePhone {
-  background: #f3e8ff;
-  color: #7e22ce;
-}
-
-/* Status Badges */
 .statusBadge {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  padding: 3px 9px;
+  padding: 2px 8px;
   border-radius: 999px;
   white-space: nowrap;
 }
 
-.statusScheduled {
-  background: #fef3c7;
-  color: #92400e;
-}
+.statusScheduled { background: #fef9c3; color: #854d0e; }
+.statusConfirmed { background: #dcfce7; color: #15803d; }
 
-.statusConfirmed {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-/* Candidate Photo (square, rounded corners) */
+/* ─── Card Photo ───────────────────────────────────────────────────────── */
 .cardPhoto {
-  width: 72px;
-  height: 72px;
+  width: 52px;
+  height: 52px;
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
   background: #f0f0f0;
 }
 
-.cardPhotoImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+.cardPhotoImg { width: 100%; height: 100%; object-fit: cover; }
 
 .cardPhotoPlaceholder {
   width: 100%;
@@ -250,159 +264,135 @@
   align-items: center;
   justify-content: center;
   background: var(--dark-gray);
-  color: white;
-  font-size: 1rem;
+  color: var(--white);
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
-/* Card Details */
+/* ─── Card Details ─────────────────────────────────────────────────────── */
 .cardDetails {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 
 .cardInfoRow {
-  font-size: 0.875rem;
+  font-size: 0.82rem;
   color: #4b5563;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
-.infoIcon {
-  font-size: 0.9rem;
-  flex-shrink: 0;
-}
+.infoIcon { font-size: 0.82rem; flex-shrink: 0; }
 
 .infoLink {
   color: var(--text-dark);
   text-decoration: underline;
+  font-size: 0.82rem;
 }
 
-.infoLink:hover {
-  text-decoration: underline;
-}
+.infoLink:hover { color: var(--dark-gray); }
 
-.infoMuted {
-  color: #9ca3af;
-  font-style: italic;
-}
+.infoMuted { color: #9ca3af; font-style: italic; }
 
 .infoDateTime {
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-dark);
 }
 
-.keepLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.8rem;
-  color: #6b7280;
-  text-decoration: underline;
-  margin-top: 0.25rem;
-  transition: color 0.15s;
-}
-
-.keepLink:hover {
-  color: #374151;
-  text-decoration: underline;
-}
-
-/* Notes textarea */
+/* ─── Notes ────────────────────────────────────────────────────────────── */
 .notesArea {
   width: 100%;
-  margin-top: 0.25rem;
-  padding: 0.5rem 0.625rem;
-  border: 1px solid #e5e7eb;
+  padding: 0.4rem 0.625rem;
+  border: 1px solid var(--border-gray);
   border-radius: 8px;
   font-size: 0.82rem;
   font-family: inherit;
   color: #374151;
   resize: none;
   background: #f9fafb;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s;
   box-sizing: border-box;
 }
 
 .notesArea:focus {
   outline: none;
   border-color: #9ca3af;
-  background: white;
+  background: var(--white);
 }
 
-.notesArea::placeholder {
-  color: #9ca3af;
-}
+.notesArea::placeholder { color: #9ca3af; }
 
-/* ─── Button System ──────────────────────────────────────────────────────── */
-
-/* Shared base for all card buttons */
+/* ─── Button System ────────────────────────────────────────────────────── */
 .btnNavy,
 .btnYellow,
 .btnRedOutline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 0.75rem;
+  padding: 0.45rem 0.875rem;
   border-radius: 8px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: background 0.15s, border-color 0.15s;
   white-space: nowrap;
   flex: 1;
   border: none;
 }
 
-/* Button rows */
-.btnRow {
-  display: flex;
-  gap: 0.5rem;
-}
+.btnRow { display: flex; gap: 0.4rem; }
 
-/* Dark navy — primary actions */
 .btnNavy {
-  background: #1a1a1a;
-  color: white;
+  background: var(--dark-gray);
+  color: var(--white);
   border: none;
 }
 
-.btnNavy:hover {
-  background: #333;
-}
+.btnNavy:hover { background: #1e293b; }
 
-/* Yellow — schedule/calendar actions */
 .btnYellow {
-  background: #FFE500;
-  color: #1a1a1a;
+  background: var(--primary-yellow);
+  color: var(--text-dark);
   border: none;
 }
 
-.btnYellow:hover {
-  background: #e6cf00;
-}
+.btnYellow:hover { background: var(--hover-yellow); }
 
-/* Red outline — destructive */
 .btnRedOutline {
-  background: white;
+  background: var(--white);
   color: #dc2626;
   border: 1.5px solid #dc2626;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
 }
 
-.btnRedOutline:hover:not(:disabled) {
-  background: #fef2f2;
+.btnRedOutline:hover:not(:disabled) { background: #fef2f2; }
+.btnRedOutline:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btnOutline {
+  background: transparent;
+  color: var(--dark-gray);
+  border: 1.5px solid var(--border-gray);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.875rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+  width: 100%;
 }
 
-.btnRedOutline:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+.btnOutline:hover { border-color: var(--dark-gray); color: var(--text-dark); }
 
-/* Full-width modifier (Row 3 calendar button) */
 .btnFullWidth {
   flex: unset;
   width: 100%;
@@ -410,12 +400,11 @@
   justify-content: center;
 }
 
-/* ─── Past Interviews ─────────────────────────────────────────────────────── */
-
+/* ─── Past Interviews ──────────────────────────────────────────────────── */
 .pastSection {
-  margin-top: 2.5rem;
-  border-top: 2px solid #e5e7eb;
-  padding-top: 1.5rem;
+  margin-top: 2rem;
+  border-top: 1px solid var(--border-gray);
+  padding-top: 1.25rem;
 }
 
 .pastToggle {
@@ -427,119 +416,85 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-gray);
 }
 
-.pastToggle:hover {
-  color: #1a1a1a;
-}
+.pastToggle:hover { color: var(--text-dark); }
 
 .chevron {
-  font-size: 1.2rem;
+  font-size: 1rem;
   transition: transform 0.2s;
   display: inline-block;
 }
 
-.chevronUp {
-  transform: rotate(180deg);
-}
+.chevronUp { transform: rotate(180deg); }
 
 .pastList {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin-top: 0.75rem;
 }
 
 .pastCard {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.875rem 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
   background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-gray);
   border-radius: 10px;
 }
 
 .pastPhoto {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
   background: #f0f0f0;
 }
 
-.pastBody {
-  flex: 1;
-  min-width: 0;
-}
+.pastBody { flex: 1; min-width: 0; }
 
 .pastMeta {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex-shrink: 0;
 }
 
 .pastStatusBadge {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: 999px;
 }
 
-.pastCompleted {
-  background: #dcfce7;
-  color: #16a34a;
-}
+.pastCompleted { background: #dcfce7; color: #16a34a; }
+.pastCancelled { background: #fee2e2; color: #dc2626; }
 
-.pastCancelled {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-/* ─── Responsive ──────────────────────────────────────────────────────────── */
+/* ─── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .interviewCards {
-    grid-template-columns: 1fr;
-  }
-}
+  .interviewCards { grid-template-columns: 1fr; }
+  .statsBar { grid-template-columns: repeat(2, 1fr); }
 
-@media (max-width: 640px) {
-  .container {
-    padding: 1rem 1rem 3rem;
-  }
+  .container { padding: 1rem 1rem 3rem; }
 
-  .statsBar {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .filterTabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-  .cardPhoto {
-    width: 64px;
-    height: 64px;
-  }
+  .cardPhoto { width: 44px; height: 44px; }
 
-  .btnRow {
-    flex-wrap: wrap;
-  }
-
+  .btnRow { flex-wrap: wrap; }
   .btnNavy,
   .btnYellow,
   .btnRedOutline {
-    flex: 1 1 calc(50% - 0.25rem);
+    flex: 1 1 calc(50% - 0.2rem);
     min-width: 0;
   }
 
-  .pastMeta {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.4rem;
-  }
-
-  .pastCard {
-    flex-wrap: wrap;
-  }
+  .pastMeta { flex-direction: column; align-items: flex-end; gap: 0.35rem; }
+  .pastCard { flex-wrap: wrap; }
 }

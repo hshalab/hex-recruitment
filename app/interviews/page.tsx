@@ -115,6 +115,7 @@ export default function InterviewsPage() {
   const [rescheduleTarget, setRescheduleTarget] = useState<InterviewItem | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [notesMap, setNotesMap] = useState<Record<string, string>>({})
+  const [activeFilter, setActiveFilter] = useState<'today' | 'week' | 'all'>('all')
 
   useEffect(() => { loadInterviews() }, [])
 
@@ -358,7 +359,17 @@ export default function InterviewsPage() {
   const countConfirmed = upcoming.filter(i => i.status === 'confirmed').length
   const countCompleted = past.filter(i => i.status === 'completed').length
 
-  const groupedUpcoming = upcoming.reduce<Record<string, InterviewItem[]>>((acc, item) => {
+  const filteredUpcoming = upcoming.filter(i => {
+    if (activeFilter === 'today') return i.interviewDate === todayStr
+    if (activeFilter === 'week') {
+      const [y, m, d] = i.interviewDate.split('-').map(Number)
+      const dt = new Date(y, m - 1, d)
+      return dt >= todayObj && dt <= weekEnd
+    }
+    return true
+  })
+
+  const groupedUpcoming = filteredUpcoming.reduce<Record<string, InterviewItem[]>>((acc, item) => {
     if (!acc[item.interviewDate]) acc[item.interviewDate] = []
     acc[item.interviewDate].push(item)
     return acc
@@ -406,6 +417,25 @@ export default function InterviewsPage() {
           </div>
         </div>
 
+        {/* Filter Tabs */}
+        {upcoming.length > 0 && (
+          <div className={styles.filterTabs}>
+            {([
+              { key: 'today' as const, label: 'Today', count: countToday },
+              { key: 'week' as const, label: 'This Week', count: countThisWeek },
+              { key: 'all' as const, label: 'All Upcoming', count: upcoming.length },
+            ]).map(tab => (
+              <button
+                key={tab.key}
+                className={`${styles.filterTab} ${activeFilter === tab.key ? styles.filterTabActive : ''}`}
+                onClick={() => setActiveFilter(tab.key)}
+              >
+                {tab.label}<span className={styles.filterTabCount}>({tab.count})</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Upcoming Interviews */}
         {upcoming.length === 0 ? (
           <div className={styles.emptyState}>
@@ -415,6 +445,15 @@ export default function InterviewsPage() {
               When you schedule interviews with candidates they will appear here.
             </p>
             <Link href="/my-jobs" className={styles.emptyLink}>Browse My Jobs</Link>
+          </div>
+        ) : filteredUpcoming.length === 0 ? (
+          <div className={styles.emptyState}>
+            <span className={styles.emptyIcon}>📅</span>
+            <h2 className={styles.emptyTitle}>No interviews {activeFilter === 'today' ? 'today' : 'this week'}</h2>
+            <p className={styles.emptyText}>
+              Try viewing all upcoming interviews.
+            </p>
+            <button className={styles.emptyLink} onClick={() => setActiveFilter('all')}>Show all</button>
           </div>
         ) : (
           <div className={styles.scheduleList}>
@@ -508,46 +547,40 @@ export default function InterviewsPage() {
                           />
                         </div>
 
-                        {/* Row 1: Message, Email — equal width */}
+                        {/* Actions Row 1: Message + Email */}
                         <div className={styles.btnRow}>
                           <button
                             className={styles.btnNavy}
                             onClick={() => router.push(`/messages?candidate=${interview.candidateId}`)}
                           >
-                            Message Candidate
+                            Message
                           </button>
-                          <a
-                            href={`mailto:${interview.candidateEmail}`}
-                            className={styles.btnNavy}
-                          >
-                            Email Candidate
+                          <a href={`mailto:${interview.candidateEmail}`} className={styles.btnNavy}>
+                            Email
                           </a>
                         </div>
 
-                        {/* Row 2: View Application — full width */}
+                        {/* Actions Row 2: View Application */}
                         <Link
                           href={`/my-jobs/${interview.jobId}/applications`}
-                          className={`${styles.btnNavy} ${styles.btnFullWidth}`}
+                          className={styles.btnOutline}
                         >
                           View Application
                         </Link>
 
-                        {/* Row 3: Calendar — full width */}
+                        {/* Actions Row 3: Calendar */}
                         <a
                           href={calendarHref}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={`${styles.btnYellow} ${styles.btnFullWidth}`}
                         >
-                          📅 View in Google Calendar
+                          Google Calendar
                         </a>
 
-                        {/* Row 4: Reschedule, Cancel — red outline, equal width */}
+                        {/* Actions Row 4: Reschedule + Cancel */}
                         <div className={styles.btnRow}>
-                          <button
-                            className={styles.btnRedOutline}
-                            onClick={() => setRescheduleTarget(interview)}
-                          >
+                          <button className={styles.btnRedOutline} onClick={() => setRescheduleTarget(interview)}>
                             Reschedule
                           </button>
                           <button
@@ -555,7 +588,7 @@ export default function InterviewsPage() {
                             onClick={() => handleCancelInterview(interview)}
                             disabled={isCancelling}
                           >
-                            {isCancelling ? 'Cancelling...' : 'Cancel Interview'}
+                            {isCancelling ? 'Cancelling...' : 'Cancel'}
                           </button>
                         </div>
 
