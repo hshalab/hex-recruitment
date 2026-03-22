@@ -370,11 +370,6 @@ export default function InterviewsPage() {
     return true
   })
 
-  const groupedUpcoming = filteredUpcoming.reduce<Record<string, InterviewItem[]>>((acc, item) => {
-    if (!acc[item.interviewDate]) acc[item.interviewDate] = []
-    acc[item.interviewDate].push(item)
-    return acc
-  }, {})
 
   if (loading) {
     return (
@@ -457,12 +452,8 @@ export default function InterviewsPage() {
             <button className={styles.emptyLink} onClick={() => setActiveFilter('all')}>Show all</button>
           </div>
         ) : (
-          <div className={styles.scheduleList}>
-            {Object.entries(groupedUpcoming).map(([dateKey, items]) => (
-              <div key={dateKey} className={styles.dateGroup}>
-                <h2 className={styles.dateHeader}>{formatGroupHeader(dateKey)}</h2>
-                <div className={styles.interviewCards}>
-                  {items.map(interview => {
+          <div className={styles.interviewCards}>
+            {filteredUpcoming.map(interview => {
                     const isCancelling = cancellingId === interview.interviewId
                     const calendarHref = interview.calendarLink || buildCalendarUrl(interview)
 
@@ -542,9 +533,6 @@ export default function InterviewsPage() {
                       </div>
                     )
                   })}
-                </div>
-              </div>
-            ))}
           </div>
         )}
 
