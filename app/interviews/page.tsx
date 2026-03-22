@@ -192,7 +192,13 @@ export default function InterviewsPage() {
       }
     })
 
-    const upcomingItems = mapped.filter(i => ['scheduled', 'confirmed'].includes(i.status))
+    const upcomingItems = mapped
+      .filter(i => ['scheduled', 'confirmed'].includes(i.status))
+      .sort((a, b) => {
+        const dtA = new Date(`${a.interviewDate}T${a.interviewTime}`).getTime()
+        const dtB = new Date(`${b.interviewDate}T${b.interviewTime}`).getTime()
+        return dtA - dtB
+      })
     const pastItems = mapped
       .filter(i => ['completed', 'cancelled', 'rescheduled'].includes(i.status))
       .sort((a, b) => b.interviewDate.localeCompare(a.interviewDate))
