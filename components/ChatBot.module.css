@@ -45,10 +45,10 @@
 
 .chatBadge {
   position: absolute;
-  top: -8px;
+  top: -28px;
   right: -10px;
-  background: var(--black);
-  color: var(--white);
+  background: #1e293b;
+  color: #FFE500;
   font-size: 0.7rem;
   font-weight: 600;
   padding: 4px 10px;
