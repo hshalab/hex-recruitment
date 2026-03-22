@@ -116,6 +116,7 @@ export default function InterviewsPage() {
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [notesMap, setNotesMap] = useState<Record<string, string>>({})
   const [activeFilter, setActiveFilter] = useState<'today' | 'week' | 'all'>('all')
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
 
   useEffect(() => { loadInterviews() }, [])
 
@@ -491,42 +492,52 @@ export default function InterviewsPage() {
                           </div>
                         </div>
 
-                        {/* Date + location row */}
-                        <p className={styles.cardInfoRow}>
-                          <span className={styles.infoDateTime}>{formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}</span>
-                          {interview.interviewType === 'in-person' && interview.locationOrLink && (
-                            <span className={styles.infoSep}> · <a href={`https://www.google.com/maps/search/${encodeURIComponent(interview.locationOrLink)}`} target="_blank" rel="noopener noreferrer" className={styles.infoLink}>{interview.locationOrLink}</a></span>
-                          )}
-                          {interview.interviewType === 'video' && interview.meetingLink && (
-                            <span className={styles.infoSep}> · <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" className={styles.infoLink}>Join call</a></span>
-                          )}
-                        </p>
-
-                        {/* Notes — single line */}
-                        <input
-                          type="text"
-                          className={styles.notesInput}
-                          placeholder="Add notes..."
-                          value={notesMap[interview.interviewId] ?? ''}
-                          onChange={e => setNotesMap(prev => ({ ...prev, [interview.interviewId]: e.target.value }))}
-                          onBlur={e => handleNoteBlur(interview.interviewId, e.target.value)}
-                        />
-
-                        {/* Actions — 2 compact rows */}
-                        <div className={styles.cardActions}>
-                          <div className={styles.btnRow}>
-                            <button className={styles.btnSm} onClick={() => router.push(`/messages?candidate=${interview.candidateId}`)}>Message</button>
-                            <a href={`mailto:${interview.candidateEmail}`} className={styles.btnSm}>Email</a>
-                            <Link href={`/my-jobs/${interview.jobId}/applications`} className={styles.btnSm}>Apps</Link>
-                            <a href={calendarHref} target="_blank" rel="noopener noreferrer" className={`${styles.btnSm} ${styles.btnSmYellow}`}>Cal</a>
+                        {/* Bottom row: tags + actions — mirrors jobCardBottom */}
+                        <div className={styles.cardBottom}>
+                          <div className={styles.cardTags}>
+                            <span className={styles.cardTag}>{formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}</span>
+                            {interview.interviewType === 'in-person' && interview.locationOrLink && (
+                              <a href={`https://www.google.com/maps/search/${encodeURIComponent(interview.locationOrLink)}`} target="_blank" rel="noopener noreferrer" className={styles.cardTagLink}>{interview.locationOrLink}</a>
+                            )}
+                            {interview.interviewType === 'video' && interview.meetingLink && (
+                              <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" className={styles.cardTagLink}>Join call</a>
+                            )}
                           </div>
-                          <div className={styles.btnRow}>
-                            <button className={styles.btnSmDanger} onClick={() => setRescheduleTarget(interview)}>Reschedule</button>
-                            <button className={styles.btnSmDanger} onClick={() => handleCancelInterview(interview)} disabled={isCancelling}>
+                        </div>
+
+                        {/* Action links row — compact, single line */}
+                        <div className={styles.cardMeta}>
+                          <div className={styles.cardLinks}>
+                            <button className={styles.metaLink} onClick={() => router.push(`/messages?candidate=${interview.candidateId}`)}>Message</button>
+                            <span className={styles.metaDot}>·</span>
+                            <a href={`mailto:${interview.candidateEmail}`} className={styles.metaLink}>Email</a>
+                            <span className={styles.metaDot}>·</span>
+                            <Link href={`/my-jobs/${interview.jobId}/applications`} className={styles.metaLink}>Applications</Link>
+                            <span className={styles.metaDot}>·</span>
+                            <a href={calendarHref} target="_blank" rel="noopener noreferrer" className={styles.metaLink}>Calendar</a>
+                            <span className={styles.metaDot}>·</span>
+                            <button className={styles.metaLink} onClick={() => setExpandedNotes(prev => { const s = new Set(prev); s.has(interview.interviewId) ? s.delete(interview.interviewId) : s.add(interview.interviewId); return s })}>Notes</button>
+                          </div>
+                          <div className={styles.cardActions}>
+                            <button className={styles.dangerLink} onClick={() => setRescheduleTarget(interview)}>Reschedule</button>
+                            <button className={styles.dangerLink} onClick={() => handleCancelInterview(interview)} disabled={isCancelling}>
                               {isCancelling ? '...' : 'Cancel'}
                             </button>
                           </div>
                         </div>
+
+                        {/* Expandable notes */}
+                        {expandedNotes.has(interview.interviewId) && (
+                          <input
+                            type="text"
+                            className={styles.notesInput}
+                            placeholder="Add notes..."
+                            autoFocus
+                            value={notesMap[interview.interviewId] ?? ''}
+                            onChange={e => setNotesMap(prev => ({ ...prev, [interview.interviewId]: e.target.value }))}
+                            onBlur={e => handleNoteBlur(interview.interviewId, e.target.value)}
+                          />
+                        )}
 
                       </div>
                     )
@@ -559,10 +570,9 @@ export default function InterviewsPage() {
                     <div className={styles.pastBody}>
                       <span className={styles.candidateName}>{interview.candidateName}</span>
                       <p className={styles.cardJobTitle}>{interview.jobTitle}</p>
-                      <p className={styles.cardInfoRow}>
-                        <span className={styles.infoIcon}>🕐</span>
+                      <span className={styles.cardTag} style={{ display: 'inline-block', marginTop: '0.2rem' }}>
                         {formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}
-                      </p>
+                      </span>
                     </div>
                     <div className={styles.pastMeta}>
                       <span className={`${styles.pastStatusBadge} ${interview.status === 'completed' ? styles.pastCompleted : styles.pastCancelled}`}>

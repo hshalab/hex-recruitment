@@ -269,26 +269,28 @@
   font-weight: 700;
 }
 
-/* ─── Card Info Row ────────────────────────────────────────────────────── */
-.cardInfoRow {
-  font-size: 0.8rem;
-  color: #4b5563;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
+/* ─── Card Bottom (mirrors jobCardBottom) ─────────────────────────────── */
+.cardBottom { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.cardTags { display: flex; flex-wrap: wrap; gap: 0.3rem; flex: 1; }
+.cardTag { font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569; white-space: nowrap; }
+.cardTagLink { font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569; white-space: nowrap; text-decoration: none; }
+.cardTagLink:hover { background: #e2e8f0; }
 
-.infoDateTime { font-weight: 600; color: var(--text-dark); font-size: 0.8rem; }
-.infoSep { color: var(--text-gray); }
-.infoLink { color: var(--text-dark); text-decoration: underline; font-size: 0.8rem; }
-.infoLink:hover { color: var(--dark-gray); }
+/* ─── Card Meta (action links row) ────────────────────────────────────── */
+.cardMeta { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.cardLinks { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; }
+.metaLink { font-size: 0.72rem; color: #9ca3af; background: none; border: none; cursor: pointer; padding: 0; text-decoration: none; transition: color 0.15s; font-weight: 500; }
+.metaLink:hover { color: var(--text-dark); text-decoration: underline; }
+.metaDot { font-size: 0.6rem; color: #d1d5db; }
+.cardActions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.dangerLink { font-size: 0.72rem; color: #dc2626; background: none; border: none; cursor: pointer; padding: 0; font-weight: 500; transition: color 0.15s; }
+.dangerLink:hover:not(:disabled) { text-decoration: underline; }
+.dangerLink:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ─── Notes Input (single line) ───────────────────────────────────────── */
+/* ─── Expandable Notes ────────────────────────────────────────────────── */
 .notesInput {
   width: 100%;
-  padding: 0.3rem 0.625rem;
+  padding: 0.35rem 0.625rem;
   border: 1px solid var(--border-gray);
   border-radius: 6px;
   font-size: 0.78rem;
@@ -302,18 +304,13 @@
 .notesInput:focus { border-color: #9ca3af; background: var(--white); }
 .notesInput::placeholder { color: #9ca3af; }
 
-/* ─── Compact Button System ───────────────────────────────────────────── */
-.cardActions { display: flex; flex-direction: column; gap: 0.35rem; }
-
-.btnRow { display: flex; gap: 0.35rem; }
-
+/* ─── Past card button ────────────────────────────────────────────────── */
 .btnSm {
-  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.3rem 0.5rem;
-  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
   font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
@@ -322,35 +319,9 @@
   border: 1px solid var(--border-gray);
   background: var(--white);
   color: var(--text-dark);
-  transition: background 0.15s, border-color 0.15s;
-}
-.btnSm:hover { background: #f9fafb; border-color: #d1d5db; }
-
-.btnSmYellow {
-  background: var(--primary-yellow);
-  color: var(--text-dark);
-  border-color: var(--primary-yellow);
-}
-.btnSmYellow:hover { background: var(--hover-yellow); border-color: var(--hover-yellow); }
-
-.btnSmDanger {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  border: 1px solid #fca5a5;
-  background: var(--white);
-  color: #dc2626;
   transition: background 0.15s;
 }
-.btnSmDanger:hover:not(:disabled) { background: #fef2f2; }
-.btnSmDanger:disabled { opacity: 0.5; cursor: not-allowed; }
+.btnSm:hover { background: #f9fafb; }
 
 /* ─── Past Interviews ──────────────────────────────────────────────────── */
 .pastSection {
@@ -439,8 +410,8 @@
 
   .cardPhoto { width: 44px; height: 44px; }
 
-  .btnRow { flex-wrap: wrap; }
-  .btnSm { flex: 1 1 calc(50% - 0.2rem); min-width: 0; }
+  .cardLinks { gap: 0.15rem; }
+  .cardMeta { flex-wrap: wrap; }
 
   .pastMeta { flex-direction: column; align-items: flex-end; gap: 0.35rem; }
   .pastCard { flex-wrap: wrap; }
