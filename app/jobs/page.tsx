@@ -915,6 +915,10 @@ function JobsPageContent() {
             </div>
           )}
         </div>
+        <div className={styles.quickLinks}>
+          <button className={styles.filterPill} onClick={clearFilters}>Browse All Jobs</button>
+          <Link href="/jobs/recommended" className={styles.filterPill}>Jobs For You →</Link>
+        </div>
       </div>
 
       {/* Filter Strip — sticky */}

@@ -70,19 +70,6 @@
 .onboardingPct { display: block; font-size: 2rem; font-weight: 800; color: #FFE500; line-height: 1; }
 .onboardingPctLabel { font-size: 0.72rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; }
 
-/* ── Search Hero ─────────────────────────────────────── */
-.searchHero { margin-bottom: 1.5rem; }
-.searchBar { display: flex; gap: 0.5rem; }
-.searchInputWrap { flex: 1; position: relative; }
-.searchInput { width: 100%; padding: 0.7rem 1rem; border: 1px solid var(--border-gray); border-radius: 8px; font-size: 0.95rem; outline: none; box-sizing: border-box; }
-.searchInput:focus { border-color: var(--primary-yellow); }
-.searchBtn { padding: 0.7rem 1.5rem; background: var(--primary-yellow); border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 700; color: var(--text-dark); cursor: pointer; white-space: nowrap; transition: background 0.15s; }
-.searchBtn:hover { background: var(--hover-yellow); }
-.searchPills { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
-.searchPill { padding: 0.35rem 0.75rem; border: 1px solid var(--border-gray); border-radius: 999px; background: var(--white); font-size: 0.78rem; color: #374151; cursor: pointer; white-space: nowrap; transition: all 0.15s; text-decoration: none; font-weight: 500; }
-.searchPill:hover { border-color: #d1d5db; background: #f9fafb; }
-@media (max-width: 640px) { .searchBar { flex-direction: column; } .searchBtn { width: 100%; } }
-
 /* ── Grid layout ─────────────────────────────────────── */
 .grid {
   display: grid;
