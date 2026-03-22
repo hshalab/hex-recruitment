@@ -3,14 +3,14 @@
    ═══════════════════════════════════════════════════════ */
 
 .pageBackground {
-  background: #f8f9fa;
+  background: var(--light-gray);
   min-height: 100vh;
   overflow-x: hidden;
   width: 100%;
 }
 
 .dashboardWrap {
-  max-width: 1280px;
+  max-width: 1200px;
   width: 100%;
   margin: 0 auto;
   padding: 1.5rem;
@@ -26,9 +26,9 @@
   justify-content: space-between;
   padding: 1.75rem 2rem;
   background: var(--dark-gray);
-  border-radius: 16px;
+  border-radius: 12px;
   margin-bottom: 1.5rem;
-  color: #fff;
+  color: var(--white);
   overflow: hidden;
 }
 
@@ -166,14 +166,16 @@
 }
 
 .statCard {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  padding: 1.25rem;
+  background: var(--dark-gray);
+  border-radius: 10px;
+  padding: 0.75rem 1.25rem;
   position: relative;
   overflow: hidden;
   transition: all 0.2s ease;
-  border-left: 4px solid transparent;
+  border-left: 3px solid var(--primary-yellow);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .statCard:hover {
@@ -207,7 +209,7 @@
 
 .statLabel {
   font-size: 0.78rem;
-  color: var(--text-gray);
+  color: rgba(255, 255, 255, 0.65);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -232,9 +234,9 @@
 
 .statNumber {
   display: block;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 800;
-  color: var(--black);
+  color: #FFE500;
   line-height: 1.2;
 }
 
@@ -260,7 +262,7 @@
 
 /* ── Card base ───────────────────────────────────────── */
 .card {
-  background: #fff;
+  background: var(--white);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
@@ -675,7 +677,7 @@
   height: 10px;
   border-radius: 50%;
   background: #16a34a;
-  border: 2px solid #fff;
+  border: 2px solid var(--white);
 }
 
 .msgOffline {
@@ -686,7 +688,7 @@
   height: 10px;
   border-radius: 50%;
   background: #cbd5e1;
-  border: 2px solid #fff;
+  border: 2px solid var(--white);
 }
 
 .msgContent {

@@ -1,6 +1,6 @@
 /* ─── Container ─────────────────────────────────────────────────────────── */
 .container {
-  max-width: 1300px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem 1.5rem 4rem;
 }
@@ -68,12 +68,12 @@
 }
 
 .filterTab {
-  padding: 0.4rem 1rem;
+  padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  border: 1.5px solid var(--border-gray);
+  border: 1px solid var(--border-gray);
   background: transparent;
   color: var(--text-gray);
   transition: all 0.15s;
@@ -159,7 +159,7 @@
 }
 
 .interviewCard:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   border-color: #d1d5db;
 }
 
@@ -271,7 +271,7 @@
   font-size: 0.78rem;
   font-family: inherit;
   color: #374151;
-  background: #f9fafb;
+  background: var(--light-gray);
   transition: border-color 0.15s;
   box-sizing: border-box;
   outline: none;
@@ -296,7 +296,7 @@
   color: var(--text-dark);
   transition: background 0.15s;
 }
-.btnSm:hover { background: #f9fafb; }
+.btnSm:hover { background: var(--light-gray); }
 
 /* ─── Past Interviews ──────────────────────────────────────────────────── */
 .pastSection {
@@ -341,7 +341,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: #f9fafb;
+  background: var(--light-gray);
   border: 1px solid var(--border-gray);
   border-radius: 10px;
 }

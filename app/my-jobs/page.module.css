@@ -13,14 +13,14 @@
 /* ─── Filter Tabs (matches jobs filterPill exactly) ────────────────────── */
 .filterTabs { display: flex; gap: 0.35rem; margin-bottom: 1rem; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
 .filterTabs::-webkit-scrollbar { display: none; }
-.filterTab { padding: 0.35rem 0.75rem; border: 1px solid var(--border-gray); border-radius: 999px; background: white; font-size: 0.78rem; color: #374151; cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 500; }
+.filterTab { padding: 0.35rem 0.75rem; border: 1px solid var(--border-gray); border-radius: 999px; background: var(--white); font-size: 0.78rem; color: #374151; cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 500; }
 .filterTab:hover { border-color: #d1d5db; background: #f9fafb; }
-.filterTabActive { background: #1a1a1a; color: white; border-color: #1a1a1a; }
-.filterTabActive:hover { background: #1a1a1a; color: white; }
+.filterTabActive { background: var(--dark-gray); color: var(--white); border-color: var(--dark-gray); }
+.filterTabActive:hover { background: var(--dark-gray); color: var(--white); }
 .filterTabCount { font-size: 0.65rem; font-weight: 700; opacity: 0.7; }
 
 /* ─── Search Bar ───────────────────────────────────────────────────────── */
-.searchBar { display: flex; background: white; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-gray); margin-bottom: 1rem; }
+.searchBar { display: flex; background: var(--white); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-gray); margin-bottom: 1rem; }
 .searchInputGroup { flex: 1; display: flex; align-items: center; padding: 0 0.75rem; gap: 0.5rem; border-right: 1px solid var(--border-gray); }
 .searchInputGroup:last-child { border-right: none; }
 .searchIcon { color: var(--text-gray); flex-shrink: 0; }
@@ -45,7 +45,7 @@
 /* ─── Job Card Grid (matches jobs page) ────────────────────────────────── */
 .jobsList { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
 
-.jobCard { background: white; border: 1px solid var(--border-gray); border-radius: 10px; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.625rem; transition: box-shadow 0.15s, border-color 0.15s; overflow: hidden; }
+.jobCard { background: var(--white); border: 1px solid var(--border-gray); border-radius: 10px; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.625rem; transition: box-shadow 0.15s, border-color 0.15s; overflow: hidden; }
 .jobCard:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-color: #d1d5db; }
 
 /* ─── Card Header (logo 52px + info) ───────────────────────────────────── */
@@ -109,7 +109,7 @@
 
 /* Unified small button — all card actions use this */
 .viewApplicationsBtn, .viewJobBtn, .viewJobOutlineBtn, .editBtn, .boostBtn, .withdrawBtn, .archiveBtn {
-  padding: 0.3rem 0.5rem; background: white; border: 1px solid var(--border-gray); border-radius: 6px; font-size: 0.72rem; font-weight: 600; color: var(--text-dark); cursor: pointer; transition: background 0.15s, border-color 0.15s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
+  padding: 0.3rem 0.5rem; background: var(--white); border: 1px solid var(--border-gray); border-radius: 6px; font-size: 0.72rem; font-weight: 600; color: var(--text-dark); cursor: pointer; transition: background 0.15s, border-color 0.15s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
 }
 .viewApplicationsBtn:hover, .viewJobBtn:hover, .viewJobOutlineBtn:hover, .editBtn:hover, .boostBtn:hover, .withdrawBtn:hover, .archiveBtn:hover { background: #f9fafb; border-color: #d1d5db; }
 
@@ -119,13 +119,13 @@
 .boostBtnActive { background: rgba(255, 229, 0, 0.12); border-color: var(--primary-yellow); }
 
 /* Danger buttons */
-.pauseBtn, .deleteBtn { padding: 0.3rem 0.5rem; background: white; border: 1px solid #fca5a5; border-radius: 6px; font-size: 0.72rem; font-weight: 600; color: #dc2626; cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
+.pauseBtn, .deleteBtn { padding: 0.3rem 0.5rem; background: var(--white); border: 1px solid #fca5a5; border-radius: 6px; font-size: 0.72rem; font-weight: 600; color: #dc2626; cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
 .pauseBtn:hover, .deleteBtn:hover { background: #fef2f2; }
 .pauseBtn { border-color: #fed7aa; color: #b45309; }
 .pauseBtn:hover { background: #fff7ed; }
 
 /* Activate (green) */
-.activateBtn { padding: 0.3rem 0.5rem; background: white; border: 1px solid #86efac; border-radius: 6px; font-size: 0.72rem; font-weight: 600; color: #16a34a; cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
+.activateBtn { padding: 0.3rem 0.5rem; background: var(--white); border: 1px solid #86efac; border-radius: 6px; font-size: 0.72rem; font-weight: 600; color: #16a34a; cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
 .activateBtn:hover { background: #f0fdf4; }
 
 /* Boost status bar */
