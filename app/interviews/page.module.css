@@ -175,11 +175,11 @@
 .interviewCard {
   background: var(--white);
   border: 1px solid var(--border-gray);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.625rem;
   transition: box-shadow 0.15s, border-color 0.15s;
 }
 
@@ -269,136 +269,88 @@
   font-weight: 700;
 }
 
-/* ─── Card Details ─────────────────────────────────────────────────────── */
-.cardDetails {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
+/* ─── Card Info Row ────────────────────────────────────────────────────── */
 .cardInfoRow {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: #4b5563;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.25rem;
+  flex-wrap: wrap;
 }
 
-.infoIcon { font-size: 0.82rem; flex-shrink: 0; }
-
-.infoLink {
-  color: var(--text-dark);
-  text-decoration: underline;
-  font-size: 0.82rem;
-}
-
+.infoDateTime { font-weight: 600; color: var(--text-dark); font-size: 0.8rem; }
+.infoSep { color: var(--text-gray); }
+.infoLink { color: var(--text-dark); text-decoration: underline; font-size: 0.8rem; }
 .infoLink:hover { color: var(--dark-gray); }
 
-.infoMuted { color: #9ca3af; font-style: italic; }
-
-.infoDateTime {
-  font-weight: 700;
-  color: var(--text-dark);
-}
-
-/* ─── Notes ────────────────────────────────────────────────────────────── */
-.notesArea {
+/* ─── Notes Input (single line) ───────────────────────────────────────── */
+.notesInput {
   width: 100%;
-  padding: 0.4rem 0.625rem;
+  padding: 0.3rem 0.625rem;
   border: 1px solid var(--border-gray);
-  border-radius: 8px;
-  font-size: 0.82rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
   font-family: inherit;
   color: #374151;
-  resize: none;
   background: #f9fafb;
   transition: border-color 0.15s;
   box-sizing: border-box;
-}
-
-.notesArea:focus {
   outline: none;
-  border-color: #9ca3af;
-  background: var(--white);
 }
+.notesInput:focus { border-color: #9ca3af; background: var(--white); }
+.notesInput::placeholder { color: #9ca3af; }
 
-.notesArea::placeholder { color: #9ca3af; }
+/* ─── Compact Button System ───────────────────────────────────────────── */
+.cardActions { display: flex; flex-direction: column; gap: 0.35rem; }
 
-/* ─── Button System ────────────────────────────────────────────────────── */
-.btnNavy,
-.btnYellow,
-.btnRedOutline {
+.btnRow { display: flex; gap: 0.35rem; }
+
+.btnSm {
+  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.45rem 0.875rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s, border-color 0.15s;
   white-space: nowrap;
-  flex: 1;
-  border: none;
+  border: 1px solid var(--border-gray);
+  background: var(--white);
+  color: var(--text-dark);
+  transition: background 0.15s, border-color 0.15s;
 }
+.btnSm:hover { background: #f9fafb; border-color: #d1d5db; }
 
-.btnRow { display: flex; gap: 0.5rem; flex-wrap: nowrap; }
-
-.btnNavy {
-  background: var(--dark-gray);
-  color: var(--white);
-  border: none;
-}
-
-.btnNavy:hover { background: #1e293b; }
-
-.btnYellow {
+.btnSmYellow {
   background: var(--primary-yellow);
   color: var(--text-dark);
-  border: none;
+  border-color: var(--primary-yellow);
 }
+.btnSmYellow:hover { background: var(--hover-yellow); border-color: var(--hover-yellow); }
 
-.btnYellow:hover { background: var(--hover-yellow); }
-
-.btnRedOutline {
-  background: var(--white);
-  color: #dc2626;
-  border: 1.5px solid #dc2626;
-  font-size: 0.75rem;
-  padding: 0.35rem 0.75rem;
-}
-
-.btnRedOutline:hover:not(:disabled) { background: #fef2f2; }
-.btnRedOutline:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.btnOutline {
-  background: transparent;
-  color: var(--dark-gray);
-  border: 1.5px solid var(--border-gray);
+.btnSmDanger {
+  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.45rem 0.875rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
   font-weight: 600;
   cursor: pointer;
-  text-decoration: none;
-  transition: border-color 0.15s;
   white-space: nowrap;
-  width: 100%;
+  border: 1px solid #fca5a5;
+  background: var(--white);
+  color: #dc2626;
+  transition: background 0.15s;
 }
-
-.btnOutline:hover { border-color: var(--dark-gray); color: var(--text-dark); }
-
-.btnFullWidth {
-  flex: unset;
-  width: 100%;
-  text-align: center;
-  justify-content: center;
-}
+.btnSmDanger:hover:not(:disabled) { background: #fef2f2; }
+.btnSmDanger:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ─── Past Interviews ──────────────────────────────────────────────────── */
 .pastSection {
@@ -488,12 +440,7 @@
   .cardPhoto { width: 44px; height: 44px; }
 
   .btnRow { flex-wrap: wrap; }
-  .btnNavy,
-  .btnYellow,
-  .btnRedOutline {
-    flex: 1 1 calc(50% - 0.2rem);
-    min-width: 0;
-  }
+  .btnSm { flex: 1 1 calc(50% - 0.2rem); min-width: 0; }
 
   .pastMeta { flex-direction: column; align-items: flex-end; gap: 0.35rem; }
   .pastCard { flex-wrap: wrap; }

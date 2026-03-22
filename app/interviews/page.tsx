@@ -491,105 +491,41 @@ export default function InterviewsPage() {
                           </div>
                         </div>
 
-                        {/* Card Details */}
-                        <div className={styles.cardDetails}>
-
-                          {/* Date + time + duration */}
-                          <p className={styles.cardInfoRow}>
-                            <span className={styles.infoIcon}>🕐</span>
-                            <span className={styles.infoDateTime}>{formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}</span>
-                          </p>
-
-                          {/* Phone */}
-                          {interview.candidatePhone && (
-                            <p className={styles.cardInfoRow}>
-                              <span className={styles.infoIcon}>📞</span>
-                              <a href={`tel:${interview.candidatePhone}`} className={styles.infoLink}>{interview.candidatePhone}</a>
-                            </p>
-                          )}
-
-                          {/* Location / video link */}
+                        {/* Date + location row */}
+                        <p className={styles.cardInfoRow}>
+                          <span className={styles.infoDateTime}>{formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}</span>
                           {interview.interviewType === 'in-person' && interview.locationOrLink && (
-                            <p className={styles.cardInfoRow}>
-                              <span className={styles.infoIcon}>📍</span>
-                              <a
-                                href={`https://www.google.com/maps/search/${encodeURIComponent(interview.locationOrLink)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={styles.infoLink}
-                              >
-                                {interview.locationOrLink}
-                              </a>
-                            </p>
+                            <span className={styles.infoSep}> · <a href={`https://www.google.com/maps/search/${encodeURIComponent(interview.locationOrLink)}`} target="_blank" rel="noopener noreferrer" className={styles.infoLink}>{interview.locationOrLink}</a></span>
                           )}
                           {interview.interviewType === 'video' && interview.meetingLink && (
-                            <p className={styles.cardInfoRow}>
-                              <span className={styles.infoIcon}>🎥</span>
-                              <a
-                                href={interview.meetingLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={styles.infoLink}
-                              >
-                                Join Video Call
-                              </a>
-                            </p>
+                            <span className={styles.infoSep}> · <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" className={styles.infoLink}>Join call</a></span>
                           )}
+                        </p>
 
-                          {/* Inline notes */}
-                          <textarea
-                            className={styles.notesArea}
-                            rows={2}
-                            placeholder="Add notes..."
-                            value={notesMap[interview.interviewId] ?? ''}
-                            onChange={e => setNotesMap(prev => ({ ...prev, [interview.interviewId]: e.target.value }))}
-                            onBlur={e => handleNoteBlur(interview.interviewId, e.target.value)}
-                          />
-                        </div>
+                        {/* Notes — single line */}
+                        <input
+                          type="text"
+                          className={styles.notesInput}
+                          placeholder="Add notes..."
+                          value={notesMap[interview.interviewId] ?? ''}
+                          onChange={e => setNotesMap(prev => ({ ...prev, [interview.interviewId]: e.target.value }))}
+                          onBlur={e => handleNoteBlur(interview.interviewId, e.target.value)}
+                        />
 
-                        {/* Actions Row 1: Message + Email */}
-                        <div className={styles.btnRow}>
-                          <button
-                            className={styles.btnNavy}
-                            onClick={() => router.push(`/messages?candidate=${interview.candidateId}`)}
-                          >
-                            Message
-                          </button>
-                          <a href={`mailto:${interview.candidateEmail}`} className={styles.btnNavy}>
-                            Email
-                          </a>
-                        </div>
-
-                        {/* Actions Row 2: View Application */}
-                        <Link
-                          href={`/my-jobs/${interview.jobId}/applications`}
-                          className={styles.btnOutline}
-                        >
-                          View Application
-                        </Link>
-
-                        {/* Actions Row 3: Calendar */}
-                        <a
-                          href={calendarHref}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`${styles.btnYellow} ${styles.btnFullWidth}`}
-                        >
-                          Google Calendar
-                        </a>
-
-                        {/* Actions Row 4: Reschedule + Cancel */}
-                        <div className={styles.btnRow}>
-                          <button className={styles.btnRedOutline} onClick={() => setRescheduleTarget(interview)}>
-                            Reschedule
-                          </button>
-                          <button
-                            className={styles.btnRedOutline}
-                            onClick={() => handleCancelInterview(interview)}
-                            disabled={isCancelling}
-                          >
-                            {isCancelling ? 'Cancelling...' : 'Cancel'}
-                          </button>
+                        {/* Actions — 2 compact rows */}
+                        <div className={styles.cardActions}>
+                          <div className={styles.btnRow}>
+                            <button className={styles.btnSm} onClick={() => router.push(`/messages?candidate=${interview.candidateId}`)}>Message</button>
+                            <a href={`mailto:${interview.candidateEmail}`} className={styles.btnSm}>Email</a>
+                            <Link href={`/my-jobs/${interview.jobId}/applications`} className={styles.btnSm}>Apps</Link>
+                            <a href={calendarHref} target="_blank" rel="noopener noreferrer" className={`${styles.btnSm} ${styles.btnSmYellow}`}>Cal</a>
+                          </div>
+                          <div className={styles.btnRow}>
+                            <button className={styles.btnSmDanger} onClick={() => setRescheduleTarget(interview)}>Reschedule</button>
+                            <button className={styles.btnSmDanger} onClick={() => handleCancelInterview(interview)} disabled={isCancelling}>
+                              {isCancelling ? '...' : 'Cancel'}
+                            </button>
+                          </div>
                         </div>
 
                       </div>
@@ -632,7 +568,7 @@ export default function InterviewsPage() {
                       <span className={`${styles.pastStatusBadge} ${interview.status === 'completed' ? styles.pastCompleted : styles.pastCancelled}`}>
                         {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
                       </span>
-                      <Link href={`/my-jobs/${interview.jobId}/applications`} className={styles.btnNavy} style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}>
+                      <Link href={`/my-jobs/${interview.jobId}/applications`} className={styles.btnSm}>
                         View Application
                       </Link>
                     </div>
