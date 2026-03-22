@@ -539,19 +539,12 @@ function JobsPageContent() {
     })
   }, [jobs, searchQuery, debouncedLocationQuery, locationCoords, locationRadius, jobCoords, activeCategory, filters, boostedJobIds, quickWorkStyle, quickExperienceLevel])
 
-  // Auto-select first job on desktop when filtered jobs change
+  // Clear selection if selected job is no longer in filtered results
   useEffect(() => {
-    if (isMobile) return
-    if (filteredJobs.length > 0 && !searchParams.get('id')) {
-      setSelectedJob(prev => {
-        // Keep current selection if it's still in the filtered list
-        if (prev && filteredJobs.some(j => j.id === prev.id)) return prev
-        return filteredJobs[0]
-      })
-    } else if (filteredJobs.length === 0) {
+    if (selectedJob && filteredJobs.length > 0 && !filteredJobs.some(j => j.id === selectedJob.id)) {
       setSelectedJob(null)
     }
-  }, [filteredJobs, isMobile, searchParams])
+  }, [filteredJobs])
 
   // Track impressions when search results change (once per result set)
   const lastTrackedQuery = useRef<string>('')
@@ -578,24 +571,8 @@ function JobsPageContent() {
       viewIncrementedForRef.current = job.id
       supabase.rpc('increment_job_views', { p_job_id: job.id })
     }
-    if (isMobile) {
-      // Mobile: check auth then open modal
-      let loggedIn = isLoggedIn
-      if (loggedIn === null) {
-        const { data: { session } } = await supabase.auth.getSession()
-        loggedIn = !!session
-        setIsLoggedIn(loggedIn)
-      }
-      if (!loggedIn) {
-        router.push(`/login/employee?redirect=${encodeURIComponent(`/jobs?id=${job.id}`)}`)
-        return
-      }
-      setSelectedJob(job)
-      router.push(`/jobs?id=${job.id}`, { scroll: false })
-    } else {
-      // Desktop: just select in the side panel
-      setSelectedJob(job)
-    }
+    setSelectedJob(job)
+    router.push(`/jobs?id=${job.id}`, { scroll: false })
   }
 
   const closeJobModal = () => {
@@ -608,11 +585,7 @@ function JobsPageContent() {
     const currentIndex = filteredJobs.findIndex(j => j.id === selectedJob.id)
     const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1
     if (newIndex >= 0 && newIndex < filteredJobs.length) {
-      const newJob = filteredJobs[newIndex]
-      setSelectedJob(newJob)
-      if (isMobile) {
-        router.push(`/jobs?id=${newJob.id}`, { scroll: false })
-      }
+      setSelectedJob(filteredJobs[newIndex])
     }
   }
 
@@ -847,188 +820,178 @@ function JobsPageContent() {
     return tagStyles[index % tagStyles.length]
   }
 
+  // Candidate personalisation
+  const [candidatePrefs, setCandidatePrefs] = useState<{ sector?: string; jobTypes?: string[]; workPrefs?: string[] } | null>(null)
+  const [prefsBannerDismissed, setPrefsBannerDismissed] = useState(false)
+
+  useEffect(() => {
+    if (currentUserRole !== 'employee') return
+    const dismissed = sessionStorage.getItem('hex_prefs_banner_dismissed')
+    if (dismissed) setPrefsBannerDismissed(true)
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      supabase.from('candidate_profiles')
+        .select('job_sector, preferred_job_types, work_location_preferences')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            setCandidatePrefs({
+              sector: data.job_sector || undefined,
+              jobTypes: data.preferred_job_types || [],
+              workPrefs: data.work_location_preferences || [],
+            })
+            // Pre-set filters from profile (only if user hasn't manually set them)
+            if (!quickWorkStyle && data.work_location_preferences?.length > 0) {
+              const wp = data.work_location_preferences[0]
+              if (['Remote', 'Hybrid', 'On-site'].includes(wp)) setQuickWorkStyle(wp)
+            }
+            if (activeCategory === 'all' && data.job_sector) {
+              const match = categories.find(c => c.id === data.job_sector)
+              if (match) setActiveCategory(match.id)
+            }
+          }
+        })
+    })
+  }, [currentUserRole])
+
+  const dismissPrefsBanner = () => {
+    setPrefsBannerDismissed(true)
+    sessionStorage.setItem('hex_prefs_banner_dismissed', '1')
+  }
+
   return (
-    <main style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+    <main>
       <Header />
 
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>
-          {currentUserRole === 'employer' ? 'Browse Job Listings' : 'Find Your Next Role'}
-        </h1>
-        <p className={styles.pageSubtitle}>
-          {currentUserRole === 'employer'
-            ? 'See what other companies are advertising across the UK'
-            : 'Thousands of jobs across all sectors in the UK'}
-        </p>
-      </div>
-
-      {/* Quick Filters — work style pills + experience dropdown */}
-      <div className={styles.quickFilters}>
-        <div className={styles.quickFiltersInner}>
-          <div className={styles.workStylePills}>
-            {(['Remote', 'Hybrid', 'On-site'] as const).map(ws => (
-              <button
-                key={ws}
-                className={`${styles.workStylePill} ${quickWorkStyle === ws ? styles.workStylePillActive : ''}`}
-                onClick={() => setQuickWorkStyle(quickWorkStyle === ws ? null : ws)}
-              >
-                {ws === 'Remote' && '🌐 '}
-                {ws === 'Hybrid' && '🏠 '}
-                {ws === 'On-site' && '🏢 '}
-                {ws}
-              </button>
-            ))}
+      {/* Search Section */}
+      <div className={styles.searchSection}>
+        <div className={styles.searchInner}>
+          <h1 className={styles.pageTitle}>
+            {currentUserRole === 'employer' ? 'Browse Job Listings' : 'Find Your Next Role'}
+          </h1>
+          <div className={styles.searchBar}>
+            <div className={styles.searchInputWrap}>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Job title or keyword"
+                className={styles.searchInput}
+              />
+              {searchQuery && (
+                <button className={styles.searchClear} onClick={() => setSearchQuery('')}>✕</button>
+              )}
+            </div>
+            <div className={styles.searchInputWrap}>
+              <input
+                type="text"
+                value={locationQuery}
+                onChange={e => {
+                  setLocationQuery(e.target.value)
+                  if (!e.target.value) { setLocationRadius(null); setLocationCoords(null) }
+                }}
+                placeholder="City, town or postcode"
+                className={styles.searchInput}
+              />
+              {geocodingLocation && <span className={styles.searchSpinner} />}
+              {locationQuery && !geocodingLocation && (
+                <button className={styles.searchClear} onClick={() => { setLocationQuery(''); setLocationRadius(null); setLocationCoords(null) }}>✕</button>
+              )}
+            </div>
           </div>
-          <select
-            value={quickExperienceLevel}
-            onChange={e => setQuickExperienceLevel(e.target.value)}
-            className={`${styles.experienceSelect} ${quickExperienceLevel ? styles.experienceSelectActive : ''}`}
-          >
-            <option value="">Experience level</option>
-            <option value="No experience required">No experience required</option>
-            <option value="Entry level">Entry level</option>
-            <option value="Mid level">Mid level</option>
-            <option value="Senior level">Senior level</option>
-            <option value="Management">Management</option>
-          </select>
-          {(quickWorkStyle || quickExperienceLevel) && (
-            <button
-              className={styles.quickFiltersClear}
-              onClick={() => { setQuickWorkStyle(null); setQuickExperienceLevel('') }}
-            >
-              Clear
-            </button>
+          {locationQuery && (
+            <div className={styles.radiusOptions}>
+              {([null, 10, 25, 50] as const).map(r => (
+                <button
+                  key={r ?? 'any'}
+                  className={`${styles.filterPill} ${locationRadius === r ? styles.filterPillActive : ''}`}
+                  onClick={() => setLocationRadius(r)}
+                >
+                  {r === null ? 'Any distance' : `Within ${r} mi`}
+                </button>
+              ))}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Category Pills - Collapsible */}
-      <section className={styles.categoriesSection}>
-        <div className={styles.categoriesInner}>
-          <div className={styles.categoriesHeader}>
+      {/* Filter Strip — sticky */}
+      <div className={styles.filterStrip}>
+        <div className={styles.filterStripInner}>
+          <div className={styles.filterStripLeft}>
+            {(['Remote', 'Hybrid', 'On-site'] as const).map(ws => (
+              <button
+                key={ws}
+                className={`${styles.filterPill} ${quickWorkStyle === ws ? styles.filterPillActive : ''}`}
+                onClick={() => setQuickWorkStyle(quickWorkStyle === ws ? null : ws)}
+              >
+                {ws === 'Remote' && '🌐 '}{ws === 'Hybrid' && '🏠 '}{ws === 'On-site' && '🏢 '}{ws}
+              </button>
+            ))}
+            <select
+              value={quickExperienceLevel}
+              onChange={e => setQuickExperienceLevel(e.target.value)}
+              className={`${styles.filterSelect} ${quickExperienceLevel ? styles.filterSelectActive : ''}`}
+            >
+              <option value="">Experience level</option>
+              <option value="No experience required">No experience</option>
+              <option value="Entry level">Entry level</option>
+              <option value="Mid level">Mid level</option>
+              <option value="Senior level">Senior level</option>
+              <option value="Management">Management</option>
+            </select>
             <button
-              className={styles.sectorsToggle}
+              className={`${styles.filterPill} ${sectorsExpanded ? styles.filterPillActive : ''}`}
               onClick={() => setSectorsExpanded(!sectorsExpanded)}
             >
-              Job Sectors
-              {activeCategory !== 'all' && (
-                <span className={styles.activeSectorLabel}>
-                  {categories.find(c => c.id === activeCategory)?.label}
-                </span>
-              )}
-              <span className={`${styles.chevron} ${sectorsExpanded ? styles.chevronUp : ''}`}>&#9662;</span>
+              Sectors {activeCategory !== 'all' ? `· ${categories.find(c => c.id === activeCategory)?.label}` : ''} ▾
             </button>
-            {activeCategory !== 'all' && !sectorsExpanded && (
-              <button
-                className={styles.clearSectorBtn}
-                onClick={() => setActiveCategory('all')}
-              >
-                Clear
-              </button>
+            <button
+              className={`${styles.filterPill} ${filtersExpanded ? styles.filterPillActive : ''}`}
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+            >
+              More filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''} ▾
+            </button>
+          </div>
+          <div className={styles.filterStripRight}>
+            <span className={styles.jobCount}>{filteredJobs.length} jobs</span>
+            {(activeFilterCount > 0 || searchQuery || locationQuery || activeCategory !== 'all' || quickWorkStyle || quickExperienceLevel) && (
+              <button className={styles.clearFiltersBtn} onClick={clearFilters}>Clear filters</button>
             )}
           </div>
-          <div className={`${styles.categoriesCollapsible} ${sectorsExpanded ? styles.categoriesExpanded : ''}`}>
-            <div className={styles.categoriesWrap}>
+        </div>
+
+        {/* Sectors Panel */}
+        {sectorsExpanded && (
+          <div className={styles.filterPanel}>
+            <div className={styles.filterPanelInner}>
               {categories.map(category => (
                 <button
                   key={category.id}
-                  className={`${styles.categoryPill} ${activeCategory === category.id ? styles.categoryPillActive : ''}`}
-                  onClick={() => setActiveCategory(category.id)}
+                  className={`${styles.filterPill} ${activeCategory === category.id ? styles.filterPillActive : ''}`}
+                  onClick={() => { setActiveCategory(category.id); setSectorsExpanded(false) }}
                 >
                   {category.label}
                 </button>
               ))}
             </div>
           </div>
+        )}
 
-          <div className={styles.filtersDivider} />
-
-          <div className={styles.categoriesHeader}>
-            <button
-              className={styles.sectorsToggle}
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-            >
-              Filters{activeFilterCount > 0 && ` (${activeFilterCount})`}
-              <span className={`${styles.chevron} ${filtersExpanded ? styles.chevronUp : ''}`}>&#9662;</span>
-            </button>
-            {activeFilterCount > 0 && !filtersExpanded && (
-              <button
-                className={styles.clearSectorBtn}
-                onClick={clearFilters}
-              >
-                Clear all
-              </button>
-            )}
-          </div>
-          <div className={`${styles.categoriesCollapsible} ${filtersExpanded ? styles.categoriesExpanded : ''}`}>
-            <div className={styles.filtersPanel}>
-              {/* Keyword Search */}
-              <div className={styles.filterSection}>
-                <h4 className={styles.filterSectionTitle}>Keyword Search</h4>
-                <div className={styles.locationInputWrapper}>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search by job title or keyword"
-                    className={styles.locationInput}
-                  />
-                  {searchQuery && (
-                    <button
-                      className={styles.locationClear}
-                      onClick={() => setSearchQuery('')}
-                      aria-label="Clear search"
-                    >✕</button>
-                  )}
-                </div>
-              </div>
-
-              {/* Location Filter */}
-              <div className={`${styles.filterSection} ${styles.locationFilterSection}`}>
-                <h4 className={styles.filterSectionTitle}>Location</h4>
-                <div className={styles.locationInputWrapper}>
-                  <input
-                    type="text"
-                    value={locationQuery}
-                    onChange={e => {
-                      setLocationQuery(e.target.value)
-                      if (!e.target.value) { setLocationRadius(null); setLocationCoords(null) }
-                    }}
-                    placeholder="City, town or postcode"
-                    className={styles.locationInput}
-                  />
-                  {geocodingLocation && <span className={styles.locationSpinner} />}
-                  {locationQuery && !geocodingLocation && (
-                    <button
-                      className={styles.locationClear}
-                      onClick={() => { setLocationQuery(''); setLocationRadius(null); setLocationCoords(null) }}
-                      aria-label="Clear location"
-                    >✕</button>
-                  )}
-                </div>
-                {locationQuery && (
-                  <div className={styles.radiusOptions}>
-                    {([null, 10, 25, 50] as const).map(r => (
-                      <button
-                        key={r ?? 'any'}
-                        className={`${styles.categoryPill} ${locationRadius === r ? styles.categoryPillActive : ''}`}
-                        onClick={() => setLocationRadius(r)}
-                      >
-                        {r === null ? 'Any distance' : `Within ${r} mi`}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
+        {/* Filters Panel */}
+        {filtersExpanded && (
+          <div className={styles.filterPanel}>
+            <div className={styles.filterPanelInner}>
               {filterSections.map(section => (
-                <div key={section.key} className={styles.filterSection}>
-                  <h4 className={styles.filterSectionTitle}>{section.title}</h4>
-                  <div className={styles.filterOptions}>
+                <div key={section.key} className={styles.filterGroup}>
+                  <h4 className={styles.filterGroupTitle}>{section.title}</h4>
+                  <div className={styles.filterGroupOptions}>
                     {section.options.map(option => (
                       <button
                         key={option}
-                        className={`${styles.categoryPill} ${filters[section.key].has(option) ? styles.categoryPillActive : ''}`}
+                        className={`${styles.filterPill} ${filters[section.key].has(option) ? styles.filterPillActive : ''}`}
                         onClick={() => toggleFilter(section.key, option)}
                       >
                         {option}
@@ -1037,242 +1000,76 @@ function JobsPageContent() {
                   </div>
                 </div>
               ))}
-              {(activeFilterCount > 0 || searchQuery || locationQuery || activeCategory !== 'all') && (
-                <button className={styles.clearAllBtn} onClick={clearFilters}>
-                  Clear all filters
-                </button>
-              )}
             </div>
           </div>
+        )}
+      </div>
+
+      {/* Personalisation Banner */}
+      {candidatePrefs && !prefsBannerDismissed && (activeCategory !== 'all' || quickWorkStyle) && (
+        <div className={styles.prefsBanner}>
+          <span>Showing jobs matching your profile</span>
+          <Link href="/settings/profile" className={styles.prefsBannerLink}>Edit preferences</Link>
+          <button className={styles.prefsBannerClose} onClick={dismissPrefsBanner}>✕</button>
         </div>
-      </section>
+      )}
 
-      {/* Main Content */}
-      <div className={styles.container}>
-        <p className={styles.jobCount}>
-          <span className={styles.jobCountHighlight}>{filteredJobs.length}</span> jobs found
-          {activeCategory !== 'all' && ` in ${categories.find(c => c.id === activeCategory)?.label}`}
-          {debouncedLocationQuery && ` in "${debouncedLocationQuery}"`}
-        </p>
-
+      {/* Job Card Grid */}
+      <div className={styles.jobsContainer}>
         {filteredJobs.length > 0 ? (
-          <div className={styles.splitLayout}>
-            {/* LEFT PANEL - Job List */}
-            <div className={styles.jobListPanel} ref={listRef}>
-              {filteredJobs.map(job => (
-                <div
-                  key={job.id}
-                  className={`${styles.listCard} ${selectedJob?.id === job.id ? styles.listCardActive : ''} ${boostedJobIds.has(job.id) ? styles.listCardBoosted : ''}`}
-                  onClick={() => selectJob(job)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && selectJob(job)}
-                >
-                  <div className={styles.listCardLogo}>
-                    <CompanyLogo
-                      src={job.companyLogo}
-                      alt={job.company}
-                      className={styles.listCardLogoImg}
-                    />
+          <div className={styles.jobsGrid} ref={listRef}>
+            {filteredJobs.map(job => (
+              <div
+                key={job.id}
+                className={`${styles.jobCard} ${boostedJobIds.has(job.id) ? styles.jobCardBoosted : ''}`}
+                onClick={() => selectJob(job)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && selectJob(job)}
+              >
+                <div className={styles.jobCardTop}>
+                  <div className={styles.jobCardLogo}>
+                    <CompanyLogo src={job.companyLogo} alt={job.company} className={styles.jobCardLogoImg} />
                   </div>
-                  <div className={styles.listCardContent}>
-                    <h3 className={styles.listCardTitle}>{job.title}</h3>
-                    <p className={styles.listCardCompany}>{job.company}</p>
-                    <p className={styles.listCardLocation}>{job.location}{job.area ? `, ${job.area}` : ''}</p>
-                    <p className={styles.listCardSalary}>{formatSalary(job)}</p>
+                  <div className={styles.jobCardInfo}>
+                    <h3 className={styles.jobCardTitle}>{job.title}</h3>
+                    <p className={styles.jobCardCompany}>{job.company} · {job.location}{job.area ? `, ${job.area}` : ''}</p>
+                    <p className={styles.jobCardSalary}>{formatSalary(job)}</p>
+                  </div>
+                </div>
+                <div className={styles.jobCardBottom}>
+                  <div className={styles.jobCardTags}>
+                    {Array.isArray(job.employmentType)
+                      ? job.employmentType.slice(0, 2).map((t, i) => <span key={i} className={styles.jobCardTag}>{t}</span>)
+                      : job.employmentType && <span className={styles.jobCardTag}>{job.employmentType}</span>
+                    }
+                    {job.workLocationType && <span className={styles.jobCardTag}>{job.workLocationType}</span>}
+                    {job.urgent && <span className={`${styles.jobCardTag} ${styles.jobCardTagUrgent}`}>Urgent</span>}
+                    {boostedJobIds.has(job.id) && <span className={styles.jobCardFeatured}>⚡ Featured</span>}
+                  </div>
+                  <div className={styles.jobCardMeta}>
+                    <span className={styles.jobCardPosted}>{job.postedAt}</span>
                     {job.expiresDate && (() => {
                       const daysLeft = Math.ceil((new Date(job.expiresDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
                       if (daysLeft <= 7 && daysLeft >= 0) {
-                        return <p className={styles.listCardExpiry}>⏰ Closes in {daysLeft === 0 ? 'today' : `${daysLeft} day${daysLeft === 1 ? '' : 's'}`}</p>
+                        return <span className={styles.jobCardExpiry}>⏰ {daysLeft === 0 ? 'Closes today' : `${daysLeft}d left`}</span>
                       }
                       return null
                     })()}
-                  </div>
-                  {boostedJobIds.has(job.id) && (
-                    <span className={styles.listCardFeaturedBadge}>⚡ Featured</span>
-                  )}
-                  {shortlistedJobIds.has(job.id) && (
-                    <span className={styles.listCardStamp}>SHORTLISTED</span>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* RIGHT PANEL - Job Detail (desktop only) */}
-            {!isMobile && selectedJob && (
-              <div className={styles.detailPanel}>
-                <JobPostingSchema job={selectedJob} />
-                <div className={styles.detailInner}>
-
-                  {/* Banner — only show if a dedicated banner image exists */}
-                  {selectedJob.companyBanner && (
-                    <div className={styles.detailBanner}>
-                      <img
-                        src={selectedJob.companyBanner}
-                        alt={selectedJob.company}
-                        className={styles.detailBannerImg}
-                      />
-                    </div>
-                  )}
-
-                  {/* Header */}
-                  <div className={styles.detailHeader}>
-                    <h1 className={styles.detailTitle}>{selectedJob.title}</h1>
-                    <p className={styles.detailCompany}>{selectedJob.company}</p>
-                    {selectedJob.companyWebsite && (
-                      <a
-                        href={selectedJob.companyWebsite.startsWith('http') ? selectedJob.companyWebsite : `https://${selectedJob.companyWebsite}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.detailWebsite}
-                      >
-                        🌐 {selectedJob.companyWebsite.replace(/^https?:\/\//, '')}
-                      </a>
-                    )}
-                    <a
-                      href={getGoogleMapsUrl(selectedJob)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.detailLocation}
-                    >
-                      📍 {selectedJob.fullLocation?.addressLine1
-                        ? `${selectedJob.fullLocation.addressLine1}, ${selectedJob.fullLocation.city} ${selectedJob.fullLocation.postcode}`
-                        : `${selectedJob.location}, ${selectedJob.area}`}
-                    </a>
-                    <p className={styles.detailSalary}>{formatSalaryFull(selectedJob)}</p>
-                    {selectedJob.expiresDate && (() => {
-                      const daysLeft = Math.ceil((new Date(selectedJob.expiresDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                      if (daysLeft <= 7 && daysLeft >= 0) {
-                        return <p className={styles.detailExpiry}>⏰ Closes in {daysLeft === 0 ? 'today' : `${daysLeft} day${daysLeft === 1 ? '' : 's'}`}</p>
-                      }
-                      return null
-                    })()}
-                    <div className={styles.detailBadges}>
-                      {Array.isArray(selectedJob.employmentType)
-                        ? selectedJob.employmentType.map((type, i) => (
-                            <span key={i} className={styles.detailBadge}>{type}</span>
-                          ))
-                        : selectedJob.employmentType && <span className={styles.detailBadge}>{selectedJob.employmentType}</span>
-                      }
-                      {selectedJob.urgent && <span className={`${styles.detailBadge} ${styles.detailBadgeUrgent}`}>Urgent</span>}
-                    </div>
-                    {selectedJob.tags && selectedJob.tags.length > 0 && (
-                      <div className={styles.detailTags}>
-                        {selectedJob.tags.map(tag => {
-                          const cat = getTagCategory(tag)
-                          return (
-                            <span key={tag} className={`${styles.detailTag} ${cat ? styles[`detailTag_${cat}`] : ''}`}>
-                              {tag}
-                            </span>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className={styles.detailActions}>
                     <button
-                      className={`${styles.detailApplyBtn} ${hasApplied ? styles.detailAppliedBtn : ''}`}
-                      onClick={handleApply}
-                      disabled={hasApplied || checkingApplied}
+                      className={`${styles.jobCardSave} ${isSaved(job.id) ? styles.jobCardSaved : ''}`}
+                      onClick={(e) => { e.stopPropagation(); if (!isSaved(job.id)) trackClickEvent(job.id, 'save_click'); toggleSave(job.id) }}
+                      aria-label={isSaved(job.id) ? 'Unsave job' : 'Save job'}
                     >
-                      {checkingApplied ? 'Checking...' : hasApplied ? 'Applied ✓' : 'Apply Now'}
-                    </button>
-                    <button
-                      className={`${styles.detailSaveBtn} ${isSaved(selectedJob.id) ? styles.detailSavedBtn : ''}`}
-                      onClick={() => { if (!isSaved(selectedJob.id)) trackClickEvent(selectedJob.id, 'save_click'); toggleSave(selectedJob.id) }}
-                    >
-                      {isSaved(selectedJob.id) ? 'Saved \u2713' : 'Save Job'}
+                      {isSaved(job.id) ? '★' : '☆'}
                     </button>
                   </div>
-
-                  {/* Details Grid */}
-                  <div className={styles.detailSection}>
-                    <h2 className={styles.detailSectionTitle}>Job Details</h2>
-                    <div className={styles.detailGrid}>
-                      <div className={styles.detailGridItem}>
-                        <span className={styles.detailGridLabel}>Pay</span>
-                        <span className={styles.detailGridValue}>{formatSalaryFull(selectedJob)}</span>
-                      </div>
-                      <div className={styles.detailGridItem}>
-                        <span className={styles.detailGridLabel}>Job type</span>
-                        <span className={styles.detailGridValue}>
-                          {Array.isArray(selectedJob.employmentType) ? selectedJob.employmentType.join(', ') : selectedJob.employmentType || 'Not specified'}
-                        </span>
-                      </div>
-                      <div className={styles.detailGridItem}>
-                        <span className={styles.detailGridLabel}>Shift & schedule</span>
-                        <span className={styles.detailGridValue}>{selectedJob.shiftSchedule || 'Not specified'}</span>
-                      </div>
-                      <div className={styles.detailGridItem}>
-                        <span className={styles.detailGridLabel}>Work location</span>
-                        <span className={styles.detailGridValue}>{selectedJob.workLocationType || 'In person'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Benefits */}
-                  {selectedJob.benefits && selectedJob.benefits.length > 0 && (
-                    <div className={styles.detailSection}>
-                      <h2 className={styles.detailSectionTitle}>Benefits</h2>
-                      <ul className={styles.detailBenefits}>
-                        {selectedJob.benefits.map((benefit, i) => (
-                          <li key={i}>✓ {benefit}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Description */}
-                  {(selectedJob.fullDescription || selectedJob.description) && (
-                    <div className={styles.detailSection}>
-                      <h2 className={styles.detailSectionTitle}>Full Job Description</h2>
-                      <div className={styles.detailDescription}>
-                        {renderDescription(selectedJob.fullDescription || selectedJob.description)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Requirements */}
-                  {selectedJob.requirements && selectedJob.requirements.length > 0 && (
-                    <div className={styles.detailSection}>
-                      <h2 className={styles.detailSectionTitle}>Requirements</h2>
-                      <ul className={styles.detailList}>
-                        {selectedJob.requirements.map((item, i) => (
-                          <li key={i}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Skills */}
-                  {selectedJob.skillsRequired && selectedJob.skillsRequired.length > 0 && (
-                    <div className={styles.detailSection}>
-                      <h2 className={styles.detailSectionTitle}>Skills Required</h2>
-                      <div className={styles.detailSkills}>
-                        {selectedJob.skillsRequired.map((skill, i) => (
-                          <span key={i} className={styles.detailSkillTag}>{skill}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Company Reviews */}
-                  <div className={styles.detailSection}>
-                    <h3 className={styles.detailSectionTitle}>Reviews for {selectedJob.company}</h3>
-                    <CompanyReviewsSummary companyName={selectedJob.company} />
-                  </div>
-
-                  {/* Footer info */}
-                  <div className={styles.detailFooter}>
-                    <p>Posted {selectedJob.postedAt}</p>
-                    {selectedJob.applicationCount > 0 && <p>{selectedJob.applicationCount} applicants</p>}
-                    {selectedJob.category && <p>Category: {selectedJob.category}</p>}
-                  </div>
                 </div>
+                {shortlistedJobIds.has(job.id) && (
+                  <span className={styles.jobCardStamp}>SHORTLISTED</span>
+                )}
               </div>
-            )}
+            ))}
           </div>
         ) : (
           <div className={styles.emptyState}>
@@ -1290,6 +1087,142 @@ function JobsPageContent() {
           </div>
         )}
       </div>
+
+      {/* Job Detail Slide-in Modal */}
+      {selectedJob && (
+        <>
+          <div className={styles.modalOverlay} onClick={closeJobModal} />
+          <div className={styles.modalPanel}>
+            <JobPostingSchema job={selectedJob} />
+            <div className={styles.modalHeader}>
+              <div className={styles.modalNav}>
+                <button
+                  className={styles.modalNavBtn}
+                  onClick={() => navigateToJob('prev')}
+                  disabled={getCurrentJobIndex() <= 0}
+                >←</button>
+                <button
+                  className={styles.modalNavBtn}
+                  onClick={() => navigateToJob('next')}
+                  disabled={getCurrentJobIndex() >= filteredJobs.length - 1}
+                >→</button>
+              </div>
+              <button className={styles.modalClose} onClick={closeJobModal}>✕</button>
+            </div>
+
+            <div className={styles.modalBody}>
+              {selectedJob.companyBanner && (
+                <div className={styles.detailBanner}>
+                  <img src={selectedJob.companyBanner} alt={selectedJob.company} className={styles.detailBannerImg} />
+                </div>
+              )}
+
+              <div className={styles.detailHeader}>
+                <h1 className={styles.detailTitle}>{selectedJob.title}</h1>
+                <p className={styles.detailCompany}>{selectedJob.company}</p>
+                {selectedJob.companyWebsite && (
+                  <a href={selectedJob.companyWebsite.startsWith('http') ? selectedJob.companyWebsite : `https://${selectedJob.companyWebsite}`} target="_blank" rel="noopener noreferrer" className={styles.detailWebsite}>
+                    🌐 {selectedJob.companyWebsite.replace(/^https?:\/\//, '')}
+                  </a>
+                )}
+                <a href={getGoogleMapsUrl(selectedJob)} target="_blank" rel="noopener noreferrer" className={styles.detailLocation}>
+                  📍 {selectedJob.fullLocation?.addressLine1
+                    ? `${selectedJob.fullLocation.addressLine1}, ${selectedJob.fullLocation.city} ${selectedJob.fullLocation.postcode}`
+                    : `${selectedJob.location}, ${selectedJob.area}`}
+                </a>
+                <p className={styles.detailSalary}>{formatSalaryFull(selectedJob)}</p>
+                {selectedJob.expiresDate && (() => {
+                  const daysLeft = Math.ceil((new Date(selectedJob.expiresDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                  if (daysLeft <= 7 && daysLeft >= 0) {
+                    return <p className={styles.detailExpiry}>⏰ Closes in {daysLeft === 0 ? 'today' : `${daysLeft} day${daysLeft === 1 ? '' : 's'}`}</p>
+                  }
+                  return null
+                })()}
+                <div className={styles.detailBadges}>
+                  {Array.isArray(selectedJob.employmentType)
+                    ? selectedJob.employmentType.map((type, i) => <span key={i} className={styles.detailBadge}>{type}</span>)
+                    : selectedJob.employmentType && <span className={styles.detailBadge}>{selectedJob.employmentType}</span>
+                  }
+                  {selectedJob.urgent && <span className={`${styles.detailBadge} ${styles.detailBadgeUrgent}`}>Urgent</span>}
+                </div>
+                {selectedJob.tags && selectedJob.tags.length > 0 && (
+                  <div className={styles.detailTags}>
+                    {selectedJob.tags.map(tag => {
+                      const cat = getTagCategory(tag)
+                      return <span key={tag} className={`${styles.detailTag} ${cat ? styles[`detailTag_${cat}`] : ''}`}>{tag}</span>
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.detailActions}>
+                <button
+                  className={`${styles.detailApplyBtn} ${hasApplied ? styles.detailAppliedBtn : ''}`}
+                  onClick={handleApply}
+                  disabled={hasApplied || checkingApplied}
+                >
+                  {checkingApplied ? 'Checking...' : hasApplied ? 'Applied ✓' : 'Apply Now'}
+                </button>
+                <button
+                  className={`${styles.detailSaveBtn} ${isSaved(selectedJob.id) ? styles.detailSavedBtn : ''}`}
+                  onClick={() => { if (!isSaved(selectedJob.id)) trackClickEvent(selectedJob.id, 'save_click'); toggleSave(selectedJob.id) }}
+                >
+                  {isSaved(selectedJob.id) ? 'Saved ✓' : 'Save Job'}
+                </button>
+              </div>
+
+              <div className={styles.detailSection}>
+                <h2 className={styles.detailSectionTitle}>Job Details</h2>
+                <div className={styles.detailGrid}>
+                  <div className={styles.detailGridItem}><span className={styles.detailGridLabel}>Pay</span><span className={styles.detailGridValue}>{formatSalaryFull(selectedJob)}</span></div>
+                  <div className={styles.detailGridItem}><span className={styles.detailGridLabel}>Job type</span><span className={styles.detailGridValue}>{Array.isArray(selectedJob.employmentType) ? selectedJob.employmentType.join(', ') : selectedJob.employmentType || 'Not specified'}</span></div>
+                  <div className={styles.detailGridItem}><span className={styles.detailGridLabel}>Shift & schedule</span><span className={styles.detailGridValue}>{selectedJob.shiftSchedule || 'Not specified'}</span></div>
+                  <div className={styles.detailGridItem}><span className={styles.detailGridLabel}>Work location</span><span className={styles.detailGridValue}>{selectedJob.workLocationType || 'In person'}</span></div>
+                </div>
+              </div>
+
+              {selectedJob.benefits && selectedJob.benefits.length > 0 && (
+                <div className={styles.detailSection}>
+                  <h2 className={styles.detailSectionTitle}>Benefits</h2>
+                  <ul className={styles.detailBenefits}>{selectedJob.benefits.map((b, i) => <li key={i}>✓ {b}</li>)}</ul>
+                </div>
+              )}
+
+              {(selectedJob.fullDescription || selectedJob.description) && (
+                <div className={styles.detailSection}>
+                  <h2 className={styles.detailSectionTitle}>Full Job Description</h2>
+                  <div className={styles.detailDescription}>{renderDescription(selectedJob.fullDescription || selectedJob.description)}</div>
+                </div>
+              )}
+
+              {selectedJob.requirements && selectedJob.requirements.length > 0 && (
+                <div className={styles.detailSection}>
+                  <h2 className={styles.detailSectionTitle}>Requirements</h2>
+                  <ul className={styles.detailList}>{selectedJob.requirements.map((item, i) => <li key={i}>{item}</li>)}</ul>
+                </div>
+              )}
+
+              {selectedJob.skillsRequired && selectedJob.skillsRequired.length > 0 && (
+                <div className={styles.detailSection}>
+                  <h2 className={styles.detailSectionTitle}>Skills Required</h2>
+                  <div className={styles.detailSkills}>{selectedJob.skillsRequired.map((s, i) => <span key={i} className={styles.detailSkillTag}>{s}</span>)}</div>
+                </div>
+              )}
+
+              <div className={styles.detailSection}>
+                <h3 className={styles.detailSectionTitle}>Reviews for {selectedJob.company}</h3>
+                <CompanyReviewsSummary companyName={selectedJob.company} />
+              </div>
+
+              <div className={styles.detailFooter}>
+                <p>Posted {selectedJob.postedAt}</p>
+                {selectedJob.applicationCount > 0 && <p>{selectedJob.applicationCount} applicants</p>}
+                {selectedJob.category && <p>Category: {selectedJob.category}</p>}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Apply Modal Overlay */}
       {showApplyModal && selectedJob && (
@@ -1317,20 +1250,12 @@ function JobsPageContent() {
                     />
                   </div>
                   <div className={styles.applyCvSection}>
-                    <p className={styles.applyCvNote}>
-                      Your profile CV will be attached automatically. Make sure it&apos;s up to date!
-                    </p>
-                    <Link href="/cv-builder" className={styles.applyUpdateCvLink}>
-                      Update your CV →
-                    </Link>
+                    <p className={styles.applyCvNote}>Your profile CV will be attached automatically. Make sure it&apos;s up to date!</p>
+                    <Link href="/cv-builder" className={styles.applyUpdateCvLink}>Update your CV →</Link>
                   </div>
                 </div>
                 <div className={styles.applyFooter}>
-                  <button
-                    className={styles.applySubmitBtn}
-                    onClick={submitApplication}
-                    disabled={isSubmitting}
-                  >
+                  <button className={styles.applySubmitBtn} onClick={submitApplication} disabled={isSubmitting}>
                     {isSubmitting ? 'Submitting...' : 'Submit Application'}
                   </button>
                 </div>
@@ -1341,26 +1266,11 @@ function JobsPageContent() {
                 <h2>Application Submitted!</h2>
                 <p>Your application has been sent to {selectedJob.company}.</p>
                 <p className={styles.applySuccessNote}>They will contact you if they&apos;re interested.</p>
-                <button className={styles.applySuccessBtn} onClick={() => setShowApplyModal(false)}>
-                  Continue Browsing
-                </button>
+                <button className={styles.applySuccessBtn} onClick={() => setShowApplyModal(false)}>Continue Browsing</button>
               </div>
             )}
           </div>
         </div>
-      )}
-
-      {/* Job Detail Modal - mobile only */}
-      {isMobile && selectedJob && (
-        <JobDetailModal
-          job={selectedJob}
-          onClose={closeJobModal}
-          onPrevious={() => navigateToJob('prev')}
-          onNext={() => navigateToJob('next')}
-          hasPrevious={getCurrentJobIndex() > 0}
-          hasNext={getCurrentJobIndex() < filteredJobs.length - 1}
-          viewSource="search"
-        />
       )}
     </main>
   )
