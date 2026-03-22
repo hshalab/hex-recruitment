@@ -249,7 +249,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--dark-gray);
   color: white;
   font-size: 1rem;
   font-weight: 700;
@@ -277,7 +277,7 @@
 }
 
 .infoLink {
-  color: #2563eb;
+  color: var(--text-dark);
   text-decoration: underline;
 }
 

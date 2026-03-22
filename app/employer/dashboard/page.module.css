@@ -25,7 +25,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.75rem 2rem;
-  background: linear-gradient(135deg, #1e293b 0%, #334155 60%, #3b4d6b 100%);
+  background: var(--dark-gray);
   border-radius: 16px;
   margin-bottom: 1.5rem;
   color: #fff;
@@ -87,7 +87,7 @@
   justify-content: center;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--dark-gray);
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -182,9 +182,9 @@
 }
 
 .statCardGold { border-left-color: #FFD700; }
-.statCardGreen { border-left-color: #22c55e; }
-.statCardBlue { border-left-color: #3b82f6; }
-.statCardPurple { border-left-color: #8b5cf6; }
+.statCardGreen { border-left-color: var(--border-gray); }
+.statCardBlue { border-left-color: var(--border-gray); }
+.statCardPurple { border-left-color: var(--border-gray); }
 
 /* Faded watermark icon */
 .statCard::after {
@@ -283,14 +283,14 @@
 
 .cardLink {
   font-size: 0.78rem;
-  color: #6366f1;
+  color: var(--text-dark);
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s ease;
 }
 
 .cardLink:hover {
-  color: #4f46e5;
+  color: var(--dark-gray);
   text-decoration: underline;
 }
 
@@ -358,9 +358,9 @@
 }
 
 .pipelineCountYellow { background: #fef3c7; color: #92400e; }
-.pipelineCountBlue { background: #dbeafe; color: #1e40af; }
-.pipelineCountGreen { background: #d1fae5; color: #065f46; }
-.pipelineCountRed { background: #fee2e2; color: #991b1b; }
+.pipelineCountBlue { background: #dbeafe; color: #1d4ed8; }
+.pipelineCountGreen { background: #d1fae5; color: #16a34a; }
+.pipelineCountRed { background: #fee2e2; color: #dc2626; }
 .pipelineCountMuted { background: #f1f5f9; color: #94a3b8; }
 
 .pipelineLabel {
@@ -589,7 +589,7 @@
 .jobProgressFill {
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(90deg, #FFD700, #22c55e);
+  background: var(--primary-yellow);
   transition: width 0.4s ease;
 }
 
@@ -674,7 +674,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #22c55e;
+  background: #16a34a;
   border: 2px solid #fff;
 }
 
@@ -726,7 +726,7 @@
   display: inline-block;
   width: 7px;
   height: 7px;
-  background: #6366f1;
+  background: var(--primary-yellow);
   border-radius: 50%;
   margin-right: 0.35rem;
   vertical-align: middle;

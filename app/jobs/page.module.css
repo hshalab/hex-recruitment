@@ -61,7 +61,7 @@
 .jobCardTags { display: flex; flex-wrap: wrap; gap: 0.3rem; flex: 1; }
 .jobCardTag { font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569; white-space: nowrap; }
 .jobCardTagUrgent { background: #fef2f2; color: #dc2626; }
-.jobCardFeatured { font-size: 0.68rem; color: #b45309; font-weight: 600; white-space: nowrap; }
+.jobCardFeatured { font-size: 0.68rem; color: var(--text-dark); font-weight: 600; white-space: nowrap; background: var(--primary-yellow); padding: 0.1rem 0.4rem; border-radius: 4px; }
 
 .jobCardMeta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
 .jobCardPosted { font-size: 0.72rem; color: #9ca3af; }
@@ -109,9 +109,9 @@
 .detailBadgeUrgent { background: #fef2f2; color: #dc2626; }
 .detailTags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.5rem; }
 .detailTag { font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569; }
-.detailTag_scheduling { background: #ecfdf5; color: #065f46; }
-.detailTag_experience { background: #eff6ff; color: #1d4ed8; }
-.detailTag_workStyle { background: #fef3c7; color: #92400e; }
+.detailTag_scheduling { background: #f1f5f9; color: #475569; }
+.detailTag_experience { background: #f1f5f9; color: #475569; }
+.detailTag_workStyle { background: #f1f5f9; color: #475569; }
 
 .detailActions { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
 .detailApplyBtn { flex: 1; padding: 0.75rem; background: #FFD700; color: #1a1a1a; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.15s; }

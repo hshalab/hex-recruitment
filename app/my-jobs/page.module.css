@@ -334,7 +334,7 @@
 }
 
 .jobLocationLine:hover {
-  color: #2563eb;
+  color: var(--text-dark);
   text-decoration: underline;
 }
 
@@ -430,7 +430,7 @@
 
 .statusReviewing {
   background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
+  color: #1d4ed8;
 }
 
 .statusInterviewing {
@@ -541,14 +541,14 @@
   gap: 0.25rem;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #3b82f6;
+  color: var(--text-dark);
   text-decoration: none;
   transition: color 0.15s;
   margin-left: auto;
 }
 
 .analyticsLink:hover {
-  color: #1d4ed8;
+  color: var(--dark-gray);
   text-decoration: underline;
 }
 
@@ -729,7 +729,7 @@
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #b8860b;
+  color: var(--primary-yellow);
   margin-bottom: 0.5rem;
 }
 

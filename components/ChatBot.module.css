@@ -6,11 +6,11 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #1e293b;
+  background: var(--dark-gray);
   border: none;
   cursor: pointer;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  z-index: 999;
+  z-index: var(--z-chatbot);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -47,7 +47,7 @@
   position: absolute;
   top: -28px;
   right: -10px;
-  background: #1e293b;
+  background: var(--dark-gray);
   color: #FFE500;
   font-size: 0.7rem;
   font-weight: 600;
@@ -78,7 +78,7 @@
   background: var(--white);
   border-radius: 14px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
+  z-index: var(--z-chatbot);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -120,7 +120,7 @@
 
 /* Header */
 .chatHeader {
-  background: #1e293b;
+  background: var(--dark-gray);
   padding: 0.625rem 0.875rem;
   display: flex;
   align-items: center;
