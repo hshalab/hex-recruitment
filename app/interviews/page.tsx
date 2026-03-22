@@ -468,11 +468,18 @@ export default function InterviewsPage() {
                     return (
                       <div key={interview.interviewId} className={styles.interviewCard}>
 
-                        {/* Card Header: name/job/badges left, photo right */}
+                        {/* Card Header: photo LEFT, info RIGHT */}
                         <div className={styles.cardHeader}>
-                          <div className={styles.cardHeaderLeft}>
+                          <div className={styles.cardPhoto}>
+                            {interview.candidatePhoto ? (
+                              <img src={interview.candidatePhoto} alt={interview.candidateName} className={styles.cardPhotoImg} />
+                            ) : (
+                              <div className={styles.cardPhotoPlaceholder}>{getInitials(interview.candidateName)}</div>
+                            )}
+                          </div>
+                          <div className={styles.cardHeaderInfo}>
                             <span className={styles.candidateName}>{interview.candidateName}</span>
-                            <p className={styles.cardJobTitle}>{interview.jobTitle}</p>
+                            <p className={styles.cardJobTitle}>{interview.jobTitle} · {interview.company}</p>
                             <div className={styles.badgeRow}>
                               <span className={`${styles.typeBadge} ${TYPE_BADGE_CLASS[interview.interviewType] || ''}`}>
                                 {TYPE_LABELS[interview.interviewType] || interview.interviewType}
@@ -481,13 +488,6 @@ export default function InterviewsPage() {
                                 {interview.status === 'confirmed' ? '✓ Confirmed' : 'Pending'}
                               </span>
                             </div>
-                          </div>
-                          <div className={styles.cardPhoto}>
-                            {interview.candidatePhoto ? (
-                              <img src={interview.candidatePhoto} alt={interview.candidateName} className={styles.cardPhotoImg} />
-                            ) : (
-                              <div className={styles.cardPhotoPlaceholder}>{getInitials(interview.candidateName)}</div>
-                            )}
                           </div>
                         </div>
 
