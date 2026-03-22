@@ -17,10 +17,10 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hexrecruitment.co.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Hex | Talent Recruitment — Find Jobs Across All Sectors in the UK',
+    default: 'Hex | Talent Recruitment — Free UK Job Board for Employers',
     template: '%s | Hex | Talent Recruitment',
   },
-  description: 'Hex — Talent Recruitment. Find your next career move or hire top talent. The smarter way to recruit. Browse thousands of jobs across every UK sector. Free for job seekers.',
+  description: 'Post unlimited jobs free for 12 months. No agency fees. Search candidates, manage applications and schedule interviews — one platform for all UK sectors.',
   keywords: ['UK jobs', 'job board', 'recruitment', 'hospitality jobs', 'healthcare jobs', 'find a job UK', 'hire staff UK', 'Hex', 'talent recruitment'],
   authors: [{ name: 'Hex' }],
   creator: 'Hex',
@@ -30,11 +30,11 @@ export const metadata: Metadata = {
     locale: 'en_GB',
     url: SITE_URL,
     siteName: 'Hex',
-    title: 'Hex | Talent Recruitment — Find Jobs Across All Sectors in the UK',
-    description: 'Hex — Talent Recruitment. Find your next career move or hire top talent. The smarter way to recruit.',
+    title: 'Hex | Talent Recruitment — Free UK Job Board for Employers',
+    description: 'Post unlimited jobs free for 12 months. No agency fees. Search candidates, manage applications and schedule interviews — one platform for all UK sectors.',
     images: [
       {
-        url: '/og-image.png',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'Hex — Talent Recruitment',
@@ -43,9 +43,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hex | Talent Recruitment — Find Jobs Across All Sectors in the UK',
-    description: 'Hex — Talent Recruitment. Find your next career move or hire top talent. The smarter way to recruit.',
-    images: ['/og-image.png'],
+    title: 'Hex | Talent Recruitment — Free UK Job Board for Employers',
+    description: 'Post unlimited jobs free for 12 months. No agency fees. Search candidates, manage applications and schedule interviews — one platform for all UK sectors.',
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,

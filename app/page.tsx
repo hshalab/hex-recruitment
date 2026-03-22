@@ -321,6 +321,37 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Schema Markup */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            {
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'Hex Recruitment',
+              url: 'https://hexrecruitment.co.uk',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: 'https://hexrecruitment.co.uk/jobs?search={search_term_string}',
+                },
+                'query-input': 'required name=search_term_string',
+              },
+            },
+            {
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'Hex Recruitment',
+              url: 'https://hexrecruitment.co.uk',
+              logo: 'https://hexrecruitment.co.uk/icon.svg',
+              sameAs: ['https://www.linkedin.com/company/hexrecruitment'],
+            },
+          ]),
+        }}
+      />
+
       {/* Footer */}
       <footer className={styles.footer}>
         <div className={styles.footerInner}>

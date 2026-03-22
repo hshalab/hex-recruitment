@@ -74,7 +74,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       if (jobs) {
         jobPages = jobs.map(job => ({
-          url: `${SITE_URL}/jobs?id=${job.id}`,
+          url: `${SITE_URL}/job/${job.id}`,
           lastModified: job.updated_at || now,
           changeFrequency: 'weekly' as const,
           priority: 0.7,

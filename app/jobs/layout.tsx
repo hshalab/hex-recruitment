@@ -7,6 +7,12 @@ export const metadata: Metadata = {
     title: 'Browse Jobs in the UK - Hospitality, Admin, Tech & More',
     description: 'Search and apply for thousands of UK jobs across all sectors. Filter by location, salary, job type and more.',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Find Jobs Across All UK Sectors | Hex Recruitment',
+    description: 'Browse thousands of jobs across all industries.',
+    images: ['/opengraph-image'],
+  },
   alternates: {
     canonical: '/jobs',
   },
