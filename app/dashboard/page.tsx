@@ -153,6 +153,50 @@ function SkeletonCard({ height = 120 }: { height?: number }) {
 // MAIN COMPONENT
 // ═════════════════════════════════════════════════════════
 
+function SearchHero() {
+  const router = useRouter()
+  const [keyword, setKeyword] = useState('')
+  const [location, setLocation] = useState('')
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    const params = new URLSearchParams()
+    if (keyword.trim()) params.set('search', keyword.trim())
+    if (location.trim()) params.set('city', location.trim())
+    router.push(`/jobs${params.toString() ? `?${params.toString()}` : ''}`)
+  }
+
+  return (
+    <div className={styles.searchHero}>
+      <form className={styles.searchBar} onSubmit={handleSearch}>
+        <div className={styles.searchInputWrap}>
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="Job title or keyword"
+            value={keyword}
+            onChange={e => setKeyword(e.target.value)}
+          />
+        </div>
+        <div className={styles.searchInputWrap}>
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="City or postcode"
+            value={location}
+            onChange={e => setLocation(e.target.value)}
+          />
+        </div>
+        <button type="submit" className={styles.searchBtn}>Search</button>
+      </form>
+      <div className={styles.searchPills}>
+        <Link href="/jobs" className={styles.searchPill}>Browse All Jobs →</Link>
+        <Link href="/jobs/recommended" className={styles.searchPill}>Jobs For You →</Link>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const { jobs } = useJobs()
@@ -670,6 +714,8 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        <SearchHero />
 
         <div className={styles.grid}>
           {/* ════════════════════ LEFT COLUMN ═════════════════ */}
