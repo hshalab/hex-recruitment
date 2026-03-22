@@ -2,7 +2,7 @@
 .hero {
   background: linear-gradient(135deg, var(--dark-gray) 0%, #1a202c 100%);
   min-height: auto;
-  padding: 5rem 0 4rem;
+  padding: 2.5rem 0 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,7 +74,7 @@
 }
 
 .heroTitle {
-  font-size: 3.25rem;
+  font-size: 2.75rem;
   font-weight: 900;
   color: var(--white);
   margin-bottom: 1.25rem;
@@ -86,7 +86,7 @@
   font-size: 1.15rem;
   color: rgba(255, 255, 255, 0.7);
   max-width: 600px;
-  margin: 0 auto 2rem;
+  margin: 0 auto 1.25rem;
   line-height: 1.7;
 }
 
