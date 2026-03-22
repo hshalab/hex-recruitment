@@ -1,7 +1,8 @@
 /* Hero Section */
 .hero {
   background: linear-gradient(135deg, var(--dark-gray) 0%, #1a202c 100%);
-  min-height: 100vh;
+  min-height: auto;
+  padding: 5rem 0 4rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,15 +71,6 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--primary-yellow);
-}
-
-.heroEyebrow {
-  color: #FFD700;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin: 0 0 0.75rem;
 }
 
 .heroTitle {
