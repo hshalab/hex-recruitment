@@ -1051,3 +1051,20 @@
     text-align: center;
   }
 }
+
+@media (max-width: 375px) {
+  .avatar,
+  .avatarPlaceholder {
+    width: 48px;
+    height: 48px;
+  }
+
+  .onboardingBanner {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  .dashboardWrap {
+    padding: 1rem;
+  }
+}

@@ -149,3 +149,12 @@
   .searchInputGroup { border-right: none; border-bottom: 1px solid var(--border-gray); }
   .searchInputGroup:last-child { border-bottom: none; }
 }
+
+@media (max-width: 480px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .btnGrid { grid-template-columns: repeat(2, 1fr); font-size: 0.75rem; }
+}
+
+@media (max-width: 375px) {
+  .container { padding: 1rem; }
+}

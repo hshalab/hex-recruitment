@@ -866,3 +866,11 @@
 
   .previewLabel { font-size: 0.7rem; }
 }
+
+@media (max-width: 390px) {
+  .pipelineLabel { font-size: 0.55rem; white-space: normal; }
+}
+
+@media (max-width: 375px) {
+  .dashboardWrap { padding: 0.5rem; }
+}

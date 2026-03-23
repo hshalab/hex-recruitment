@@ -692,3 +692,11 @@
     padding: 0 3px;
   }
 }
+
+@media (max-width: 375px) {
+  .iconBadge {
+    min-width: 12px;
+    height: 12px;
+    font-size: 0.5rem;
+  }
+}

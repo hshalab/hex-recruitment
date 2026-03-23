@@ -185,3 +185,13 @@
 
   .detailGrid { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 480px) {
+  .modalPanel { width: 100%; border-radius: 16px 16px 0 0; }
+  .filterStripInner { padding-bottom: 4px; }
+}
+
+@media (max-width: 375px) {
+  .jobsContainer { padding: 1rem; }
+  .searchInner { padding: 0 1rem; }
+}

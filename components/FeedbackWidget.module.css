@@ -195,10 +195,10 @@
   }
 
   .panel {
-    width: 90vw;
+    width: calc(100vw - 32px);
   }
 
   .panelWide {
-    width: 90vw;
+    width: calc(100vw - 32px);
   }
 }

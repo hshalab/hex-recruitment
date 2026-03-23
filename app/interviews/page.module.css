@@ -391,3 +391,12 @@
   .pastMeta { flex-direction: column; align-items: flex-end; gap: 0.35rem; }
   .pastCard { flex-wrap: wrap; }
 }
+
+@media (max-width: 480px) {
+  .statsBar { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 375px) {
+  .cardHeader { gap: 0.5rem; }
+  .container { padding: 1rem; }
+}
