@@ -43,6 +43,12 @@
   animation: slideUp 0.2s ease-out;
 }
 
+.panelWide {
+  width: 360px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -63,6 +69,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
+  z-index: 1;
 }
 
 .closeBtn:hover {
@@ -80,7 +87,7 @@
 .subtext {
   font-size: 13px;
   color: #64748b;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
 }
 
 .error {
@@ -96,7 +103,7 @@
   padding: 10px;
   font-size: 14px;
   resize: none;
-  margin-top: 12px;
+  margin-top: 0;
   font-family: inherit;
   outline: none;
   box-sizing: border-box;
@@ -135,6 +142,50 @@
   font-weight: 500;
   color: #0f172a;
   padding: 24px 0;
+  line-height: 1.5;
+}
+
+/* ── Questionnaire ────────────────────── */
+
+.qBlock {
+  margin-bottom: 16px;
+}
+
+.qLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  margin: 0 0 8px;
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.optionPill {
+  padding: 4px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.optionPill:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.optionPillActive {
+  background: #0f172a;
+  color: #FFE500;
+  border-color: #0f172a;
 }
 
 @media (max-width: 480px) {
@@ -144,6 +195,10 @@
   }
 
   .panel {
+    width: 90vw;
+  }
+
+  .panelWide {
     width: 90vw;
   }
 }
