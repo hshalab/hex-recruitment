@@ -476,9 +476,6 @@ export default function InterviewsPage() {
                               <span className={`${styles.typeBadge} ${TYPE_BADGE_CLASS[interview.interviewType] || ''}`}>
                                 {TYPE_LABELS[interview.interviewType] || interview.interviewType}
                               </span>
-                              <span className={`${styles.statusBadge} ${interview.status === 'confirmed' ? styles.statusConfirmed : styles.statusScheduled}`}>
-                                {interview.status === 'confirmed' ? '✓ Confirmed' : 'Pending'}
-                              </span>
                             </div>
                           </div>
                         </div>
@@ -487,6 +484,9 @@ export default function InterviewsPage() {
                         <div className={styles.cardBottom}>
                           <div className={styles.cardTags}>
                             <span className={styles.cardTag}>{formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}</span>
+                            <span className={`${styles.statusBadge} ${interview.status === 'confirmed' ? styles.statusConfirmed : styles.statusScheduled}`}>
+                              {interview.status === 'confirmed' ? '✓ Confirmed' : 'Pending'}
+                            </span>
                             {interview.interviewType === 'in-person' && interview.locationOrLink && (
                               <a href={`https://www.google.com/maps/search/${encodeURIComponent(interview.locationOrLink)}`} target="_blank" rel="noopener noreferrer" className={styles.cardTagLink}>{interview.locationOrLink}</a>
                             )}

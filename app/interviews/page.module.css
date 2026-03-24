@@ -205,9 +205,9 @@
   white-space: nowrap;
 }
 
-.typeInPerson { background: #fef3c7; color: #92400e; }
+.typeInPerson { background: #dbeafe; color: #1d4ed8; }
 .typeVideo { background: #dbeafe; color: #1d4ed8; }
-.typePhone { background: #f3e8ff; color: #7e22ce; }
+.typePhone { background: #dbeafe; color: #1d4ed8; }
 
 .statusBadge {
   font-size: 0.7rem;
