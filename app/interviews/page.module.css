@@ -170,7 +170,8 @@
   gap: 0.875rem;
 }
 
-.cardHeaderInfo { flex: 1; min-width: 0; }
+.cardHeaderInfo { flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+.cardHeaderInfoLeft { min-width: 0; flex: 1; }
 
 .candidateName {
   display: block;
@@ -200,9 +201,12 @@
 .typeBadge {
   font-size: 0.7rem;
   font-weight: 600;
-  padding: 2px 8px;
+  padding: 3px 9px;
   border-radius: 999px;
   white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
 }
 
 .typeInPerson { background: #dbeafe; color: #1d4ed8; }

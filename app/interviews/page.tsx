@@ -470,13 +470,13 @@ export default function InterviewsPage() {
                             )}
                           </div>
                           <div className={styles.cardHeaderInfo}>
-                            <span className={styles.candidateName}>{interview.candidateName}</span>
-                            <p className={styles.cardJobTitle}>{interview.jobTitle} · {interview.company}</p>
-                            <div className={styles.badgeRow}>
-                              <span className={`${styles.typeBadge} ${TYPE_BADGE_CLASS[interview.interviewType] || ''}`}>
-                                {TYPE_LABELS[interview.interviewType] || interview.interviewType}
-                              </span>
+                            <div className={styles.cardHeaderInfoLeft}>
+                              <span className={styles.candidateName}>{interview.candidateName}</span>
+                              <p className={styles.cardJobTitle}>{interview.jobTitle} · {interview.company}</p>
                             </div>
+                            <span className={`${styles.typeBadge} ${TYPE_BADGE_CLASS[interview.interviewType] || ''}`}>
+                              {TYPE_LABELS[interview.interviewType] || interview.interviewType}
+                            </span>
                           </div>
                         </div>
 
