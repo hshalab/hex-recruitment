@@ -210,15 +210,18 @@
 .typePhone { background: #dbeafe; color: #1d4ed8; }
 
 .statusBadge {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
   white-space: nowrap;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e5e7eb;
 }
 
-.statusScheduled { background: #fef9c3; color: #854d0e; }
-.statusConfirmed { background: #dcfce7; color: #15803d; }
+.statusScheduled { }
+.statusConfirmed { }
 
 /* ─── Card Photo ───────────────────────────────────────────────────────── */
 .cardPhoto {

@@ -487,12 +487,6 @@ export default function InterviewsPage() {
                             <span className={`${styles.statusBadge} ${interview.status === 'confirmed' ? styles.statusConfirmed : styles.statusScheduled}`}>
                               {interview.status === 'confirmed' ? '✓ Confirmed' : 'Pending'}
                             </span>
-                            {interview.interviewType === 'in-person' && interview.locationOrLink && (
-                              <a href={`https://www.google.com/maps/search/${encodeURIComponent(interview.locationOrLink)}`} target="_blank" rel="noopener noreferrer" className={styles.cardTagLink}>{interview.locationOrLink}</a>
-                            )}
-                            {interview.interviewType === 'video' && interview.meetingLink && (
-                              <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" className={styles.cardTagLink}>Join call</a>
-                            )}
                           </div>
                         </div>
 
