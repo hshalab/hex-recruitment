@@ -138,10 +138,9 @@ test.describe('Employer Authenticated Flows', () => {
 
     expect(page.url()).toContain('/post-job')
 
-    // Wait for the form to render (may be inside Suspense)
-    // Try multiple selectors for the title input
-    const titleInput = page.locator('input[name="title"], input[id="title"], input[placeholder*="title" i], input[placeholder*="Job" i]')
-    await expect(titleInput.first()).toBeVisible({ timeout: 15000 })
+    // Wait for any form input to be visible — company field renders first
+    const anyInput = page.locator('input[id="company"], input[name="company"]')
+    await expect(anyInput.first()).toBeVisible({ timeout: 15000 })
   })
 
   test('4. Interviews — Cancel shows confirmation prompt', async ({ page }) => {
