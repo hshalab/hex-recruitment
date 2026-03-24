@@ -100,20 +100,23 @@ export default function FeedbackWidget() {
     <div className={styles.wrapper}>
       {isOpen && (
         <div className={`${styles.panel} ${role ? styles.panelWide : ''}`}>
+          {/* Sticky header */}
+          <div className={styles.panelHeader}>
+            <span className={styles.panelHeaderTitle}>
+              {submitted ? '' : role ? (role === 'employer' ? 'How\u2019s Hex working for you?' : 'How\u2019s your experience so far?') : 'Share your feedback'}
+            </span>
+            <button className={styles.closeBtn} onClick={() => setIsOpen(false)} aria-label="Close">&times;</button>
+          </div>
+
           {submitted ? (
             <div className={styles.thanks}>
               Thanks for your feedback! It helps us make Hex better.
             </div>
           ) : (
             <>
-              <button className={styles.closeBtn} onClick={() => setIsOpen(false)} aria-label="Close">&times;</button>
-
               {role ? (
                 /* ── Questionnaire for logged-in users ── */
                 <>
-                  <h3 className={styles.heading}>
-                    {role === 'employer' ? 'How\'s Hex working for you?' : 'How\'s your experience so far?'}
-                  </h3>
                   <p className={styles.subtext}>
                     {role === 'employer' ? 'Takes 2 minutes — helps us build what you need' : 'Takes 2 minutes — helps us improve Hex for you'}
                   </p>
@@ -166,7 +169,6 @@ export default function FeedbackWidget() {
               ) : (
                 /* ── Simple star rating for logged-out users ── */
                 <>
-                  <h3 className={styles.heading}>Share your feedback</h3>
                   <p className={styles.subtext}>How&apos;s your experience on this page?</p>
                   <StarRating rating={rating} interactive size="md" onRate={r => { setRating(r); setError('') }} />
                   {error && <p className={styles.error}>{error}</p>}

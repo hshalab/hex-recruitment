@@ -38,15 +38,33 @@
   border-radius: 16px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  padding: 20px;
+  padding: 0 20px 20px;
   position: relative;
   animation: slideUp 0.2s ease-out;
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 .panelWide {
   width: 360px;
-  max-height: 85vh;
-  overflow-y: auto;
+}
+
+.panelHeader {
+  position: sticky;
+  top: 0;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 8px;
+  z-index: 2;
+  border-bottom: 1px solid transparent;
+}
+
+.panelHeaderTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
 }
 
 @keyframes slideUp {
@@ -55,11 +73,8 @@
 }
 
 .closeBtn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   border: none;
   background: none;
   color: #94a3b8;
@@ -69,19 +84,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  z-index: 1;
+  flex-shrink: 0;
+  margin-right: -10px;
 }
 
 .closeBtn:hover {
   background: #f1f5f9;
   color: #475569;
-}
-
-.heading {
-  font-size: 15px;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 4px;
 }
 
 .subtext {
@@ -191,14 +200,30 @@
 @media (max-width: 480px) {
   .wrapper {
     bottom: 16px;
-    right: 88px;
+    right: 12px;
+    left: 12px;
+    align-items: stretch;
   }
 
   .panel {
-    width: calc(100vw - 32px);
+    width: auto;
+    max-height: 80vh;
   }
 
   .panelWide {
-    width: calc(100vw - 32px);
+    width: auto;
+  }
+
+  .optionPill {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .pillRow {
+    gap: 3px;
+  }
+
+  .submitBtn {
+    height: 44px;
   }
 }
