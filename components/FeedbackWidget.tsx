@@ -18,7 +18,7 @@ const CANDIDATE_QUESTIONS = [
 const EMPLOYER_QUESTIONS = [
   { id: 'q2', label: 'How easy was posting your first job?', options: ['Very easy', 'Easy', 'OK', 'Difficult', 'Very difficult'] },
   { id: 'q3', label: 'How useful is the candidate search and pipeline?', options: ['Very useful', 'Useful', 'Somewhat', 'Not useful', 'Haven\'t used it'] },
-  { id: 'q4', label: 'How does Hex compare to recruitment agencies or other tools?', options: ['Much better', 'Better', 'About the same', 'Worse', 'Much worse'] },
+  { id: 'q4', label: 'How does Hex compare to other tools?', options: ['Much better', 'Better', 'About the same', 'Worse', 'Much worse'] },
   { id: 'q5', label: 'Would you recommend Hex to another business owner?', options: ['Yes definitely', 'Maybe', 'No'] },
 ]
 
@@ -151,7 +151,7 @@ export default function FeedbackWidget() {
                   <div className={styles.qBlock}>
                     <p className={styles.qLabel}>
                       {role === 'employer'
-                        ? 'What feature would make the biggest difference to you? (optional)'
+                        ? 'What would make Hex better? (optional)'
                         : 'Anything we could do better? (optional)'}
                     </p>
                     <textarea

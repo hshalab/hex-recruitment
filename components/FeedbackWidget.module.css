@@ -170,7 +170,7 @@
 .pillRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
 }
 
 .optionPill {
@@ -199,24 +199,53 @@
 
 @media (max-width: 768px) {
   .wrapper {
-    bottom: 80px;
-    right: 16px;
-    width: auto;
-    left: auto;
-    align-items: flex-end;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: var(--z-modal);
+    align-items: stretch;
+    gap: 0;
+    padding: 0 16px 16px;
+    pointer-events: none;
+    box-sizing: border-box;
   }
 
   .pill {
     width: auto;
+    align-self: flex-end;
+    pointer-events: auto;
+    margin-bottom: 80px;
   }
 
   .panel {
-    width: calc(100vw - 32px);
-    max-height: 80vh;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    z-index: var(--z-modal);
+    pointer-events: auto;
+    box-sizing: border-box;
   }
 
   .panelWide {
-    width: calc(100vw - 32px);
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .qBlock {
+    margin-bottom: 12px;
+  }
+
+  .qLabel {
+    font-size: 13px;
+    margin-bottom: 6px;
   }
 
   .optionPill {
@@ -225,7 +254,7 @@
   }
 
   .pillRow {
-    gap: 3px;
+    gap: 4px;
   }
 
   .submitBtn {
