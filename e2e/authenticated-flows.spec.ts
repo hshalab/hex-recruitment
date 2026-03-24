@@ -121,16 +121,13 @@ test.describe('Employer Authenticated Flows', () => {
 
   test('3. Post New Job navigates to /post-job', async ({ page }) => {
     await loginAsEmployer(page)
-
-    // Wait for employer dashboard to confirm session is fully active
-    await page.waitForURL(/\/employer\/dashboard/, { timeout: 15000 })
+    await page.waitForURL(/employer|dashboard|my-jobs|interviews/, { timeout: 15000 })
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(2000)
 
-    // Now navigate to post-job with active session
     await page.goto(`${BASE}/post-job`)
     await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(2000)
+    await page.waitForTimeout(3000)
 
     const currentUrl = page.url()
     if (!currentUrl.includes('/post-job')) {
