@@ -156,6 +156,7 @@
   flex-direction: column;
   gap: 0.625rem;
   transition: box-shadow 0.15s, border-color 0.15s;
+  overflow: hidden;
 }
 
 .interviewCard:hover {
@@ -401,9 +402,15 @@
 
 @media (max-width: 480px) {
   .statsBar { grid-template-columns: repeat(2, 1fr); }
+  .interviewCard { padding: 1rem; }
+  .cardActions { flex-wrap: wrap; }
+  .cardMeta { flex-direction: column; align-items: flex-start; gap: 0.35rem; }
 }
 
 @media (max-width: 375px) {
   .cardHeader { gap: 0.5rem; }
   .container { padding: 1rem; }
+  .typeBadge { font-size: 0.62rem; padding: 2px 7px; }
+  .candidateName { font-size: 0.82rem; }
+  .cardJobTitle { font-size: 0.72rem; }
 }
