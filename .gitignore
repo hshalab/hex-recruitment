@@ -4,3 +4,4 @@
 .env
 *.log
 hex-recruitment.zip
+.env.test
