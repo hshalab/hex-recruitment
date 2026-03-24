@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import StarRating from './StarRating'
 import styles from './FeedbackWidget.module.css'
@@ -22,6 +23,7 @@ const EMPLOYER_QUESTIONS = [
 ]
 
 export default function FeedbackWidget() {
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
@@ -37,6 +39,8 @@ export default function FeedbackWidget() {
       if (r === 'employer' || r === 'employee') setRole(r)
     })
   }, [])
+
+  if (pathname === '/' || pathname.startsWith('/login') || pathname.startsWith('/register')) return null
 
   const questions = role === 'employer' ? EMPLOYER_QUESTIONS : role === 'employee' ? CANDIDATE_QUESTIONS : []
 

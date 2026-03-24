@@ -197,21 +197,26 @@
   border-color: #0f172a;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .wrapper {
-    bottom: 16px;
-    right: 12px;
-    left: 12px;
-    align-items: stretch;
+    bottom: 80px;
+    right: 16px;
+    width: auto;
+    left: auto;
+    align-items: flex-end;
+  }
+
+  .pill {
+    width: auto;
   }
 
   .panel {
-    width: auto;
+    width: calc(100vw - 32px);
     max-height: 80vh;
   }
 
   .panelWide {
-    width: auto;
+    width: calc(100vw - 32px);
   }
 
   .optionPill {
