@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
-import PostcodeLookup, { type AddressData } from '@/components/PostcodeLookup'
 import { supabase } from '@/lib/supabase'
 import loginStyles from '../../login/page.module.css'
 import styles from './page.module.css'
@@ -17,9 +16,6 @@ export default function RegisterEmployerFreePage() {
   const [contactName, setContactName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [phone, setPhone] = useState('')
-  const [postcode, setPostcode] = useState('')
-  const [addressData, setAddressData] = useState<AddressData | null>(null)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [agreePrivacy, setAgreePrivacy] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -38,11 +34,6 @@ export default function RegisterEmployerFreePage() {
       })
       .catch(() => {})
   }, [])
-
-  const handleAddressFound = (address: AddressData) => {
-    setAddressData(address)
-    setPostcode(address.postcode)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,7 +73,6 @@ export default function RegisterEmployerFreePage() {
             full_name: contactName,
             company_name: companyName,
             role: 'employer',
-            postcode: addressData?.postcode || postcode,
           },
         },
       })
@@ -105,19 +95,9 @@ export default function RegisterEmployerFreePage() {
           company_name: companyName,
           contact_name: contactName,
           email,
-          phone: phone || null,
-          location: addressData
-            ? [addressData.addressLine1, addressData.city, addressData.postcode].filter(Boolean).join(', ')
-            : postcode || null,
-          business_address: addressData
-            ? {
-                address_line_1: addressData.addressLine1,
-                address_line_2: addressData.addressLine2,
-                city: addressData.city,
-                county: addressData.county,
-                postcode: addressData.postcode,
-              }
-            : postcode ? { postcode } : null,
+          phone: null,
+          location: null,
+          business_address: null,
         }, { onConflict: 'user_id' })
 
         // Create subscription record for free launch
@@ -164,7 +144,7 @@ export default function RegisterEmployerFreePage() {
           </div>
 
           <h1 className={loginStyles.title}>Create your employer account</h1>
-          <p className={loginStyles.subtitle}>Start hiring for free — takes under 2 minutes</p>
+          <p className={loginStyles.subtitle}>Takes 60 seconds — no card needed.</p>
 
           {error && <div className={loginStyles.error}>{error}</div>}
 
@@ -220,24 +200,6 @@ export default function RegisterEmployerFreePage() {
                 placeholder="At least 6 characters"
                 autoComplete="new-password"
               />
-            </div>
-
-            <div className={loginStyles.formGroup}>
-              <label htmlFor="phone">Phone number (optional)</label>
-              <input
-                id="phone"
-                type="tel"
-                className={loginStyles.input}
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                autoComplete="tel"
-                placeholder="+44 7XXX XXXXXX"
-              />
-            </div>
-
-            <div className={loginStyles.formGroup}>
-              <label>Postcode *</label>
-              <PostcodeLookup onAddressFound={handleAddressFound} />
             </div>
 
             <div className={styles.checkboxGroup}>
