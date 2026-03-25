@@ -217,7 +217,7 @@ export default function RegisterEmployerFreePage() {
               className={styles.submitBtn}
               disabled={loading}
             >
-              {loading ? 'Creating account...' : 'Create free account →'}
+              {loading ? 'Claiming your spot...' : 'Claim my free spot →'}
             </button>
 
             <div className={styles.trustRow}>
