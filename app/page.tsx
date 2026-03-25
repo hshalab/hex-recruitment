@@ -132,14 +132,14 @@ export default function Home() {
           </h1>
           <p className={styles.heroSubtitle}>
             Post jobs, search candidates, manage your pipeline, schedule interviews —
-            one platform, all UK sectors. Free for the first 100 employers.
+            one platform, all UK sectors. Free for the first 1000 employers.
           </p>
           <div className={styles.spotsCounter}>
             <div className={styles.spotsBar}>
-              <div className={styles.spotsBarFill} style={{ width: `${Math.min((employerCount ?? 0) / 100 * 100, 100)}%` }} />
+              <div className={styles.spotsBarFill} style={{ width: `${Math.min((employerCount ?? 0) / 1000 * 100, 100)}%` }} />
             </div>
             <p className={styles.spotsText}>
-              <span className={styles.spotsFree}>{employerCount ?? '—'} of 100</span> free spots claimed — <span className={styles.spotsFree}>12 months free, no card needed</span>
+              <span className={styles.spotsFree}>{employerCount ?? '—'} of 1000</span> free spots claimed — <span className={styles.spotsFree}>no card needed</span>
             </p>
           </div>
           <div className={styles.heroCtas}>
@@ -207,8 +207,8 @@ export default function Home() {
       {/* What You Get — free launch offer */}
       <section className={`${styles.benefits} ${styles.scrollReveal}`} data-reveal>
         <div className={styles.sectionInner}>
-          <h2 className={styles.sectionTitle}>Everything you need to hire — free for 12 months</h2>
-          <p className={styles.sectionSubtitle}>The first 100 employers get the full platform. No card. No catch.</p>
+          <h2 className={styles.sectionTitle}>Everything you need to hire — completely free</h2>
+          <p className={styles.sectionSubtitle}>The first 1000 employers get the full platform. No card. No catch.</p>
           <div className={`${styles.benefitsGrid} ${styles.staggerChildren}`} data-reveal>
             <div className={styles.benefitCard}>
               <div className={styles.benefitIcon}>
@@ -270,7 +270,7 @@ export default function Home() {
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
               <h3 className={styles.stepTitle}>No agency fees</h3>
-              <p className={styles.stepText}>Agencies charge 15-25% of salary per hire. Hex gives you the same tools for a flat subscription — free for the first 100.</p>
+              <p className={styles.stepText}>Agencies charge 15-25% of salary per hire. Hex gives you the same tools for free — no subscription needed for the first 1000 employers.</p>
             </div>
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
@@ -303,12 +303,12 @@ export default function Home() {
       <section className={`${styles.finalCta} ${styles.scrollReveal}`} data-reveal>
         <div className={styles.sectionInner}>
           <h2 className={styles.finalCtaTitle}>
-            {100 - (employerCount ?? 0) > 0
-              ? `Only ${100 - (employerCount ?? 0)} free spots left`
+            {1000 - (employerCount ?? 0) > 0
+              ? `Only ${1000 - (employerCount ?? 0)} free spots left`
               : 'Join Hex today'}
           </h2>
           <p className={styles.finalCtaText}>
-            12 months free. All features. No card needed. Once the 100 spots fill up, new employers pay from day one.
+            All features. No card needed. Once the 1000 free spots fill up, new employers pay from day one.
           </p>
           <div className={styles.heroCtas}>
             <Link href="/register/employer-free" className={styles.ctaPrimary}>
