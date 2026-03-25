@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -24,6 +24,20 @@ export default function RegisterEmployerFreePage() {
   const [agreePrivacy, setAgreePrivacy] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/api/check-spots')
+      .then(r => r.json())
+      .then(d => {
+        if (d.isFull) {
+          router.push('/waitlist?reason=full')
+        } else {
+          setSpotsRemaining(d.spotsRemaining ?? null)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const handleAddressFound = (address: AddressData) => {
     setAddressData(address)
@@ -142,7 +156,11 @@ export default function RegisterEmployerFreePage() {
         <div className={loginStyles.formCard}>
           {/* Free banner */}
           <div className={styles.freeBanner}>
-            🎉 You&apos;re claiming one of the first 100 free employer spots — 12 months free, no card needed.
+            {spotsRemaining === null
+              ? '🎉 You\u2019re claiming one of the first 100 free employer spots \u2014 12 months free, no card needed.'
+              : spotsRemaining <= 10
+                ? `\ud83d\udd34 Only ${spotsRemaining} spot${spotsRemaining === 1 ? '' : 's'} left \u2014 claim yours now before they\u2019re gone.`
+                : `\ud83d\udfe1 ${spotsRemaining} of 100 free spots remaining \u2014 no card needed.`}
           </div>
 
           <h1 className={loginStyles.title}>Create your employer account</h1>
