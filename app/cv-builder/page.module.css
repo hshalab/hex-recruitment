@@ -111,7 +111,7 @@
   margin: 0 auto;
   padding: 1rem 2rem 2rem;
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   min-height: calc(100vh - 140px);
 }
 
@@ -121,7 +121,7 @@
 }
 
 .previewPanel {
-  width: 420px;
+  width: 340px;
   flex-shrink: 0;
   position: sticky;
   top: 1rem;
@@ -161,6 +161,7 @@
   gap: 0.25rem;
   margin-bottom: 1.25rem;
   flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .stepBtn {
