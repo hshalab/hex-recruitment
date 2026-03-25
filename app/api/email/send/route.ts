@@ -14,6 +14,11 @@ import { trialEndingEmail } from '@/emails/trial-ending'
 import { newMessageEmail } from '@/emails/new-message'
 import { passwordResetEmail } from '@/emails/password-reset'
 import { emailVerificationEmail } from '@/emails/email-verification'
+import { activationDay1Email } from '@/emails/activation-day1'
+import { activationDay3Email } from '@/emails/activation-day3'
+import { activationDay7Email } from '@/emails/activation-day7'
+import { activationDay14Email } from '@/emails/activation-day14'
+import { activationDay30Email } from '@/emails/activation-day30'
 
 export async function POST(req: Request) {
   try {
@@ -92,6 +97,21 @@ export async function POST(req: Request) {
         break
       case 'email_verification':
         email = emailVerificationEmail(data.verifyUrl)
+        break
+      case 'activation_day1':
+        email = activationDay1Email(data.companyName)
+        break
+      case 'activation_day3':
+        email = activationDay3Email(data.companyName)
+        break
+      case 'activation_day7':
+        email = activationDay7Email(data.companyName)
+        break
+      case 'activation_day14':
+        email = activationDay14Email(data.companyName)
+        break
+      case 'activation_day30':
+        email = activationDay30Email(data.companyName)
         break
       default:
         return NextResponse.json({ error: `Unknown email type: ${type}` }, { status: 400 })
