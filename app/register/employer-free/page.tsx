@@ -136,14 +136,14 @@ export default function RegisterEmployerFreePage() {
           {/* Free banner */}
           <div className={styles.freeBanner}>
             {spotsRemaining === null
-              ? '🎉 You\u2019re claiming one of the first 100 free employer spots \u2014 12 months free, no card needed.'
+              ? '\ud83c\udf89 Join the first 1000 employers on Hex \u2014 post jobs free, no card needed.'
               : spotsRemaining <= 10
                 ? `\ud83d\udd34 Only ${spotsRemaining} spot${spotsRemaining === 1 ? '' : 's'} left \u2014 claim yours now before they\u2019re gone.`
-                : `\ud83d\udfe1 ${spotsRemaining} of 100 free spots remaining \u2014 no card needed.`}
+                : `\ud83d\udfe1 ${spotsRemaining} of 1000 free employer spots remaining \u2014 no card needed.`}
           </div>
 
-          <h1 className={loginStyles.title}>Create your employer account</h1>
-          <p className={loginStyles.subtitle}>Takes 60 seconds — no card needed.</p>
+          <h1 className={loginStyles.title}>Start hiring for free</h1>
+          <p className={loginStyles.subtitle}>Join the first 1000 employers on Hex — post jobs free, no card needed.</p>
 
           {error && <div className={loginStyles.error}>{error}</div>}
 
@@ -223,7 +223,7 @@ export default function RegisterEmployerFreePage() {
             <div className={styles.trustRow}>
               <span><span className={styles.trustCheck}>✓</span> No credit card</span>
               <span><span className={styles.trustCheck}>✓</span> Cancel anytime</span>
-              <span><span className={styles.trustCheck}>✓</span> Free for 12 months</span>
+              <span><span className={styles.trustCheck}>✓</span> Free for first 1000 employers</span>
             </div>
           </form>
 
