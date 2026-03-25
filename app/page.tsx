@@ -257,11 +257,6 @@ export default function Home() {
               <p className={styles.stepText}>See which jobs get views, where candidates come from, and how your hiring funnel performs.</p>
             </div>
           </div>
-          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-            <Link href="/register/employer-free" className={styles.ctaPrimary}>
-              Claim your free spot →
-            </Link>
-          </div>
         </div>
       </section>
 
