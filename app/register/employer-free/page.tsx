@@ -16,8 +16,7 @@ export default function RegisterEmployerFreePage() {
   const [contactName, setContactName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [agreeTerms, setAgreeTerms] = useState(false)
-  const [agreePrivacy, setAgreePrivacy] = useState(false)
+  const [agreeAll, setAgreeAll] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null)
@@ -39,8 +38,8 @@ export default function RegisterEmployerFreePage() {
     e.preventDefault()
     setError('')
 
-    if (!agreeTerms || !agreePrivacy) {
-      setError('Please agree to the Terms of Service and Privacy Policy')
+    if (!agreeAll) {
+      setError('Please agree to our Terms of Service and Privacy Policy to continue.')
       return
     }
 
@@ -206,18 +205,10 @@ export default function RegisterEmployerFreePage() {
               <label className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
-                  checked={agreeTerms}
-                  onChange={e => setAgreeTerms(e.target.checked)}
+                  checked={agreeAll}
+                  onChange={e => setAgreeAll(e.target.checked)}
                 />
-                <span>I agree to the <Link href="/terms" target="_blank" className={styles.legalLink}>Terms of Service</Link></span>
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={agreePrivacy}
-                  onChange={e => setAgreePrivacy(e.target.checked)}
-                />
-                <span>I agree to the <Link href="/privacy-policy" target="_blank" className={styles.legalLink}>Privacy Policy</Link></span>
+                <span>I agree to the <Link href="/terms" target="_blank" className={styles.legalLink}>Terms of Service</Link> and <Link href="/privacy-policy" target="_blank" className={styles.legalLink}>Privacy Policy</Link></span>
               </label>
             </div>
 
