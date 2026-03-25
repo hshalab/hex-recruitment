@@ -100,10 +100,13 @@ export default function Home() {
           }
         })
       },
-      { threshold: 0.15 }
+      { threshold: 0.05 }
     )
     reveals.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+    const fallback = setTimeout(() => {
+      reveals.forEach((el) => el.classList.add(styles.scrollRevealVisible))
+    }, 1500)
+    return () => { observer.disconnect(); clearTimeout(fallback) }
   }, [])
 
   const jobsCount = useCountUp(jobsTarget, 2000, statsVisible)
