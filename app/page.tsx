@@ -86,28 +86,6 @@ export default function Home() {
     return () => observer.disconnect()
   }, [])
 
-  // Scroll reveal animations — observe all elements with data-reveal
-  useEffect(() => {
-    const reveals = document.querySelectorAll('[data-reveal]')
-    if (!reveals.length) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add(styles.scrollRevealVisible)
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      { threshold: 0.05 }
-    )
-    reveals.forEach((el) => observer.observe(el))
-    const fallback = setTimeout(() => {
-      reveals.forEach((el) => el.classList.add(styles.scrollRevealVisible))
-    }, 1500)
-    return () => { observer.disconnect(); clearTimeout(fallback) }
-  }, [])
 
   const jobsCount = useCountUp(jobsTarget, 2000, statsVisible)
   const candidatesCount = useCountUp(candidatesTarget, 2000, statsVisible)
@@ -157,7 +135,7 @@ export default function Home() {
       </section>
 
       {/* Stats Bar */}
-      <section className={`${styles.statsBar} ${styles.scrollReveal}`} ref={statsRef} data-reveal>
+      <section className={`${styles.statsBar}`} ref={statsRef}>
         <div className={styles.statsInner}>
           <div className={styles.stat}>
             <span className={styles.statNumber}>{jobsCount.toLocaleString()}+</span>
@@ -182,12 +160,12 @@ export default function Home() {
       </section>
 
       {/* How It Works — employer focused */}
-      <section className={`${styles.howItWorks} ${styles.scrollReveal}`} data-reveal>
+      <section className={`${styles.howItWorks}`}>
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>Post a job in 3 minutes. Get applicants the same day.</h2>
           <p className={styles.sectionSubtitle}>No agencies, no long contracts — just a simple hiring toolkit</p>
 
-          <div className={`${styles.stepsGrid} ${styles.staggerChildren}`} data-reveal>
+          <div className={`${styles.stepsGrid}`}>
             <div className={styles.step}>
               <div className={styles.stepNumber}>1</div>
               <h3 className={styles.stepTitle}>Post your job</h3>
@@ -208,11 +186,11 @@ export default function Home() {
       </section>
 
       {/* What You Get — free launch offer */}
-      <section className={`${styles.benefits} ${styles.scrollReveal}`} data-reveal>
+      <section className={`${styles.benefits}`}>
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>Everything you need to hire — completely free</h2>
           <p className={styles.sectionSubtitle}>The first 1000 employers get the full platform. No card. No catch.</p>
-          <div className={`${styles.benefitsGrid} ${styles.staggerChildren}`} data-reveal>
+          <div className={`${styles.benefitsGrid}`}>
             <div className={styles.benefitCard}>
               <div className={styles.benefitIcon}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -261,10 +239,10 @@ export default function Home() {
       </section>
 
       {/* Objection Handling */}
-      <section className={`${styles.howItWorks} ${styles.scrollReveal}`} data-reveal>
+      <section className={`${styles.howItWorks}`}>
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>Why employers switch to Hex</h2>
-          <div className={`${styles.stepsGrid} ${styles.staggerChildren}`} data-reveal>
+          <div className={`${styles.stepsGrid}`}>
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
               <h3 className={styles.stepTitle}>No agency fees</h3>
@@ -285,7 +263,7 @@ export default function Home() {
       </section>
 
       {/* Sectors */}
-      <section className={`${styles.sectors} ${styles.scrollReveal}`} data-reveal>
+      <section className={`${styles.sectors}`}>
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>All UK Sectors Covered</h2>
           <p className={styles.sectionSubtitle}>From accountancy to transport — we cover every industry</p>
@@ -298,7 +276,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className={`${styles.finalCta} ${styles.scrollReveal}`} data-reveal>
+      <section className={`${styles.finalCta}`}>
         <div className={styles.sectionInner}>
           <h2 className={styles.finalCtaTitle}>
             {1000 - (employerCount ?? 0) > 0
