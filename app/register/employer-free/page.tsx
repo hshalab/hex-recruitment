@@ -22,6 +22,12 @@ export default function RegisterEmployerFreePage() {
   const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null)
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.user_metadata?.role === 'employer') {
+        router.replace('/employer/dashboard')
+      }
+    })
+
     fetch('/api/check-spots')
       .then(r => r.json())
       .then(d => {
