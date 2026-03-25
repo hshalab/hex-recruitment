@@ -274,7 +274,7 @@
 
 .benefitsGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   max-width: 1100px;
   margin: 0 auto;
@@ -632,8 +632,8 @@
   }
 
   .benefitsGrid {
-    grid-template-columns: 1fr;
-    max-width: 400px;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: none;
   }
 
   .sectionTitle {
@@ -669,6 +669,11 @@
     width: 100%;
     max-width: 280px;
     text-align: center;
+  }
+
+  .benefitsGrid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
   }
 }
 
