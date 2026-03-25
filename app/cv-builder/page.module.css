@@ -160,15 +160,14 @@
   display: flex;
   gap: 0.25rem;
   margin-bottom: 1.25rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
+  flex-wrap: nowrap;
 }
 
 .stepBtn {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.5rem 0.875rem;
+  padding: 0.5rem 0.75rem;
   background: #fff;
   border: 1.5px solid var(--border-gray);
   border-radius: 8px;
