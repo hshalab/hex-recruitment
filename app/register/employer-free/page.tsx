@@ -219,6 +219,12 @@ export default function RegisterEmployerFreePage() {
             >
               {loading ? 'Creating account...' : 'Create free account →'}
             </button>
+
+            <div className={styles.trustRow}>
+              <span><span className={styles.trustCheck}>✓</span> No credit card</span>
+              <span><span className={styles.trustCheck}>✓</span> Cancel anytime</span>
+              <span><span className={styles.trustCheck}>✓</span> Free for 12 months</span>
+            </div>
           </form>
 
           <div className={loginStyles.links}>

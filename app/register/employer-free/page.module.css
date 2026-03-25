@@ -57,3 +57,18 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.trustRow {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-gray);
+}
+
+.trustCheck {
+  color: #16a34a;
+  font-weight: 700;
+  margin-right: 0.2rem;
+}
