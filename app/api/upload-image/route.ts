@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import sharp from 'sharp'
+import { rateLimit } from '@/lib/rateLimit'
 
 const MIN_WIDTH = 400
 const MIN_HEIGHT = 300
@@ -10,6 +11,12 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: max 20 requests per minute per IP
+    const ip = request.headers.get('x-forwarded-for') || 'unknown'
+    if (!rateLimit(`upload-image:${ip}`, 20, 60000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('image') as File | null
 

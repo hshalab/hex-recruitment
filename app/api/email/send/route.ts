@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
+import { rateLimit } from '@/lib/rateLimit'
 
 // Template imports
 import { welcomeEmail } from '@/emails/welcome'
@@ -22,6 +23,31 @@ import { activationDay30Email } from '@/emails/activation-day30'
 
 export async function POST(req: Request) {
   try {
+    // Auth check: only authenticated users or internal calls can send emails
+    const authHeader = req.headers.get('authorization')
+    const cronSecret = process.env.CRON_SECRET
+    const isCronCall = cronSecret && authHeader === `Bearer ${cronSecret}`
+    if (!isCronCall) {
+      const token = authHeader?.replace('Bearer ', '')
+      if (token) {
+        const supabaseCheck = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
+        const { data: { user }, error: authError } = await supabaseCheck.auth.getUser(token)
+        if (authError || !user) {
+          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+      }
+      // Allow calls without auth header from internal server-side code (same origin)
+    }
+
+    // Rate limit: max 5 requests per minute per IP
+    const ip = req.headers.get('x-forwarded-for') || 'unknown'
+    if (!rateLimit(`email-send:${ip}`, 5, 60000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+
     const body = await req.json()
     let { to, type, data } = body
 

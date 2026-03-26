@@ -130,7 +130,7 @@ export default function CityJobsPage() {
                   </div>
                   <div className={styles.detailSection}>
                     <h3 className={styles.detailSectionTitle}>Description</h3>
-                    <div className={styles.detailDescription} dangerouslySetInnerHTML={{ __html: selectedJob.fullDescription || selectedJob.description }} />
+                    <div className={styles.detailDescription} dangerouslySetInnerHTML={{ __html: (() => { const DOMPurify = require('dompurify'); return DOMPurify.sanitize(selectedJob.fullDescription || selectedJob.description, { ALLOWED_TAGS: ['h2','h3','h4','p','br','strong','em','u','ul','ol','li','a','blockquote'] }) })() }} />
                   </div>
                   {selectedJob.requirements?.length > 0 && (
                     <div className={styles.detailSection}>

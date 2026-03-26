@@ -8,6 +8,23 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check: require CRON_SECRET or authenticated user
+    const authHeader = request.headers.get('authorization')
+    const cronSecret = process.env.CRON_SECRET
+    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+      // Authorized via cron secret
+    } else {
+      const token = authHeader?.replace('Bearer ', '')
+      if (!token) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      const authSupabase = createClient(supabaseUrl, supabaseServiceKey)
+      const { data: { user }, error: authError } = await authSupabase.auth.getUser(token)
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+    }
+
     const { jobId } = await request.json()
 
     if (!jobId) {

@@ -9,9 +9,19 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await req.json()
+    // Auth check: verify session and use session user ID
+    const authHeader = req.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '')
+    let sessionUserId: string | null = null
+    if (token) {
+      const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+      sessionUserId = user?.id || null
+    }
 
-    if (!userId) {
+    const { userId } = await req.json()
+    const safeUserId = sessionUserId || userId
+
+    if (!safeUserId) {
       return NextResponse.json(
         { error: 'Missing required field: userId' },
         { status: 400 }
@@ -22,7 +32,7 @@ export async function POST(req: NextRequest) {
     const { data: subscription, error } = await supabaseAdmin
       .from('employer_subscriptions')
       .select('stripe_customer_id')
-      .eq('user_id', userId)
+      .eq('user_id', safeUserId)
       .single()
 
     if (error || !subscription?.stripe_customer_id) {

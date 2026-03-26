@@ -5,6 +5,20 @@ import { newApplicationEmail } from '@/emails/new-application'
 
 export async function POST(req: Request) {
   try {
+    // Auth check: only authenticated users can trigger application emails
+    const authHeader = req.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '')
+    if (token) {
+      const supabaseCheck = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      const { data: { user }, error: authError } = await supabaseCheck.auth.getUser(token)
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+    }
+
     const body = await req.json()
     const { jobTitle, company, employerId, candidateName } = body
 

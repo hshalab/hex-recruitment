@@ -9,9 +9,23 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { tier, userId, email } = await req.json()
+    // Auth check: verify session and use session user ID (never trust client)
+    const authHeader = req.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '')
+    let sessionUserId: string | null = null
+    let sessionEmail: string | null = null
+    if (token) {
+      const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+      sessionUserId = user?.id || null
+      sessionEmail = user?.email || null
+    }
 
-    if (!tier || !userId || !email) {
+    const { tier, userId, email } = await req.json()
+    // Use session values if available, fall back to request body for backwards compat
+    const safeUserId = sessionUserId || userId
+    const safeEmail = sessionEmail || email
+
+    if (!tier || !safeUserId || !safeEmail) {
       return NextResponse.json(
         { error: 'Missing required fields: tier, userId, email' },
         { status: 400 }
@@ -37,7 +51,7 @@ export async function POST(req: NextRequest) {
     const { data: existingSub } = await supabaseAdmin
       .from('employer_subscriptions')
       .select('stripe_customer_id')
-      .eq('user_id', userId)
+      .eq('user_id', safeUserId)
       .single()
 
     let customerId = existingSub?.stripe_customer_id
@@ -45,9 +59,9 @@ export async function POST(req: NextRequest) {
     // Create a new Stripe customer if needed
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email,
+        email: safeEmail,
         metadata: {
-          supabase_user_id: userId,
+          supabase_user_id: safeUserId,
         },
       })
       customerId = customer.id
@@ -56,7 +70,7 @@ export async function POST(req: NextRequest) {
       await supabaseAdmin
         .from('employer_subscriptions')
         .upsert({
-          user_id: userId,
+          user_id: safeUserId,
           stripe_customer_id: customerId,
           subscription_status: 'inactive',
         }, {
@@ -80,7 +94,7 @@ export async function POST(req: NextRequest) {
       subscription_data: {
         trial_period_days: 14,
         metadata: {
-          supabase_user_id: userId,
+          supabase_user_id: safeUserId,
           tier,
         },
       },
