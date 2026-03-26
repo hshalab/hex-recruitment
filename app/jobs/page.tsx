@@ -224,6 +224,7 @@ function JobsPageContent() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null)
   const [shortlistedJobIds, setShortlistedJobIds] = useState<Set<string>>(new Set())
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set())
   const [boostedJobIds, setBoostedJobIds] = useState<Set<string>>(new Set())
   const [quickWorkStyle, setQuickWorkStyle] = useState<string | null>(null)
   const [quickExperienceLevel, setQuickExperienceLevel] = useState<string>('')
@@ -263,6 +264,16 @@ function JobsPageContent() {
           .eq('status', 'shortlisted')
         if (shortlisted) {
           setShortlistedJobIds(new Set(shortlisted.map((r: any) => r.job_id)))
+        }
+        // Load all applied job IDs for the candidate (for "Applied ✓" badge on cards)
+        if (session.user.user_metadata?.role !== 'employer') {
+          const { data: applied } = await supabase
+            .from('job_applications')
+            .select('job_id')
+            .eq('candidate_id', session.user.id)
+          if (applied) {
+            setAppliedJobIds(new Set(applied.map((r: any) => r.job_id)))
+          }
         }
       }
     }
@@ -800,6 +811,7 @@ function JobsPageContent() {
 
       setHasApplied(true)
       setApplicationSubmitted(true)
+      if (selectedJob) setAppliedJobIds(prev => { const next = new Set(prev); next.add(selectedJob.id); return next })
     } catch (err) {
       console.error('Application error:', err)
       alert('Failed to submit application. Please try again.')
@@ -1050,7 +1062,24 @@ function JobsPageContent() {
                     {job.workLocationType && <span className={styles.jobCardTag}>{job.workLocationType}</span>}
                     {job.urgent && <span className={`${styles.jobCardTag} ${styles.jobCardTagUrgent}`}>Urgent</span>}
                     {boostedJobIds.has(job.id) && <span className={styles.jobCardFeatured}>⚡ Featured</span>}
+                    {!job.tags?.includes('CV required') && !job.tags?.includes('Cover letter required') && (
+                      <span className={styles.jobCardEasyApply}>⚡ Easy Apply</span>
+                    )}
+                    {getPostedDaysAgo(job.postedAt) <= 2 && (
+                      <span className={styles.jobCardNew}>New</span>
+                    )}
                   </div>
+                  {(() => {
+                    const benefitTags = ['Pension', 'Health insurance', 'Bonus scheme', 'Training provided', 'Career progression']
+                    const jobBenefits = (job.tags || []).filter(t => benefitTags.includes(t)).slice(0, 3)
+                    return jobBenefits.length > 0 ? (
+                      <div className={styles.jobCardBenefits}>
+                        {jobBenefits.map((b, i) => (
+                          <span key={i} className={styles.jobCardBenefit}>{b}</span>
+                        ))}
+                      </div>
+                    ) : null
+                  })()}
                   <div className={styles.jobCardMeta}>
                     <span className={styles.jobCardPosted}>{job.postedAt}</span>
                     {job.expiresDate && (() => {
@@ -1060,6 +1089,9 @@ function JobsPageContent() {
                       }
                       return null
                     })()}
+                    {appliedJobIds.has(job.id) && (
+                      <span className={styles.jobCardApplied}>Applied ✓</span>
+                    )}
                     <button
                       className={`${styles.jobCardSave} ${isSaved(job.id) ? styles.jobCardSaved : ''}`}
                       onClick={(e) => { e.stopPropagation(); if (!isSaved(job.id)) trackClickEvent(job.id, 'save_click'); toggleSave(job.id) }}
