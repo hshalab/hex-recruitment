@@ -527,7 +527,7 @@ export default function Header() {
           <div className={styles.headerContent}>
             <Link href={logoHref} className={styles.logo} {...(showSidebar ? { 'data-sidebar-logo': '' } : {})}>
               <HoneycombLogo size={28} color="var(--primary-yellow)" className={styles.logoIcon} />
-              <div className={styles.logoBrand}>
+              <div className={`${styles.logoBrand} ${user ? styles.logoBrandHidden : ''}`}>
                 <span className={styles.logoText}>HEX</span>
                 <span className={styles.logoTagline}>{logoTagline}</span>
               </div>
