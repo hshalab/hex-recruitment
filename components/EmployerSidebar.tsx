@@ -251,7 +251,7 @@ export default function EmployerSidebar() {
               className={`${styles.item} ${isActive(item.href) ? styles.active : ''}`}
               data-tooltip={item.label}
               title={item.label}
-              onClick={() => setMobileOpen(false)}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMobileOpen(false); router.push(item.href) }}
               onMouseEnter={() => router.prefetch(item.href)}
             >
               <span className={styles.icon}>{item.icon}</span>

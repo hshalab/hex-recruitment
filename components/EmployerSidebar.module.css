@@ -10,7 +10,7 @@
   background: var(--dark-gray);
   display: flex;
   flex-direction: column;
-  z-index: 999;
+  z-index: 1100;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -299,7 +299,7 @@ button.item {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 998;
+    z-index: 1099;
   }
 
   /* Always show labels on mobile */
