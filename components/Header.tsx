@@ -200,7 +200,7 @@ export default function Header() {
       {showProfileMenu && (
         <>
         <div className={styles.dropdownOverlay} onClick={() => setShowProfileMenu(false)} />
-        <div className={styles.profileDropdown}>
+        <div className={styles.profileDropdown} onClick={e => e.stopPropagation()}>
           <div className={styles.dropdownHeader}>
             <div className={`${styles.dropdownAvatar} ${isEmployer ? styles.avatarSquare : ''}`}>
               {getProfilePhoto() ? (
@@ -222,7 +222,7 @@ export default function Header() {
           <Link
             href={isEmployer ? '/settings/company' : profilePath}
             className={styles.dropdownItem}
-            onClick={() => setShowProfileMenu(false)}
+            onClick={(e) => { e.preventDefault(); setShowProfileMenu(false); router.push(isEmployer ? '/settings/company' : profilePath) }}
           >
             <svg className={styles.dropdownIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -233,7 +233,7 @@ export default function Header() {
           <Link
             href="/settings"
             className={styles.dropdownItem}
-            onClick={() => setShowProfileMenu(false)}
+            onClick={(e) => { e.preventDefault(); setShowProfileMenu(false); router.push('/settings') }}
           >
             <svg className={styles.dropdownIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="3" />
@@ -245,7 +245,7 @@ export default function Header() {
             <Link
               href="/job-alerts"
               className={styles.dropdownItem}
-              onClick={() => setShowProfileMenu(false)}
+              onClick={(e) => { e.preventDefault(); setShowProfileMenu(false); router.push('/job-alerts') }}
             >
               <svg className={styles.dropdownIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -258,7 +258,7 @@ export default function Header() {
             <Link
               href="/my-jobs?filter=archived"
               className={styles.dropdownItem}
-              onClick={() => setShowProfileMenu(false)}
+              onClick={(e) => { e.preventDefault(); setShowProfileMenu(false); router.push('/my-jobs?filter=archived') }}
             >
               <svg className={styles.dropdownIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="21 8 21 21 3 21 3 8" />
