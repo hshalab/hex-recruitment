@@ -115,7 +115,11 @@ export default function Header() {
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside as EventListener)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside as EventListener)
+    }
   }, [])
 
   useEffect(() => {
@@ -199,7 +203,11 @@ export default function Header() {
 
       {showProfileMenu && (
         <>
-        <div className={styles.dropdownOverlay} onClick={() => setShowProfileMenu(false)} />
+        <div
+          className={styles.dropdownOverlay}
+          onClick={() => setShowProfileMenu(false)}
+          onTouchEnd={(e) => { e.preventDefault(); setShowProfileMenu(false); }}
+        />
         <div className={styles.profileDropdown} onClick={e => e.stopPropagation()}>
           <div className={styles.dropdownHeader}>
             <div className={`${styles.dropdownAvatar} ${isEmployer ? styles.avatarSquare : ''}`}>
