@@ -6,11 +6,15 @@ import { Inter, Dancing_Script } from 'next/font/google'
 import { Providers } from './providers'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+})
 const dancingScript = Dancing_Script({
   subsets: ['latin'],
   variable: '--font-cursive',
   weight: ['400', '700'],
+  display: 'swap',
 })
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hexjobs.co.uk'
@@ -18,34 +22,34 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hexjobs.co.uk'
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Hex | Talent Recruitment — Free UK Job Board for Employers',
-    template: '%s | Hex | Talent Recruitment',
+    default: 'Hex Jobs — Free UK Job Board | No Agency Fees',
+    template: '%s | Hex Jobs',
   },
-  description: 'Post unlimited jobs free for 12 months. No agency fees. Search candidates, manage applications and schedule interviews — one platform for all UK sectors.',
-  keywords: ['UK jobs', 'job board', 'recruitment', 'hospitality jobs', 'healthcare jobs', 'find a job UK', 'hire staff UK', 'Hex', 'talent recruitment'],
-  authors: [{ name: 'Hex' }],
-  creator: 'Hex',
-  publisher: 'Hex',
+  description: 'Find jobs or hire great people across all UK sectors. Post unlimited jobs free — no agency fees, no card needed. Search candidates, manage applications and schedule interviews in one platform.',
+  keywords: ['UK jobs', 'job board', 'find jobs UK', 'hire staff UK', 'no agency fees', 'free job posting', 'hospitality jobs', 'healthcare jobs', 'Hex Jobs'],
+  authors: [{ name: 'Hex Jobs' }],
+  creator: 'Hex Jobs',
+  publisher: 'Hex Jobs',
   openGraph: {
     type: 'website',
     locale: 'en_GB',
     url: SITE_URL,
-    siteName: 'Hex',
-    title: 'Hex | Talent Recruitment — Free UK Job Board for Employers',
-    description: 'Post unlimited jobs free for 12 months. No agency fees. Search candidates, manage applications and schedule interviews — one platform for all UK sectors.',
+    siteName: 'Hex Jobs',
+    title: 'Hex Jobs — Free UK Job Board | No Agency Fees',
+    description: 'Find jobs or hire great people across all UK sectors. Post unlimited jobs free — no agency fees, no card needed.',
     images: [
       {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'Hex — Talent Recruitment',
+        alt: 'Hex Jobs — Free UK Job Board',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hex | Talent Recruitment — Free UK Job Board for Employers',
-    description: 'Post unlimited jobs free for 12 months. No agency fees. Search candidates, manage applications and schedule interviews — one platform for all UK sectors.',
+    title: 'Hex Jobs — Free UK Job Board | No Agency Fees',
+    description: 'Find jobs or hire great people across all UK sectors. Post unlimited jobs free — no agency fees, no card needed.',
     images: ['/opengraph-image'],
   },
   robots: {
