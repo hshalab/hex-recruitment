@@ -56,6 +56,38 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
+/* ── Welcome Actions ──────────────────────────────── */
+.welcomeActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.welcomeActionPrimary {
+  padding: 0.5rem 1.25rem;
+  background: var(--primary-yellow);
+  color: var(--text-dark);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.welcomeActionPrimary:hover { background: var(--hover-yellow); }
+.welcomeActionSecondary {
+  padding: 0.5rem 1.25rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--white);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.welcomeActionSecondary:hover { background: rgba(255, 255, 255, 0.25); }
+
 /* ── Onboarding Banner ──────────────────────────────── */
 .onboardingBanner { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; gap: 1rem; }
 .onboardingLeft { flex: 1; }

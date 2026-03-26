@@ -400,6 +400,16 @@ export default function EmployerDashboardPage() {
           </div>
         </div>
 
+        {/* ── QUICK ACTION BUTTONS (above fold) ───────── */}
+        <div className={styles.quickActionBar}>
+          {QUICK_ACTIONS.map(action => (
+            <Link key={action.href} href={action.href} className={styles.quickActionBarBtn}>
+              <span>{action.icon}</span>
+              <span>{action.title === 'Messages' && totalUnreadCount > 0 ? `${action.title} (${totalUnreadCount})` : action.title}</span>
+            </Link>
+          ))}
+        </div>
+
         {/* ── GETTING STARTED CHECKLIST ───────────────── */}
         {totalJobs === 0 && !dismissChecklist && (() => {
           const hasLogo = !!companyLogo

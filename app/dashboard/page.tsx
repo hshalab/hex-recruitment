@@ -647,6 +647,10 @@ export default function DashboardPage() {
             <h1>{getGreeting()}, {displayName.split(' ')[0]}</h1>
             <p>{candidate?.jobTitle || 'Job Seeker'} {candidate?.location ? `in ${candidate.location}` : ''}</p>
           </div>
+          <div className={styles.welcomeActions}>
+            <Link href="/jobs" className={styles.welcomeActionPrimary}>Browse Jobs</Link>
+            <Link href="/settings/profile" className={styles.welcomeActionSecondary}>Edit Profile</Link>
+          </div>
         </div>
 
         {completionPct < 80 && (
