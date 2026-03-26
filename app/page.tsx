@@ -278,13 +278,9 @@ export default function Home() {
       {/* Final CTA */}
       <section className={`${styles.finalCta}`}>
         <div className={styles.sectionInner}>
-          <h2 className={styles.finalCtaTitle}>
-            {1000 - (employerCount ?? 0) > 0
-              ? `Only ${1000 - (employerCount ?? 0)} free spots left`
-              : 'Join Hex today'}
-          </h2>
+          <h2 className={styles.finalCtaTitle}>Ready to get started?</h2>
           <p className={styles.finalCtaText}>
-            All features. No card needed. Once the 1000 free spots fill up, new employers pay from day one.
+            Join free today. No credit card required.
           </p>
           <div className={styles.heroCtas}>
             <Link href="/register/employer-free" className={styles.ctaPrimary}>

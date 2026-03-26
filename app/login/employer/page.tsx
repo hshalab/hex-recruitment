@@ -143,18 +143,18 @@ export default function EmployerLoginPage() {
 
           <div className={styles.signupSection}>
             <p className={styles.signupText}>New employer?</p>
-            <Link href="/subscribe" className={styles.signupBtn}>
-              Subscribe now
+            <Link href="/register/employer-free" className={styles.signupBtn}>
+              Create free account
             </Link>
           </div>
 
           <div className={styles.benefits}>
             <h3 className={styles.benefitsTitle}>Employer Benefits</h3>
             <ul className={styles.benefitsList}>
+              <li>Free for first 1000 employers</li>
               <li>Post unlimited jobs</li>
-              <li>Browse candidate profiles</li>
-              <li>Direct messaging</li>
-              <li>14-day free trial</li>
+              <li>Search &amp; message candidates</li>
+              <li>Full hiring pipeline</li>
             </ul>
           </div>
 
