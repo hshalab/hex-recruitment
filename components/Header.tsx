@@ -162,6 +162,15 @@ export default function Header() {
 
   const isEmployer = user?.user_metadata?.role === 'employer'
 
+  const logoTagline = (() => {
+    if (!mounted) return 'FIND JOBS · HIRE TALENT'
+    if (user) return isEmployer ? 'HIRE TALENT' : 'FIND JOBS'
+    if (pathname?.startsWith('/employer')) return 'HIRE TALENT'
+    if (pathname?.startsWith('/login') && !pathname?.startsWith('/employer')) return 'FIND JOBS'
+    if (pathname?.startsWith('/register') && !pathname?.startsWith('/employer')) return 'FIND JOBS'
+    return 'FIND JOBS · HIRE TALENT'
+  })()
+
   // Get user initials for avatar fallback
   const getUserInitials = () => {
     const name = user?.user_metadata?.full_name || user?.email || 'U'
@@ -511,7 +520,7 @@ export default function Header() {
               <HoneycombLogo size={28} color="var(--primary-yellow)" className={styles.logoIcon} />
               <div className={styles.logoBrand}>
                 <span className={styles.logoText}>HEX</span>
-                <span className={styles.logoTagline}>FIND JOBS · HIRE TALENT</span>
+                <span className={styles.logoTagline}>{logoTagline}</span>
               </div>
             </Link>
 
