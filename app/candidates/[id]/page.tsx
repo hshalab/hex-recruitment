@@ -91,6 +91,9 @@ export default function CandidateDetailPage() {
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [isEmployer, setIsEmployer] = useState(false)
   const [showContact, setShowContact] = useState(false)
+  const [lastActive, setLastActive] = useState<string | null>(null)
+  const [isOwnProfile, setIsOwnProfile] = useState(false)
+  const [completionPct, setCompletionPct] = useState(0)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -117,9 +120,36 @@ export default function CandidateDetailPage() {
         .maybeSingle()
 
       if (!error && data) {
-        setCandidate(supabaseProfileToCandidate(data))
+        const candidateData = supabaseProfileToCandidate(data)
+        setCandidate(candidateData)
         if (data.visibility_settings) {
           setVisibility({ ...DEFAULT_VISIBILITY, ...data.visibility_settings })
+        }
+
+        // Last active timestamp from profile updated_at
+        if (data.updated_at) {
+          const date = new Date(data.updated_at)
+          const now = new Date()
+          const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+          if (diffDays === 0) setLastActive('Active today')
+          else if (diffDays <= 7) setLastActive('Active this week')
+          else if (diffDays <= 30) setLastActive('Active this month')
+          else setLastActive(null)
+        }
+
+        // Profile completeness (visible only to the candidate themselves)
+        if (session.user.id === candidateId) {
+          setIsOwnProfile(true)
+          const fields = [
+            candidateData.profilePictureUrl,
+            candidateData.jobTitle,
+            candidateData.bio,
+            candidateData.location,
+            candidateData.skills && candidateData.skills.length > 0,
+            candidateData.yearsExperience != null,
+            candidateData.availability,
+          ]
+          setCompletionPct(Math.round((fields.filter(Boolean).length / fields.length) * 100))
         }
       }
 
@@ -192,6 +222,16 @@ export default function CandidateDetailPage() {
           </button>
         </div>
 
+        {/* Profile completeness (own profile only) */}
+        {isOwnProfile && completionPct < 100 && (
+          <div className={styles.completionBar}>
+            <div className={styles.completionBarFill} style={{ width: `${completionPct}%` }} />
+            <span className={styles.completionBarText}>
+              Profile {completionPct}% complete — <Link href="/settings/profile" className={styles.completionBarLink}>complete your profile</Link>
+            </span>
+          </div>
+        )}
+
         {/* ===== PROFILE HEADER ===== */}
         <div className={styles.profileHeader}>
           <div className={styles.headerContent}>
@@ -208,6 +248,46 @@ export default function CandidateDetailPage() {
               <h1 className={styles.candidateName}>{candidate.fullName}</h1>
               <p className={styles.candidateTitle}>{candidate.jobTitle}</p>
 
+              {/* Prominent availability badge */}
+              {visibility.show_availability && candidate.availability && (
+                <div className={styles.availabilityRow}>
+                  <span className={`${styles.availabilityBadgeLarge} ${styles[`availability${availStyle}`]}`}>
+                    <span className={styles.availabilityDot} />
+                    {candidate.availability}
+                  </span>
+                </div>
+              )}
+
+              {/* Verification badges in header */}
+              {visibility.show_verification_badges && (candidate.hasNiNumber || candidate.hasBankAccount || candidate.hasRightToWork || candidate.hasP45) && (
+                <div className={styles.headerVerification}>
+                  {candidate.hasRightToWork && (
+                    <span className={styles.headerVerificationBadge}>
+                      <span className={styles.headerVerificationCheck}>✓</span>
+                      Right to Work
+                    </span>
+                  )}
+                  {candidate.hasNiNumber && (
+                    <span className={styles.headerVerificationBadge}>
+                      <span className={styles.headerVerificationCheck}>✓</span>
+                      NI Number
+                    </span>
+                  )}
+                  {candidate.hasBankAccount && (
+                    <span className={styles.headerVerificationBadge}>
+                      <span className={styles.headerVerificationCheck}>✓</span>
+                      UK Bank Account
+                    </span>
+                  )}
+                  {candidate.hasP45 && (
+                    <span className={styles.headerVerificationBadge}>
+                      <span className={styles.headerVerificationCheck}>✓</span>
+                      P45
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className={styles.headerMeta}>
                 {candidate.location && (
                   <span className={styles.metaItem}>
@@ -221,10 +301,10 @@ export default function CandidateDetailPage() {
                     {candidate.yearsExperience} years experience
                   </span>
                 )}
-                {visibility.show_availability && candidate.availability && (
-                  <span className={`${styles.availabilityBadge} ${styles[`availability${availStyle}`]}`}>
-                    <span className={styles.availabilityDot} />
-                    {candidate.availability}
+                {lastActive && (
+                  <span className={styles.metaItem}>
+                    <span className={styles.lastActiveDot} />
+                    {lastActive}
                   </span>
                 )}
               </div>

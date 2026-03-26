@@ -116,10 +116,10 @@
 .avatar {
   width: 120px;
   height: 120px;
-  border-radius: 12px;
+  border-radius: 50%;
   flex-shrink: 0;
   overflow: hidden;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  border: 3px solid rgba(255, 229, 0, 0.4);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   background: #FFD700;
   display: flex;
@@ -131,7 +131,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 50%;
 }
 
 .avatarPlaceholder {
@@ -226,6 +226,96 @@
 
 .availabilityGrey .availabilityDot {
   background: rgba(255, 255, 255, 0.4);
+}
+
+/* Prominent Availability Row */
+.availabilityRow {
+  margin: 0.35rem 0 0.5rem;
+}
+.availabilityBadgeLarge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Header Verification Badges */
+.headerVerification {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 0.5rem;
+}
+.headerVerificationBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #15803d;
+  border-radius: 20px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.headerVerificationCheck {
+  width: 16px;
+  height: 16px;
+  background: #22c55e;
+  color: white;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Last Active Dot */
+.lastActiveDot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+/* Profile Completeness Bar */
+.completionBar {
+  background: rgba(255, 229, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 229, 0, 0.2);
+  padding: 0.6rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  border-radius: 12px 12px 0 0;
+  margin-bottom: -1px;
+}
+.completionBarFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 229, 0, 0.15);
+  border-radius: 12px 0 0 0;
+  transition: width 0.3s ease;
+}
+.completionBarText {
+  font-size: 0.8rem;
+  color: #92400e;
+  position: relative;
+  z-index: 1;
+}
+.completionBarLink {
+  color: #b45309;
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 /* Quick Stats Row */
@@ -1071,6 +1161,7 @@
   .avatar {
     width: 90px;
     height: 90px;
+    border-radius: 50%;
   }
 
   .avatarPlaceholder {
