@@ -859,43 +859,6 @@
 /* ===========================
    MOBILE ACTION BAR
    =========================== */
-.mobileActionBar {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 0.75rem 1rem;
-  background: #fff;
-  border-top: 1px solid #e2e8f0;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  gap: 0.5rem;
-}
-
-.mobileActionBtn {
-  flex: 1;
-  padding: 0.875rem;
-  background: #FFD700;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #0f172a;
-  cursor: pointer;
-}
-
-.mobileActionBtnOutline {
-  flex: 1;
-  padding: 0.875rem;
-  background: #fff;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #334155;
-  cursor: pointer;
-}
 
 /* ===========================
    CONNECTION MODAL
@@ -1138,9 +1101,6 @@
     order: -1;
   }
 
-  .mobileActionBar {
-    display: flex;
-  }
 
   .prefRow {
     flex-direction: column;

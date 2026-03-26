@@ -600,17 +600,6 @@ export default function CandidateDetailPage() {
         </div>
       </div>
 
-      {/* Mobile Action Bar */}
-      <div className={styles.mobileActionBar}>
-        <Link href={`/messages?candidate=${candidateId}`} className={styles.mobileActionBtn}>
-          Message
-        </Link>
-        {visibility.show_cv && candidate.cvUrl && (
-          <a href={candidate.cvUrl} target="_blank" rel="noopener noreferrer" download>
-            <button className={styles.mobileActionBtnOutline}>Download CV</button>
-          </a>
-        )}
-      </div>
     </main>
   )
 }
