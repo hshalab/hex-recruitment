@@ -658,7 +658,7 @@
 
   .employerLoginBtn,
   .employeeLoginBtn {
-    padding: 0.4rem 0.75rem;
+    padding: 0.5rem 0.9rem;
     font-size: 0.8rem;
   }
 
@@ -667,7 +667,7 @@
   }
 
   .logoText {
-    display: none;
+    display: inline;
   }
 
   .logoTagline {
