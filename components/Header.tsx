@@ -511,7 +511,7 @@ export default function Header() {
               <HoneycombLogo size={28} color="var(--primary-yellow)" className={styles.logoIcon} />
               <div className={styles.logoBrand}>
                 <span className={styles.logoText}>HEX</span>
-                <span className={styles.logoTagline}>TALENT RECRUITMENT</span>
+                <span className={styles.logoTagline}>FIND JOBS · HIRE TALENT</span>
               </div>
             </Link>
 
