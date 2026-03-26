@@ -41,7 +41,7 @@ export default async function Image() {
             borderRadius: 999,
           }}
         >
-          hexrecruitment.co.uk
+          hexjobs.co.uk
         </div>
       </div>
     ),

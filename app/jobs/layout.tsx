@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Find Jobs Across All UK Sectors | Hex Recruitment',
+    title: 'Find Jobs Across All UK Sectors | Hex Jobs',
     description: 'Browse thousands of jobs across all industries.',
     images: ['/opengraph-image'],
   },

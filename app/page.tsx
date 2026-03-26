@@ -305,13 +305,13 @@ export default function Home() {
             {
               '@context': 'https://schema.org',
               '@type': 'WebSite',
-              name: 'Hex Recruitment',
-              url: 'https://hexrecruitment.co.uk',
+              name: 'Hex Jobs',
+              url: 'https://hexjobs.co.uk',
               potentialAction: {
                 '@type': 'SearchAction',
                 target: {
                   '@type': 'EntryPoint',
-                  urlTemplate: 'https://hexrecruitment.co.uk/jobs?search={search_term_string}',
+                  urlTemplate: 'https://hexjobs.co.uk/jobs?search={search_term_string}',
                 },
                 'query-input': 'required name=search_term_string',
               },
@@ -319,10 +319,10 @@ export default function Home() {
             {
               '@context': 'https://schema.org',
               '@type': 'Organization',
-              name: 'Hex Recruitment',
-              url: 'https://hexrecruitment.co.uk',
-              logo: 'https://hexrecruitment.co.uk/icon.svg',
-              sameAs: ['https://www.linkedin.com/company/hexrecruitment'],
+              name: 'Hex Jobs',
+              url: 'https://hexjobs.co.uk',
+              logo: 'https://hexjobs.co.uk/icon.svg',
+              sameAs: ['https://www.linkedin.com/company/hexjobs'],
             },
           ]),
         }}
@@ -344,7 +344,7 @@ export default function Home() {
             <button onClick={() => (window as any).__openCookiePreferences?.()} className={styles.footerLink} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>Cookie Settings</button>
             <Link href="/jobs" className={styles.footerLink}>Browse Jobs</Link>
             <Link href="/subscribe" className={styles.footerLink}>Employer Plans</Link>
-            <a href="mailto:contact@hexrecruitment.co.uk" className={styles.footerLink}>Contact Us</a>
+            <a href="mailto:contact@hexjobs.co.uk" className={styles.footerLink}>Contact Us</a>
           </div>
           <p className={styles.footerCopy}>&copy; 2026 Hex. All rights reserved.</p>
         </div>

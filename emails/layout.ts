@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://hexrecruitment.co.uk'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://hexjobs.co.uk'
 
 export function emailLayout(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html>

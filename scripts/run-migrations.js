@@ -38,7 +38,7 @@ async function run() {
     } else {
       const { data: inserted, error: insertErr } = await admin.from('employer_profiles').insert({
         user_id: employer.id,
-        company_name: meta.company_name || 'Hex Recruitment',
+        company_name: meta.company_name || 'Hex Jobs',
         contact_name: meta.full_name || 'Paul Davies',
         email: employer.email,
         subscription_plan: meta.subscription_plan || 'professional',

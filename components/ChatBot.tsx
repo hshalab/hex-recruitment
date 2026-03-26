@@ -44,7 +44,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   },
   {
     keywords: ['contact', 'support', 'email', 'phone number'],
-    response: "Need more help? Our support team is here for you!\n\nEmail: support@hexrecruitment.co.uk\n\nWe typically respond within 24 hours."
+    response: "Need more help? Our support team is here for you!\n\nEmail: support@hexjobs.co.uk\n\nWe typically respond within 24 hours."
   },
 
   // ── REGISTRATION & LOGIN ──

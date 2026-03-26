@@ -20,7 +20,7 @@ export function activationDay30Email(companyName: string): { subject: string; ht
     </p>
     ${ctaButton('Share your feedback', `${BASE_URL}/employer/dashboard`)}
     <p style="margin:0;font-size:14px;color:#94a3b8;">
-      Paul Davies, Founder — Hex Recruitment
+      Paul Davies, Founder — Hex Jobs
     </p>
   `)
 

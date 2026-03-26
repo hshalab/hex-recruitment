@@ -7,7 +7,7 @@ if (!process.env.RESEND_API_KEY) {
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
-const FROM_ADDRESS = 'Hex <notifications@hexrecruitment.co.uk>'
+const FROM_ADDRESS = 'Hex Jobs <noreply@hexjobs.co.uk>'
 const FALLBACK_FROM = 'Hex <onboarding@resend.dev>'
 
 export async function sendEmail(

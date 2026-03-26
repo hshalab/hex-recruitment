@@ -12,7 +12,7 @@ const dancingScript = Dancing_Script({
   weight: ['400', '700'],
 })
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hexrecruitment.co.uk'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hexjobs.co.uk'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

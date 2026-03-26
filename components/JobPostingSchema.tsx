@@ -15,7 +15,7 @@ function mapEmploymentType(types: string[]): string[] {
 }
 
 export default function JobPostingSchema({ job }: { job: Job }) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hexrecruitment.co.uk'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hexjobs.co.uk'
 
   const salaryUnit = job.salaryPeriod === 'hour' ? 'HOUR' : 'YEAR'
 
