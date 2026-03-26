@@ -1,4 +1,5 @@
-import FeedbackWidget from '@/components/FeedbackWidget'
+import dynamic from 'next/dynamic'
+const FeedbackWidget = dynamic(() => import('@/components/FeedbackWidget'), { ssr: false })
 import SessionGuard from '@/components/SessionGuard'
 import type { Metadata } from 'next'
 import { Inter, Dancing_Script } from 'next/font/google'

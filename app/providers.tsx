@@ -1,9 +1,10 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { JobsProvider } from '@/lib/JobsContext'
-import ChatBot from '@/components/ChatBot'
-import CookieConsent from '@/components/CookieConsent'
+const ChatBot = dynamic(() => import('@/components/ChatBot'), { ssr: false })
+const CookieConsent = dynamic(() => import('@/components/CookieConsent'), { ssr: false })
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()

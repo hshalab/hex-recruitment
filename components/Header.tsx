@@ -7,9 +7,10 @@ import { supabase } from '@/lib/supabase'
 import { ukCities } from '@/lib/ukCities'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
 import { useSavedJobs } from '@/lib/useSavedJobs'
-import NotificationBell from './NotificationBell'
+import dynamic from 'next/dynamic'
+const NotificationBell = dynamic(() => import('./NotificationBell'), { ssr: false })
 import HoneycombLogo from './HoneycombLogo'
-import EmployerSidebar from './EmployerSidebar'
+const EmployerSidebar = dynamic(() => import('./EmployerSidebar'), { ssr: false })
 import styles from './Header.module.css'
 
 export default function Header() {
