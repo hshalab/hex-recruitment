@@ -316,9 +316,17 @@ export default function Header() {
   )
 
   // Navigation for users who are NOT logged in
-  const LoggedOutNav = () => (
-    <div className={styles.loginButtons}>
-      {pathname !== '/login/employer' && pathname !== '/register/employer' && (
+  const LoggedOutNav = () => {
+    const onLoginOrRegisterPage =
+      pathname === '/login/employer' ||
+      pathname === '/login/employee' ||
+      pathname === '/register/employer' ||
+      pathname === '/register/employee'
+
+    if (onLoginOrRegisterPage) return null
+
+    return (
+      <div className={styles.loginButtons}>
         <Link href="/login/employer" className={styles.employerLoginBtn}>
           <svg className={styles.loginIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
@@ -326,8 +334,6 @@ export default function Header() {
           </svg>
           Employer Login
         </Link>
-      )}
-      {pathname !== '/login/employee' && pathname !== '/register/employee' && (
         <Link href="/login/employee" className={styles.employeeLoginBtn}>
           <svg className={styles.loginIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -335,9 +341,9 @@ export default function Header() {
           </svg>
           Employee Login
         </Link>
-      )}
-    </div>
-  )
+      </div>
+    )
+  }
 
   // Navigation for logged-in EMPLOYERS (top bar: search + communication + profile)
   const EmployerNav = () => (
