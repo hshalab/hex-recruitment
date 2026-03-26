@@ -334,6 +334,10 @@
   animation: dropdownFadeIn 0.15s ease-out;
 }
 
+.dropdownOverlay {
+  display: none;
+}
+
 @keyframes dropdownFadeIn {
   from {
     opacity: 0;
@@ -675,12 +679,37 @@
   }
 
   .profileDropdown {
-    position: absolute;
-    top: calc(100% + 0.5rem);
+    position: fixed;
+    top: 0;
     right: 0;
-    left: auto;
-    width: 260px;
-    max-width: calc(100vw - 16px);
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    z-index: var(--z-modal);
+    padding-top: 56px;
+    overflow-y: auto;
+    animation: none;
+  }
+
+  .dropdownItem {
+    padding: 1rem 1.5rem;
+  }
+
+  .dropdownItemLogout {
+    padding: 1rem 1.5rem;
+  }
+
+  .dropdownOverlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: calc(var(--z-modal) - 1);
   }
 
   .iconBadge {

@@ -198,6 +198,8 @@ export default function Header() {
       </button>
 
       {showProfileMenu && (
+        <>
+        <div className={styles.dropdownOverlay} onClick={() => setShowProfileMenu(false)} />
         <div className={styles.profileDropdown}>
           <div className={styles.dropdownHeader}>
             <div className={`${styles.dropdownAvatar} ${isEmployer ? styles.avatarSquare : ''}`}>
@@ -292,6 +294,7 @@ export default function Header() {
             Log out
           </button>
         </div>
+        </>
       )}
     </div>
   )
