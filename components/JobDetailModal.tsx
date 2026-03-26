@@ -296,13 +296,15 @@ export default function JobDetailModal({
 
           {/* Action Buttons */}
           <div className={styles.actions}>
-            <button
-              className={`${styles.applyBtn} ${hasApplied ? styles.appliedBtn : ''}`}
-              onClick={handleApply}
-              disabled={hasApplied || checkingApplied}
-            >
-              {checkingApplied ? 'Checking...' : hasApplied ? 'Applied \u2713' : 'Apply now'}
-            </button>
+            {currentUserRole !== 'employer' && (
+              <button
+                className={`${styles.applyBtn} ${hasApplied ? styles.appliedBtn : ''}`}
+                onClick={handleApply}
+                disabled={hasApplied || checkingApplied}
+              >
+                {checkingApplied ? 'Checking...' : hasApplied ? 'Applied \u2713' : 'Apply now'}
+              </button>
+            )}
             <button
               className={`${styles.actionBtn} ${checkSaved(job.id) ? styles.saved : ''}`}
               onClick={() => { if (!checkSaved(job.id)) trackClickEvent(job.id, 'save_click'); toggleSave(job.id) }}
@@ -509,15 +511,17 @@ export default function JobDetailModal({
         </div>
 
         {/* Mobile Apply Button */}
-        <div className={styles.mobileApplyBar}>
-          <button
-            className={`${styles.mobileApplyBtn} ${hasApplied ? styles.appliedBtn : ''}`}
-            onClick={handleApply}
-            disabled={hasApplied || checkingApplied}
-          >
-            {checkingApplied ? 'Checking...' : hasApplied ? 'Applied \u2713' : 'Apply now'}
-          </button>
-        </div>
+        {currentUserRole !== 'employer' && (
+          <div className={styles.mobileApplyBar}>
+            <button
+              className={`${styles.mobileApplyBtn} ${hasApplied ? styles.appliedBtn : ''}`}
+              onClick={handleApply}
+              disabled={hasApplied || checkingApplied}
+            >
+              {checkingApplied ? 'Checking...' : hasApplied ? 'Applied \u2713' : 'Apply now'}
+            </button>
+          </div>
+        )}
       </div>
 
       <ApplyNowModal
