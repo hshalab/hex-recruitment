@@ -218,7 +218,11 @@ export default function EmployerSidebar() {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className={styles.overlay} onClick={() => setMobileOpen(false)} />
+        <div
+          className={styles.overlay}
+          onClick={() => setMobileOpen(false)}
+          onTouchEnd={(e) => { e.preventDefault(); setMobileOpen(false); }}
+        />
       )}
 
       <aside ref={sidebarRef} className={`${styles.sidebar} ${collapsed ? styles.collapsed : styles.expanded} ${mobileOpen ? styles.mobileOpen : ''}`}>
@@ -251,7 +255,8 @@ export default function EmployerSidebar() {
               className={`${styles.item} ${isActive(item.href) ? styles.active : ''}`}
               data-tooltip={item.label}
               title={item.label}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMobileOpen(false); router.push(item.href) }}
+              onClick={(e) => { e.preventDefault(); setMobileOpen(false); router.push(item.href) }}
+              onTouchEnd={(e) => { e.preventDefault(); setMobileOpen(false); router.push(item.href) }}
               onMouseEnter={() => router.prefetch(item.href)}
             >
               <span className={styles.icon}>{item.icon}</span>
