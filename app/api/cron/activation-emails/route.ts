@@ -21,12 +21,11 @@ const EMAIL_BUILDERS: Record<number, (companyName: string) => { subject: string;
 }
 
 export async function GET(req: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret — fail-closed: reject if secret is missing or doesn't match
   const authHeader = req.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    return new Response('Unauthorized', { status: 401 })
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey)
