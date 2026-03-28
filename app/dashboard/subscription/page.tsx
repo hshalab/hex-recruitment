@@ -191,7 +191,7 @@ export default function SubscriptionPage() {
             <span className={styles.warningIcon}>&#9888;</span>
             <div>
               <strong>Payment failed</strong>
-              <p>Your last payment failed. Please update your payment method to continue using Hex.</p>
+              <p>Your last payment failed. Please update your payment method to continue using Thrive.</p>
               <button onClick={handleManageBilling} className={styles.bannerBtn}>
                 Update Payment Method
               </button>

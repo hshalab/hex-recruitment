@@ -53,14 +53,14 @@ export default function PrivacyPolicyPage() {
         {/* Intro */}
         <div className={styles.intro}>
           <p>
-            Hex (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is committed to
+            Thrive (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is committed to
             protecting and respecting your privacy. This Privacy Policy explains how we collect, use,
             store, and protect your personal data when you use our website, applications, and services
             (the &quot;Platform&quot;).
           </p>
           <p>
             We operate in accordance with the <strong>UK General Data Protection Regulation (UK GDPR)</strong> and
-            the <strong>Data Protection Act 2018</strong>. Hex is the data controller
+            the <strong>Data Protection Act 2018</strong>. Thrive is the data controller
             responsible for your personal data.
           </p>
         </div>
@@ -232,7 +232,7 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Legal Requirements:</strong> We may disclose data if required by law, court
-                order, or government request, or to protect the rights, safety, or property of Hex
+                order, or government request, or to protect the rights, safety, or property of Thrive
                 and our users.
               </li>
             </ul>
@@ -407,8 +407,8 @@ export default function PrivacyPolicyPage() {
                 use the{' '}
                 <Link href="/settings/privacy" className={styles.link}>Download My Data</Link> feature
                 to export your data. For any other requests, email us at{' '}
-                <a href="mailto:privacy@hexjobs.co.uk" className={styles.link}>
-                  privacy@hexjobs.co.uk
+                <a href="mailto:privacy@thrivecareers.co.uk" className={styles.link}>
+                  privacy@thrivecareers.co.uk
                 </a>
                 . We will respond within <strong>30 days</strong>.
               </p>
@@ -473,15 +473,15 @@ export default function PrivacyPolicyPage() {
               Children&apos;s Privacy
             </h2>
             <p>
-              Hex is not intended for use by anyone under the age of 16. We do not
+              Thrive is not intended for use by anyone under the age of 16. We do not
               knowingly collect personal data from children under 16 years of age.
             </p>
             <p>
               If we become aware that we have inadvertently collected data from a child under 16, we
               will take steps to delete that data as quickly as possible. If you believe a child under
               16 has provided us with personal data, please contact us immediately at{' '}
-              <a href="mailto:privacy@hexjobs.co.uk" className={styles.link}>
-                privacy@hexjobs.co.uk
+              <a href="mailto:privacy@thrivecareers.co.uk" className={styles.link}>
+                privacy@thrivecareers.co.uk
               </a>
               .
             </p>
@@ -548,11 +548,11 @@ export default function PrivacyPolicyPage() {
             </p>
 
             <div className={styles.contactBox}>
-              <p><strong>Hex — Data Protection</strong></p>
+              <p><strong>Thrive — Data Protection</strong></p>
               <p>
                 Email:{' '}
-                <a href="mailto:privacy@hexjobs.co.uk" className={styles.link}>
-                  privacy@hexjobs.co.uk
+                <a href="mailto:privacy@thrivecareers.co.uk" className={styles.link}>
+                  privacy@thrivecareers.co.uk
                 </a>
               </p>
             </div>
@@ -586,7 +586,7 @@ export default function PrivacyPolicyPage() {
       <footer className={styles.footer}>
         <div className={styles.footerContent}>
           <div className={styles.footerBrand}>
-            <span className={styles.footerLogo}><HoneycombLogo size={20} color="currentColor" /> HEX</span>
+            <span className={styles.footerLogo}><HoneycombLogo size={20} color="currentColor" /> THRIVE</span>
             <p className={styles.footerTagline}>
               Connecting talent with opportunity
             </p>
@@ -595,10 +595,10 @@ export default function PrivacyPolicyPage() {
             <Link href="/terms" className={styles.footerLink}>Terms of Service</Link>
             <Link href="/privacy-policy" className={styles.footerLinkActive}>Privacy Policy</Link>
             <button onClick={() => (window as any).__openCookiePreferences?.()} className={styles.footerLink} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>Cookie Settings</button>
-            <a href="mailto:privacy@hexjobs.co.uk" className={styles.footerLink}>Contact</a>
+            <a href="mailto:privacy@thrivecareers.co.uk" className={styles.footerLink}>Contact</a>
           </div>
           <p className={styles.footerCopyright}>
-            &copy; {new Date().getFullYear()} Hex. All rights reserved.
+            &copy; {new Date().getFullYear()} Thrive. All rights reserved.
           </p>
         </div>
       </footer>

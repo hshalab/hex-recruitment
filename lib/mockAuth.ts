@@ -9,7 +9,7 @@ export type MockUserType = 'employer' | 'employee'
 export const mockUsers = {
   employer: {
     id: 'mock-employer-123',
-    email: 'employer@hex-recruitment.dev',
+    email: 'employer@thrive-careers.dev',
     user_metadata: {
       role: 'employer',
       full_name: 'Sarah Mitchell',
@@ -19,7 +19,7 @@ export const mockUsers = {
   },
   employee: {
     id: 'mock-employee-456',
-    email: 'jobseeker@hex-recruitment.dev',
+    email: 'jobseeker@thrive-careers.dev',
     user_metadata: {
       role: 'employee',
       full_name: 'James Wilson',

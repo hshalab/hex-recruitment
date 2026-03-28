@@ -138,7 +138,7 @@ export default function ReactivateAccountPage() {
             )}
             <p className={styles.subtitle}>
               Your 14-day free trial ended{expiredDate && ` on ${expiredDate}`}.
-              Make a one-time payment to continue using Hex.
+              Make a one-time payment to continue using Thrive.
             </p>
           </div>
 

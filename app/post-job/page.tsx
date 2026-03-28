@@ -487,7 +487,7 @@ function PostJobContent() {
       const jobReference = formData.jobReference || `JOB-${Date.now().toString(36).toUpperCase()}`
       const employerId = currentUser?.id || 'unknown'
 
-      const descriptionFallback = `Join ${formData.company} as a ${formData.title}. Apply now on Hex.`
+      const descriptionFallback = `Join ${formData.company} as a ${formData.title}. Apply now on Thrive.`
 
       const jobPayload = {
         company: formData.company,
@@ -581,7 +581,7 @@ function PostJobContent() {
             <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔒</div>
             <h2 style={{ marginBottom: '1rem' }}>Employer Account Required</h2>
             <p style={{ color: '#666', marginBottom: '2rem' }}>
-              You need an employer subscription to post jobs on Hex.
+              You need an employer subscription to post jobs on Thrive.
             </p>
             <a href="/subscribe" className="btn btn-primary">
               Start Free 14-Day Trial

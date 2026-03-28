@@ -151,7 +151,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className={styles.sidebar}>
         <div className={styles.logo}>
           <Link href="/admin" className={styles.logoLink}>
-            <span className={styles.logoText}>HEX</span>
+            <span className={styles.logoText}>THRIVE</span>
             <span className={styles.logoSub}>Admin</span>
           </Link>
         </div>

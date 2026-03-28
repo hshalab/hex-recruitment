@@ -1,13 +1,13 @@
 import { emailLayout, ctaButton, BASE_URL } from './layout'
 
 export function activationDay14Email(companyName: string): { subject: string; html: string } {
-  const subject = "2 weeks on Hex — here's what's working"
+  const subject = "2 weeks on Thrive — here's what's working"
 
   const html = emailLayout(subject, `
     <p style="margin:0 0 4px;font-size:13px;color:#94a3b8;">The employers getting the best results all do this one thing.</p>
     <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Keep the momentum going, ${companyName}</h1>
     <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
-      Two weeks in. The employers getting the best results on Hex all have one thing in common: they stay active.
+      Two weeks in. The employers getting the best results on Thrive all have one thing in common: they stay active.
     </p>
     <p style="margin:0 0 8px;font-size:15px;color:#475569;line-height:1.6;">
       Here's what works:

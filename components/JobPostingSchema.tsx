@@ -15,7 +15,7 @@ function mapEmploymentType(types: string[]): string[] {
 }
 
 export default function JobPostingSchema({ job }: { job: Job }) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hexjobs.co.uk'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareers.co.uk'
 
   const salaryUnit = job.salaryPeriod === 'hour' ? 'HOUR' : 'YEAR'
 
@@ -58,7 +58,7 @@ export default function JobPostingSchema({ job }: { job: Job }) {
     url: `${siteUrl}/jobs?id=${job.id}`,
     identifier: {
       '@type': 'PropertyValue',
-      name: 'Hex',
+      name: 'Thrive',
       value: job.jobReference || job.id,
     },
     ...(job.skillsRequired?.length && {

@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'Hex — Talent Recruitment'
+export const alt = 'Thrive — Talent Recruitment'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -21,7 +21,7 @@ export default async function Image() {
         }}
       >
         <div style={{ display: 'flex', fontSize: 72, fontWeight: 900, color: '#FFE500', letterSpacing: '-0.02em' }}>
-          HEX
+          THRIVE
         </div>
         <div style={{ display: 'flex', fontSize: 36, fontWeight: 400, color: 'white', marginTop: 8 }}>
           Talent Recruitment
@@ -41,7 +41,7 @@ export default async function Image() {
             borderRadius: 999,
           }}
         >
-          hexjobs.co.uk
+          thrivecareers.co.uk
         </div>
       </div>
     ),

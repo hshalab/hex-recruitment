@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://hexjobs.co.uk'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://thrivecareers.co.uk'
 
 export function emailLayout(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html>
@@ -16,7 +16,7 @@ export function emailLayout(title: string, bodyHtml: string): string {
           <!-- Header -->
           <tr>
             <td style="background-color:#1e293b;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center;">
-              <span style="font-size:28px;font-weight:800;color:#FFE500;letter-spacing:2px;">HEX</span>
+              <span style="font-size:28px;font-weight:800;color:#FFE500;letter-spacing:2px;">THRIVE</span>
             </td>
           </tr>
           <!-- Body -->
@@ -33,7 +33,7 @@ export function emailLayout(title: string, bodyHtml: string): string {
                 &nbsp;&middot;&nbsp;
                 <a href="${BASE_URL}/privacy-policy" style="color:#64748b;text-decoration:underline;">Privacy Policy</a>
               </p>
-              <p style="margin:0;font-size:12px;color:#94a3b8;">&copy; 2026 Hex. All rights reserved.</p>
+              <p style="margin:0;font-size:12px;color:#94a3b8;">&copy; 2026 Thrive. All rights reserved.</p>
             </td>
           </tr>
         </table>

@@ -241,22 +241,22 @@ export default function Home() {
       {/* Objection Handling */}
       <section className={`${styles.howItWorks}`}>
         <div className={styles.sectionInner}>
-          <h2 className={styles.sectionTitle}>Why employers switch to Hex</h2>
+          <h2 className={styles.sectionTitle}>Why employers switch to Thrive</h2>
           <div className={`${styles.stepsGrid}`}>
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
               <h3 className={styles.stepTitle}>No agency fees</h3>
-              <p className={styles.stepText}>Agencies charge 15-25% of salary per hire. Hex gives you the same tools for free — no subscription needed for the first 1000 employers.</p>
+              <p className={styles.stepText}>Agencies charge 15-25% of salary per hire. Thrive gives you the same tools for free — no subscription needed for the first 1000 employers.</p>
             </div>
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
               <h3 className={styles.stepTitle}>No CV black holes</h3>
-              <p className={styles.stepText}>On Indeed and Reed, candidates apply and never hear back. On Hex, you manage every application with a clear pipeline and direct messaging.</p>
+              <p className={styles.stepText}>On Indeed and Reed, candidates apply and never hear back. On Thrive, you manage every application with a clear pipeline and direct messaging.</p>
             </div>
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
               <h3 className={styles.stepTitle}>No per-listing costs</h3>
-              <p className={styles.stepText}>Other boards charge per job post. On Hex, post as many jobs as you need — included in your account.</p>
+              <p className={styles.stepText}>Other boards charge per job post. On Thrive, post as many jobs as you need — included in your account.</p>
             </div>
           </div>
         </div>
@@ -301,13 +301,13 @@ export default function Home() {
             {
               '@context': 'https://schema.org',
               '@type': 'WebSite',
-              name: 'Hex Jobs',
-              url: 'https://hexjobs.co.uk',
+              name: 'Thrive',
+              url: 'https://thrivecareers.co.uk',
               potentialAction: {
                 '@type': 'SearchAction',
                 target: {
                   '@type': 'EntryPoint',
-                  urlTemplate: 'https://hexjobs.co.uk/jobs?search={search_term_string}',
+                  urlTemplate: 'https://thrivecareers.co.uk/jobs?search={search_term_string}',
                 },
                 'query-input': 'required name=search_term_string',
               },
@@ -315,10 +315,10 @@ export default function Home() {
             {
               '@context': 'https://schema.org',
               '@type': 'Organization',
-              name: 'Hex Jobs',
-              url: 'https://hexjobs.co.uk',
-              logo: 'https://hexjobs.co.uk/icon.svg',
-              sameAs: ['https://www.linkedin.com/company/hexjobs'],
+              name: 'Thrive',
+              url: 'https://thrivecareers.co.uk',
+              logo: 'https://thrivecareers.co.uk/icon.svg',
+              sameAs: ['https://www.linkedin.com/company/thrivecareers'],
             },
           ]),
         }}
@@ -330,7 +330,7 @@ export default function Home() {
           <div className={styles.footerBrand}>
             <HoneycombLogo size={24} color="#FFE500" />
             <div className={styles.footerBrandText}>
-              <span className={styles.footerLogo}>Hex</span>
+              <span className={styles.footerLogo}>Thrive</span>
               <span className={styles.footerTagline}>Talent Recruitment</span>
             </div>
           </div>
@@ -340,9 +340,9 @@ export default function Home() {
             <button onClick={() => (window as any).__openCookiePreferences?.()} className={styles.footerLink} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>Cookie Settings</button>
             <Link href="/jobs" className={styles.footerLink}>Browse Jobs</Link>
             <Link href="/subscribe" className={styles.footerLink}>Employer Plans</Link>
-            <a href="mailto:contact@hexjobs.co.uk" className={styles.footerLink}>Contact Us</a>
+            <a href="mailto:contact@thrivecareers.co.uk" className={styles.footerLink}>Contact Us</a>
           </div>
-          <p className={styles.footerCopy}>&copy; 2026 Hex. All rights reserved.</p>
+          <p className={styles.footerCopy}>&copy; 2026 Thrive. All rights reserved.</p>
         </div>
       </footer>
     </main>

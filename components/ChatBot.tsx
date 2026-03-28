@@ -30,13 +30,13 @@ const suggestedQuestions = [
 const responsePatterns: { keywords: string[]; response: string; links?: { text: string; href: string }[] }[] = [
   // ── GENERAL / ABOUT ──
   {
-    keywords: ['what is hex', 'about hex', 'how does it work', 'tell me about', 'what does hex do'],
-    response: "Hex | Talent Recruitment is the UK's recruitment platform connecting employers across all industries with qualified professionals.\n\n**For Job Seekers:** Completely free! Create your profile, upload your CV, browse jobs, and apply directly.\n\n**For Employers:** Post jobs, browse candidate profiles, schedule interviews, send offers, and track your hiring pipeline. Start with a 14-day free trial, then from £29.99/month.",
+    keywords: ['what is thrive', 'about thrive', 'how does it work', 'tell me about', 'what does thrive do'],
+    response: "Thrive | Talent Recruitment is the UK's recruitment platform connecting employers across all industries with qualified professionals.\n\n**For Job Seekers:** Completely free! Create your profile, upload your CV, browse jobs, and apply directly.\n\n**For Employers:** Post jobs, browse candidate profiles, schedule interviews, send offers, and track your hiring pipeline. Start with a 14-day free trial, then from £29.99/month.",
     links: [{ text: 'Learn More', href: '/' }]
   },
   {
     keywords: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'],
-    response: "Hello! Welcome to Hex | Talent Recruitment! I'm here to help you find your next opportunity or hire great talent. What would you like to know?"
+    response: "Hello! Welcome to Thrive | Talent Recruitment! I'm here to help you find your next opportunity or hire great talent. What would you like to know?"
   },
   {
     keywords: ['thanks', 'thank you', 'cheers', 'appreciate', 'ta'],
@@ -44,13 +44,13 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   },
   {
     keywords: ['contact', 'support', 'email', 'phone number'],
-    response: "Need more help? Our support team is here for you!\n\nEmail: support@hexjobs.co.uk\n\nWe typically respond within 24 hours."
+    response: "Need more help? Our support team is here for you!\n\nEmail: support@thrivecareers.co.uk\n\nWe typically respond within 24 hours."
   },
 
   // ── REGISTRATION & LOGIN ──
   {
     keywords: ['register', 'sign up', 'create account', 'join', 'get started'],
-    response: "There are two ways to join Hex:\n\n**Job Seekers:** Create a free profile — browse jobs, upload your CV, and apply directly. No cost, ever.\n\n**Employers:** Subscribe to a plan to post jobs and access candidate profiles. Start with 14 days free!",
+    response: "There are two ways to join Thrive:\n\n**Job Seekers:** Create a free profile — browse jobs, upload your CV, and apply directly. No cost, ever.\n\n**Employers:** Subscribe to a plan to post jobs and access candidate profiles. Start with 14 days free!",
     links: [{ text: 'I\'m a Job Seeker', href: '/register/employee' }, { text: 'I\'m an Employer', href: '/subscribe' }]
   },
   {
@@ -62,7 +62,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── PRICING & SUBSCRIPTION ──
   {
     keywords: ['cost', 'price', 'pay', 'how much', 'pricing', 'fee', 'charge', 'subscription', 'plan'],
-    response: "Great question! Hex offers a 14-day FREE trial, then two plans:\n\n**Standard:** £29.99/month\n• Up to 3 active job listings\n• Browse candidate profiles\n• Direct messaging\n• Interview scheduling\n\n**Professional:** £59.99/month\n• Unlimited job listings\n• Priority candidate access\n• Full analytics dashboard\n• All Standard features\n\nJust give 1 week's notice to cancel. No hidden fees.",
+    response: "Great question! Thrive offers a 14-day FREE trial, then two plans:\n\n**Standard:** £29.99/month\n• Up to 3 active job listings\n• Browse candidate profiles\n• Direct messaging\n• Interview scheduling\n\n**Professional:** £59.99/month\n• Unlimited job listings\n• Priority candidate access\n• Full analytics dashboard\n• All Standard features\n\nJust give 1 week's notice to cancel. No hidden fees.",
     links: [{ text: 'View Plans', href: '/subscribe' }]
   },
   {
@@ -94,7 +94,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── EMPLOYER: POSTING JOBS ──
   {
     keywords: ['post job', 'post a job', 'add job', 'create job', 'new job', 'advertise', 'list job', 'job listing'],
-    response: "To post a job on Hex:\n1. Subscribe to a plan (or start a free trial)\n2. Click \"Post Job\" in the sidebar\n3. Fill in the job details: title, description, salary, location, job type, and category\n4. Publish and your job is live!\n\nYour listing will be visible to thousands of candidates across the UK.",
+    response: "To post a job on Thrive:\n1. Subscribe to a plan (or start a free trial)\n2. Click \"Post Job\" in the sidebar\n3. Fill in the job details: title, description, salary, location, job type, and category\n4. Publish and your job is live!\n\nYour listing will be visible to thousands of candidates across the UK.",
     links: [{ text: 'Post a Job', href: '/post-job' }]
   },
   {
@@ -127,7 +127,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── EMPLOYER: INTERVIEWS ──
   {
     keywords: ['interview', 'schedule interview', 'interview date', 'interview time', 'calendar', 'book interview'],
-    response: "Hex makes interview scheduling easy!\n\n• Schedule interviews directly from a candidate's application\n• Set the date, time, duration, and interview type (in-person, video, or phone)\n• Add a location or video call link\n• Interviews sync with Google Calendar automatically\n• Track all upcoming interviews from the \"Interviews\" tab in the sidebar\n\nThe Interviews view shows today's, this week's, pending confirmation, and completed interviews.",
+    response: "Thrive makes interview scheduling easy!\n\n• Schedule interviews directly from a candidate's application\n• Set the date, time, duration, and interview type (in-person, video, or phone)\n• Add a location or video call link\n• Interviews sync with Google Calendar automatically\n• Track all upcoming interviews from the \"Interviews\" tab in the sidebar\n\nThe Interviews view shows today's, this week's, pending confirmation, and completed interviews.",
     links: [{ text: 'View Interviews', href: '/my-jobs?filter=interviewing' }]
   },
   {
@@ -138,7 +138,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── EMPLOYER: OFFERS ──
   {
     keywords: ['offer', 'job offer', 'send offer', 'make offer', 'offer letter', 'signature'],
-    response: "When you're ready to hire, you can send a formal job offer through Hex!\n\n• Create an offer with salary, start date, and terms\n• The candidate receives a notification and can review the offer\n• Candidates can accept and sign digitally, or decline\n• Track all your pending and accepted offers from the \"Offers\" tab\n\nOffers include a digital signature system for quick acceptance.",
+    response: "When you're ready to hire, you can send a formal job offer through Thrive!\n\n• Create an offer with salary, start date, and terms\n• The candidate receives a notification and can review the offer\n• Candidates can accept and sign digitally, or decline\n• Track all your pending and accepted offers from the \"Offers\" tab\n\nOffers include a digital signature system for quick acceptance.",
     links: [{ text: 'View Offers', href: '/my-jobs?filter=offers' }]
   },
 
@@ -166,14 +166,14 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── MESSAGING ──
   {
     keywords: ['message', 'chat', 'inbox', 'direct message', 'dm', 'communicate', 'send message'],
-    response: "Hex has built-in messaging so you can communicate directly with candidates or employers!\n\n• Send and receive messages from your inbox\n• Get notifications for new messages\n• Discuss job details, arrange interviews, or ask questions\n• Messages are accessible from the top navigation bar\n\nLook for the message icon in the navbar to access your conversations.",
+    response: "Thrive has built-in messaging so you can communicate directly with candidates or employers!\n\n• Send and receive messages from your inbox\n• Get notifications for new messages\n• Discuss job details, arrange interviews, or ask questions\n• Messages are accessible from the top navigation bar\n\nLook for the message icon in the navbar to access your conversations.",
     links: [{ text: 'Browse Jobs', href: '/jobs' }]
   },
 
   // ── NOTIFICATIONS ──
   {
     keywords: ['notification', 'alert', 'bell', 'updates', 'notify'],
-    response: "Stay up to date with Hex notifications! You'll receive alerts for:\n\n• New job applications\n• Messages from candidates or employers\n• Interview confirmations and reminders\n• Offer responses (accepted or declined)\n• Profile views\n\nClick the bell icon in the top navigation bar to see all your notifications."
+    response: "Stay up to date with Thrive notifications! You'll receive alerts for:\n\n• New job applications\n• Messages from candidates or employers\n• Interview confirmations and reminders\n• Offer responses (accepted or declined)\n• Profile views\n\nClick the bell icon in the top navigation bar to see all your notifications."
   },
 
   // ── SETTINGS ──
@@ -202,7 +202,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── CANDIDATE: BROWSING & APPLYING ──
   {
     keywords: ['job seeker', 'find job', 'apply', 'get hired', 'search job', 'browse job', 'look for job'],
-    response: "Job seekers can use Hex completely FREE!\n\n• Browse hundreds of jobs across all UK sectors\n• Filter by location, category, salary, and job type\n• Apply with one click using your profile and CV\n• Track your applications and their status\n• Receive messages from interested employers\n\nCreate your free profile to get started!",
+    response: "Job seekers can use Thrive completely FREE!\n\n• Browse hundreds of jobs across all UK sectors\n• Filter by location, category, salary, and job type\n• Apply with one click using your profile and CV\n• Track your applications and their status\n• Receive messages from interested employers\n\nCreate your free profile to get started!",
     links: [{ text: 'Browse Jobs', href: '/jobs' }, { text: 'Create Profile', href: '/register/employee' }]
   },
   {
@@ -225,14 +225,14 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── SECTORS & CATEGORIES ──
   {
     keywords: ['sector', 'industry', 'category', 'what jobs', 'job type', 'positions', 'field'],
-    response: "Hex covers all major UK job sectors:\n\n• Accountancy, Banking & Finance\n• Admin, Secretarial & PA\n• Digital & IT\n• Engineering & Manufacturing\n• Healthcare & Social Care\n• Hospitality, Tourism & Sport\n• Legal\n• Marketing, Advertising & PR\n• Retail & Sales\n• Teaching & Education\n• Construction & Property\n• Transport & Logistics\n\nAnd many more!",
+    response: "Thrive covers all major UK job sectors:\n\n• Accountancy, Banking & Finance\n• Admin, Secretarial & PA\n• Digital & IT\n• Engineering & Manufacturing\n• Healthcare & Social Care\n• Hospitality, Tourism & Sport\n• Legal\n• Marketing, Advertising & PR\n• Retail & Sales\n• Teaching & Education\n• Construction & Property\n• Transport & Logistics\n\nAnd many more!",
     links: [{ text: 'Browse All Jobs', href: '/jobs' }]
   },
 
   // ── LOCATION ──
   {
     keywords: ['london', 'manchester', 'birmingham', 'location', 'where', 'city', 'area', 'region'],
-    response: "Hex covers jobs across the entire UK! We have listings in:\n\n• London\n• Manchester\n• Birmingham\n• Edinburgh\n• Leeds\n• Bristol\n• And many more cities\n\nUse the location filter when browsing jobs to find opportunities near you.",
+    response: "Thrive covers jobs across the entire UK! We have listings in:\n\n• London\n• Manchester\n• Birmingham\n• Edinburgh\n• Leeds\n• Bristol\n• And many more cities\n\nUse the location filter when browsing jobs to find opportunities near you.",
     links: [{ text: 'Browse Jobs', href: '/jobs' }]
   },
 
@@ -245,14 +245,14 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── EMPLOYER: GENERAL HIRING ──
   {
     keywords: ['hire', 'hiring process', 'recruitment process', 'how to hire'],
-    response: "The hiring process on Hex is straightforward:\n\n1. **Post a Job** — Create your listing with details\n2. **Review Applications** — Candidates apply and you review them\n3. **Schedule Interviews** — Book interviews with top candidates\n4. **Send Offers** — Make formal offers with digital signatures\n5. **Hire!** — Track successful hires in your dashboard\n\nEverything is managed from your employer dashboard.",
+    response: "The hiring process on Thrive is straightforward:\n\n1. **Post a Job** — Create your listing with details\n2. **Review Applications** — Candidates apply and you review them\n3. **Schedule Interviews** — Book interviews with top candidates\n4. **Send Offers** — Make formal offers with digital signatures\n5. **Hire!** — Track successful hires in your dashboard\n\nEverything is managed from your employer dashboard.",
     links: [{ text: 'Post a Job', href: '/post-job' }, { text: 'Browse Candidates', href: '/candidates' }]
   },
 
   // ── FREE FOR CANDIDATES ──
   {
     keywords: ['free for candidate', 'candidate cost', 'does it cost candidate', 'job seeker free', 'do i pay'],
-    response: "Hex is completely FREE for job seekers! You can:\n\n• Create your profile at no cost\n• Browse and apply for unlimited jobs\n• Receive messages from employers\n• Track your applications\n• Accept job offers\n\nThere are no hidden fees for candidates — ever.",
+    response: "Thrive is completely FREE for job seekers! You can:\n\n• Create your profile at no cost\n• Browse and apply for unlimited jobs\n• Receive messages from employers\n• Track your applications\n• Accept job offers\n\nThere are no hidden fees for candidates — ever.",
     links: [{ text: 'Create Free Profile', href: '/register/employee' }]
   },
 
@@ -265,7 +265,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── GOOGLE CALENDAR ──
   {
     keywords: ['google calendar', 'calendar sync', 'calendar integration'],
-    response: "Hex integrates with Google Calendar! When interviews are scheduled, they can be automatically added to your Google Calendar with all the details — date, time, location or video link, and candidate/employer information. Never miss an interview!"
+    response: "Thrive integrates with Google Calendar! When interviews are scheduled, they can be automatically added to your Google Calendar with all the details — date, time, location or video link, and candidate/employer information. Never miss an interview!"
   }
 ]
 
@@ -306,7 +306,7 @@ export default function ChatBot() {
     if (isOpen && messages.length === 0) {
       const welcomeMessage: Message = {
         id: 'welcome',
-        content: "Hi! I'm your Hex Assistant. How can I help you today?",
+        content: "Hi! I'm your Thrive Assistant. How can I help you today?",
         sender: 'bot',
         timestamp: new Date()
       }
@@ -393,7 +393,7 @@ export default function ChatBot() {
   const handleNewConversation = () => {
     setMessages([{
       id: 'welcome-new',
-      content: "Hi! I'm your Hex Assistant. How can I help you today?",
+      content: "Hi! I'm your Thrive Assistant. How can I help you today?",
       sender: 'bot',
       timestamp: new Date()
     }])
@@ -421,13 +421,13 @@ export default function ChatBot() {
       <div
         className={`${styles.chatWindow} ${isOpen ? styles.open : ''}`}
         role="dialog"
-        aria-label="Chat with Hex Assistant"
+        aria-label="Chat with Thrive Assistant"
       >
         {/* Header */}
         <div className={styles.chatHeader}>
           <div className={styles.headerInfo}>
             <span className={styles.headerIcon}><HexIcon size={18} /></span>
-            <h3 className={styles.headerTitle}>HEX Chat</h3>
+            <h3 className={styles.headerTitle}>THRIVE Chat</h3>
           </div>
           <div className={styles.headerActions}>
             <button
@@ -543,7 +543,7 @@ export default function ChatBot() {
 
         {/* Footer */}
         <div className={styles.chatFooter}>
-          Powered by Hex AI
+          Powered by Thrive AI
         </div>
       </div>
     </>

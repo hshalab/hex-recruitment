@@ -296,7 +296,7 @@ export default function Header() {
             <svg className={styles.dropdownIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" stroke="#FFD700" strokeWidth="2" strokeLinejoin="round" />
             </svg>
-            Hex Assistant
+            Thrive Assistant
           </button>
           <div className={styles.dropdownDivider} />
           <button
@@ -529,7 +529,7 @@ export default function Header() {
             <Link href={logoHref} className={styles.logo} {...(showSidebar ? { 'data-sidebar-logo': '' } : {})}>
               <HoneycombLogo size={28} color="var(--primary-yellow)" className={styles.logoIcon} />
               <div className={`${styles.logoBrand} ${user ? styles.logoBrandHidden : ''}`}>
-                <span className={styles.logoText}>HEX</span>
+                <span className={styles.logoText}>THRIVE</span>
                 <span className={styles.logoTagline}>{logoTagline}</span>
               </div>
             </Link>

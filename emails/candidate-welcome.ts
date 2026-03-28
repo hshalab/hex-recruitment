@@ -2,12 +2,12 @@ import { emailLayout, ctaButton, BASE_URL } from './layout'
 
 export function candidateWelcomeEmail(candidateName: string): { subject: string; html: string } {
   const firstName = candidateName.split(' ')[0] || 'there'
-  const subject = `Welcome to Hex Jobs, ${firstName} — let's find your next role`
+  const subject = `Welcome to Thrive, ${firstName} — let's find your next role`
 
   const html = emailLayout(subject, `
-    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Welcome to Hex, ${firstName}!</h1>
+    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Welcome to Thrive, ${firstName}!</h1>
     <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
-      Your profile is live and employers can now find you. Here's how to get the most out of Hex:
+      Your profile is live and employers can now find you. Here's how to get the most out of Thrive:
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
       <tr>
@@ -31,7 +31,7 @@ export function candidateWelcomeEmail(candidateName: string): { subject: string;
     </table>
     ${ctaButton('Browse Jobs', `${BASE_URL}/jobs`)}
     <p style="margin:16px 0 0;font-size:14px;color:#94a3b8;">
-      Hex is 100% free for job seekers — always.
+      Thrive is 100% free for job seekers — always.
     </p>
   `)
 

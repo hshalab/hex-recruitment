@@ -17,38 +17,38 @@ const dancingScript = Dancing_Script({
   display: 'swap',
 })
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hexjobs.co.uk'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareers.co.uk'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Hex Jobs — Free UK Job Board | No Agency Fees',
-    template: '%s | Hex Jobs',
+    default: 'Thrive — Free UK Job Board | No Agency Fees',
+    template: '%s | Thrive',
   },
   description: 'Find jobs or hire great people across all UK sectors. Post unlimited jobs free — no agency fees, no card needed. Search candidates, manage applications and schedule interviews in one platform.',
-  keywords: ['UK jobs', 'job board', 'find jobs UK', 'hire staff UK', 'no agency fees', 'free job posting', 'hospitality jobs', 'healthcare jobs', 'Hex Jobs'],
-  authors: [{ name: 'Hex Jobs' }],
-  creator: 'Hex Jobs',
-  publisher: 'Hex Jobs',
+  keywords: ['UK jobs', 'job board', 'find jobs UK', 'hire staff UK', 'no agency fees', 'free job posting', 'hospitality jobs', 'healthcare jobs', 'Thrive'],
+  authors: [{ name: 'Thrive' }],
+  creator: 'Thrive',
+  publisher: 'Thrive',
   openGraph: {
     type: 'website',
     locale: 'en_GB',
     url: SITE_URL,
-    siteName: 'Hex Jobs',
-    title: 'Hex Jobs — Free UK Job Board | No Agency Fees',
+    siteName: 'Thrive',
+    title: 'Thrive — Free UK Job Board | No Agency Fees',
     description: 'Find jobs or hire great people across all UK sectors. Post unlimited jobs free — no agency fees, no card needed.',
     images: [
       {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'Hex Jobs — Free UK Job Board',
+        alt: 'Thrive — Free UK Job Board',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hex Jobs — Free UK Job Board | No Agency Fees',
+    title: 'Thrive — Free UK Job Board | No Agency Fees',
     description: 'Find jobs or hire great people across all UK sectors. Post unlimited jobs free — no agency fees, no card needed.',
     images: ['/opengraph-image'],
   },

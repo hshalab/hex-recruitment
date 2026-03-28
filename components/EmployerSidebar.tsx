@@ -269,8 +269,8 @@ export default function EmployerSidebar() {
           <div className={styles.navDivider} />
           <button
             className={styles.item}
-            data-tooltip="Hex Assistant"
-            title="Hex Assistant"
+            data-tooltip="Thrive Assistant"
+            title="Thrive Assistant"
             onClick={() => {
               setMobileOpen(false)
               window.dispatchEvent(new CustomEvent('open-hex-chatbot'))
@@ -281,7 +281,7 @@ export default function EmployerSidebar() {
                 <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" stroke="#FFD700" />
               </svg>
             </span>
-            <span className={styles.label}>Hex Assistant</span>
+            <span className={styles.label}>Thrive Assistant</span>
           </button>
         </nav>
 
