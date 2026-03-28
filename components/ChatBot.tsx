@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { Leaf } from 'lucide-react'
 import styles from './ChatBot.module.css'
 
-const HexIcon = ({ size = 20 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinejoin="round" />
-  </svg>
+const ThriveIcon = ({ size = 20 }: { size?: number }) => (
+  <span style={{ width: size, height: size, borderRadius: '50%', background: '#FFE500', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <Leaf size={size * 0.6} color="#0f172a" strokeWidth={2.5} />
+  </span>
 )
 
 interface Message {
@@ -413,7 +414,7 @@ export default function ChatBot() {
         onClick={handleOpenChat}
         aria-label="Open chat assistant"
       >
-        <span className={styles.chatIcon}><HexIcon size={24} /></span>
+        <span className={styles.chatIcon}><ThriveIcon size={24} /></span>
         {showBadge && <span className={styles.chatBadge}>Need help?</span>}
       </button>
 
@@ -426,7 +427,7 @@ export default function ChatBot() {
         {/* Header */}
         <div className={styles.chatHeader}>
           <div className={styles.headerInfo}>
-            <span className={styles.headerIcon}><HexIcon size={18} /></span>
+            <span className={styles.headerIcon}><ThriveIcon size={18} /></span>
             <h3 className={styles.headerTitle}>THRIVE Chat</h3>
           </div>
           <div className={styles.headerActions}>
@@ -457,7 +458,7 @@ export default function ChatBot() {
               className={`${styles.message} ${message.sender === 'user' ? styles.userMessage : styles.botMessage}`}
             >
               {message.sender === 'bot' && (
-                <span className={styles.messageIcon}><HexIcon size={14} /></span>
+                <span className={styles.messageIcon}><ThriveIcon size={14} /></span>
               )}
               <div className={styles.messageContent}>
                 <p className={styles.messageText}>
@@ -490,7 +491,7 @@ export default function ChatBot() {
 
           {isTyping && (
             <div className={`${styles.message} ${styles.botMessage}`}>
-              <span className={styles.messageIcon}><HexIcon size={14} /></span>
+              <span className={styles.messageIcon}><ThriveIcon size={14} /></span>
               <div className={styles.typingIndicator}>
                 <span></span>
                 <span></span>

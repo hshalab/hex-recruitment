@@ -2041,24 +2041,9 @@ export default function AnalyticsContent() {
       pdf.setFillColor(30, 41, 59) // navy
       pdf.rect(0, 0, W, 36, 'F')
 
-      // Honeycomb icon (simplified hexagon shapes)
-      const drawHex = (cx: number, cy: number, r: number) => {
-        const pts: [number, number][] = []
-        for (let i = 0; i < 6; i++) {
-          const angle = (Math.PI / 3) * i - Math.PI / 6
-          pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)])
-        }
-        pdf.setDrawColor(255, 215, 0)
-        pdf.setLineWidth(0.5)
-        pdf.setFillColor(255, 215, 0)
-        pdf.triangle(pts[0][0], pts[0][1], pts[1][0], pts[1][1], pts[2][0], pts[2][1], 'F')
-        pdf.triangle(pts[0][0], pts[0][1], pts[2][0], pts[2][1], pts[3][0], pts[3][1], 'F')
-        pdf.triangle(pts[0][0], pts[0][1], pts[3][0], pts[3][1], pts[4][0], pts[4][1], 'F')
-        pdf.triangle(pts[0][0], pts[0][1], pts[4][0], pts[4][1], pts[5][0], pts[5][1], 'F')
-      }
-      drawHex(MARGIN + 5, 12, 4)
-      drawHex(MARGIN + 12, 12, 4)
-      drawHex(MARGIN + 8.5, 19, 4)
+      // Thrive logo (yellow circle)
+      pdf.setFillColor(255, 229, 0)
+      pdf.circle(MARGIN + 9, 15, 7, 'F')
 
       pdf.setTextColor(255, 255, 255)
       pdf.setFontSize(16)
