@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
+import { Leaf } from 'lucide-react'
 import styles from './EmployerSidebar.module.css'
 
 const STORAGE_KEY = 'employer-sidebar-collapsed'
@@ -276,10 +277,8 @@ export default function EmployerSidebar() {
               window.dispatchEvent(new CustomEvent('open-hex-chatbot'))
             }}
           >
-            <span className={styles.icon}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" stroke="#FFD700" />
-              </svg>
+            <span className={styles.icon} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: '50%', background: '#FFE500', flexShrink: 0 }}>
+              <Leaf size={12} color="#0f172a" strokeWidth={2.5} />
             </span>
             <span className={styles.label}>Thrive Assistant</span>
           </button>

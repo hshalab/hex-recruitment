@@ -292,6 +292,7 @@
   color: var(--black);
   margin: 0 0 0.2rem;
   line-height: 1.3;
+  padding-right: 3rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
