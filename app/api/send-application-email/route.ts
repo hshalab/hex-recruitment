@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { newApplicationEmail } from '@/emails/new-application'
+import { applicationSubmittedEmail } from '@/emails/application-submitted'
 
 export async function POST(req: Request) {
   try {
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { jobTitle, company, employerId, candidateName } = body
+    const { jobTitle, company, employerId, candidateName, candidateEmail } = body
 
     // Look up employer email from Supabase
     let employerEmail: string | null = null
@@ -59,6 +60,13 @@ export async function POST(req: Request) {
 
     if (!result.success) {
       console.error('[Application Email] Failed:', result.error)
+    }
+
+    // Send confirmation email to candidate
+    if (candidateEmail) {
+      const candidateEmailContent = applicationSubmittedEmail(candidateName, jobTitle, company)
+      await sendEmail(candidateEmail, candidateEmailContent.subject, candidateEmailContent.html)
+        .catch(() => {}) // non-blocking
     }
 
     return NextResponse.json({ success: true })

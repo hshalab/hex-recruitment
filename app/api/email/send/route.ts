@@ -20,6 +20,7 @@ import { activationDay3Email } from '@/emails/activation-day3'
 import { activationDay7Email } from '@/emails/activation-day7'
 import { activationDay14Email } from '@/emails/activation-day14'
 import { activationDay30Email } from '@/emails/activation-day30'
+import { candidateWelcomeEmail } from '@/emails/candidate-welcome'
 
 export async function POST(req: Request) {
   try {
@@ -93,6 +94,9 @@ export async function POST(req: Request) {
     switch (type) {
       case 'welcome':
         email = welcomeEmail(data.companyName)
+        break
+      case 'candidate_welcome':
+        email = candidateWelcomeEmail(data.candidateName)
         break
       case 'new_application':
         email = newApplicationEmail(data.candidateName, data.jobTitle, data.company)

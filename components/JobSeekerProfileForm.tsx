@@ -809,8 +809,17 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           }
         }
 
-        // For demo, skip actual Stripe and mark as paid
-        // In production, this would redirect to Stripe checkout
+        // Send candidate welcome email
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: formData.email,
+            type: 'candidate_welcome',
+            data: { candidateName: `${formData.firstName} ${formData.lastName}` },
+          }),
+        }).catch(() => {}) // fire and forget
+
         setSuccess(true)
         setTimeout(() => {
           router.push('/login/employee?registered=true')

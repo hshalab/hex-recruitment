@@ -861,7 +861,13 @@ function JobsPageContent() {
             }
             if (activeCategory === 'all' && data.job_sector) {
               const match = categories.find(c => c.id === data.job_sector)
-              if (match) setActiveCategory(match.id)
+              // Only pre-set sector if it has matching jobs — otherwise show all
+              if (match) {
+                const hasMatchingJobs = jobs.some(j => j.category === match.id)
+                if (hasMatchingJobs) {
+                  setActiveCategory(match.id)
+                }
+              }
             }
           }
         })
