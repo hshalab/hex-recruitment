@@ -815,7 +815,7 @@
    ========================== */
 @media (max-width: 900px) {
   .page {
-    padding-top: 72px;
+    padding-top: 64px;
   }
   .layout {
     flex-direction: column;
