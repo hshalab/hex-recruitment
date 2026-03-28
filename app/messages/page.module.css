@@ -714,6 +714,9 @@
 
 /* Responsive */
 @media (max-width: 900px) {
+  .container {
+    padding-top: 72px;
+  }
   .messagesLayout {
     height: calc(100dvh - 70px);
   }

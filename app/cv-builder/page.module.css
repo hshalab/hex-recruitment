@@ -814,6 +814,9 @@
    RESPONSIVE
    ========================== */
 @media (max-width: 900px) {
+  .page {
+    padding-top: 72px;
+  }
   .layout {
     flex-direction: column;
     padding: 1rem;

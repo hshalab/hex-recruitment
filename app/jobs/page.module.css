@@ -177,6 +177,7 @@
 }
 
 @media (max-width: 600px) {
+  .searchSection { padding-top: 72px; }
   .searchBar { flex-direction: column; }
   .searchInner { padding: 0 1rem; }
   .jobsContainer { padding: 1rem 1rem 3rem; }

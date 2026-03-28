@@ -997,7 +997,7 @@
 
 @media (max-width: 768px) {
   .dashboardWrap {
-    padding: 1rem;
+    padding: 80px 1rem 1rem;
   }
 
   .welcomeHeader {

@@ -741,7 +741,7 @@ export default function DashboardPage() {
                     {/* Recent applications */}
                     <div className={styles.recentApps}>
                       {recentApps.map(app => (
-                        <div key={app.id} className={styles.appCard}>
+                        <Link key={app.id} href="/applications" className={styles.appCard} style={{ textDecoration: 'none', color: 'inherit' }}>
                           <div className={styles.appCardInfo}>
                             <h4>{app.job_title || 'Untitled Position'}</h4>
                             <p>{app.company || 'Company'} &middot; {formatRelativeTime(app.created_at)}</p>
@@ -749,7 +749,7 @@ export default function DashboardPage() {
                           <span className={`${styles.statusBadge} ${styles[getStatusColor(app.status)]}`}>
                             {STATUS_LABELS[app.status] || app.status}
                           </span>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   </>
