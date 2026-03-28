@@ -815,7 +815,12 @@
    ========================== */
 @media (max-width: 900px) {
   .page {
-    padding-top: 64px;
+    padding-top: 56px;
+  }
+  .banner {
+    position: sticky;
+    top: 56px;
+    z-index: 10;
   }
   .layout {
     flex-direction: column;
