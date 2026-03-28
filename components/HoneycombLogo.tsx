@@ -8,40 +8,22 @@ interface HoneycombLogoProps {
 export default function HoneycombLogo({
   size = 32,
   className,
-  color = 'currentColor',
 }: HoneycombLogoProps) {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 100 100"
       width={size}
       height={size}
+      viewBox="0 0 200 200"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-hidden="true"
     >
-      <circle cx="50" cy="50" r="46" fill={color} />
-      <path
-        d="M50 20 C35 35, 30 55, 50 80 C70 55, 65 35, 50 20Z"
-        fill="#0f172a"
-      />
-      <path
-        d="M50 30 Q42 50, 50 70"
-        stroke="#0f172a"
-        strokeWidth="2.5"
-        fill="none"
-      />
-      <path
-        d="M50 42 Q42 38, 36 42"
-        stroke="#0f172a"
-        strokeWidth="2"
-        fill="none"
-      />
-      <path
-        d="M50 52 Q58 48, 64 52"
-        stroke="#0f172a"
-        strokeWidth="2"
-        fill="none"
-      />
+      <circle cx="100" cy="100" r="95" fill="#FFE500" />
+      <path d="M100 35 C70 65, 55 100, 100 165 C145 100, 130 65, 100 35Z" fill="#0f172a" />
+      <path d="M100 55 Q85 95, 100 145" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" />
+      <path d="M100 80 Q85 72, 72 80" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d="M100 105 Q115 97, 128 105" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
     </svg>
   )
 }
