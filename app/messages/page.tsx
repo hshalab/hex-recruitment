@@ -48,10 +48,9 @@ export default function MessagesPage() {
   const [hasSubscription, setHasSubscription] = useState<boolean | null>(null)
 
   // ── Refs ───────────────────────────────────────────────────────────────
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messageListRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const isMounted = useRef(true)
-  const hasScrolledRef = useRef(false)
 
   // ── Derived values ─────────────────────────────────────────────────────
   const totalUnreadCount = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
@@ -253,17 +252,22 @@ export default function MessagesPage() {
     checkAuth()
   }, [router, loadConversations])
 
-  // Auto-scroll to bottom of messages — instant on first load, smooth on new messages
+  // Scroll message list to bottom
+  const scrollToBottom = useCallback(() => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight
+    }
+  }, [])
+
+  // Auto-scroll when messages load or change — delay ensures DOM has rendered
   useEffect(() => {
     if (messages.length === 0) return
-    const behavior = hasScrolledRef.current ? 'smooth' : 'instant'
-    messagesEndRef.current?.scrollIntoView({ behavior })
-    hasScrolledRef.current = true
-  }, [messages])
+    const t = setTimeout(scrollToBottom, 50)
+    return () => clearTimeout(t)
+  }, [messages, scrollToBottom])
 
   useEffect(() => {
     if (selectedConversation) {
-      hasScrolledRef.current = false // reset so next message load scrolls instantly
       loadMessages(selectedConversation.id)
       markConversationAsRead(selectedConversation.id)
     }
@@ -368,6 +372,7 @@ export default function MessagesPage() {
         isRead: true,
       }
       setMessages(prev => [...prev, newMsg])
+      setTimeout(scrollToBottom, 50)
     }
 
     await supabase
@@ -541,7 +546,7 @@ export default function MessagesPage() {
             </div>
 
             {/* Messages Area */}
-            <div className={styles.messagesArea}>
+            <div className={styles.messagesArea} ref={messageListRef}>
               {messages.map((message, index) => {
                 const isSent = message.senderId === currentUserId
 
@@ -579,7 +584,7 @@ export default function MessagesPage() {
                   </div>
                 )
               })}
-              <div ref={messagesEndRef} />
+              {/* scroll anchor handled by messageListRef.scrollTop */}
             </div>
 
             {/* Chat Input */}
