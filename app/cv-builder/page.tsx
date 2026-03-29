@@ -199,11 +199,16 @@ export default function CVBuilderPage() {
     load()
   }, [])
 
+  // Reset saved indicator when user edits any field
+  useEffect(() => {
+    if (saved) setSaved(false)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cvData])
+
   // Save CV to Supabase
   const saveCV = useCallback(async () => {
     if (!userId || DEV_MODE) {
       setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
       return
     }
 
@@ -223,7 +228,6 @@ export default function CVBuilderPage() {
         if (data) setCvId(data.id)
       }
       setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
     } catch {
       alert('Failed to save CV. Please try again.')
     } finally {

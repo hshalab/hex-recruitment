@@ -575,11 +575,12 @@
   }
 
   .page {
-    padding-top: 56px;
+    padding-top: 57px;
+    background: #1e293b;
   }
   .pageHeader {
     position: sticky;
-    top: 56px;
+    top: 57px;
     z-index: 10;
   }
   .container {

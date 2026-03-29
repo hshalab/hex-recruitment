@@ -24,6 +24,7 @@ const EMPLOYER_QUESTIONS = [
 
 export default function FeedbackWidget() {
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
@@ -34,12 +35,14 @@ export default function FeedbackWidget() {
   const [answers, setAnswers] = useState<Record<string, string>>({})
 
   useEffect(() => {
+    setMounted(true)
     supabase.auth.getSession().then(({ data: { session } }) => {
       const r = session?.user?.user_metadata?.role
       if (r === 'employer' || r === 'employee') setRole(r)
     })
   }, [])
 
+  if (!mounted) return null
   if (pathname === '/' || pathname.startsWith('/login') || pathname.startsWith('/register')) return null
 
   const questions = role === 'employer' ? EMPLOYER_QUESTIONS : role === 'employee' ? CANDIDATE_QUESTIONS : []
