@@ -36,6 +36,13 @@ export default function FeedbackWidget() {
 
   useEffect(() => {
     setMounted(true)
+    // Clear stale feedback widget state from old versions
+    const ver = localStorage.getItem('feedbackWidgetVersion')
+    if (ver !== '2') {
+      localStorage.removeItem('feedbackShown')
+      localStorage.removeItem('feedbackWidget')
+      localStorage.setItem('feedbackWidgetVersion', '2')
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       const r = session?.user?.user_metadata?.role
       if (r === 'employer' || r === 'employee') setRole(r)

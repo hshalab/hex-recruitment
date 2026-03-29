@@ -953,6 +953,11 @@
    MOBILE - Fall back to card list
    ============================================ */
 @media (max-width: 768px) {
+  .hero {
+    position: sticky;
+    top: 57px;
+    z-index: 9;
+  }
   .splitLayout {
     display: grid;
     grid-template-columns: 1fr;
