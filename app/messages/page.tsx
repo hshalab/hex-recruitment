@@ -51,6 +51,7 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const isMounted = useRef(true)
+  const hasScrolledRef = useRef(false)
 
   // ── Derived values ─────────────────────────────────────────────────────
   const totalUnreadCount = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
@@ -252,13 +253,17 @@ export default function MessagesPage() {
     checkAuth()
   }, [router, loadConversations])
 
-  // Auto-scroll to bottom of messages
+  // Auto-scroll to bottom of messages — instant on first load, smooth on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length === 0) return
+    const behavior = hasScrolledRef.current ? 'smooth' : 'instant'
+    messagesEndRef.current?.scrollIntoView({ behavior })
+    hasScrolledRef.current = true
   }, [messages])
 
   useEffect(() => {
     if (selectedConversation) {
+      hasScrolledRef.current = false // reset so next message load scrolls instantly
       loadMessages(selectedConversation.id)
       markConversationAsRead(selectedConversation.id)
     }
