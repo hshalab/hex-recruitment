@@ -350,5 +350,5 @@
 }
 
 @media (max-width: 768px) {
-  .container { padding-top: 20px; }
+  .container { padding-top: 0; }
 }
