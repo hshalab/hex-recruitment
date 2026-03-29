@@ -427,8 +427,8 @@ export default function MyJobsPage() {
                         </div>
                         {application.status === 'interview' ? (
                           <div className={styles.interviewCard}>
-                            <div className={styles.interviewCardHeader}>
-                              Interview Scheduled
+                            <div className={styles.interviewCardHeader} style={application.interview?.status === 'cancelled' ? { background: '#6b7280' } : undefined}>
+                              {application.interview?.status === 'cancelled' ? 'Interview Cancelled' : 'Interview Scheduled'}
                             </div>
                             <div className={styles.interviewCardBody}>
                               {application.interview ? (
@@ -519,8 +519,8 @@ export default function MyJobsPage() {
                       {application.interview && (
                         <div className={styles.interviewSection}>
                           <h4 className={styles.interviewTitle}>
-                            {application.interview.status === 'confirmed' ? '✅ ' : '📅 '}
-                            Scheduled Interview
+                            {application.interview.status === 'cancelled' ? '❌ ' : application.interview.status === 'confirmed' ? '✅ ' : '📅 '}
+                            {application.interview.status === 'cancelled' ? 'Cancelled Interview' : 'Scheduled Interview'}
                           </h4>
                           <div className={styles.interviewDetails}>
                             <p className={styles.interviewDate}>
