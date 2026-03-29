@@ -589,7 +589,7 @@
 /* Responsive */
 @media (max-width: 640px) {
   .container {
-    padding: 64px 1rem 1rem;
+    padding: 20px 1rem 1rem;
   }
 
   .formCard {
