@@ -957,6 +957,7 @@
     position: sticky;
     top: 57px;
     z-index: 9;
+    margin-top: 0;
   }
   .splitLayout {
     display: grid;

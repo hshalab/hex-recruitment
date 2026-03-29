@@ -815,13 +815,15 @@
    ========================== */
 @media (max-width: 900px) {
   .page {
-    padding-top: 57px;
+    padding-top: 0;
+    margin-top: 0;
     background: #1e293b;
   }
   .banner {
     position: sticky;
     top: 57px;
     z-index: 10;
+    margin-top: 0;
   }
   .layout {
     flex-direction: column;
