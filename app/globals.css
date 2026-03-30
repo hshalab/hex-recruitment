@@ -14,6 +14,9 @@
   --card-shadow: 0 2px 8px rgba(45, 55, 72, 0.08);
   --card-shadow-hover: 0 4px 16px rgba(45, 55, 72, 0.12);
 
+  /* Nav height — used for body padding + sticky sub-header top */
+  --nav-height: 58px;
+
   /* Z-index scale */
   --z-base: 1;
   --z-sticky: 40;
@@ -184,7 +187,7 @@ body[data-sidebar="expanded"] {
 
   /* Fixed header on mobile + chatbot button clearance */
   body {
-    padding-top: 56px;
+    padding-top: var(--nav-height);
     padding-bottom: 80px;
     overflow-x: hidden;
   }

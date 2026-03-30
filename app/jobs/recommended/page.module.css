@@ -955,9 +955,9 @@
 @media (max-width: 768px) {
   .hero {
     position: sticky;
-    top: 57px;
+    top: var(--nav-height);
     z-index: 9;
-    margin-top: -56px;
+    margin-top: calc(-1 * var(--nav-height));
   }
   .splitLayout {
     display: grid;

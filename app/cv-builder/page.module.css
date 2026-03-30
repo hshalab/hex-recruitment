@@ -815,12 +815,12 @@
    ========================== */
 @media (max-width: 900px) {
   .page {
+    margin-top: calc(-1 * var(--nav-height));
     padding-top: 0;
-    margin-top: -56px;
   }
   .banner {
     position: sticky;
-    top: 57px;
+    top: var(--nav-height);
     z-index: 10;
   }
   .layout {

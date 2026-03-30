@@ -720,7 +720,7 @@
   }
   .messagesLayout {
     position: fixed;
-    top: 57px;
+    top: var(--nav-height);
     left: 0;
     right: 0;
     bottom: 0;
