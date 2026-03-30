@@ -984,6 +984,7 @@
 
   .container {
     padding: 1rem;
+    padding-top: calc(var(--nav-height) + 1rem);
   }
 
   .heroInner {

@@ -576,6 +576,7 @@
 
   .container {
     padding: 0 1rem 1rem;
+    padding-top: calc(var(--nav-height) + 0.5rem);
   }
 }
 
