@@ -719,12 +719,7 @@
     min-height: auto;
   }
   .messagesLayout {
-    position: fixed;
-    top: var(--nav-height);
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: auto;
+    height: calc(100dvh - 80px);
     max-width: none;
     box-shadow: none;
   }
@@ -791,6 +786,17 @@
 
   .chatInput {
     font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .messagesLayout {
+    position: fixed;
+    top: var(--nav-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: auto;
   }
 }
 

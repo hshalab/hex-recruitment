@@ -1,7 +1,7 @@
 .header {
   background: var(--dark-gray);
   border-bottom: 2px solid var(--primary-yellow);
-  padding: 1rem 0;
+  padding: 0.75rem 0;
   position: sticky;
   top: 0;
   z-index: var(--z-header);
