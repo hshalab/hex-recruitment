@@ -880,7 +880,7 @@ function JobsPageContent() {
   }
 
   return (
-    <main>
+    <main className="no-pad">
       <Header />
 
       {/* Search Section */}
@@ -1321,7 +1321,7 @@ function JobsPageContent() {
 export default function JobsPage() {
   return (
     <Suspense fallback={
-      <main>
+      <main className="no-pad">
         <Header />
         <div style={{ textAlign: 'center', padding: '4rem' }}>
           Loading jobs...
