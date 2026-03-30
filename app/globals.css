@@ -192,6 +192,11 @@ body[data-sidebar="expanded"] {
     overflow-x: hidden;
   }
 
+  /* Pages with dark sub-headers cancel body padding via this class */
+  .flush-nav {
+    margin-top: calc(-1 * var(--nav-height));
+  }
+
   /* Prevent iOS Safari auto-zoom — font-size must be ≥16px on all interactive inputs */
   input,
   textarea,

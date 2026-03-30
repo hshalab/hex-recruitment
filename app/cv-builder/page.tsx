@@ -737,7 +737,7 @@ export default function CVBuilderPage() {
 
   if (loading) {
     return (
-      <main>
+      <main className="flush-nav">
         <Header />
         <div className={styles.loadingState}>
           <div className={styles.spinner} />
@@ -1066,7 +1066,7 @@ export default function CVBuilderPage() {
   )
 
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} flush-nav`}>
       <Header />
 
       {/* Banner */}

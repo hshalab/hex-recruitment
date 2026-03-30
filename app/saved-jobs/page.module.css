@@ -580,10 +580,6 @@
 }
 
 @media (max-width: 768px) {
-  .page {
-    margin-top: calc(-1 * var(--nav-height));
-    padding-top: 0;
-  }
   .pageHeader {
     position: sticky;
     top: var(--nav-height);

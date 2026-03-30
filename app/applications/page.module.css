@@ -807,6 +807,6 @@
 
 @media (max-width: 768px) {
   .container {
-    padding-top: 0;
+    padding-top: 0.75rem;
   }
 }

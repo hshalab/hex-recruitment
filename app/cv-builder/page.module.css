@@ -814,10 +814,6 @@
    RESPONSIVE
    ========================== */
 @media (max-width: 768px) {
-  .page {
-    margin-top: calc(-1 * var(--nav-height));
-    padding-top: 0;
-  }
   .banner {
     position: sticky;
     top: var(--nav-height);
@@ -828,7 +824,7 @@
 @media (max-width: 900px) {
   .layout {
     flex-direction: column;
-    padding: 1rem;
+    padding: 0.5rem 1rem 1rem;
   }
 
   .previewPanel {
@@ -863,6 +859,7 @@
 
   .steps {
     gap: 0.2rem;
+    scroll-margin-top: 140px;
   }
 
   .stepLabel {
