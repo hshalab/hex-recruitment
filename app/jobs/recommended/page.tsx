@@ -250,7 +250,7 @@ export default function RecommendedJobsPage() {
   }
 
   return (
-    <main>
+    <main className={styles.page}>
       <Header />
 
       {/* Slim dark banner */}
