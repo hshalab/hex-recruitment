@@ -15,7 +15,7 @@
   --card-shadow-hover: 0 4px 16px rgba(45, 55, 72, 0.12);
 
   /* Nav height — used for body padding + sticky sub-header top */
-  --nav-height: 58px;
+  --nav-height: 64px;
 
   /* Z-index scale */
   --z-base: 1;
