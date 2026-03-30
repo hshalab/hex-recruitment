@@ -250,7 +250,7 @@ export default function RecommendedJobsPage() {
   }
 
   return (
-    <main className={`${styles.page} flush-nav`}>
+    <main className={`${styles.page} no-pad`}>
       <Header />
 
       {/* Slim dark banner */}

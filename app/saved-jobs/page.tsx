@@ -198,7 +198,7 @@ export default function SavedJobsPage() {
 
   if (isAuthenticated === null || jobsLoading || savedLoading) {
     return (
-      <main className={`${styles.page} flush-nav`}>
+      <main className={`${styles.page} no-pad`}>
         <Header />
         <div className={styles.loadingState}>
           <div className={styles.spinner} />
@@ -209,7 +209,7 @@ export default function SavedJobsPage() {
   }
 
   return (
-    <main className={`${styles.page} flush-nav`}>
+    <main className={`${styles.page} no-pad`}>
       <Header />
 
       {/* Page Header */}

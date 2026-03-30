@@ -187,14 +187,19 @@ body[data-sidebar="expanded"] {
 
   /* Fixed header on mobile + chatbot button clearance */
   body {
-    padding-top: var(--nav-height);
+    padding-top: 0;
     padding-bottom: 80px;
     overflow-x: hidden;
   }
 
-  /* Pages with dark sub-headers cancel body padding via this class */
-  .flush-nav {
-    margin-top: calc(-1 * var(--nav-height));
+  /* All pages: clear the fixed header */
+  main {
+    padding-top: var(--nav-height);
+  }
+
+  /* Dark sub-header pages: no padding, sub-header sits flush */
+  main.no-pad {
+    padding-top: 0;
   }
 
   /* Prevent iOS Safari auto-zoom — font-size must be ≥16px on all interactive inputs */
