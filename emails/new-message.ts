@@ -4,7 +4,7 @@ export function newMessageEmail(
   senderName: string,
   messagePreview: string
 ): { subject: string; html: string } {
-  const subject = `New message from ${senderName} on Hex`
+  const subject = `New message from ${senderName} on Thrive`
 
   // Truncate preview to 200 chars
   const preview = messagePreview.length > 200
@@ -24,7 +24,7 @@ export function newMessageEmail(
         </td>
       </tr>
     </table>
-    ${ctaButton('Reply on Hex', `${BASE_URL}/messages`)}
+    ${ctaButton('Reply on Thrive', `${BASE_URL}/messages`)}
   `)
 
   return { subject, html }

@@ -1,13 +1,13 @@
 import { emailLayout, ctaButton, BASE_URL } from './layout'
 
 export function activationDay3Email(companyName: string): { subject: string; html: string } {
-  const subject = "3 ways to find candidates faster on Hex"
+  const subject = "3 ways to find candidates faster on Thrive"
 
   const html = emailLayout(subject, `
     <p style="margin:0 0 4px;font-size:13px;color:#94a3b8;">Most employers miss this — don't be one of them.</p>
-    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Get more from Hex, ${companyName}</h1>
+    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Get more from Thrive, ${companyName}</h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Here are three things the most successful employers on Hex do differently:
+      Here are three things the most successful employers on Thrive do differently:
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
       <tr>

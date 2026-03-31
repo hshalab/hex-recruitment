@@ -48,7 +48,7 @@ export function interviewRescheduledEmail(
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
       If you have any questions, please contact ${companyName} directly via your Hex messages inbox.
     </p>
-    ${ctaButton('View on Hex', `${BASE_URL}/applications`)}
+    ${ctaButton('View on Thrive', `${BASE_URL}/applications`)}
     <p style="margin:0;font-size:14px;color:#94a3b8;">
       Good luck with your interview!
     </p>

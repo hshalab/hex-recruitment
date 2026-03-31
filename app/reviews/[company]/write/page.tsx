@@ -293,7 +293,7 @@ export default function WriteReviewPage() {
             </div>
             <h2 className={styles.notOnPlatformTitle}>Company Not Found</h2>
             <p className={styles.notOnPlatformText}>
-              This company hasn&apos;t posted any jobs on Hex yet.
+              This company hasn&apos;t posted any jobs on Thrive yet.
               You can only review companies with active or past job listings.
             </p>
             <Link href="/reviews" className={styles.notOnPlatformLink}>

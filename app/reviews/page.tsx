@@ -212,7 +212,7 @@ export default function ReviewsLandingPage() {
         ) : companies.length > 0 ? (
           <>
             <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Companies on Hex</h2>
+              <h2 className={styles.sectionTitle}>Companies on Thrive</h2>
             </div>
 
             <div className={styles.grid}>

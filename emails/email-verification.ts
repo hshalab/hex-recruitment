@@ -13,7 +13,7 @@ export function emailVerificationEmail(verifyUrl: string): { subject: string; ht
       This link expires in <strong>24 hours</strong>.
     </p>
     <p style="margin:0;font-size:14px;color:#94a3b8;">
-      If you didn't create an account on Hex, you can safely ignore this email.
+      If you didn't create an account on Thrive, you can safely ignore this email.
     </p>
   `)
 

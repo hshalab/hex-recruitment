@@ -140,7 +140,7 @@
   .stats { grid-template-columns: repeat(2, 1fr); }
   .header { flex-direction: column; align-items: stretch; }
   .postJobBtn, .browseJobsBtn { text-align: center; }
-  .container { padding: 0 1rem 3rem; }
+  .container { padding: 1rem 1rem 3rem; }
   .btnGrid { grid-template-columns: repeat(2, 1fr); }
 }
 

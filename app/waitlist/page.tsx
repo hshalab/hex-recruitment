@@ -87,7 +87,7 @@ function WaitlistContent() {
 
         {/* Subheadline */}
         <p className={styles.subheadline}>
-          Join the waitlist. The first 100 employers on Hex get a full year free. No card needed.
+          Join the waitlist. The first 100 employers on Thrive get a full year free. No card needed.
         </p>
 
         {/* Spots counter */}
