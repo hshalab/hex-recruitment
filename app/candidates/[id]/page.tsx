@@ -680,6 +680,14 @@ export default function CandidateDetailPage() {
         </div>
       </div>
 
+      {/* Mobile sticky Message bar */}
+      <div className={styles.mobileMessageBar}>
+        <Link href={`/messages?candidate=${candidateId}`} className={styles.mobileMessageBtn}>
+          <MessageSquare size={18} />
+          Message {candidate.fullName.split(' ')[0]}
+        </Link>
+      </div>
+
     </main>
   )
 }
