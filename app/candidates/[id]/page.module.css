@@ -1133,7 +1133,7 @@
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
     background: var(--white);
     border-top: 1px solid var(--border-gray);
-    z-index: 50;
+    z-index: 150;
     box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
   }
   .mobileMessageBtn {
@@ -1164,6 +1164,10 @@
 
   .sidebar {
     order: -1;
+  }
+
+  .connectBtn {
+    display: none;
   }
 
   .sidebarSticky {
