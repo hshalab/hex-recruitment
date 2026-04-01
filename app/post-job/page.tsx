@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import Header from '@/components/Header'
 import PostcodeLookup, { type AddressData } from '@/components/PostcodeLookup'
@@ -609,6 +610,12 @@ function PostJobContent() {
       <Header />
 
       <div className={styles.hero}>
+        {isEditMode && (
+          <Link href="/my-jobs" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', color: '#6b7280', textDecoration: 'none', marginBottom: '0.5rem' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+            Back to My Jobs
+          </Link>
+        )}
         <h1 className={styles.heroTitle}>{isEditMode ? 'Edit Job' : 'Post a Job'}</h1>
         <p className={styles.heroSubtitle}>
           {isEditMode

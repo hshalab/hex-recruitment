@@ -58,7 +58,7 @@
 
 /* Key info row (salary, type, category) */
 .jobKeyInfo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin-top: 0.15rem; }
-.jobKeyInfo .statusBadge { margin-left: auto; }
+.jobKeyInfo .statusBadge { margin-left: auto; margin-top: 0.25rem; }
 .salaryBadge { font-size: 0.8rem; font-weight: 600; color: var(--text-dark); padding: 0; background: none; }
 .typeBadge { font-size: 0.8rem; color: var(--text-gray); padding: 0; background: none; }
 .categoryTag { font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569; }
@@ -90,7 +90,7 @@
 .jobDescription { margin: 0; font-size: 0.8rem; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
 /* Meta row */
-.jobMeta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.jobMeta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: -0.25rem; }
 .cardMetaRow { display: flex; align-items: center; gap: 0.5rem; }
 .metaItem { display: flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; color: #9ca3af; }
 .metaIcon { font-size: 0.72rem; }
