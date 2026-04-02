@@ -495,6 +495,11 @@ export default function MessagesPage() {
         {/* Sidebar */}
         <div className={`${styles.sidebar} ${!showSidebar ? styles.hidden : ''}`}>
           <div className={styles.sidebarHeader}>
+            {candidateParam && (
+              <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6b7280', fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: '8px' }}>
+                ← Back to Candidates
+              </button>
+            )}
             <h1 className={styles.sidebarTitle}>
               Messages
             </h1>
