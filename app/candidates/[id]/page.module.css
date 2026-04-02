@@ -1117,43 +1117,6 @@
   cursor: not-allowed;
 }
 
-/* Mobile sticky Message bar */
-.mobileMessageBar {
-  display: none;
-}
-
-@media (max-width: 968px) {
-  .mobileMessageBar {
-    display: block;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 0.75rem 1rem;
-    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-    background: var(--white);
-    border-top: 1px solid var(--border-gray);
-    z-index: 150;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
-  }
-  .mobileMessageBtn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 100%;
-    padding: 0.75rem 1.5rem;
-    background: var(--primary-yellow);
-    color: var(--text-dark);
-    border: none;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    text-decoration: none;
-    cursor: pointer;
-  }
-}
-
 /* ===========================
    RESPONSIVE
    =========================== */
@@ -1164,10 +1127,6 @@
 
   .sidebar {
     order: -1;
-  }
-
-  .connectBtn {
-    display: none;
   }
 
   .sidebarSticky {

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -95,10 +94,6 @@ export default function CandidateDetailPage() {
   const [lastActive, setLastActive] = useState<string | null>(null)
   const [isOwnProfile, setIsOwnProfile] = useState(false)
   const [completionPct, setCompletionPct] = useState(0)
-  const [portalMounted, setPortalMounted] = useState(false)
-
-  useEffect(() => { setPortalMounted(true) }, [])
-
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -535,10 +530,14 @@ export default function CandidateDetailPage() {
               <div className={styles.actionsCard}>
                 <h3 className={styles.actionsTitle}>Contact {candidate.fullName.split(' ')[0]}</h3>
 
-                <Link href={`/messages?candidate=${candidateId}`} className={styles.connectBtn}>
+                <button
+                  onClick={() => router.push(`/messages?candidate=${candidateId}`)}
+                  className={styles.connectBtn}
+                  type="button"
+                >
                   <MessageSquare size={18} />
-                  Message
-                </Link>
+                  Message {candidate.fullName.split(' ')[0]}
+                </button>
 
                 <div className={styles.actionRow}>
                   {hasAnyContact ? (
@@ -683,17 +682,6 @@ export default function CandidateDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Mobile sticky Message bar — portalled to body to escape any stacking context */}
-      {portalMounted && createPortal(
-        <div className={styles.mobileMessageBar}>
-          <Link href={`/messages?candidate=${candidateId}`} className={styles.mobileMessageBtn}>
-            <MessageSquare size={18} />
-            Message {candidate.fullName.split(' ')[0]}
-          </Link>
-        </div>,
-        document.body
-      )}
 
     </main>
   )
