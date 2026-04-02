@@ -271,13 +271,32 @@ export default function MessagesPage() {
 
   // Auto-select conversation when ?candidate= param is present
   useEffect(() => {
-    if (!candidateParam || conversations.length === 0 || selectedConversation) return
+    if (!candidateParam || isLoading || selectedConversation) return
     const match = conversations.find(c => c.participantId === candidateParam)
     if (match) {
       setSelectedConversation(match)
       setShowSidebar(false)
+    } else {
+      // No existing conversation — create a compose state
+      // Fetch candidate name from Supabase
+      supabase.from('candidate_profiles').select('full_name, profile_picture_url').eq('user_id', candidateParam).maybeSingle()
+        .then(({ data }) => {
+          setSelectedConversation({
+            id: 'new',
+            connectionId: '',
+            participantId: candidateParam,
+            participantName: data?.full_name || 'Candidate',
+            participantRole: 'candidate',
+            participantProfilePicture: data?.profile_picture_url || null,
+            lastMessage: '',
+            lastMessageAt: new Date().toISOString(),
+            unreadCount: 0,
+            isOnline: false,
+          })
+          setShowSidebar(false)
+        })
     }
-  }, [candidateParam, conversations, selectedConversation])
+  }, [candidateParam, isLoading, selectedConversation, conversations])
 
   useEffect(() => {
     if (selectedConversation) {
@@ -354,10 +373,40 @@ export default function MessagesPage() {
     const senderName = session.user.user_metadata?.full_name || session.user.user_metadata?.company_name || 'You'
     const senderRole = session.user.user_metadata?.role || 'candidate'
 
+    // If this is a new conversation, create it first
+    let conversationId = selectedConversation.id
+    if (conversationId === 'new') {
+      const { data: newConv, error: convError } = await supabase
+        .from('conversations')
+        .insert({
+          participant_1: currentUserId,
+          participant_2: selectedConversation.participantId,
+          participant_1_name: senderName,
+          participant_1_role: senderRole,
+          participant_1_company: session.user.user_metadata?.company_name || '',
+          participant_2_name: selectedConversation.participantName,
+          participant_2_role: 'candidate',
+          last_message: content,
+          last_message_at: new Date().toISOString(),
+        })
+        .select()
+        .single()
+
+      if (convError || !newConv) {
+        console.error('Failed to create conversation:', convError?.message)
+        setNewMessage(content)
+        return
+      }
+
+      conversationId = newConv.id
+      // Update the selected conversation with the real ID
+      setSelectedConversation(prev => prev ? { ...prev, id: conversationId } : prev)
+    }
+
     const { data: inserted, error } = await supabase
       .from('messages')
       .insert({
-        conversation_id: selectedConversation.id,
+        conversation_id: conversationId,
         sender_id: currentUserId,
         sender_name: senderName,
         sender_role: senderRole,
@@ -394,9 +443,9 @@ export default function MessagesPage() {
         last_message: content,
         last_message_at: new Date().toISOString(),
       })
-      .eq('id', selectedConversation.id)
+      .eq('id', conversationId)
 
-    updateConversation(selectedConversation.id, {
+    updateConversation(conversationId, {
       lastMessage: content,
       lastMessageAt: new Date().toISOString(),
     })
