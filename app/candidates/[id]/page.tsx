@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -94,6 +95,9 @@ export default function CandidateDetailPage() {
   const [lastActive, setLastActive] = useState<string | null>(null)
   const [isOwnProfile, setIsOwnProfile] = useState(false)
   const [completionPct, setCompletionPct] = useState(0)
+  const [portalMounted, setPortalMounted] = useState(false)
+
+  useEffect(() => { setPortalMounted(true) }, [])
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -680,13 +684,16 @@ export default function CandidateDetailPage() {
         </div>
       </div>
 
-      {/* Mobile sticky Message bar */}
-      <div className={styles.mobileMessageBar}>
-        <Link href={`/messages?candidate=${candidateId}`} className={styles.mobileMessageBtn}>
-          <MessageSquare size={18} />
-          Message {candidate.fullName.split(' ')[0]}
-        </Link>
-      </div>
+      {/* Mobile sticky Message bar — portalled to body to escape any stacking context */}
+      {portalMounted && createPortal(
+        <div className={styles.mobileMessageBar}>
+          <Link href={`/messages?candidate=${candidateId}`} className={styles.mobileMessageBtn}>
+            <MessageSquare size={18} />
+            Message {candidate.fullName.split(' ')[0]}
+          </Link>
+        </div>,
+        document.body
+      )}
 
     </main>
   )
