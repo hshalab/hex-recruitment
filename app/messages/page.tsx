@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
@@ -33,6 +33,8 @@ function renderMessageContent(text: string | null | undefined) {
 
 export default function MessagesPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const candidateParam = searchParams.get('candidate')
 
   // ── State ──────────────────────────────────────────────────────────────
   const [isLoading, setIsLoading] = useState(true)
@@ -244,6 +246,7 @@ export default function MessagesPage() {
         await loadConversations(userId)
 
         if (isMounted.current) setIsLoading(false)
+
       } catch {
         router.push('/login')
       }
@@ -265,6 +268,16 @@ export default function MessagesPage() {
     const t = setTimeout(scrollToBottom, 50)
     return () => clearTimeout(t)
   }, [messages, scrollToBottom])
+
+  // Auto-select conversation when ?candidate= param is present
+  useEffect(() => {
+    if (!candidateParam || conversations.length === 0 || selectedConversation) return
+    const match = conversations.find(c => c.participantId === candidateParam)
+    if (match) {
+      setSelectedConversation(match)
+      setShowSidebar(false)
+    }
+  }, [candidateParam, conversations, selectedConversation])
 
   useEffect(() => {
     if (selectedConversation) {
