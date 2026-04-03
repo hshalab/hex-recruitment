@@ -11,15 +11,15 @@ type UserRole = 'employer' | 'employee' | null
 const CANDIDATE_QUESTIONS = [
   { id: 'q2', label: 'How easy was it to find relevant jobs?', options: ['Very easy', 'Easy', 'OK', 'Difficult', 'Very difficult'] },
   { id: 'q3', label: 'How straightforward was applying for a job?', options: ['Very easy', 'Easy', 'OK', 'Difficult', 'Very difficult'] },
-  { id: 'q4', label: 'How does Hex compare to other job sites you\'ve used?', options: ['Much better', 'Better', 'About the same', 'Worse', 'Much worse'] },
-  { id: 'q5', label: 'Would you recommend Hex to someone looking for work?', options: ['Yes definitely', 'Maybe', 'No'] },
+  { id: 'q4', label: 'How does Thrive compare to other job sites you\'ve used?', options: ['Much better', 'Better', 'About the same', 'Worse', 'Much worse'] },
+  { id: 'q5', label: 'Would you recommend Thrive to someone looking for work?', options: ['Yes definitely', 'Maybe', 'No'] },
 ]
 
 const EMPLOYER_QUESTIONS = [
   { id: 'q2', label: 'How easy was posting your first job?', options: ['Very easy', 'Easy', 'OK', 'Difficult', 'Very difficult'] },
   { id: 'q3', label: 'How useful is the candidate search and pipeline?', options: ['Very useful', 'Useful', 'Somewhat', 'Not useful', 'Haven\'t used it'] },
-  { id: 'q4', label: 'How does Hex compare to other tools?', options: ['Much better', 'Better', 'About the same', 'Worse', 'Much worse'] },
-  { id: 'q5', label: 'Would you recommend Hex to another business owner?', options: ['Yes definitely', 'Maybe', 'No'] },
+  { id: 'q4', label: 'How does Thrive compare to other tools?', options: ['Much better', 'Better', 'About the same', 'Worse', 'Much worse'] },
+  { id: 'q5', label: 'Would you recommend Thrive to another business owner?', options: ['Yes definitely', 'Maybe', 'No'] },
 ]
 
 export default function FeedbackWidget() {
@@ -117,14 +117,14 @@ export default function FeedbackWidget() {
           {/* Sticky header */}
           <div className={styles.panelHeader}>
             <span className={styles.panelHeaderTitle}>
-              {submitted ? '' : role ? (role === 'employer' ? 'How\u2019s Hex working for you?' : 'How\u2019s your experience so far?') : 'Share your feedback'}
+              {submitted ? '' : role ? (role === 'employer' ? 'How\u2019s Thrive working for you?' : 'How\u2019s your experience so far?') : 'Share your feedback'}
             </span>
             <button className={styles.closeBtn} onClick={() => setIsOpen(false)} aria-label="Close">&times;</button>
           </div>
 
           {submitted ? (
             <div className={styles.thanks}>
-              Thanks for your feedback! It helps us make Hex better.
+              Thanks for your feedback! It helps us make Thrive better.
             </div>
           ) : (
             <>
@@ -132,11 +132,11 @@ export default function FeedbackWidget() {
                 /* ── Questionnaire for logged-in users ── */
                 <>
                   <p className={styles.subtext}>
-                    {role === 'employer' ? 'Takes 2 minutes — helps us build what you need' : 'Takes 2 minutes — helps us improve Hex for you'}
+                    {role === 'employer' ? 'Takes 2 minutes — helps us build what you need' : 'Takes 2 minutes — helps us improve Thrive for you'}
                   </p>
 
                   <div className={styles.qBlock}>
-                    <p className={styles.qLabel}>Overall, how would you rate Hex?</p>
+                    <p className={styles.qLabel}>Overall, how would you rate Thrive?</p>
                     <StarRating rating={rating} interactive size="md" onRate={r => { setRating(r); setError('') }} />
                     {error && <p className={styles.error}>{error}</p>}
                   </div>
@@ -161,7 +161,7 @@ export default function FeedbackWidget() {
                   <div className={styles.qBlock}>
                     <p className={styles.qLabel}>
                       {role === 'employer'
-                        ? 'What would make Hex better? (optional)'
+                        ? 'What would make Thrive better? (optional)'
                         : 'Anything we could do better? (optional)'}
                     </p>
                     <textarea

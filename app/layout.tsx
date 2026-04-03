@@ -18,7 +18,7 @@ const dancingScript = Dancing_Script({
   display: 'swap',
 })
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareers.co.uk'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareer.co.uk'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

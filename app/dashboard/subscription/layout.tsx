@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Subscription Management - Hex',
-  description: 'Manage your Hex subscription plan, billing, and account settings.',
+  title: 'Subscription Management - Thrive',
+  description: 'Manage your Thrive subscription plan, billing, and account settings.',
   robots: { index: false },
 }
 

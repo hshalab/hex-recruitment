@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
-  description: 'Read the Hex terms of service. Understand your rights and obligations when using our platform.',
+  description: 'Read the Thrive terms of service. Understand your rights and obligations when using our platform.',
   alternates: {
     canonical: '/terms',
   },

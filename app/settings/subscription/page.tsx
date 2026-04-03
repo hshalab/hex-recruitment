@@ -634,7 +634,7 @@ export default function SubscriptionSettingsPage() {
 
             <div className={styles.modalBody}>
               <p className={styles.modalText}>
-                Are you sure you want to cancel your Hex subscription?
+                Are you sure you want to cancel your Thrive subscription?
               </p>
 
               <div className={styles.modalWarning}>

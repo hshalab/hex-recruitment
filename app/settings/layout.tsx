@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Settings - Account Settings',
-  description: 'Manage your Hex account settings, profile, notifications and subscription.',
+  description: 'Manage your Thrive account settings, profile, notifications and subscription.',
   robots: { index: false },
   alternates: {
     canonical: '/settings',

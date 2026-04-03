@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Notifications',
-  description: 'View your Hex notifications.',
+  description: 'View your Thrive notifications.',
   robots: { index: false },
   alternates: {
     canonical: '/notifications',

@@ -14,7 +14,7 @@ function RegisterEmployeePageContent() {
         <div className={styles.header}>
           <h1 className={styles.title}>Create Your Job Seeker Profile</h1>
           <p className={styles.subtitle}>
-            Join Hex and connect with top employers across the UK
+            Join Thrive and connect with top employers across the UK
           </p>
         </div>
 

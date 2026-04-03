@@ -1,7 +1,7 @@
 import { emailLayout, ctaButton } from './layout'
 
 export function passwordResetEmail(resetUrl: string): { subject: string; html: string } {
-  const subject = 'Reset your Hex password'
+  const subject = 'Reset your Thrive password'
 
   const html = emailLayout(subject, `
     <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Reset Your Password</h1>

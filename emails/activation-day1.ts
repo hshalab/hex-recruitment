@@ -7,7 +7,7 @@ export function activationDay1Email(companyName: string): { subject: string; htm
     <p style="margin:0 0 4px;font-size:13px;color:#94a3b8;">Your free spot is claimed. Here's what to do next.</p>
     <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Time to post your first job, ${companyName}</h1>
     <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
-      The first job is the hardest part. After that, Hex runs itself — applications come in, you review them, and you hire. The whole thing takes about 3 minutes:
+      The first job is the hardest part. After that, Thrive runs itself — applications come in, you review them, and you hire. The whole thing takes about 3 minutes:
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
       <tr>

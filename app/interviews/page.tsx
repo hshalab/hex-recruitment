@@ -100,7 +100,7 @@ async function sendHexMessage(params: {
       }
     }
   } catch (err) {
-    console.error('Error sending Hex message:', err)
+    console.error('Error sending Thrive message:', err)
   }
 }
 

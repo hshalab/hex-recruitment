@@ -143,7 +143,7 @@ export default function PhoneVerificationModal({ onComplete }: PhoneVerification
               <div className={styles.toggleText}>
                 <span className={styles.toggleTitle}>I agree to receive promotional SMS</span>
                 <span className={styles.toggleDescription}>
-                  Receive updates about new features, special offers, and hiring tips from Hex
+                  Receive updates about new features, special offers, and hiring tips from Thrive
                 </span>
               </div>
             </label>

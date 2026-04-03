@@ -290,7 +290,7 @@ export default function Header() {
             style={{ width: '100%', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left' }}
             onClick={() => {
               setShowProfileMenu(false)
-              window.dispatchEvent(new CustomEvent('open-hex-chatbot'))
+              window.dispatchEvent(new CustomEvent('open-thrive-chatbot'))
             }}
           >
             <svg className={styles.dropdownIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

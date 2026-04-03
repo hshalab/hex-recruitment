@@ -419,7 +419,7 @@ export default function EmployerDashboardPage() {
           return (
             <div className={styles.checklistCard}>
               <button className={styles.checklistDismiss} onClick={() => setDismissChecklist(true)} aria-label="Dismiss">×</button>
-              <h3 className={styles.checklistHeading}>Get started with Hex</h3>
+              <h3 className={styles.checklistHeading}>Get started with Thrive</h3>
               <p className={styles.checklistSub}>Complete these steps to start finding great candidates</p>
               <div className={styles.checklistItems}>
                 <div className={styles.checklistItem}>

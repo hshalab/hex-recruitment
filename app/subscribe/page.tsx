@@ -352,7 +352,7 @@ export default function SubscribePage() {
         <div className={styles.successContainer}>
           <div className={styles.successCard}>
             <div className={styles.successIcon}>🎉</div>
-            <h1>Welcome to Hex!</h1>
+            <h1>Welcome to Thrive!</h1>
             <p className={styles.successMessage}>Your free trial has started.</p>
             <div className={styles.successDetails}>
               <div className={styles.successItem}>

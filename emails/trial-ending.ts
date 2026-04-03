@@ -4,7 +4,7 @@ export function trialEndingEmail(
   companyName: string,
   daysLeft: number
 ): { subject: string; html: string } {
-  const subject = `Your Hex trial ends in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
+  const subject = `Your Thrive trial ends in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
 
   const html = emailLayout(subject, `
     <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Your trial is ending soon</h1>

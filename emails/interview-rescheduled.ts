@@ -46,7 +46,7 @@ export function interviewRescheduledEmail(
     </table>
     ` : ''}
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
-      If you have any questions, please contact ${companyName} directly via your Hex messages inbox.
+      If you have any questions, please contact ${companyName} directly via your Thrive messages inbox.
     </p>
     ${ctaButton('View on Thrive', `${BASE_URL}/applications`)}
     <p style="margin:0;font-size:14px;color:#94a3b8;">

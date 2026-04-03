@@ -268,7 +268,7 @@ export default function JobAlertsPage() {
 
   if (loading) {
     return (
-      <main className={styles.page}>
+      <main className={`${styles.page} no-pad`}>
         <Header />
         <div className={styles.loading}>Loading...</div>
       </main>
@@ -278,7 +278,7 @@ export default function JobAlertsPage() {
   const activeCount = alerts.filter(a => a.is_active).length
 
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} no-pad`}>
       <Header />
 
       {/* Page Header */}

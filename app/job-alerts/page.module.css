@@ -587,6 +587,12 @@
 }
 
 /* Responsive */
+@media (max-width: 768px) {
+  .pageHeader {
+    padding-top: var(--nav-height);
+  }
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 0 1rem 1rem;

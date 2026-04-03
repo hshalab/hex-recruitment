@@ -344,8 +344,8 @@ export default function ChatBot() {
       setIsOpen(true)
       setShowBadge(false)
     }
-    window.addEventListener('open-hex-chatbot', handleOpen)
-    return () => window.removeEventListener('open-hex-chatbot', handleOpen)
+    window.addEventListener('open-thrive-chatbot', handleOpen)
+    return () => window.removeEventListener('open-thrive-chatbot', handleOpen)
   }, [])
 
   const sendMessage = useCallback((content: string) => {

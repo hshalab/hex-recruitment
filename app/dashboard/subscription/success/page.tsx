@@ -34,7 +34,7 @@ function SuccessContent() {
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
       </div>
-      <h1 className={styles.title}>Welcome to Hex!</h1>
+      <h1 className={styles.title}>Welcome to Thrive!</h1>
       <p className={styles.message}>
         Your subscription is now active. You have a 14-day free trial — no charges until it ends.
       </p>

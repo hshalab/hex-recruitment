@@ -131,7 +131,7 @@ export default function ReviewsLandingPage() {
   }
 
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} no-pad`}>
       <Header />
 
       {/* Hero with search */}

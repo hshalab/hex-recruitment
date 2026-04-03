@@ -274,7 +274,7 @@ export default function EmployerSidebar() {
             title="Thrive Assistant"
             onClick={() => {
               setMobileOpen(false)
-              window.dispatchEvent(new CustomEvent('open-hex-chatbot'))
+              window.dispatchEvent(new CustomEvent('open-thrive-chatbot'))
             }}
           >
             <span className={styles.icon} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: '50%', background: '#FFE500', flexShrink: 0 }}>
