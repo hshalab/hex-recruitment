@@ -1,4 +1,4 @@
-import { Leaf } from 'lucide-react'
+import { Sprout } from 'lucide-react'
 
 interface HoneycombLogoProps {
   size?: number
@@ -12,20 +12,6 @@ export default function HoneycombLogo({
   className,
 }: HoneycombLogoProps) {
   return (
-    <div
-      className={className}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        backgroundColor: '#FFE500',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-      }}
-    >
-      <Leaf size={size * 0.55} color="#0f172a" strokeWidth={2.5} />
-    </div>
+    <Sprout size={size} color="#FFE500" strokeWidth={2} className={className} />
   )
 }
