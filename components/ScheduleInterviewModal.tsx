@@ -40,9 +40,11 @@ export default function ScheduleInterviewModal({
   existingMeetingLink,
   onSuccess,
 }: ScheduleInterviewModalProps) {
-  const [interviewDate, setInterviewDate] = useState('')
-  const [interviewTime, setInterviewTime] = useState('')
-  const [duration, setDuration] = useState(30)
+  const [slots, setSlots] = useState([
+    { date: '', time: '' },
+    { date: '', time: '' },
+    { date: '', time: '' },
+  ])
   const [interviewType, setInterviewType] = useState('in-person')
   const [meetingLink, setMeetingLink] = useState(existingMeetingLink || '')
   const [notes, setNotes] = useState('')
@@ -62,7 +64,7 @@ export default function ScheduleInterviewModal({
         .select('interview_date, interview_time, candidate_id')
         .eq('employer_id', session.user.id)
         .eq('interview_date', date)
-        .in('status', ['scheduled', 'confirmed'])
+        .in('status', ['pending_selection', 'scheduled', 'confirmed'])
       if (existing && existing.length > 0) {
         const clash = existing.find(i => i.interview_time === time && i.candidate_id !== candidateId)
         if (clash) {
@@ -80,13 +82,14 @@ export default function ScheduleInterviewModal({
     const title = jobTitle ? `Interview - ${jobTitle}` : 'Interview'
     const details = candidateName ? `Interview with ${candidateName}` : 'Interview'
     const guestParam = candidateEmail ? `&add=${encodeURIComponent(candidateEmail)}` : ''
+    const firstSlot = slots[0]
 
     let dateParams = ''
-    if (interviewDate && interviewTime) {
-      const [year, month, day] = interviewDate.split('-').map(Number)
-      const [hours, minutes] = interviewTime.split(':').map(Number)
+    if (firstSlot.date && firstSlot.time) {
+      const [year, month, day] = firstSlot.date.split('-').map(Number)
+      const [hours, minutes] = firstSlot.time.split(':').map(Number)
       const start = new Date(year, month - 1, day, hours, minutes, 0)
-      const end = new Date(start.getTime() + duration * 60000)
+      const end = new Date(start.getTime() + 30 * 60000)
       const pad = (n: number) => String(n).padStart(2, '0')
       const fmt = (d: Date) =>
         `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`
@@ -105,10 +108,20 @@ export default function ScheduleInterviewModal({
   const handleSubmit = async () => {
     setError('')
 
-    if (!interviewDate || !interviewTime) {
-      setError('Please enter the interview date and time')
+    const filledSlots = slots.filter(s => s.date && s.time)
+    // Validate: partial slots (date without time or vice versa)
+    const partialSlots = slots.filter(s => (s.date && !s.time) || (!s.date && s.time))
+    if (partialSlots.length > 0) {
+      setError('Please fill in both date and time for each option')
       return
     }
+    if (filledSlots.length === 0) {
+      setError('Please enter at least one date and time option')
+      return
+    }
+
+    const proposedSlots = filledSlots.map(s => ({ date: s.date, time: s.time }))
+    const isMultiSlot = proposedSlots.length > 1
 
     setSubmitting(true)
 
@@ -143,17 +156,19 @@ export default function ScheduleInterviewModal({
         job_id: jobId,
         employer_id: session.user.id,
         candidate_id: candidateId,
-        interview_date: interviewDate,
-        interview_time: interviewTime,
-        duration_minutes: duration,
+        interview_date: proposedSlots[0].date,
+        interview_time: proposedSlots[0].time,
         interview_type: interviewType,
         location_or_link: interviewTypeLabel,
         meeting_link: interviewType === 'video' ? (meetingLink.trim() || null) : null,
         notes: notes.trim() || null,
-        status: 'scheduled',
+        status: isMultiSlot ? 'pending_selection' : 'scheduled',
+        proposed_slots: proposedSlots,
       })
 
       // Format date for messages and emails
+      const interviewDate = proposedSlots[0].date
+      const interviewTime = proposedSlots[0].time
       const [year, month, day] = interviewDate.split('-').map(Number)
       const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-GB', {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -168,38 +183,81 @@ export default function ScheduleInterviewModal({
 
       if (isReschedule) {
         const firstName = candidateName.split(' ')[0]
-        const rescheduleLines = [
-          `Hi ${firstName}, I wanted to let you know your interview for ${jobTitle} has been rescheduled.`,
-          '',
-          `Your new interview is on ${formattedDate} at ${interviewTime} (${interviewTypeLabel}).`,
-        ]
-        if (trimmedMeetingLink) {
-          rescheduleLines.push('', `Join the video call here: ${trimmedMeetingLink}`)
+        if (isMultiSlot) {
+          const slotLines = proposedSlots.map((s, i) => {
+            const [sy, sm, sd] = s.date.split('-').map(Number)
+            const fd = new Date(sy, sm - 1, sd).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+            return `  Option ${i + 1}: ${fd} at ${s.time}`
+          })
+          messageContent = [
+            `Hi ${firstName}, I wanted to let you know your interview for ${jobTitle} has been rescheduled.`,
+            '',
+            `Please choose one of the following times:`,
+            ...slotLines,
+            '',
+            `Type: ${interviewTypeLabel}`,
+            ...(trimmedMeetingLink ? ['', `Join the video call here: ${trimmedMeetingLink}`] : []),
+            '', 'Please select a time from your Applications page.', '', 'Best regards,', company,
+          ].join('\n')
+        } else {
+          const rescheduleLines = [
+            `Hi ${firstName}, I wanted to let you know your interview for ${jobTitle} has been rescheduled.`,
+            '',
+            `Your new interview is on ${formattedDate} at ${interviewTime} (${interviewTypeLabel}).`,
+          ]
+          if (trimmedMeetingLink) {
+            rescheduleLines.push('', `Join the video call here: ${trimmedMeetingLink}`)
+          }
+          rescheduleLines.push('', 'Please let me know if you have any questions.', '', 'Best regards,', company)
+          messageContent = rescheduleLines.join('\n')
         }
-        rescheduleLines.push('', 'Please let me know if you have any questions.', '', 'Best regards,', company)
-        messageContent = rescheduleLines.join('\n')
         notificationTitle = 'Interview Rescheduled'
-        notificationMessage = `${company} has rescheduled your interview for ${jobTitle}. New date: ${formattedDate} at ${interviewTime}.`
+        notificationMessage = isMultiSlot
+          ? `${company} has rescheduled your interview for ${jobTitle}. Please select a time that works for you.`
+          : `${company} has rescheduled your interview for ${jobTitle}. New date: ${formattedDate} at ${interviewTime}.`
       } else {
-        const messageLines = [
-          `Hello ${candidateName},`,
-          '',
-          `You've been invited to an interview for the ${jobTitle} position at ${company}.`,
-          '',
-          `Date: ${formattedDate}`,
-          `Time: ${interviewTime}`,
-          `Type: ${interviewTypeLabel}`,
-        ]
-        if (trimmedMeetingLink) {
-          messageLines.push('', `Join the video call here: ${trimmedMeetingLink}`)
+        if (isMultiSlot) {
+          const slotLines = proposedSlots.map((s, i) => {
+            const [sy, sm, sd] = s.date.split('-').map(Number)
+            const fd = new Date(sy, sm - 1, sd).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+            return `  Option ${i + 1}: ${fd} at ${s.time}`
+          })
+          messageContent = [
+            `Hello ${candidateName},`,
+            '',
+            `You've been invited to an interview for the ${jobTitle} position at ${company}.`,
+            '',
+            `Please choose one of the following times:`,
+            ...slotLines,
+            '',
+            `Type: ${interviewTypeLabel}`,
+            ...(trimmedMeetingLink ? ['', `Join the video call here: ${trimmedMeetingLink}`] : []),
+            ...(notes.trim() ? ['', notes.trim()] : []),
+            '', 'Please select a time from your Applications page.', '', 'Best regards,', company,
+          ].join('\n')
+        } else {
+          const messageLines = [
+            `Hello ${candidateName},`,
+            '',
+            `You've been invited to an interview for the ${jobTitle} position at ${company}.`,
+            '',
+            `Date: ${formattedDate}`,
+            `Time: ${interviewTime}`,
+            `Type: ${interviewTypeLabel}`,
+          ]
+          if (trimmedMeetingLink) {
+            messageLines.push('', `Join the video call here: ${trimmedMeetingLink}`)
+          }
+          if (notes.trim()) {
+            messageLines.push('', notes.trim())
+          }
+          messageLines.push('', 'Best regards,', company)
+          messageContent = messageLines.join('\n')
         }
-        if (notes.trim()) {
-          messageLines.push('', notes.trim())
-        }
-        messageLines.push('', 'Best regards,', company)
-        messageContent = messageLines.join('\n')
         notificationTitle = 'Interview Invitation'
-        notificationMessage = `${company} has invited you for an interview for the ${jobTitle} position on ${formattedDate} at ${interviewTime}.`
+        notificationMessage = isMultiSlot
+          ? `${company} has invited you to interview for ${jobTitle}. Please select a time that works for you.`
+          : `${company} has invited you for an interview for the ${jobTitle} position on ${formattedDate} at ${interviewTime}.`
       }
 
       // Send in-app notification
@@ -313,14 +371,12 @@ export default function ScheduleInterviewModal({
       onSuccess()
 
       // Auto-open Google Calendar so employer can add it to their calendar
-      if (interviewDate && interviewTime) {
+      if (slots[0].date && slots[0].time) {
         handleOpenCalendar()
       }
 
       onClose()
-      setInterviewDate('')
-      setInterviewTime('')
-      setDuration(30)
+      setSlots([{ date: '', time: '' }, { date: '', time: '' }, { date: '', time: '' }])
       setInterviewType('in-person')
       setMeetingLink('')
       setNotes('')
@@ -346,27 +402,36 @@ export default function ScheduleInterviewModal({
         </div>
 
         <div className={styles.body}>
-          <div className={styles.dateTimeRow}>
-            <div className={styles.dateTimeField}>
-              <label htmlFor="interviewDate" className={styles.fieldLabel}>Date</label>
-              <input
-                type="date"
-                id="interviewDate"
-                value={interviewDate}
-                onChange={(e) => { setInterviewDate(e.target.value); checkConflict(e.target.value, interviewTime) }}
-                className={styles.input}
-              />
-            </div>
-            <div className={styles.dateTimeField}>
-              <label htmlFor="interviewTime" className={styles.fieldLabel}>Time</label>
-              <input
-                type="time"
-                id="interviewTime"
-                value={interviewTime}
-                onChange={(e) => { setInterviewTime(e.target.value); checkConflict(interviewDate, e.target.value) }}
-                className={styles.input}
-              />
-            </div>
+          <div className={styles.slotsSection}>
+            <p className={styles.slotsLabel}>Propose up to 3 date and time options</p>
+            {slots.map((slot, i) => (
+              <div key={i} className={styles.slotRow}>
+                <span className={styles.slotNum}>Option {i + 1}{i > 0 ? ' (optional)' : ''}</span>
+                <input
+                  type="date"
+                  value={slot.date}
+                  onChange={(e) => {
+                    const next = [...slots]
+                    next[i] = { ...next[i], date: e.target.value }
+                    setSlots(next)
+                    if (i === 0) checkConflict(e.target.value, slot.time)
+                  }}
+                  className={styles.slotInput}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+                <input
+                  type="time"
+                  value={slot.time}
+                  onChange={(e) => {
+                    const next = [...slots]
+                    next[i] = { ...next[i], time: e.target.value }
+                    setSlots(next)
+                    if (i === 0) checkConflict(slot.date, e.target.value)
+                  }}
+                  className={styles.slotInput}
+                />
+              </div>
+            ))}
           </div>
 
           <div className={styles.field}>

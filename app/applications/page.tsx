@@ -79,7 +79,7 @@ export default function MyJobsPage() {
           .from('interviews')
           .select('*')
           .in('application_id', applicationIds)
-          .in('status', ['scheduled', 'confirmed'])
+          .in('status', ['pending_selection', 'scheduled', 'confirmed'])
 
         const interviewMap: Record<string, any> = {}
         if (interviews) {
@@ -124,6 +124,7 @@ export default function MyJobsPage() {
               locationOrLink: interview.location_or_link,
               notes: interview.notes,
               status: interview.status,
+              proposedSlots: interview.proposed_slots || [],
               createdAt: interview.created_at,
               updatedAt: interview.updated_at,
             } : undefined,
@@ -332,6 +333,69 @@ export default function MyJobsPage() {
     }
   }
 
+  const formatSlotDate = (dateStr: string) => {
+    const date = new Date(dateStr + 'T00:00:00')
+    return date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  }
+
+  const formatSlotTime = (timeStr: string) => {
+    const [h, m] = timeStr.split(':')
+    const hour = parseInt(h)
+    return `${hour > 12 ? hour - 12 : hour}:${m}${hour >= 12 ? 'pm' : 'am'}`
+  }
+
+  const handleSelectSlot = async (application: JobApplication, slot: { date: string; time: string }) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session || !application.interview) return
+
+      // Update the interview with the chosen slot and confirm it
+      await supabase
+        .from('interviews')
+        .update({
+          interview_date: slot.date,
+          interview_time: slot.time,
+          status: 'confirmed',
+        })
+        .eq('id', application.interview.id)
+
+      // Notify employer
+      await supabase.from('notifications').insert({
+        user_id: application.interview.employerId,
+        title: 'Interview Time Confirmed',
+        message: `${session.user.user_metadata?.full_name || 'Candidate'} has selected ${formatSlotDate(slot.date)} at ${formatSlotTime(slot.time)} for the ${application.jobTitle} interview.`,
+        type: 'application_update',
+        read: false,
+        related_id: application.id,
+        related_type: 'application',
+        link: '/my-jobs',
+      })
+
+      // Send email to employer
+      fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'interview_confirmed',
+          data: {
+            recipientUserId: application.interview.employerId,
+            companyName: application.company,
+            jobTitle: application.jobTitle,
+            candidateName: session.user.user_metadata?.full_name || 'Candidate',
+            date: formatSlotDate(slot.date),
+            time: formatSlotTime(slot.time),
+            interviewType: application.interview.interviewType,
+          },
+        }),
+      }).catch(() => {})
+
+      loadApplications()
+      alert('Interview time confirmed!')
+    } catch (err) {
+      console.error('Error selecting slot:', err)
+    }
+  }
+
   const handleWithdraw = async (appId: string) => {
     setWithdrawingId(appId)
     try {
@@ -443,8 +507,8 @@ export default function MyJobsPage() {
                         </div>
                         {application.status === 'interview' ? (
                           <div className={styles.interviewCard}>
-                            <div className={styles.interviewCardHeader} style={application.interview?.status === 'cancelled' ? { background: '#6b7280' } : undefined}>
-                              {application.interview?.status === 'cancelled' ? 'Interview Cancelled' : 'Interview Scheduled'}
+                            <div className={styles.interviewCardHeader} style={application.interview?.status === 'cancelled' ? { background: '#6b7280' } : application.interview?.status === 'pending_selection' ? { background: '#f59e0b' } : undefined}>
+                              {application.interview?.status === 'cancelled' ? 'Interview Cancelled' : application.interview?.status === 'pending_selection' ? 'Select a Time' : 'Interview Scheduled'}
                             </div>
                             <div className={styles.interviewCardBody}>
                               {application.interview ? (
@@ -535,24 +599,81 @@ export default function MyJobsPage() {
                       {application.interview && (
                         <div className={styles.interviewSection}>
                           <h4 className={styles.interviewTitle}>
-                            {application.interview.status === 'cancelled' ? '❌ ' : application.interview.status === 'confirmed' ? '✅ ' : '📅 '}
-                            {application.interview.status === 'cancelled' ? 'Cancelled Interview' : 'Scheduled Interview'}
+                            {application.interview.status === 'cancelled' ? '❌ ' : application.interview.status === 'confirmed' ? '✅ ' : application.interview.status === 'pending_selection' ? '📅 ' : '📅 '}
+                            {application.interview.status === 'cancelled' ? 'Cancelled Interview' : application.interview.status === 'pending_selection' ? 'Select Interview Time' : 'Scheduled Interview'}
                           </h4>
-                          <div className={styles.interviewDetails}>
-                            <p className={styles.interviewDate}>
-                              <strong>Date:</strong>{' '}
-                              {(() => {
-                                const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
-                                return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
-                                  weekday: 'long',
-                                  day: 'numeric',
-                                  month: 'long',
-                                  year: 'numeric',
-                                })
-                              })()}{' '}
-                              at {application.interview.interviewTime}
-                            </p>
-                            <p className={styles.interviewType}>
+
+                          {/* Slot picker for pending_selection */}
+                          {application.interview.status === 'pending_selection' && (application.interview.proposedSlots?.length ?? 0) > 0 && (
+                            <div className={styles.slotPicker}>
+                              <p className={styles.slotPickerTitle}>Please select an interview time:</p>
+                              {(application.interview.proposedSlots || []).map((slot, i) => (
+                                <button
+                                  key={i}
+                                  className={styles.slotOption}
+                                  onClick={() => handleSelectSlot(application, slot)}
+                                >
+                                  {formatSlotDate(slot.date)} at {formatSlotTime(slot.time)}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Standard interview details (shown when not pending_selection) */}
+                          {application.interview.status !== 'pending_selection' && (
+                            <div className={styles.interviewDetails}>
+                              <p className={styles.interviewDate}>
+                                <strong>Date:</strong>{' '}
+                                {(() => {
+                                  const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
+                                  return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
+                                    weekday: 'long',
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric',
+                                  })
+                                })()}{' '}
+                                at {application.interview.interviewTime}
+                              </p>
+                              <p className={styles.interviewType}>
+                                <strong>Type:</strong>{' '}
+                                {application.interview.interviewType === 'in-person'
+                                  ? '🏢 In-Person'
+                                  : application.interview.interviewType === 'video'
+                                  ? '📹 Video Call'
+                                  : '📞 Phone Call'}
+                              </p>
+                              {application.interview.locationOrLink && (
+                                <p className={styles.interviewLocation}>
+                                  <strong>
+                                    {application.interview.locationOrLink.startsWith('http')
+                                      ? 'Calendar Link:'
+                                      : application.interview.interviewType === 'in-person'
+                                      ? 'Location:'
+                                      : application.interview.interviewType === 'video'
+                                      ? 'Meeting Link:'
+                                      : 'Phone Number:'}
+                                  </strong>{' '}
+                                  {application.interview.locationOrLink.startsWith('http') ? (
+                                    <a href={application.interview.locationOrLink} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline' }}>
+                                      View Calendar Event
+                                    </a>
+                                  ) : (
+                                    application.interview.locationOrLink
+                                  )}
+                                </p>
+                              )}
+                              {application.interview.notes && (
+                                <p className={styles.interviewNotes}>
+                                  <strong>Notes:</strong> {application.interview.notes}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Interview type info for pending_selection */}
+                          {application.interview.status === 'pending_selection' && (
+                            <p className={styles.interviewType} style={{ marginTop: '0.5rem' }}>
                               <strong>Type:</strong>{' '}
                               {application.interview.interviewType === 'in-person'
                                 ? '🏢 In-Person'
@@ -560,32 +681,8 @@ export default function MyJobsPage() {
                                 ? '📹 Video Call'
                                 : '📞 Phone Call'}
                             </p>
-                            {application.interview.locationOrLink && (
-                              <p className={styles.interviewLocation}>
-                                <strong>
-                                  {application.interview.locationOrLink.startsWith('http')
-                                    ? 'Calendar Link:'
-                                    : application.interview.interviewType === 'in-person'
-                                    ? 'Location:'
-                                    : application.interview.interviewType === 'video'
-                                    ? 'Meeting Link:'
-                                    : 'Phone Number:'}
-                                </strong>{' '}
-                                {application.interview.locationOrLink.startsWith('http') ? (
-                                  <a href={application.interview.locationOrLink} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline' }}>
-                                    View Calendar Event
-                                  </a>
-                                ) : (
-                                  application.interview.locationOrLink
-                                )}
-                              </p>
-                            )}
-                            {application.interview.notes && (
-                              <p className={styles.interviewNotes}>
-                                <strong>Notes:</strong> {application.interview.notes}
-                              </p>
-                            )}
-                          </div>
+                          )}
+
                           {application.interview.status === 'scheduled' && !(application.offer?.status === 'accepted' || application.status === 'hired') && (
                             <div className={styles.interviewActions}>
                               <button

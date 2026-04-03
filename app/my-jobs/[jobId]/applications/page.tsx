@@ -115,7 +115,7 @@ export default function JobApplicationsPage() {
           .from('interviews')
           .select('*')
           .in('application_id', applicationIds)
-          .in('status', ['scheduled', 'confirmed', 'completed'])
+          .in('status', ['pending_selection', 'scheduled', 'confirmed', 'completed'])
 
         const interviewMap: Record<string, any> = {}
         if (interviews) {
@@ -166,6 +166,7 @@ export default function JobApplicationsPage() {
               locationOrLink: interview.location_or_link,
               notes: interview.notes,
               status: interview.status,
+              proposedSlots: interview.proposed_slots || [],
               createdAt: interview.created_at,
               updatedAt: interview.updated_at,
             } : undefined,
@@ -228,7 +229,7 @@ export default function JobApplicationsPage() {
         .from('interviews')
         .select('*')
         .in('application_id', applicationIds)
-        .in('status', ['scheduled', 'confirmed', 'completed'])
+        .in('status', ['pending_selection', 'scheduled', 'confirmed', 'completed'])
 
       const interviewMap: Record<string, any> = {}
       if (interviews) {
@@ -768,19 +769,35 @@ export default function JobApplicationsPage() {
                       <h4 className={styles.interviewTitle}>
                         {application.interview.status === 'completed'
                           ? '✅ Interview Completed'
+                          : application.interview.status === 'pending_selection'
+                          ? '⏳ Awaiting Time Selection'
                           : '📅 Scheduled Interview'}
                       </h4>
+                      {application.interview.status === 'pending_selection' && (
+                        <p className={styles.pendingSlot}>Waiting for candidate to select a time</p>
+                      )}
                       <div className={styles.interviewDetails}>
-                        <p className={styles.interviewDate}>
-                          <strong>Date:</strong>{' '}
-                          {new Date(application.interview.interviewDate).toLocaleDateString('en-GB', {
-                            weekday: 'long',
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}{' '}
-                          at {application.interview.interviewTime}
-                        </p>
+                        {application.interview.status === 'pending_selection' && (application.interview.proposedSlots?.length ?? 0) > 0 ? (
+                          <div>
+                            <p style={{ fontSize: '0.85rem', color: '#334155', margin: '0 0 0.375rem 0' }}><strong>Proposed times:</strong></p>
+                            {(application.interview.proposedSlots || []).map((slot, i) => {
+                              const d = new Date(slot.date + 'T00:00:00')
+                              const fd = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+                              return <p key={i} style={{ fontSize: '0.85rem', color: '#334155', margin: '0 0 0.25rem 0' }}>Option {i + 1}: {fd} at {slot.time}</p>
+                            })}
+                          </div>
+                        ) : (
+                          <p className={styles.interviewDate}>
+                            <strong>Date:</strong>{' '}
+                            {new Date(application.interview.interviewDate).toLocaleDateString('en-GB', {
+                              weekday: 'long',
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            })}{' '}
+                            at {application.interview.interviewTime}
+                          </p>
+                        )}
                         <p className={styles.interviewType}>
                           <strong>Type:</strong>{' '}
                           {application.interview.interviewType === 'in-person'

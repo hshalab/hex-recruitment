@@ -805,6 +805,46 @@
   margin: 0;
 }
 
+/* Slot Picker */
+.slotPicker {
+  background: var(--accent-yellow, #fffbeb);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.slotPickerTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--black, #1a1a1a);
+  margin: 0 0 0.5rem 0;
+}
+
+.slotOption {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.4rem;
+  background: var(--white, #fff);
+  border: 1.5px solid var(--border-gray, #e5e7eb);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-dark, #1f2937);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.slotOption:hover {
+  border-color: var(--primary-yellow, #FFE500);
+  background: var(--accent-yellow, #fffbeb);
+}
+
+.slotOption:last-child {
+  margin-bottom: 0;
+}
+
 @media (max-width: 768px) {
   .container {
     padding-top: 0.75rem;

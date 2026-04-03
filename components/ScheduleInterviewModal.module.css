@@ -63,6 +63,48 @@
   padding: 1.5rem;
 }
 
+.slotsSection {
+  margin-bottom: 1.25rem;
+}
+
+.slotsLabel {
+  font-size: 0.8rem;
+  color: var(--text-gray);
+  margin: 0 0 0.6rem 0;
+}
+
+.slotRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.slotNum {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-gray);
+  min-width: 110px;
+}
+
+.slotInput {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border-gray);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.slotInput:focus {
+  outline: none;
+  border-color: var(--primary-yellow);
+}
+
 .dateTimeRow {
   display: flex;
   gap: 1rem;
@@ -232,6 +274,15 @@
   }
 
   .dateTimeField {
+    width: 100%;
+  }
+
+  .slotRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .slotInput {
     width: 100%;
   }
 
