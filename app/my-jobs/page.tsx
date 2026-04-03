@@ -9,9 +9,6 @@ import { useJobs } from '@/lib/JobsContext' // refreshJobs only — data fetched
 import CompanyLogo from '@/components/CompanyLogo'
 import BoostModal from '@/components/BoostModal'
 import { Boost, JOB_BOOST_TIERS, getDaysRemaining, isBoostActive } from '@/lib/boostTypes'
-import { scoreAndRankCandidates, type SuggestedCandidate } from '@/lib/recommendations'
-import { supabaseProfileToCandidate } from '@/lib/types'
-import { type Candidate } from '@/lib/mockCandidates'
 import styles from './page.module.css'
 
 interface PostedJob {
@@ -69,8 +66,6 @@ function MyJobsContent() {
   const [jobBoosts, setJobBoosts] = useState<Record<string, Boost>>({})
   const [myJobsSearch, setMyJobsSearch] = useState('')
   const [myJobsLocationSearch, setMyJobsLocationSearch] = useState('')
-  const [allCandidates, setAllCandidates] = useState<Candidate[]>([])
-  const [appliedCandidateIds, setAppliedCandidateIds] = useState<Record<string, Set<string>>>({})
 
   // Read filter from URL query param (e.g. /my-jobs?filter=interviewing)
   const filterParam = searchParams.get('filter')
@@ -244,22 +239,6 @@ function MyJobsContent() {
         }
 
         setPostedJobs(employerJobs)
-
-        // Fetch candidates for suggested matches
-        const { data: profileData } = await supabase.from('candidate_profiles').select('*').limit(200)
-        if (profileData) setAllCandidates(profileData.map((p: any) => supabaseProfileToCandidate(p)))
-
-        // Build map of jobId → applied candidate IDs
-        const empJobIds = employerJobs.map(j => j.id)
-        if (empJobIds.length > 0) {
-          const { data: appData } = await supabase.from('job_applications').select('job_id, candidate_id').in('job_id', empJobIds)
-          const appliedMap: Record<string, Set<string>> = {}
-          for (const row of (appData || []) as any[]) {
-            if (!appliedMap[row.job_id]) appliedMap[row.job_id] = new Set()
-            appliedMap[row.job_id].add(row.candidate_id)
-          }
-          setAppliedCandidateIds(appliedMap)
-        }
       } else {
         // Job seeker - fetch applications from Supabase
         setIsEmployer(false)
@@ -621,17 +600,6 @@ function MyJobsContent() {
     return jobs
   }, [viewData.filtered, myJobsSearch, myJobsLocationSearch])
 
-  const suggestedCandidatesMap = useMemo(() => {
-    if (allCandidates.length === 0 || !isEmployer) return {}
-    const map: Record<string, SuggestedCandidate[]> = {}
-    for (const job of displayJobs) {
-      if (job.status !== 'active') continue
-      const applied = appliedCandidateIds[job.id] || new Set<string>()
-      map[job.id] = scoreAndRankCandidates(job as any, allCandidates, applied)
-    }
-    return map
-  }, [allCandidates, displayJobs, appliedCandidateIds, isEmployer])
-
   if (loading) {
     return (
       <main>
@@ -910,35 +878,6 @@ function MyJobsContent() {
                         </div>
                       </div>
 
-                      {job.status === 'active' && suggestedCandidatesMap[job.id]?.length > 0 && (
-                        <div className={styles.suggestedCandidates}>
-                          <div className={styles.suggestedLabel}>
-                            <span>✨</span>
-                            <span>Suggested candidates</span>
-                          </div>
-                          <div className={styles.suggestedList}>
-                            {suggestedCandidatesMap[job.id].map(c => (
-                              <Link key={c.id} href={`/candidates/${c.id}`} className={styles.suggestedCandidate} onClick={e => e.stopPropagation()}>
-                                <div className={styles.suggestedAvatar}>
-                                  {c.profilePictureUrl
-                                    ? <img src={c.profilePictureUrl} alt={c.fullName} className={styles.suggestedAvatarImg} />
-                                    : <span className={styles.suggestedAvatarInitial}>{c.fullName.charAt(0)}</span>
-                                  }
-                                </div>
-                                <div className={styles.suggestedInfo}>
-                                  <span className={styles.suggestedName}>{c.fullName}</span>
-                                  <span className={styles.suggestedTitle}>{c.jobTitle || c.location}</span>
-                                </div>
-                                <span className={styles.suggestedMatch}>{c.matchPercentage}%</span>
-                              </Link>
-                            ))}
-                          </div>
-                          <Link href={`/candidates?jobId=${job.id}`} className={styles.suggestedViewAll} onClick={e => e.stopPropagation()}>
-                            View all matched candidates →
-                          </Link>
-                        </div>
-                      )}
-
                       <div className={styles.cardFooter}>
                         {job.status === 'archived' ? (
                           <>
@@ -1011,6 +950,12 @@ function MyJobsContent() {
                               onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
                             >
                               View Applications
+                            </button>
+                            <button
+                              className={styles.findCandidatesBtn}
+                              onClick={() => router.push(`/candidates?jobId=${job.id}`)}
+                            >
+                              Find Candidates
                             </button>
                             <button
                               className={styles.viewJobOutlineBtn}
