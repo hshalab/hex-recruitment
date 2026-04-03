@@ -12,6 +12,9 @@ import {
   Award, Heart, Globe, MessageSquare, FileDown, Sliders
 } from 'lucide-react'
 import { Boost } from '@/lib/boostTypes'
+import { scoreAllCandidates } from '@/lib/recommendations'
+import { supabaseJobToJob } from '@/lib/types'
+import { Job } from '@/lib/mockJobs'
 import styles from './page.module.css'
 
 type Filters = {
@@ -192,6 +195,8 @@ function CandidatesContent() {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [boostedProfileIds, setBoostedProfileIds] = useState<Set<string>>(new Set())
+  const [matchedJob, setMatchedJob] = useState<Job | null>(null)
+  const [matchScores, setMatchScores] = useState<Record<string, number>>({})
   const listRef = useRef<HTMLDivElement>(null)
 
   // Fetch active profile boosts for sorting (non-blocking — table may not exist yet)
@@ -292,7 +297,19 @@ function CandidatesContent() {
         .select('*')
         .limit(200)
       if (!error && data) {
-        setAllCandidates(data.map(supabaseProfileToCandidate))
+        const candidates = data.map(supabaseProfileToCandidate)
+        setAllCandidates(candidates)
+
+        // If jobId param is present, fetch job and compute match scores
+        const jobIdParam = searchParams.get('jobId')
+        if (jobIdParam) {
+          const { data: jobData } = await supabase.from('jobs').select('*').eq('id', jobIdParam).maybeSingle()
+          if (jobData) {
+            const job = supabaseJobToJob(jobData)
+            setMatchedJob(job)
+            setMatchScores(scoreAllCandidates(job, candidates))
+          }
+        }
       }
 
       setCheckingAuth(false)
@@ -302,6 +319,11 @@ function CandidatesContent() {
 
   const filteredCandidates = useMemo(() => {
     return allCandidates.filter(candidate => {
+      // Match score filter — when viewing matched candidates for a job
+      if (matchedJob && Object.keys(matchScores).length > 0) {
+        if ((matchScores[candidate.id] || 0) < 25) return false
+      }
+
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
@@ -378,11 +400,15 @@ function CandidatesContent() {
 
       return true
     }).sort((a, b) => {
+      // Sort by match score when viewing matched candidates
+      if (matchedJob && Object.keys(matchScores).length > 0) {
+        return (matchScores[b.id] || 0) - (matchScores[a.id] || 0)
+      }
       const aBoost = boostedProfileIds.has(a.id) ? 1 : 0
       const bBoost = boostedProfileIds.has(b.id) ? 1 : 0
       return bBoost - aBoost
     })
-  }, [allCandidates, searchQuery, locationQuery, activeCategories, filters, boostedProfileIds])
+  }, [allCandidates, searchQuery, locationQuery, activeCategories, filters, boostedProfileIds, matchedJob, matchScores])
 
   // Auto-select first candidate on desktop when filtered results change
   useEffect(() => {
@@ -566,6 +592,14 @@ function CandidatesContent() {
 
       {/* Main Content */}
       <div className={styles.mainContainer}>
+        {matchedJob && (
+          <div className={styles.matchBanner}>
+            <span>Showing candidates matched to: <strong>{matchedJob.title}</strong></span>
+            <button className={styles.matchBannerClear} onClick={() => { setMatchedJob(null); setMatchScores({}) }}>
+              Clear filter ✕
+            </button>
+          </div>
+        )}
         <p className={styles.candidateCount}>
           <span className={styles.candidateCountHighlight}>{filteredCandidates.length}</span> candidates found
           {activeCategories.length === 1 && ` in ${categories.find(c => c.id === activeCategories[0])?.label}`}
@@ -587,7 +621,12 @@ function CandidatesContent() {
                   onKeyDown={(e) => e.key === 'Enter' && selectCandidate(candidate)}
                 >
                   <div className={styles.listCardContent}>
-                    <h3 className={styles.listCardName}>{candidate.fullName}</h3>
+                    <h3 className={styles.listCardName}>
+                      {candidate.fullName}
+                      {matchScores[candidate.id] > 0 && (
+                        <span className={styles.matchBadge}>{matchScores[candidate.id]}% match</span>
+                      )}
+                    </h3>
                     <p className={styles.listCardCompany}>{candidate.jobTitle}</p>
                     <p className={styles.listCardLocation}>{candidate.yearsExperience} yrs exp · {candidate.location}</p>
                     <p className={styles.listCardSalary}>{candidate.bio}</p>

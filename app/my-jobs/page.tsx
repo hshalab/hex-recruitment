@@ -933,8 +933,8 @@ function MyJobsContent() {
                               </Link>
                             ))}
                           </div>
-                          <Link href="/candidates" className={styles.suggestedViewAll} onClick={e => e.stopPropagation()}>
-                            View all candidates →
+                          <Link href={`/candidates?jobId=${job.id}`} className={styles.suggestedViewAll} onClick={e => e.stopPropagation()}>
+                            View all matched candidates →
                           </Link>
                         </div>
                       )}

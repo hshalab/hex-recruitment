@@ -640,3 +640,15 @@ export function scoreAndRankCandidates(
     .sort((a, b) => b.matchPercentage - a.matchPercentage)
     .slice(0, 3)
 }
+
+export function scoreAllCandidates(
+  job: Job,
+  candidates: Candidate[]
+): Record<string, number> {
+  const scores: Record<string, number> = {}
+  for (const candidate of candidates) {
+    const { score } = calculateMatchScore(job, candidate, [], [])
+    scores[candidate.id] = Math.min(Math.round(score), 99)
+  }
+  return scores
+}
