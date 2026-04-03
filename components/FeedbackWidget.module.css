@@ -214,9 +214,9 @@
 
   .pill {
     width: auto;
-    align-self: flex-end;
+    align-self: flex-start;
     pointer-events: auto;
-    margin-bottom: 80px;
+    margin-bottom: 16px;
   }
 
   .panel {
