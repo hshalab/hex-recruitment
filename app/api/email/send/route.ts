@@ -24,11 +24,15 @@ import { candidateWelcomeEmail } from '@/emails/candidate-welcome'
 
 export async function POST(req: Request) {
   try {
-    // Auth check: only authenticated users or internal calls can send emails
+    // Auth check: allow authenticated users, cron jobs, and internal server calls
     const authHeader = req.headers.get('authorization')
+    const internalSecret = req.headers.get('x-internal-secret')
     const cronSecret = process.env.CRON_SECRET
+
     const isCronCall = cronSecret && authHeader === `Bearer ${cronSecret}`
-    if (!isCronCall) {
+    const isInternalCall = cronSecret && internalSecret === cronSecret
+
+    if (!isCronCall && !isInternalCall) {
       const token = authHeader?.replace('Bearer ', '')
       if (token) {
         const supabaseCheck = createClient(
@@ -40,7 +44,7 @@ export async function POST(req: Request) {
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
       }
-      // Allow calls without auth header from internal server-side code (same origin)
+      // Calls without any auth header are allowed (client-side browser calls)
     }
 
     // Rate limit: max 5 requests per minute per IP
