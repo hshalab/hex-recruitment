@@ -25,8 +25,37 @@ export default function Header() {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
 
-  // Message badge removed — no longer depends on MessagesContext
-  const totalUnreadCount = 0
+  // Real-time unread message count
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0)
+
+  useEffect(() => {
+    if (!user) return
+    const fetchUnreadCount = async () => {
+      const { data: convs } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
+      if (convs && convs.length > 0) {
+        const convIds = convs.map(c => c.id)
+        const { count } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .in('conversation_id', convIds)
+          .eq('is_read', false)
+          .neq('sender_id', user.id)
+        setUnreadMessageCount(count || 0)
+      }
+    }
+    fetchUnreadCount()
+    const channel = supabase
+      .channel('header-unread')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => fetchUnreadCount())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => fetchUnreadCount())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [user])
+
+  const totalUnreadCount = unreadMessageCount
   const pendingRequestsCount = 0
   const { unseenCount } = useSavedJobs()
 
@@ -454,20 +483,20 @@ export default function Header() {
 
   const EmployeeNav = () => (
     <>
-      <Link href="/jobs" className={navLink('/jobs')} aria-label="Search Jobs">
+      <Link href="/jobs" className={`${navLink('/jobs')} ${styles.mobileHide}`} aria-label="Search Jobs">
         <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
         <span className={styles.navTooltip}>Search Jobs</span>
       </Link>
-      <Link href="/jobs/recommended" className={navLink('/jobs/recommended')} aria-label="Recommended">
+      <Link href="/jobs/recommended" className={`${navLink('/jobs/recommended')} ${styles.mobileHide}`} aria-label="Recommended">
         <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
         </svg>
         <span className={styles.navTooltip}>Recommended</span>
       </Link>
-      <Link href="/saved-jobs" className={navLink('/saved-jobs')} aria-label="Saved Jobs">
+      <Link href="/saved-jobs" className={`${navLink('/saved-jobs')} ${styles.mobileHide}`} aria-label="Saved Jobs">
         <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
         </svg>
@@ -476,7 +505,7 @@ export default function Header() {
         )}
         <span className={styles.navTooltip}>Saved Jobs</span>
       </Link>
-      <Link href="/applications" className={navLink('/applications')} aria-label="My Applications">
+      <Link href="/applications" className={`${navLink('/applications')} ${styles.mobileHide}`} aria-label="My Applications">
         <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
           <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
@@ -492,7 +521,7 @@ export default function Header() {
         )}
         <span className={styles.navTooltip}>Messages</span>
       </Link>
-      <Link href="/cv-builder" className={navLink('/cv-builder')} aria-label="CV Builder">
+      <Link href="/cv-builder" className={`${navLink('/cv-builder')} ${styles.mobileHide}`} aria-label="CV Builder">
         <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
           <polyline points="14 2 14 8 20 8" />
@@ -502,7 +531,7 @@ export default function Header() {
         </svg>
         <span className={styles.navTooltip}>CV Builder</span>
       </Link>
-      <Link href="/reviews" className={navLink('/reviews')} aria-label="Company Reviews">
+      <Link href="/reviews" className={`${navLink('/reviews')} ${styles.mobileHide}`} aria-label="Company Reviews">
         <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 20h9" />
           <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
