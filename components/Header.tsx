@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic'
 const NotificationBell = dynamic(() => import('./NotificationBell'), { ssr: false })
 import HoneycombLogo from './HoneycombLogo'
 const EmployerSidebar = dynamic(() => import('./EmployerSidebar'), { ssr: false })
+const CandidateSidebar = dynamic(() => import('./CandidateSidebar'), { ssr: false })
 import styles from './Header.module.css'
 
 export default function Header() {
@@ -483,35 +484,6 @@ export default function Header() {
 
   const EmployeeNav = () => (
     <>
-      <Link href="/jobs" className={`${navLink('/jobs')} ${styles.mobileHide}`} aria-label="Search Jobs">
-        <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <span className={styles.navTooltip}>Search Jobs</span>
-      </Link>
-      <Link href="/jobs/recommended" className={`${navLink('/jobs/recommended')} ${styles.mobileHide}`} aria-label="Recommended">
-        <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-        </svg>
-        <span className={styles.navTooltip}>Recommended</span>
-      </Link>
-      <Link href="/saved-jobs" className={`${navLink('/saved-jobs')} ${styles.mobileHide}`} aria-label="Saved Jobs">
-        <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-        </svg>
-        {unseenCount > 0 && (
-          <span className={styles.iconBadge}>{unseenCount}</span>
-        )}
-        <span className={styles.navTooltip}>Saved Jobs</span>
-      </Link>
-      <Link href="/applications" className={`${navLink('/applications')} ${styles.mobileHide}`} aria-label="My Applications">
-        <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-        </svg>
-        <span className={styles.navTooltip}>My Applications</span>
-      </Link>
       <Link href="/messages" className={`${styles.navIconLink} ${pathname === '/messages' ? styles.navIconLinkActive : ''}`} aria-label="Messages">
         <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -521,41 +493,26 @@ export default function Header() {
         )}
         <span className={styles.navTooltip}>Messages</span>
       </Link>
-      <Link href="/cv-builder" className={`${navLink('/cv-builder')} ${styles.mobileHide}`} aria-label="CV Builder">
-        <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-          <polyline points="10 9 9 9 8 9" />
-        </svg>
-        <span className={styles.navTooltip}>CV Builder</span>
-      </Link>
-      <Link href="/reviews" className={`${navLink('/reviews')} ${styles.mobileHide}`} aria-label="Company Reviews">
-        <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 20h9" />
-          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-        </svg>
-        <span className={styles.navTooltip}>Company Reviews</span>
-      </Link>
       <NotificationBell />
       <ProfileAvatar profilePath="/profile" />
     </>
   )
 
   const showSidebar = mounted && user && isEmployer
+  const showCandidateSidebar = mounted && user && !isEmployer
   const logoHref = !mounted || !user ? '/' : isEmployer ? '/employer/dashboard' : '/dashboard'
 
   return (
     <>
       {showSidebar && <EmployerSidebar />}
+      {showCandidateSidebar && <CandidateSidebar />}
       <header
-        className={`${styles.header} ${showSidebar ? styles.headerEmployer : ''}`}
+        className={`${styles.header} ${(showSidebar || showCandidateSidebar) ? styles.headerEmployer : ''}`}
         style={DEV_MODE ? { marginTop: '40px' } : undefined}
       >
-        <div className={showSidebar ? styles.headerFull : 'container'}>
+        <div className={(showSidebar || showCandidateSidebar) ? styles.headerFull : 'container'}>
           <div className={styles.headerContent}>
-            <Link href={logoHref} className={styles.logo} {...(showSidebar ? { 'data-sidebar-logo': '' } : {})}>
+            <Link href={logoHref} className={styles.logo} {...((showSidebar || showCandidateSidebar) ? { 'data-sidebar-logo': '' } : {})}>
               <HoneycombLogo size={28} color="var(--primary-yellow)" className={styles.logoIcon} />
               <div className={styles.logoBrand}>
                 <span className={styles.logoText}>THRIVE</span>
