@@ -72,7 +72,7 @@ function WaitlistContent() {
       <div className={styles.inner}>
         {/* Logo */}
         <Link href="/" className={styles.logo}>
-          <HoneycombLogo size={36} color="#FFD700" />
+          <HoneycombLogo size={36} color="#FFE500" />
         </Link>
 
         {/* Full banner */}

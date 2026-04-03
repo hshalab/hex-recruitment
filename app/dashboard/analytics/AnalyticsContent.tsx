@@ -2041,9 +2041,16 @@ export default function AnalyticsContent() {
       pdf.setFillColor(30, 41, 59) // navy
       pdf.rect(0, 0, W, 36, 'F')
 
-      // Thrive logo (yellow circle)
+      // Thrive logo (sprout — two strokes)
+      pdf.setDrawColor(255, 229, 0)
+      pdf.setLineWidth(1.2)
+      // Stem
+      pdf.line(MARGIN + 9, 20, MARGIN + 9, 13)
+      // Left leaf arc
       pdf.setFillColor(255, 229, 0)
-      pdf.circle(MARGIN + 9, 15, 7, 'F')
+      pdf.ellipse(MARGIN + 7, 16, 2.5, 1.8, 'FD')
+      // Right leaf arc
+      pdf.ellipse(MARGIN + 11, 14.5, 2.5, 1.8, 'FD')
 
       pdf.setTextColor(255, 255, 255)
       pdf.setFontSize(16)

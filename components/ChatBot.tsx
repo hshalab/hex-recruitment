@@ -3,13 +3,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Leaf } from 'lucide-react'
+import { Sprout } from 'lucide-react'
 import styles from './ChatBot.module.css'
 
 const ThriveIcon = ({ size = 20 }: { size?: number }) => (
-  <span style={{ width: size, height: size, borderRadius: '50%', background: '#FFE500', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-    <Leaf size={size * 0.6} color="#0f172a" strokeWidth={2.5} />
-  </span>
+  <Sprout size={size} color="#FFE500" strokeWidth={2} />
 )
 
 interface Message {

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
-import { Leaf } from 'lucide-react'
+import { Sprout } from 'lucide-react'
 import styles from './EmployerSidebar.module.css'
 
 const STORAGE_KEY = 'employer-sidebar-collapsed'
@@ -277,8 +277,8 @@ export default function EmployerSidebar() {
               window.dispatchEvent(new CustomEvent('open-thrive-chatbot'))
             }}
           >
-            <span className={styles.icon} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: '50%', background: '#FFE500', flexShrink: 0 }}>
-              <Leaf size={12} color="#0f172a" strokeWidth={2.5} />
+            <span className={styles.icon}>
+              <Sprout size={20} color="#FFE500" strokeWidth={2} />
             </span>
             <span className={styles.label}>Thrive Assistant</span>
           </button>
