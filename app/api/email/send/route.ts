@@ -106,7 +106,7 @@ export async function POST(req: Request) {
         email = newApplicationEmail(data.candidateName, data.jobTitle, data.company)
         break
       case 'application_status':
-        email = applicationStatusEmail(data.status, data.companyName, data.jobTitle)
+        email = applicationStatusEmail(data.status, data.companyName, data.jobTitle, data.candidateName, data.reason)
         break
       case 'interview_scheduled':
         email = interviewScheduledEmail(data.companyName, data.jobTitle, data.date, data.time, data.notes, data.meetingLink)

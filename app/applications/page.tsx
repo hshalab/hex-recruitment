@@ -212,16 +212,32 @@ export default function MyJobsPage() {
         .eq('id', interviewId)
 
       if (!error) {
+        const { data: { session } } = await supabase.auth.getSession()
+        const candidateName = session?.user?.user_metadata?.full_name || 'Candidate'
+
         // Send notification to employer
         await supabase
           .from('notifications')
           .insert({
             user_id: employerId,
             title: 'Interview Confirmed',
-            message: 'A candidate has confirmed their interview',
+            message: `${candidateName} has confirmed their interview`,
             type: 'application_status_change',
             read: false,
           })
+
+        // Send email to employer
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'interview_confirmed',
+            data: {
+              recipientUserId: employerId,
+              candidateName,
+            },
+          }),
+        }).catch(() => {})
 
         loadApplications()
       }

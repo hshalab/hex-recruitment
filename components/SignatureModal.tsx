@@ -95,6 +95,16 @@ export default function SignatureModal({
         related_type: 'application',
       })
 
+      // Send email to employer
+      fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'application_status',
+          data: { recipientUserId: employerId, status: 'offer_accepted', companyName: company, jobTitle, candidateName },
+        }),
+      }).catch(() => {})
+
       // Send acceptance message via conversation
       const senderName = session.user.user_metadata?.full_name || candidateName
       const messageContent = [

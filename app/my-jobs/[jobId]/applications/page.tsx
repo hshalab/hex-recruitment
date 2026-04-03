@@ -505,12 +505,44 @@ export default function JobApplicationsPage() {
     const confirmed = confirm('Are you sure you want to cancel this interview?')
     if (!confirmed) return
 
+    const application = applications.find(a => a.id === applicationId)
+
     await supabase
       .from('interviews')
       .update({ status: 'cancelled' })
       .eq('id', interviewId)
 
-    // Reload applications to refresh interview data
+    // Notify candidate in-app
+    if (application) {
+      supabase.from('notifications').insert({
+        user_id: application.candidateId,
+        title: 'Interview Cancelled',
+        message: `Your interview for ${application.jobTitle} has been cancelled.`,
+        type: 'application_update',
+        read: false,
+        related_id: applicationId,
+        related_type: 'application',
+      }).then(() => {})
+
+      // Send email to candidate
+      if (application.candidateEmail) {
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: application.candidateEmail,
+            type: 'interview_cancelled',
+            data: {
+              companyName: application.company || '',
+              jobTitle: application.jobTitle,
+              candidateName: application.candidateName,
+              date: '',
+            },
+          }),
+        }).catch(() => {})
+      }
+    }
+
     loadApplications()
   }
 

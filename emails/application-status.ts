@@ -26,13 +26,59 @@ const STATUS_CONFIG: Record<string, { heading: string; message: string; nextStep
     message: 'Unfortunately, your application was not selected to move forward.',
     nextSteps: "Don't be discouraged — new opportunities are posted every day. Keep applying!",
   },
+  offer_accepted: {
+    heading: 'Offer accepted!',
+    message: '', // dynamically set below
+    nextSteps: 'Head to your applications dashboard to confirm the hire and begin onboarding.',
+  },
+  offer_declined: {
+    heading: 'Offer declined',
+    message: '', // dynamically set below
+    nextSteps: 'You can view the candidate\'s reason (if provided) and decide on next steps from your dashboard.',
+  },
 }
 
 export function applicationStatusEmail(
   status: string,
   companyName: string,
-  jobTitle: string
+  jobTitle: string,
+  candidateName?: string,
+  reason?: string
 ): { subject: string; html: string } {
+  // Employer-facing statuses use different subjects
+  if (status === 'offer_accepted') {
+    const subject = `Offer accepted — ${jobTitle} at ${companyName}`
+    const html = emailLayout(subject, `
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Offer accepted!</h1>
+      <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+        <strong>${candidateName || 'A candidate'}</strong> has digitally signed and accepted your offer for <strong>${jobTitle}</strong>.
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
+        Head to your applications dashboard to confirm the hire and begin onboarding.
+      </p>
+      ${ctaButton('View Applications', `${BASE_URL}/my-jobs`)}
+    `)
+    return { subject, html }
+  }
+
+  if (status === 'offer_declined') {
+    const subject = `Offer declined — ${jobTitle} at ${companyName}`
+    const reasonLine = reason ? `<p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">Their reason: "${reason}"</p>` : ''
+    const html = emailLayout(subject, `
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Offer declined</h1>
+      <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+        <strong>${candidateName || 'A candidate'}</strong> has declined your offer for <strong>${jobTitle}</strong>.
+      </p>
+      ${reasonLine}
+      <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
+        You can view the full details and decide on next steps from your dashboard.
+      </p>
+      ${ctaButton('View Applications', `${BASE_URL}/my-jobs`)}
+    `)
+    return { subject, html }
+  }
+
+  // Candidate-facing statuses (existing behaviour)
   const subject = `Update on your application at ${companyName}`
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.shortlisted
 

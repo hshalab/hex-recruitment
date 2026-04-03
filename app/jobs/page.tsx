@@ -691,6 +691,9 @@ function JobsPageContent() {
         console.warn('Supabase insert warning:', insertError.message)
       }
 
+      // Increment application_count on the job
+      ;(supabase as any).rpc('increment_application_count', { p_job_id: selectedJob.id }).catch(() => {})
+
       // 2. Send notification to employer
       if (selectedJob.employerId) {
         try {

@@ -153,6 +153,19 @@ export default function MakeOfferModal({
         related_type: 'application',
       })
 
+      // Send email to candidate
+      if (candidateEmail) {
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: candidateEmail,
+            type: 'application_status',
+            data: { status: 'offered', companyName: company, jobTitle },
+          }),
+        }).catch(() => {})
+      }
+
       // Send message via conversation
       const contractLabel = contractTypes.find(c => c.value === contractType)?.label || contractType
       const messageContent = [
