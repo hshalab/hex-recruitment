@@ -93,6 +93,7 @@ export default function SignatureModal({
         read: false,
         related_id: applicationId,
         related_type: 'application',
+        link: '/my-jobs',
       })
 
       // Send email to employer

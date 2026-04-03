@@ -329,6 +329,7 @@ export default function JobApplicationsPage() {
         read: false,
         related_id: applicationId,
         related_type: 'application',
+        link: '/applications',
       })
 
       // Send email notification
@@ -367,6 +368,7 @@ export default function JobApplicationsPage() {
       read: false,
       related_id: application.id,
       related_type: 'application',
+      link: '/applications',
     })
 
     // Send email notification
@@ -419,6 +421,7 @@ export default function JobApplicationsPage() {
         read: false,
         related_id: application.id,
         related_type: 'application',
+        link: '/applications',
       })
 
       // Send email notification
@@ -522,6 +525,7 @@ export default function JobApplicationsPage() {
         read: false,
         related_id: applicationId,
         related_type: 'application',
+        link: '/applications',
       }).then(() => {})
 
       // Send email to candidate

@@ -83,6 +83,7 @@ export default function DeclineOfferModal({
         read: false,
         related_id: applicationId,
         related_type: 'application',
+        link: '/my-jobs',
       })
 
       // Send email to employer

@@ -151,6 +151,7 @@ export default function MakeOfferModal({
         read: false,
         related_id: applicationId,
         related_type: 'application',
+        link: '/applications',
       })
 
       // Send email to candidate

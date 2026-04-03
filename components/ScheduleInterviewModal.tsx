@@ -211,6 +211,7 @@ export default function ScheduleInterviewModal({
         read: false,
         related_id: applicationId,
         related_type: 'application',
+        link: '/applications',
       })
 
       // Send email notification (fire & forget — never block the save)

@@ -349,6 +349,21 @@
   }
 }
 
+.backBtn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.5rem;
+}
+
 @media (max-width: 768px) {
   .container { padding-top: 0; }
+  .backBtn { display: flex; }
 }

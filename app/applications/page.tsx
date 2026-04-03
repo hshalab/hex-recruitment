@@ -592,7 +592,7 @@ export default function MyJobsPage() {
                                 className={styles.acceptBtn}
                                 onClick={() => handleAcceptInterview(application.interview!.id, application.interview!.employerId)}
                               >
-                                ✓ Accept Interview
+                                ✓ Confirm Attendance
                               </button>
                               <button
                                 className={styles.rescheduleBtn}
