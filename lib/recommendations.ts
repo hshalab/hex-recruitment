@@ -602,3 +602,41 @@ function calcExperienceLevelMatch(
 
   return { points: 0, reason: null }
 }
+
+// ─── Reverse matching: score candidates against a job ──────────────
+
+export interface SuggestedCandidate {
+  id: string
+  fullName: string
+  jobTitle: string
+  location: string
+  profilePictureUrl: string | null
+  matchPercentage: number
+  matchReasons: string[]
+}
+
+export function scoreAndRankCandidates(
+  job: Job,
+  candidates: Candidate[],
+  alreadyAppliedIds: Set<string>
+): SuggestedCandidate[] {
+  const eligible = candidates.filter(c => !alreadyAppliedIds.has(c.id))
+
+  const scored = eligible.map(candidate => {
+    const { score, reasons } = calculateMatchScore(job, candidate, [], [])
+    return {
+      id: candidate.id,
+      fullName: candidate.fullName || 'Candidate',
+      jobTitle: candidate.jobTitle || '',
+      location: candidate.location || '',
+      profilePictureUrl: candidate.profilePictureUrl || null,
+      matchPercentage: Math.min(Math.round(score), 99),
+      matchReasons: reasons.slice(0, 2),
+    }
+  })
+
+  return scored
+    .filter(c => c.matchPercentage >= 30)
+    .sort((a, b) => b.matchPercentage - a.matchPercentage)
+    .slice(0, 3)
+}
