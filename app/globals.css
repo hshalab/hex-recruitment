@@ -240,7 +240,7 @@ body[data-sidebar="expanded"] [data-sidebar-logo] {
 @media (max-width: 768px) {
   body[data-sidebar="expanded"] [data-sidebar-logo],
   body[data-sidebar="collapsed"] [data-sidebar-logo] {
-    margin-left: 40px;
+    margin-left: 8px;
     width: auto;
     border-right: none;
   }
