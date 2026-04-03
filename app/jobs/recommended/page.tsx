@@ -33,6 +33,7 @@ export default function RecommendedJobsPage() {
   const [loading, setLoading] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [profileComplete, setProfileComplete] = useState(true)
+  const [needsPreferences, setNeedsPreferences] = useState(false)
   const [selectedJob, setSelectedJob] = useState<RecommendedJob | null>(null)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -85,10 +86,12 @@ export default function RecommendedJobsPage() {
       if (profileResult.data) {
         const candidateData = supabaseProfileToCandidate(profileResult.data)
         setCandidate(candidateData)
-        const hasSkills = (candidateData.skills || []).length > 0
-        const hasJobTitle = !!candidateData.jobTitle
-        const hasLocation = !!candidateData.location
-        setProfileComplete(hasSkills || hasJobTitle || hasLocation)
+        const hasBasics = !!(candidateData.jobTitle) || (candidateData.skills || []).length > 0 || !!candidateData.location
+        const hasMatchingFields = !!candidateData.jobSector &&
+          !!(candidateData.preferredJobTypes && candidateData.preferredJobTypes.length > 0) &&
+          !!(candidateData.workLocationPreferences && candidateData.workLocationPreferences.length > 0)
+        setProfileComplete(hasBasics && hasMatchingFields)
+        setNeedsPreferences(hasBasics && !hasMatchingFields)
       } else {
         setProfileComplete(false)
       }
@@ -294,15 +297,16 @@ export default function RecommendedJobsPage() {
         {isLoggedIn && !loading && !jobsLoading && (
           <>
             {/* Incomplete profile banner */}
-            {!profileComplete && (
+            {(!profileComplete || needsPreferences) && (
               <div className={styles.profileBanner}>
                 <span className={styles.profileBannerIcon}>💡</span>
                 <div className={styles.profileBannerText}>
                   <p>
-                    Complete your profile to get better recommendations.
-                    Add your skills, job title, and location for more accurate matches.{' '}
+                    {needsPreferences
+                      ? 'Add your job preferences to improve your recommendations. Set your sector, preferred job type, and work style for better matches. '
+                      : 'Complete your profile to get better recommendations. Add your skills, job title, and location for more accurate matches. '}
                     <Link href="/profile" className={styles.profileBannerLink}>
-                      Update Profile
+                      {needsPreferences ? 'Add Preferences' : 'Update Profile'}
                     </Link>
                   </p>
                 </div>
