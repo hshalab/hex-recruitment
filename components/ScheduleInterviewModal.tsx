@@ -310,6 +310,12 @@ export default function ScheduleInterviewModal({
       }
 
       onSuccess()
+
+      // Auto-open Google Calendar so employer can add it to their calendar
+      if (interviewDate && interviewTime) {
+        handleOpenCalendar()
+      }
+
       onClose()
       setInterviewDate('')
       setInterviewTime('')
@@ -333,7 +339,7 @@ export default function ScheduleInterviewModal({
         <div className={styles.header}>
           <div>
             <h2 className={styles.title}>{existingInterviewId ? 'Reschedule Interview' : 'Schedule Interview'}</h2>
-            <p className={styles.subtitle}>Set the details below and send to the candidate</p>
+            <p className={styles.subtitle}>The candidate will be notified instantly by email and in-app message</p>
           </div>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Close">✕</button>
         </div>
@@ -359,20 +365,6 @@ export default function ScheduleInterviewModal({
                 onChange={(e) => { setInterviewTime(e.target.value); checkConflict(interviewDate, e.target.value) }}
                 className={styles.input}
               />
-            </div>
-            <div className={styles.dateTimeField}>
-              <label htmlFor="duration" className={styles.fieldLabel}>Duration</label>
-              <select
-                id="duration"
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                className={styles.input}
-              >
-                <option value={30}>30 minutes</option>
-                <option value={60}>1 hour</option>
-                <option value={90}>1.5 hours</option>
-                <option value={120}>2 hours</option>
-              </select>
             </div>
           </div>
 
@@ -431,30 +423,22 @@ export default function ScheduleInterviewModal({
             </div>
           )}
 
-          <div className={styles.formActions}>
-            <button
-              type="button"
-              className={styles.calendarBtn}
-              onClick={handleOpenCalendar}
-              disabled={submitting}
-            >
-              Open Google Calendar
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className={styles.submitBtn}
-              disabled={submitting}
-            >
-              {submitting ? 'Sending...' : 'Send to Candidate'}
-            </button>
-          </div>
-
-          <div className={styles.cancelRow}>
-            <button type="button" onClick={onClose} className={styles.cancelLink} disabled={submitting}>
-              Cancel
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className={styles.sendBtn}
+            disabled={submitting}
+          >
+            {submitting ? 'Sending...' : 'Send Interview Invite'}
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenCalendar}
+            className={styles.calendarLink}
+            disabled={submitting}
+          >
+            + Add to Google Calendar (optional)
+          </button>
         </div>
       </div>
     </div>

@@ -140,57 +140,47 @@
   font-size: 0.9rem;
 }
 
-.formActions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-}
-
-.calendarBtn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: white;
-  color: var(--black);
-  border: 2px solid var(--border-gray);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.calendarBtn:hover:not(:disabled) {
-  border-color: var(--primary-yellow);
-  background: #fffbea;
-}
-
-.submitBtn {
-  flex: 1;
-  padding: 0.75rem 1rem;
+.sendBtn {
+  width: 100%;
+  padding: 0.875rem 1rem;
   background: var(--primary-yellow);
   color: var(--black);
   border: none;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.15s;
+  margin-top: 1.5rem;
 }
 
-.submitBtn:hover:not(:disabled) {
+.sendBtn:hover:not(:disabled) {
   background: var(--hover-yellow);
-  transform: translateY(-1px);
 }
 
-.submitBtn:disabled,
-.calendarBtn:disabled {
+.sendBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.calendarLink {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: var(--text-gray);
+  cursor: pointer;
+}
+
+.calendarLink:hover:not(:disabled) {
+  text-decoration: underline;
+  color: var(--text-dark);
+}
+
 
 .cancelRow {
   display: flex;
@@ -245,12 +235,4 @@
     width: 100%;
   }
 
-  .formActions {
-    flex-direction: column;
-  }
-
-  .calendarBtn,
-  .submitBtn {
-    width: 100%;
-  }
 }
