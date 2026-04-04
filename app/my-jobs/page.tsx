@@ -795,27 +795,21 @@ function MyJobsContent() {
                       </div>
 
                       <div className={styles.cardContent}>
-                        <div className={styles.cardInfoRow}>
-                          <p className={styles.cardSalaryType}>
-                            <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
-                            <span className={styles.cardDot}>·</span>
-                            <span>{job.employmentType.join(', ')}</span>
-                          </p>
-                        </div>
-                        <div className={styles.cardInfoRow}>
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.cardAction}
-                          >
-                            📍 {job.location}
-                          </a>
-                        </div>
+                        <p className={styles.cardSalaryType}>
+                          <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
+                          <span className={styles.cardDot}>·</span>
+                          <span>{job.employmentType.join(', ')}</span>
+                        </p>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.cardAction}
+                        >
+                          📍 {job.location}
+                        </a>
                         {job.expiresDate && (
-                          <div className={styles.cardInfoRow}>
-                            <p className={styles.cardMeta}>Closes: {formatDate(job.expiresDate)}</p>
-                          </div>
+                          <p className={styles.cardMeta}>Closes: {formatDate(job.expiresDate)}</p>
                         )}
 
                         {activeTab === 'interviewing' && viewData.nextInterviewMap[job.id] && (
@@ -841,69 +835,52 @@ function MyJobsContent() {
                           </div>
                         )}
 
-                        <div className={styles.cardInfoRow}>
-                          <button
-                            className={styles.cardAction}
-                            onClick={(e) => { e.stopPropagation(); router.push(`/my-jobs/${job.id}/applications`) }}
-                          >
-                            👥 {job.applicationCount} {job.applicationCount === 1 ? 'application' : 'applications'}
-                          </button>
-                        </div>
-                        <div className={styles.cardInfoRow}>
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => router.push(`/employer/analytics/${job.id}`)}
-                          >
-                            👁 {job.viewCount} {job.viewCount === 1 ? 'view' : 'views'}
-                          </button>
-                        </div>
-
-                        <div className={styles.cardSpacer} />
-
-                        <div className={styles.cardActionRow}>
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => router.push(`/employer/analytics/${job.id}`)}
-                          >
-                            ↗ View Analytics
-                          </button>
-                        </div>
-                        <div className={styles.cardActionRow}>
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
-                          >
-                            View Job
-                          </button>
-                        </div>
-                        <div className={styles.cardActionRow}>
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => router.push(`/candidates?jobId=${job.id}`)}
-                          >
-                            Find Candidates
-                          </button>
-                        </div>
+                        <button
+                          className={styles.cardAction}
+                          onClick={(e) => { e.stopPropagation(); router.push(`/my-jobs/${job.id}/applications`) }}
+                        >
+                          👥 {job.applicationCount} {job.applicationCount === 1 ? 'application' : 'applications'}
+                        </button>
+                        <button
+                          className={styles.cardAction}
+                          onClick={() => router.push(`/employer/analytics/${job.id}`)}
+                        >
+                          👁 {job.viewCount} {job.viewCount === 1 ? 'view' : 'views'}
+                        </button>
+                        <button
+                          className={styles.cardAction}
+                          onClick={() => router.push(`/employer/analytics/${job.id}`)}
+                        >
+                          ↗ View Analytics
+                        </button>
+                        <button
+                          className={styles.cardAction}
+                          onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
+                        >
+                          View Job
+                        </button>
+                        <button
+                          className={styles.cardAction}
+                          onClick={() => router.push(`/candidates?jobId=${job.id}`)}
+                        >
+                          Find Candidates
+                        </button>
 
                         {(job.status === 'archived' || job.status === 'filled') && (
-                          <div className={styles.cardActionRow}>
-                            <button
-                              className={styles.cardAction}
-                              onClick={() => handleReactivateJob(job.id)}
-                            >
-                              Reactivate
-                            </button>
-                          </div>
+                          <button
+                            className={styles.cardAction}
+                            onClick={() => handleReactivateJob(job.id)}
+                          >
+                            Reactivate
+                          </button>
                         )}
                         {job.status === 'archived' && (
-                          <div className={styles.cardActionRow}>
-                            <button
-                              className={styles.cardAction}
-                              onClick={() => handleRepostJob(job)}
-                            >
-                              Repost Job
-                            </button>
-                          </div>
+                          <button
+                            className={styles.cardAction}
+                            onClick={() => handleRepostJob(job)}
+                          >
+                            Repost Job
+                          </button>
                         )}
                       </div>
 
