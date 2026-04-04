@@ -1116,18 +1116,19 @@ export default function CVBuilderPage() {
       <div className={styles.layout}>
         {/* LEFT: Form */}
         <div className={`${styles.formPanel} ${showPreview ? styles.formPanelHidden : ''}`}>
-          {/* Step Navigation */}
-          <div className={styles.steps}>
-            {STEPS.map((step, i) => (
-              <button
-                key={step.id}
-                className={`${styles.stepBtn} ${i === currentStep ? styles.stepBtnActive : ''} ${i < currentStep ? styles.stepBtnDone : ''}`}
-                onClick={() => setCurrentStep(i)}
-              >
-                <span className={styles.stepNum}>{i + 1}</span>
-                <span className={styles.stepLabel}>{step.label}</span>
-              </button>
-            ))}
+          {/* Progress Bar */}
+          <div className={styles.progressBar}>
+            <div className={styles.progressMeta}>
+              <span className={styles.progressLabel}>
+                {STEPS[currentStep].label}
+              </span>
+              <span className={styles.progressCount}>
+                Step {currentStep + 1} of {STEPS.length}
+              </span>
+            </div>
+            <div className={styles.progressTrack}>
+              <div className={styles.progressFill} style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }} />
+            </div>
           </div>
 
           {/* Step Content */}
