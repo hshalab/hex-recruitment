@@ -249,45 +249,48 @@ export default function JobDetailPage() {
                   {job.companyWebsite.replace(/^https?:\/\//, '')}
                 </a>
               )}
-              <div className={styles.headerMeta}>
-                <a
-                  href={getGoogleMapsUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.locationLink}
-                >
-                  <span className={styles.metaIcon}>📍</span>
-                  {job.fullLocation?.addressLine1
-                    ? `${job.fullLocation.addressLine1}, ${job.fullLocation.city} ${job.fullLocation.postcode}`
-                    : `${job.location}, ${job.area}`}
-                </a>
-                <span className={styles.salary}>{formatSalary()}</span>
-              </div>
-              <div className={styles.badges}>
-                {Array.isArray(job.employmentType)
-                  ? job.employmentType.map((type, i) => (
-                      <span key={i} className={styles.badge}>{type}</span>
-                    ))
-                  : job.employmentType && <span className={styles.badge}>{job.employmentType}</span>
-                }
-                {job.urgent && <span className={`${styles.badge} ${styles.urgentBadge}`}>Urgent</span>}
-                {(job.tags || []).filter(t => WORK_STYLE_TAGS.has(t)).map(t => (
-                  <span key={t} className={`${styles.badge} ${styles.workStyleBadge}`}>{t}</span>
-                ))}
-              </div>
-              {(job.tags || []).filter(t => !WORK_STYLE_TAGS.has(t)).length > 0 && (
-                <div className={styles.jobTags}>
-                  {(job.tags || []).filter(t => !WORK_STYLE_TAGS.has(t)).map(tag => {
-                    const cat = getTagCategory(tag)
-                    return (
-                      <span key={tag} className={`${styles.jobTag} ${cat ? styles[`jobTag_${cat}`] : ''}`}>
-                        {tag}
-                      </span>
-                    )
-                  })}
-                </div>
-              )}
             </div>
+          </div>
+
+          <div className={styles.headerDetails}>
+            <div className={styles.headerMeta}>
+              <a
+                href={getGoogleMapsUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.locationLink}
+              >
+                <span className={styles.metaIcon}>📍</span>
+                {job.fullLocation?.addressLine1
+                  ? `${job.fullLocation.addressLine1}, ${job.fullLocation.city} ${job.fullLocation.postcode}`
+                  : `${job.location}, ${job.area}`}
+              </a>
+              <span className={styles.salary}>{formatSalary()}</span>
+            </div>
+            <div className={styles.badges}>
+              {Array.isArray(job.employmentType)
+                ? job.employmentType.map((type, i) => (
+                    <span key={i} className={styles.badge}>{type}</span>
+                  ))
+                : job.employmentType && <span className={styles.badge}>{job.employmentType}</span>
+              }
+              {job.urgent && <span className={`${styles.badge} ${styles.urgentBadge}`}>Urgent</span>}
+              {(job.tags || []).filter(t => WORK_STYLE_TAGS.has(t)).map(t => (
+                <span key={t} className={`${styles.badge} ${styles.workStyleBadge}`}>{t}</span>
+              ))}
+            </div>
+            {(job.tags || []).filter(t => !WORK_STYLE_TAGS.has(t)).length > 0 && (
+              <div className={styles.jobTags}>
+                {(job.tags || []).filter(t => !WORK_STYLE_TAGS.has(t)).map(tag => {
+                  const cat = getTagCategory(tag)
+                  return (
+                    <span key={tag} className={`${styles.jobTag} ${cat ? styles[`jobTag_${cat}`] : ''}`}>
+                      {tag}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
 
