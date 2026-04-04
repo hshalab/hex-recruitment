@@ -26,6 +26,13 @@ export default function FeedbackWidget() {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+
+  // Allow external trigger via custom event
+  useEffect(() => {
+    const handleOpenFeedback = () => setIsOpen(true)
+    window.addEventListener('open-feedback-widget', handleOpenFeedback)
+    return () => window.removeEventListener('open-feedback-widget', handleOpenFeedback)
+  }, [])
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
