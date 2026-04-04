@@ -118,7 +118,6 @@
 
 /* Layout */
 .page {
-  min-height: 100vh;
   background: #f1f5f9;
 }
 
@@ -128,7 +127,6 @@
   padding: 1rem 2rem 2rem;
   display: flex;
   gap: 1rem;
-  min-height: calc(100vh - 140px);
 }
 
 .formPanel {
@@ -835,12 +833,21 @@
     top: var(--nav-height);
     z-index: 10;
   }
+
+  .layout {
+    padding-top: 1rem;
+    scroll-margin-top: 130px;
+  }
+
+  .steps {
+    scroll-margin-top: 130px;
+  }
 }
 
 @media (max-width: 900px) {
   .layout {
     flex-direction: column;
-    padding: 0.5rem 1rem 1rem;
+    padding: 0.5rem 1rem 4rem;
   }
 
   .previewPanel {

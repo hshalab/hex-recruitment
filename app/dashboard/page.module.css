@@ -1016,6 +1016,12 @@
     font-size: 1.25rem;
   }
 
+  .welcomeActions {
+    margin-left: 0;
+    justify-content: center;
+    width: 100%;
+  }
+
   .pipeline {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
