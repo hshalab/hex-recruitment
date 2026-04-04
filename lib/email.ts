@@ -7,8 +7,9 @@ if (!process.env.RESEND_API_KEY) {
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
-const FROM_ADDRESS = 'Thrive <noreply@thrivecareers.co.uk>'
-const FALLBACK_FROM = 'Thrive <onboarding@resend.dev>'
+const FROM_ADDRESS = process.env.RESEND_DOMAIN_VERIFIED === 'true'
+  ? 'Thrive <noreply@thrivecareers.co.uk>'
+  : 'Thrive <onboarding@resend.dev>'
 
 export async function sendEmail(
   to: string,
@@ -29,23 +30,6 @@ export async function sendEmail(
     })
 
     if (error) {
-      // If domain not verified, retry with fallback
-      if (error.message?.includes('not verified') || error.message?.includes('not allowed')) {
-        const { error: fallbackError } = await resend.emails.send({
-          from: FALLBACK_FROM,
-          to,
-          subject,
-          html,
-        })
-
-        if (fallbackError) {
-          console.error('[Email] Fallback send failed:', fallbackError.message)
-          return { success: false, error: fallbackError.message }
-        }
-
-        return { success: true }
-      }
-
       console.error('[Email] Send failed:', error.message)
       return { success: false, error: error.message }
     }
