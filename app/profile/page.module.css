@@ -3,6 +3,22 @@
   background: var(--light-gray);
 }
 
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-gray, #64748b);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.4rem 0;
+  margin-bottom: 1rem;
+  transition: color 0.15s;
+}
+.backBtn:hover { color: var(--text-dark, #1e293b); }
+
 .container {
   max-width: 1000px;
   margin: 0 auto;

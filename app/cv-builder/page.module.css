@@ -1,3 +1,19 @@
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.4rem 0;
+  margin-bottom: 0;
+  transition: color 0.15s;
+}
+.backBtn:hover { color: #1e293b; }
+
 /* Loading */
 .loadingState {
   display: flex;

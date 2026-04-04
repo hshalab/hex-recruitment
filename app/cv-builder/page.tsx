@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, TabStopPosition, TabStopType } from 'docx'
@@ -69,6 +70,7 @@ const STEPS = [
 ]
 
 export default function CVBuilderPage() {
+  const router = useRouter()
   const [cvData, setCvData] = useState<CVData>(emptyCV())
   const [currentStep, setCurrentStep] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -1068,6 +1070,13 @@ export default function CVBuilderPage() {
   return (
     <main className={`${styles.page} no-pad`}>
       <Header />
+
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0.75rem 1rem 0' }}>
+        <button className={styles.backBtn} onClick={() => router.push('/dashboard')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+          Back to Dashboard
+        </button>
+      </div>
 
       {/* Banner */}
       <section className={styles.banner}>

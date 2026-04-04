@@ -136,31 +136,41 @@ export default function CandidateSidebar() {
     return false
   }
 
+  const hideHamburger =
+    pathname?.startsWith('/job/') ||
+    pathname?.startsWith('/candidates/') ||
+    pathname?.startsWith('/company/') ||
+    pathname?.startsWith('/employer/analytics/') ||
+    pathname?.startsWith('/my-jobs/') ||
+    pathname?.startsWith('/reviews/')
+
   if (!mounted) return null
 
   return (
     <>
       {/* Mobile hamburger toggle */}
-      <button
-        className={styles.mobileToggle}
-        onClick={() => setMobileOpen(prev => !prev)}
-        aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
-          {mobileOpen ? (
-            <>
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </>
-          ) : (
-            <>
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </>
-          )}
-        </svg>
-      </button>
+      {!hideHamburger && (
+        <button
+          className={styles.mobileToggle}
+          onClick={() => setMobileOpen(prev => !prev)}
+          aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
+            {mobileOpen ? (
+              <>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </>
+            ) : (
+              <>
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </>
+            )}
+          </svg>
+        </button>
+      )}
 
       {mobileOpen && (
         <div

@@ -279,6 +279,11 @@ export default function ProfilePage() {
     <main className={styles.main}>
       <Header />
       <div className={styles.container}>
+        <button className={styles.backBtn} onClick={() => router.push('/dashboard')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+          Back to Dashboard
+        </button>
+
         {/* Profile Header Card */}
         <div className={styles.profileCard}>
           <div className={styles.profileHeader}>

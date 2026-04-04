@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
@@ -20,6 +20,7 @@ const SUB_RATING_KEYS = [
 
 export default function CompanyReviewsPage() {
   const params = useParams()
+  const router = useRouter()
   const companySlug = decodeURIComponent(params.company as string)
 
   const [loading, setLoading] = useState(true)
@@ -274,6 +275,10 @@ export default function CompanyReviewsPage() {
 
       {/* Content */}
       <div className={styles.container}>
+        <button className={styles.backBtn} onClick={() => router.push('/reviews')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+          Back to Company Reviews
+        </button>
         <div className={styles.layout}>
           {/* Sidebar: Distribution */}
           <aside className={styles.sidebar}>

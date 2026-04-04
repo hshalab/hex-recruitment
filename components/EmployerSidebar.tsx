@@ -200,22 +200,32 @@ export default function EmployerSidebar() {
     return false
   }
 
+  const hideHamburger =
+    pathname?.startsWith('/job/') ||
+    pathname?.startsWith('/candidates/') ||
+    pathname?.startsWith('/company/') ||
+    pathname?.startsWith('/employer/analytics/') ||
+    pathname?.startsWith('/my-jobs/') ||
+    pathname?.startsWith('/reviews/')
+
   if (!mounted) return null
 
   return (
     <>
       {/* Mobile hamburger */}
-      <button
-        className={styles.mobileToggle}
-        onClick={() => setMobileOpen(true)}
-        aria-label="Open navigation"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
+      {!hideHamburger && (
+        <button
+          className={styles.mobileToggle}
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open navigation"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+      )}
 
       {/* Mobile overlay */}
       {mobileOpen && (
