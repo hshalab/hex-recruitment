@@ -103,7 +103,6 @@
 }
 
 @media (max-width: 640px) {
-  .hero { padding-top: 64px; }
   .formRow {
     grid-template-columns: 1fr;
   }

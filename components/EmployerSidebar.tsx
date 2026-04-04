@@ -207,6 +207,7 @@ export default function EmployerSidebar() {
     pathname?.startsWith('/employer/analytics/') ||
     pathname?.startsWith('/my-jobs/') ||
     pathname?.startsWith('/reviews/') ||
+    pathname === '/post-job' ||
     (pathname === '/jobs' && searchParams.has('id'))
 
   if (!mounted) return null
