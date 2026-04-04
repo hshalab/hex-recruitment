@@ -10,20 +10,7 @@
 }
 
 .pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--dark-gray);
-  color: #FFE500;
-  border: none;
-  border-radius: 999px;
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
-  letter-spacing: 0.01em;
+  display: none !important;
 }
 
 .pill:hover {

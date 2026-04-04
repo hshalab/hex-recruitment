@@ -223,7 +223,7 @@ export default function CandidateSidebar() {
             title="Share Feedback"
             onClick={() => {
               setMobileOpen(false)
-              window.dispatchEvent(new CustomEvent('open-feedback-widget'))
+              router.push('/feedback')
             }}
           >
             <span className={styles.icon}>
