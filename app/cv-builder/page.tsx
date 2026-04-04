@@ -75,6 +75,7 @@ export default function CVBuilderPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [cvId, setCvId] = useState<string | null>(null)
@@ -211,6 +212,8 @@ export default function CVBuilderPage() {
   const saveCV = useCallback(async () => {
     if (!userId || DEV_MODE) {
       setSaved(true)
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
+      savedTimeoutRef.current = setTimeout(() => setSaved(false), 2500)
       return
     }
 
@@ -230,6 +233,8 @@ export default function CVBuilderPage() {
         if (data) setCvId(data.id)
       }
       setSaved(true)
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
+      savedTimeoutRef.current = setTimeout(() => setSaved(false), 2500)
     } catch {
       alert('Failed to save CV. Please try again.')
     } finally {
