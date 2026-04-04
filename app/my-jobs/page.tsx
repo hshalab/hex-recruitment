@@ -786,6 +786,11 @@ function MyJobsContent() {
                       <div className={styles.cardHeader}>
                         <div className={styles.jobInfo}>
                           <h3 className={styles.jobTitle}>{job.title}</h3>
+                          <div className={styles.jobKeyInfo}>
+                            <span className={styles.salaryBadge}>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
+                            <span className={styles.cardDot}>·</span>
+                            <span className={styles.typeBadge}>{job.employmentType.join(', ')}</span>
+                          </div>
                         </div>
                         <CompanyLogo
                           src={job.companyLogo}
@@ -795,11 +800,6 @@ function MyJobsContent() {
                       </div>
 
                       <div className={styles.cardContent}>
-                        <p className={styles.cardSalaryType}>
-                          <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
-                          <span className={styles.cardDot}>·</span>
-                          <span>{job.employmentType.join(', ')}</span>
-                        </p>
                         <a
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`}
                           target="_blank"

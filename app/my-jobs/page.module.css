@@ -53,29 +53,28 @@
 .jobCard:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); border-color: #d1d5db; }
 
 /* ─── Card Header (title left + logo right) ──────────────────────────── */
-.cardHeader { display: flex; gap: 0.875rem; align-items: flex-start; }
-.companyLogo { width: 48px; min-width: 48px; max-width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #f5f5f5; overflow: hidden; border: 1px solid var(--border-gray); }
-.jobInfo { flex: 1; min-width: 0; }
-.jobTitle { font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin: 0; line-height: 1.3; }
+.cardHeader { display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0; }
+.companyLogo { width: 40px; min-width: 40px; max-width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: #f5f5f5; overflow: hidden; border: 1px solid var(--border-gray); }
+.jobInfo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+.jobTitle { font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin: 0; padding: 0; line-height: 1.3; }
+.jobKeyInfo { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; margin: 0; padding: 0; line-height: 1.4; }
+.salaryBadge { font-size: 0.9rem; font-weight: 700; color: var(--text-dark); padding: 0; background: none; }
+.typeBadge { font-size: 0.9rem; font-weight: 700; color: var(--text-dark); padding: 0; background: none; }
 
 /* ─── Card Content (single column, uniform line-height) ──────────────── */
-.cardContent { display: flex; flex-direction: column; gap: 0; margin-top: 0.25rem; }
+.cardContent { display: flex; flex-direction: column; gap: 0; margin-top: 0.5rem; }
 
-.cardSalaryType {
-  font-size: 0.9rem; font-weight: 600; color: var(--text-dark); margin: 0; padding: 0;
-  display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; line-height: 1.8;
-}
 .cardDot { color: var(--border-gray); }
 
 .cardMeta {
-  font-size: 0.9rem; color: var(--text-gray); font-weight: 400;
-  margin: 0; padding: 0; display: block; line-height: 1.8;
+  font-size: 0.875rem; font-weight: 400; color: var(--text-gray);
+  margin: 0; padding: 0.3rem 0 0; display: block; line-height: 1.4;
 }
 
 .cardAction {
-  background: none; border: none; padding: 0; margin: 0;
-  font-size: 0.9rem; font-weight: 600; color: var(--text-dark);
-  cursor: pointer; text-align: left; display: block; line-height: 1.8;
+  font-size: 0.875rem; font-weight: 400; color: var(--text-dark);
+  background: none; border: none; padding: 0.3rem 0 0; margin: 0;
+  display: block; text-align: left; cursor: pointer; width: 100%; line-height: 1.4;
   text-decoration: underline; text-underline-offset: 2px; text-decoration-color: #d1d5db;
   transition: color 0.15s, text-decoration-color 0.15s;
 }
