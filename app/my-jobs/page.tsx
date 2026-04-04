@@ -890,7 +890,7 @@ function MyJobsContent() {
                               </button>
                               <button
                                 className={styles.viewJobOutlineBtn}
-                                onClick={() => router.push(`/jobs?id=${job.id}&from=my-jobs`)}
+                                onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
                               >
                                 View Job
                               </button>
@@ -919,7 +919,7 @@ function MyJobsContent() {
                               </button>
                               <button
                                 className={styles.viewJobOutlineBtn}
-                                onClick={() => router.push(`/jobs?id=${job.id}&from=my-jobs`)}
+                                onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
                               >
                                 View Job
                               </button>
@@ -959,7 +959,7 @@ function MyJobsContent() {
                             </button>
                             <button
                               className={styles.viewJobOutlineBtn}
-                              onClick={() => router.push(`/jobs?id=${job.id}&from=my-jobs`)}
+                              onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
                             >
                               View Job
                             </button>
