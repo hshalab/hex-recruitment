@@ -206,7 +206,7 @@
 
 .viewsHeader {
   display: grid;
-  grid-template-columns: 1fr 1fr 100px 100px;
+  grid-template-columns: 1fr 1.5fr 90px 80px 70px;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   font-size: 0.7rem;
@@ -219,7 +219,7 @@
 
 .viewsRow {
   display: grid;
-  grid-template-columns: 1fr 1fr 100px 100px;
+  grid-template-columns: 1fr 1.5fr 90px 80px 70px;
   gap: 0.5rem;
   padding: 0.625rem 0.75rem;
   font-size: 0.85rem;
@@ -259,6 +259,26 @@
 .viewsMuted {
   color: #cbd5e1;
 }
+
+/* Viewer Profile */
+.viewerProfile { display: flex; align-items: center; gap: 0.5rem; }
+.viewerAvatar { width: 28px; height: 28px; border-radius: 50%; background: var(--dark-gray); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+.viewerAvatarImg { width: 100%; height: 100%; object-fit: cover; }
+.viewerAvatarInitial { font-size: 0.7rem; font-weight: 700; color: var(--primary-yellow); }
+.viewerInfo { display: flex; flex-direction: column; min-width: 0; }
+.viewerName { font-size: 0.8rem; font-weight: 600; color: var(--text-dark); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.viewerName:hover { text-decoration: underline; }
+.viewerTitle { font-size: 0.7rem; color: var(--text-gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.messageViewerBtn {
+  padding: 0.2rem 0.6rem; background: var(--primary-yellow); color: var(--black); border: none;
+  border-radius: 4px; font-size: 0.7rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: background 0.15s;
+}
+.messageViewerBtn:hover { background: var(--hover-yellow); }
+
+.viewersSectionHeader { margin-bottom: 0.75rem; }
+.sectionSubtitle { font-size: 0.8rem; color: var(--text-gray); margin: 0.2rem 0 0; }
 
 /* Empty States */
 .emptyState {
@@ -361,7 +381,7 @@
 
   .viewsHeader,
   .viewsRow {
-    grid-template-columns: 1fr 1fr 80px 80px;
+    grid-template-columns: 1fr 1.5fr 80px 70px 60px;
   }
 }
 

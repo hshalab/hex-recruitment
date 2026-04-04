@@ -82,6 +82,7 @@ function JobAnalyticsContent() {
   const [clickEvents, setClickEvents] = useState<any[]>([])
   const [impressions, setImpressions] = useState<any[]>([])
   const [applications, setApplications] = useState<any[]>([])
+  const [viewerProfiles, setViewerProfiles] = useState<Record<string, any>>({})
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -153,6 +154,26 @@ function JobAnalyticsContent() {
       setClickEvents(clicksResult.data || [])
       setImpressions(impressionsResult.data || [])
       setApplications(appsResult.data || [])
+
+      // Fetch candidate profiles for registered viewers
+      const allViews = viewsResult.error ? [] : (viewsResult.data || [])
+      const registeredViewerIds = allViews
+        .map((v: any) => v.viewer_id)
+        .filter(Boolean)
+        .filter((id: string, i: number, arr: string[]) => arr.indexOf(id) === i)
+
+      if (registeredViewerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('candidate_profiles')
+          .select('user_id, full_name, job_title, profile_picture_url, location')
+          .in('user_id', registeredViewerIds)
+
+        if (profiles) {
+          const profileMap: Record<string, any> = {}
+          profiles.forEach((p: any) => { profileMap[p.user_id] = p })
+          setViewerProfiles(profileMap)
+        }
+      }
 
       setLoading(false)
     }
@@ -407,9 +428,14 @@ function JobAnalyticsContent() {
           </div>
         </div>
 
-        {/* Recent Views */}
+        {/* Who Viewed This Job */}
         <div className={styles.sectionCard}>
-          <h2 className={styles.sectionTitle}>Recent Views</h2>
+          <div className={styles.viewersSectionHeader}>
+            <h2 className={styles.sectionTitle}>Who Viewed This Job</h2>
+            <p className={styles.sectionSubtitle}>
+              Registered candidates who viewed this listing. Reach out to those who haven&apos;t applied yet.
+            </p>
+          </div>
           {recentViews.length > 0 ? (
             <div className={styles.viewsList}>
               <div className={styles.viewsHeader}>
@@ -417,11 +443,44 @@ function JobAnalyticsContent() {
                 <span>Viewer</span>
                 <span>Source</span>
                 <span>Device</span>
+                <span></span>
               </div>
               {recentViews.map((view, i) => (
                 <div key={view.id || i} className={styles.viewsRow}>
                   <span className={styles.viewsTime}>{formatRelativeTime(view.viewed_at)}</span>
-                  <span>{view.viewer_id ? 'Registered User' : 'Anonymous'}</span>
+                  <span>
+                    {view.viewer_id && viewerProfiles[view.viewer_id] ? (
+                      <div className={styles.viewerProfile}>
+                        <div className={styles.viewerAvatar}>
+                          {viewerProfiles[view.viewer_id].profile_picture_url ? (
+                            <img src={viewerProfiles[view.viewer_id].profile_picture_url} alt="" className={styles.viewerAvatarImg} />
+                          ) : (
+                            <span className={styles.viewerAvatarInitial}>
+                              {viewerProfiles[view.viewer_id].full_name?.charAt(0) || '?'}
+                            </span>
+                          )}
+                        </div>
+                        <div className={styles.viewerInfo}>
+                          <Link
+                            href={`/candidates/${view.viewer_id}`}
+                            className={styles.viewerName}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {viewerProfiles[view.viewer_id].full_name || 'Candidate'}
+                          </Link>
+                          {viewerProfiles[view.viewer_id].job_title && (
+                            <span className={styles.viewerTitle}>
+                              {viewerProfiles[view.viewer_id].job_title}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ) : view.viewer_id ? (
+                      <span>Registered User</span>
+                    ) : (
+                      <span className={styles.viewsMuted}>Anonymous</span>
+                    )}
+                  </span>
                   <span className={styles.viewsSource}>
                     {view.source ? (
                       <span className={styles.sourceTag} style={{ background: SOURCE_COLORS[view.source] || '#64748b' }}>
@@ -433,6 +492,16 @@ function JobAnalyticsContent() {
                   </span>
                   <span className={styles.viewsDevice}>
                     {view.device_type || <span className={styles.viewsMuted}>-</span>}
+                  </span>
+                  <span>
+                    {view.viewer_id && viewerProfiles[view.viewer_id] && !applications.some((a: any) => a.candidate_id === view.viewer_id) && (
+                      <button
+                        className={styles.messageViewerBtn}
+                        onClick={() => router.push(`/messages?candidate=${view.viewer_id}&job=${jobId}`)}
+                      >
+                        Message
+                      </button>
+                    )}
                   </span>
                 </div>
               ))}
