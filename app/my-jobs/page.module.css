@@ -99,34 +99,37 @@
 .appliedDate { display: flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; color: #9ca3af; }
 .dateIcon { font-size: 0.72rem; }
 
-/* ─── Card Footer (compact action links) ───────────────────────────────── */
-.cardFooter { display: flex; flex-direction: column; gap: 0.35rem; padding: 0; border-top: 1px solid var(--border-gray); padding-top: 0.625rem; background: none; }
-.footerBtnRow { display: flex; gap: 0.5rem; width: 100%; }
-.footerBtnRow > button { flex: 1; }
+/* ─── Card Footer ─────────────────────────────────────────────────────── */
+.cardFooter { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.75rem; border-top: 1px solid var(--border-gray); }
 
-.btnGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3rem; }
-.btnGrid > button, .btnGrid > a { width: 100%; }
+.footerActions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
 
-/* Unified small button — all card actions use this */
-.viewApplicationsBtn, .viewJobBtn, .viewJobOutlineBtn, .editBtn, .boostBtn, .withdrawBtn, .archiveBtn {
+.viewJobBtn {
+  padding: 0.55rem 0; border: 1.5px solid var(--border-gray); border-radius: 8px; background: transparent; color: var(--text-dark); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: border-color 0.15s; text-align: center;
+}
+.viewJobBtn:hover { border-color: var(--dark-gray); }
+
+.findCandidatesBtn {
+  padding: 0.55rem 0; border: 1.5px solid var(--border-gray); border-radius: 8px; background: transparent; color: var(--text-dark); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: border-color 0.15s; text-align: center;
+}
+.findCandidatesBtn:hover { border-color: var(--dark-gray); }
+
+.boostBtn {
+  width: 100%; padding: 0.6rem; background: #B8860B; color: #000; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: background 0.15s;
+}
+.boostBtn:hover { background: #DAA520; }
+.boostBtnActive { background: #DAA520; }
+
+.applicationsLink {
+  background: none; border: none; padding: 0; color: var(--text-gray); font-size: 0.8rem; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; display: inline-flex; align-items: center; gap: 0.2rem;
+}
+.applicationsLink:hover { color: var(--text-dark); }
+
+/* Withdraw button (candidate applied jobs view) */
+.withdrawBtn {
   padding: 0.3rem 0.5rem; background: var(--white); border: 1px solid var(--border-gray); border-radius: 6px; font-size: 0.72rem; font-weight: 600; color: var(--text-dark); cursor: pointer; transition: background 0.15s, border-color 0.15s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
 }
-.viewApplicationsBtn:hover, .viewJobBtn:hover, .viewJobOutlineBtn:hover, .editBtn:hover, .boostBtn:hover, .withdrawBtn:hover, .archiveBtn:hover { background: #f9fafb; border-color: #d1d5db; }
-
-/* Yellow accent for boost */
-.boostBtn { border-color: var(--primary-yellow); color: #92660a; }
-.boostBtn:hover { background: rgba(255, 229, 0, 0.08); }
-.boostBtnActive { background: rgba(255, 229, 0, 0.12); border-color: var(--primary-yellow); }
-
-/* Danger buttons */
-.pauseBtn, .deleteBtn { padding: 0.3rem 0.5rem; background: var(--white); border: 1px solid #fca5a5; border-radius: 6px; font-size: 0.72rem; font-weight: 600; color: #dc2626; cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
-.pauseBtn:hover, .deleteBtn:hover { background: #fef2f2; }
-.pauseBtn { border-color: #fed7aa; color: #b45309; }
-.pauseBtn:hover { background: #fff7ed; }
-
-/* Activate (green) */
-.activateBtn { padding: 0.3rem 0.5rem; background: var(--white); border: 1px solid #86efac; border-radius: 6px; font-size: 0.72rem; font-weight: 600; color: #16a34a; cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
-.activateBtn:hover { background: #f0fdf4; }
+.withdrawBtn:hover { background: #f9fafb; border-color: #d1d5db; }
 
 /* Boost status bar */
 .boostStatus { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.2rem 0.5rem; background: rgba(255, 229, 0, 0.06); border: 1px solid rgba(255, 229, 0, 0.2); border-radius: 4px; font-size: 0.68rem; font-weight: 600; color: var(--primary-yellow); }
@@ -141,7 +144,6 @@
   .header { flex-direction: column; align-items: stretch; }
   .postJobBtn, .browseJobsBtn { text-align: center; }
   .container { padding: 1rem 1rem 3rem; }
-  .btnGrid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 640px) {
@@ -152,7 +154,6 @@
 
 @media (max-width: 480px) {
   .stats { grid-template-columns: repeat(2, 1fr); }
-  .btnGrid { grid-template-columns: repeat(2, 1fr); font-size: 0.75rem; }
 }
 
 @media (max-width: 375px) {

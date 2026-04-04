@@ -851,10 +851,12 @@ function MyJobsContent() {
                               <span>Closes: {formatDate(job.expiresDate)}</span>
                             </div>
                           )}
-                          <div className={styles.metaItem}>
-                            <span className={styles.metaIcon}>👥</span>
-                            <span>{job.applicationCount} applications</span>
-                          </div>
+                          <button
+                            className={styles.applicationsLink}
+                            onClick={(e) => { e.stopPropagation(); router.push(`/my-jobs/${job.id}/applications`) }}
+                          >
+                            👥 {job.applicationCount} {job.applicationCount === 1 ? 'application' : 'applications'}
+                          </button>
                           <div className={styles.metaItem}>
                             <span className={styles.metaIcon}>👁️</span>
                             <span>{job.viewCount} views</span>
@@ -881,88 +883,61 @@ function MyJobsContent() {
                       <div className={styles.cardFooter}>
                         {job.status === 'archived' ? (
                           <>
-                            <div className={styles.footerBtnRow}>
+                            <div className={styles.footerActions}>
                               <button
-                                className={styles.viewApplicationsBtn}
-                                onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
-                              >
-                                View Applications
-                              </button>
-                              <button
-                                className={styles.viewJobOutlineBtn}
+                                className={styles.viewJobBtn}
                                 onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
                               >
                                 View Job
                               </button>
+                              <button
+                                className={styles.viewJobBtn}
+                                onClick={() => handleReactivateJob(job.id)}
+                              >
+                                Reactivate
+                              </button>
                             </div>
                             <button
-                              className={styles.activateBtn}
-                              onClick={() => handleReactivateJob(job.id)}
-                            >
-                              Reactivate
-                            </button>
-                            <button
-                              className={styles.editBtn}
+                              className={styles.viewJobBtn}
                               onClick={() => handleRepostJob(job)}
+                              style={{ width: '100%' }}
                             >
                               Repost Job
                             </button>
                           </>
                         ) : job.status === 'filled' ? (
                           <>
-                            <div className={styles.footerBtnRow}>
+                            <div className={styles.footerActions}>
                               <button
-                                className={styles.viewApplicationsBtn}
-                                onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
-                              >
-                                View Applications
-                              </button>
-                              <button
-                                className={styles.viewJobOutlineBtn}
+                                className={styles.viewJobBtn}
                                 onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
                               >
                                 View Job
                               </button>
+                              <button
+                                className={styles.viewJobBtn}
+                                onClick={() => handleReactivateJob(job.id)}
+                              >
+                                Reactivate
+                              </button>
                             </div>
-                            <button
-                              className={styles.activateBtn}
-                              onClick={() => handleReactivateJob(job.id)}
-                            >
-                              Reactivate
-                            </button>
-                            <button
-                              className={styles.editBtn}
-                              onClick={() => handleRepostJob(job)}
-                            >
-                              Repost Job
-                            </button>
-                            <button
-                              className={styles.archiveBtn}
-                              onClick={() => handleArchiveJob(job.id)}
-                            >
-                              Archive
-                            </button>
                           </>
                         ) : (
-                          <div className={styles.btnGrid}>
-                            <button
-                              className={styles.viewApplicationsBtn}
-                              onClick={() => router.push(`/my-jobs/${job.id}/applications`)}
-                            >
-                              View Applications
-                            </button>
-                            <button
-                              className={styles.findCandidatesBtn}
-                              onClick={() => router.push(`/candidates?jobId=${job.id}`)}
-                            >
-                              Find Candidates
-                            </button>
-                            <button
-                              className={styles.viewJobOutlineBtn}
-                              onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
-                            >
-                              View Job
-                            </button>
+                          <>
+                            <div className={styles.footerActions}>
+                              <button
+                                className={styles.viewJobBtn}
+                                onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
+                              >
+                                View Job
+                              </button>
+                              <button
+                                className={styles.findCandidatesBtn}
+                                onClick={() => router.push(`/candidates?jobId=${job.id}`)}
+                              >
+                                Find Candidates
+                              </button>
+                            </div>
                             <button
                               className={`${styles.boostBtn} ${jobBoosts[job.id] ? styles.boostBtnActive : ''}`}
                               onClick={() => {
@@ -970,27 +945,9 @@ function MyJobsContent() {
                                 setBoostModalOpen(true)
                               }}
                             >
-                              {jobBoosts[job.id] ? '⚡ Boosted' : '⚡ Boost'}
+                              ⚡ {jobBoosts[job.id] ? `Boosted · ${getDaysRemaining(jobBoosts[job.id].expires_at)}d left` : 'Boost'}
                             </button>
-                            <button
-                              className={styles.editBtn}
-                              onClick={() => router.push(`/post-job?edit=${job.id}`)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className={job.status === 'active' ? styles.pauseBtn : styles.activateBtn}
-                              onClick={() => handleToggleJobStatus(job.id)}
-                            >
-                              {job.status === 'active' ? 'Pause' : 'Activate'}
-                            </button>
-                            <button
-                              className={styles.deleteBtn}
-                              onClick={() => handleDeleteJob(job.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          </>
                         )}
                       </div>
                     </div>
