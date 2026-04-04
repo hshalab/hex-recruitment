@@ -898,19 +898,20 @@
   }
 
   .headerContent {
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-direction: row;
+    gap: 0.875rem;
     align-items: flex-start;
   }
 
   .companyLogo {
     width: 52px;
     height: 52px;
+    min-width: 52px;
     border-radius: 8px;
   }
 
   .jobTitle {
-    font-size: 1.35rem;
+    font-size: 1.2rem;
   }
 
   .section {
