@@ -1,6 +1,6 @@
 /* Page */
 .page {
-  min-height: 100vh;
+  min-height: unset;
   background: linear-gradient(180deg, #f1f5f9 0%, #eef2f7 100%);
 }
 

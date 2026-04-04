@@ -4,7 +4,7 @@
 
 .pageBackground {
   background: var(--light-gray);
-  min-height: 100vh;
+  min-height: unset;
   overflow-x: hidden;
   width: 100%;
 }

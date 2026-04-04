@@ -1,6 +1,6 @@
 /* Page */
 .page {
-  min-height: 100vh;
+  min-height: unset;
   background: #f1f5f9;
 }
 
