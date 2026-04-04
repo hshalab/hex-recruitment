@@ -924,15 +924,16 @@ function MyJobsContent() {
                           </>
                         ) : (
                           <>
-                            <div className={styles.footerActions}>
+                            <div className={styles.footerLinks}>
                               <button
-                                className={styles.viewJobBtn}
+                                className={styles.footerLink}
                                 onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
                               >
                                 View Job
                               </button>
+                              <span className={styles.footerDivider}>·</span>
                               <button
-                                className={styles.findCandidatesBtn}
+                                className={styles.footerLink}
                                 onClick={() => router.push(`/candidates?jobId=${job.id}`)}
                               >
                                 Find Candidates
@@ -945,7 +946,7 @@ function MyJobsContent() {
                                 setBoostModalOpen(true)
                               }}
                             >
-                              ⚡ {jobBoosts[job.id] ? `Boosted · ${getDaysRemaining(jobBoosts[job.id].expires_at)}d left` : 'Boost'}
+                              ⚡ {jobBoosts[job.id] ? 'Boosted' : 'Boost'}
                             </button>
                           </>
                         )}
