@@ -337,6 +337,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     lastName: existingData?.lastName || '',
     dateOfBirth: existingData?.dateOfBirth || '',
     nationality: existingData?.nationality || '',
+    // DOB parts are managed separately below
     addressLine1: existingData?.addressLine1 || '',
     addressLine2: existingData?.addressLine2 || '',
     city: existingData?.city || '',
@@ -378,6 +379,29 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     accountHolderName: existingData?.accountHolderName || '',
   })
 
+  const [dobDay, setDobDay] = useState(() => {
+    const parts = formData.dateOfBirth?.split('-') || []
+    return parts[2] || ''
+  })
+  const [dobMonth, setDobMonth] = useState(() => {
+    const parts = formData.dateOfBirth?.split('-') || []
+    return parts[1] || ''
+  })
+  const [dobYear, setDobYear] = useState(() => {
+    const parts = formData.dateOfBirth?.split('-') || []
+    return parts[0] || ''
+  })
+
+  // Sync DOB parts on mount if pre-populated (edit mode)
+  useEffect(() => {
+    if (formData.dateOfBirth) {
+      const parts = formData.dateOfBirth.split('-')
+      setDobYear(parts[0] || '')
+      setDobMonth(parts[1] || '')
+      setDobDay(parts[2] || '')
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
@@ -389,11 +413,17 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
   }
 
   const handleDobChange = (part: 'day' | 'month' | 'year', value: string) => {
-    const parts = formData.dateOfBirth ? formData.dateOfBirth.split('-') : ['', '', '']
-    const y = part === 'year' ? value : (parts[0] || '')
-    const m = part === 'month' ? value : (parts[1] || '')
-    const d = part === 'day' ? value : (parts[2] || '')
-    const combined = (y && m && d) ? `${y}-${m}-${d}` : ''
+    let newDay = dobDay
+    let newMonth = dobMonth
+    let newYear = dobYear
+
+    if (part === 'day') { newDay = value; setDobDay(value) }
+    if (part === 'month') { newMonth = value; setDobMonth(value) }
+    if (part === 'year') { newYear = value; setDobYear(value) }
+
+    const combined = (newYear && newMonth && newDay)
+      ? `${newYear}-${newMonth}-${newDay}`
+      : ''
     setFormData(prev => ({ ...prev, dateOfBirth: combined }))
   }
 
@@ -1076,61 +1106,53 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         <div className={styles.formGroup}>
           <label className={styles.label}>Date of Birth *</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {(() => {
-              const parts = formData.dateOfBirth ? formData.dateOfBirth.split('-') : ['', '', '']
-              const dobYear = parts[0] || ''
-              const dobMonth = parts[1] || ''
-              const dobDay = parts[2] || ''
-              const currentYear = new Date().getFullYear()
-              const maxYear = currentYear - 16
-              const minYear = currentYear - 100
-              return (
-                <>
-                  <select
-                    aria-label="Day"
-                    value={dobDay}
-                    onChange={e => handleDobChange('day', e.target.value)}
-                    className={styles.select}
-                    autoComplete="bday-day"
-                    style={{ flex: '0 0 auto', width: '70px' }}
-                  >
-                    <option value="">DD</option>
-                    {Array.from({ length: 31 }, (_, i) => {
-                      const d = String(i + 1).padStart(2, '0')
-                      return <option key={d} value={d}>{i + 1}</option>
-                    })}
-                  </select>
-                  <select
-                    aria-label="Month"
-                    value={dobMonth}
-                    onChange={e => handleDobChange('month', e.target.value)}
-                    className={styles.select}
-                    autoComplete="bday-month"
-                    style={{ flex: '1 1 auto' }}
-                  >
-                    <option value="">Month</option>
-                    {['January','February','March','April','May','June','July','August','September','October','November','December'].map((name, i) => {
-                      const m = String(i + 1).padStart(2, '0')
-                      return <option key={m} value={m}>{name}</option>
-                    })}
-                  </select>
-                  <select
-                    aria-label="Year"
-                    value={dobYear}
-                    onChange={e => handleDobChange('year', e.target.value)}
-                    className={styles.select}
-                    autoComplete="bday-year"
-                    style={{ flex: '0 0 auto', width: '80px' }}
-                  >
-                    <option value="">YYYY</option>
-                    {Array.from({ length: maxYear - minYear + 1 }, (_, i) => {
-                      const y = String(maxYear - i)
-                      return <option key={y} value={y}>{y}</option>
-                    })}
-                  </select>
-                </>
-              )
-            })()}
+            <select
+              aria-label="Day"
+              value={dobDay}
+              onChange={e => handleDobChange('day', e.target.value)}
+              className={styles.select}
+              autoComplete="bday-day"
+              style={{ flex: '0 0 auto', width: '70px' }}
+            >
+              <option value="">DD</option>
+              {Array.from({ length: 31 }, (_, i) => {
+                const d = String(i + 1).padStart(2, '0')
+                return <option key={d} value={d}>{i + 1}</option>
+              })}
+            </select>
+            <select
+              aria-label="Month"
+              value={dobMonth}
+              onChange={e => handleDobChange('month', e.target.value)}
+              className={styles.select}
+              autoComplete="bday-month"
+              style={{ flex: '1 1 auto' }}
+            >
+              <option value="">Month</option>
+              {['January','February','March','April','May','June','July','August','September','October','November','December'].map((name, i) => {
+                const m = String(i + 1).padStart(2, '0')
+                return <option key={m} value={m}>{name}</option>
+              })}
+            </select>
+            <select
+              aria-label="Year"
+              value={dobYear}
+              onChange={e => handleDobChange('year', e.target.value)}
+              className={styles.select}
+              autoComplete="bday-year"
+              style={{ flex: '0 0 auto', width: '80px' }}
+            >
+              <option value="">YYYY</option>
+              {(() => {
+                const currentYear = new Date().getFullYear()
+                const maxYear = currentYear - 16
+                const minYear = currentYear - 100
+                return Array.from({ length: maxYear - minYear + 1 }, (_, i) => {
+                  const y = String(maxYear - i)
+                  return <option key={y} value={y}>{y}</option>
+                })
+              })()}
+            </select>
           </div>
         </div>
         <div className={styles.formGroup}>
