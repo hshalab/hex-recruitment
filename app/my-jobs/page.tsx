@@ -625,14 +625,14 @@ function MyJobsContent() {
                  activeTab === 'offers' ? 'Offers' :
                  activeTab === 'hired' ? 'Hired' :
                  activeTab === 'archived' ? 'Archived Jobs' :
-                 'My Job Postings'}
+                 'Manage Job Ads'}
               </h1>
               <p className={styles.subtitle}>
                 {activeTab === 'interviewing' ? 'Jobs with candidates in the interview stage' :
                  activeTab === 'offers' ? 'Jobs with pending or completed offers' :
                  activeTab === 'hired' ? 'Jobs where candidates have been hired' :
                  activeTab === 'archived' ? 'Filled positions and past job listings' :
-                 `Manage your job listings for ${companyName}`}
+                 `All your job adverts for ${companyName}`}
               </p>
             </div>
             {activeTab !== 'interviewing' && activeTab !== 'offers' && activeTab !== 'hired' && (

@@ -610,9 +610,9 @@ function PostJobContent() {
       <Header />
 
       <div className={styles.hero}>
-        <button className={styles.backBtn} onClick={() => router.push('/my-jobs')}>
+        <button className={styles.backBtn} onClick={() => router.push('/employer/dashboard')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-          Back to My Jobs
+          Back to Dashboard
         </button>
         <h1 className={styles.heroTitle}>{isEditMode ? 'Edit Job' : 'Post a Job'}</h1>
         <p className={styles.heroSubtitle}>

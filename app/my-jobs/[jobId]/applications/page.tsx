@@ -593,7 +593,7 @@ export default function JobApplicationsPage() {
         <div className={styles.header}>
           <button className={styles.backLink} style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer' }} onClick={() => router.push('/my-jobs')}>
             <span className={styles.backArrow}>←</span>
-            Back to My Jobs
+            Back to Manage Job Ads
           </button>
 
           <div className={styles.jobInfo}>
@@ -684,7 +684,7 @@ export default function JobApplicationsPage() {
                 📋 Copy Job Link
               </button>
               <button className={styles.backBtn} onClick={() => router.push('/my-jobs')}>
-                Back to My Jobs
+                Back to Manage Job Ads
               </button>
             </div>
           </div>
