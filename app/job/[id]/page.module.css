@@ -155,24 +155,28 @@
 
 .headerDetails {
   margin-top: 0.75rem;
+  width: 100%;
+  text-align: left;
 }
 
 .headerMeta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.25rem;
   margin-bottom: 0.5rem;
-  align-items: center;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .locationLink {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.375rem;
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   transition: color 0.2s;
+  align-self: flex-start;
 }
 
 .locationLink:hover {
@@ -187,6 +191,8 @@
   font-size: 1rem;
   font-weight: 700;
   color: #FFD700;
+  align-self: flex-start;
+  text-align: left;
 }
 
 .badges {
