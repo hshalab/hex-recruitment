@@ -136,32 +136,51 @@
 }
 
 /* ── Quick Action Bar (above fold) ────────────────────── */
-.quickActionBar {
-  display: flex;
-  gap: 0.5rem;
+.statsSummary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
   margin-bottom: 1.25rem;
-  flex-wrap: wrap;
 }
-.quickActionBarBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  background: var(--dark-gray);
-  color: var(--white);
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background 0.15s;
-  white-space: nowrap;
+
+.statCard {
+  background: var(--white);
+  border: 1px solid var(--border-gray);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  transition: box-shadow 0.15s, border-color 0.15s;
 }
-.quickActionBarBtn:first-child {
-  background: var(--primary-yellow);
+.statCard:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+  border-color: #d1d5db;
+}
+
+.statValue {
+  font-size: 1.75rem;
+  font-weight: 700;
   color: var(--text-dark);
+  line-height: 1;
 }
-.quickActionBarBtn:hover {
-  opacity: 0.9;
+
+.statLabel {
+  font-size: 0.8rem;
+  color: var(--text-gray);
+  font-weight: 500;
+}
+
+.statBadge {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  background: var(--primary-yellow);
+  color: var(--black);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: fit-content;
 }
 
 /* ── Stale applications nudge ────────────────────────── */
@@ -481,78 +500,6 @@
   color: #94a3b8;
 }
 
-/* ── Quick actions ───────────────────────────────────── */
-.quickActions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.quickAction {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--border-gray);
-  border-left: 3px solid transparent;
-  border-radius: 10px;
-  text-decoration: none;
-  color: var(--black);
-  transition: all 0.2s ease;
-}
-
-.quickAction:hover {
-  border-left-color: #FFD700;
-  background: #fffdf5;
-  transform: translateX(3px);
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.1);
-}
-
-.quickActionIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.15rem;
-  flex-shrink: 0;
-}
-
-.quickActionIconYellow { background: #fef9e7; }
-.quickActionIconBlue { background: #eff6ff; }
-.quickActionIconGreen { background: #f0fdf4; }
-.quickActionIconPurple { background: #f5f3ff; }
-
-.quickActionText {
-  flex: 1;
-}
-
-.quickActionTitle {
-  display: block;
-  font-size: 0.88rem;
-  font-weight: 600;
-}
-
-.quickActionDesc {
-  display: block;
-  font-size: 0.72rem;
-  color: var(--text-gray);
-  font-weight: 400;
-  margin-top: 0.1rem;
-}
-
-.quickActionArrow {
-  color: #cbd5e1;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-}
-
-.quickAction:hover .quickActionArrow {
-  color: #b8860b;
-  transform: translateX(2px);
-}
-
 /* ── Active jobs list ────────────────────────────────── */
 .jobList {
   display: flex;
@@ -863,12 +810,6 @@
   /* Application cards */
   .appCard { padding: 0.5rem 0.65rem; }
   .appCardInfo h4 { font-size: 0.82rem; }
-
-  /* Quick actions */
-  .quickAction { padding: 0.65rem 0.75rem; gap: 0.65rem; }
-  .quickActionIcon { width: 34px; height: 34px; font-size: 0.95rem; }
-  .quickActionTitle { font-size: 0.82rem; }
-  .quickActionDesc { font-size: 0.68rem; }
 
   /* Messages */
   .msgItem { overflow: hidden; }

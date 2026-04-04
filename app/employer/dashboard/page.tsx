@@ -70,12 +70,6 @@ function getPipelineStyle(status: string): string {
   return 'pipelineCountYellow'
 }
 
-const QUICK_ACTIONS = [
-  { href: '/post-job', icon: '\u2795', iconStyle: 'quickActionIconYellow', title: 'Post New Job', desc: 'Create a new job listing' },
-  { href: '/candidates', icon: '\uD83D\uDC64', iconStyle: 'quickActionIconBlue', title: 'Browse Candidates', desc: 'Find the right talent' },
-  { href: '/dashboard/analytics', icon: '\uD83D\uDCC8', iconStyle: 'quickActionIconGreen', title: 'View Analytics', desc: 'Track your performance' },
-  { href: '/messages', icon: '\uD83D\uDCAC', iconStyle: 'quickActionIconPurple', title: 'Messages', desc: 'Chat with candidates' },
-] as const
 
 // ── Skeleton placeholder ────────────────────────────────
 function SkeletonCard({ height = 120 }: { height?: number }) {
@@ -400,14 +394,33 @@ export default function EmployerDashboardPage() {
           </div>
         </div>
 
-        {/* ── QUICK ACTION BUTTONS (above fold) ───────── */}
-        <div className={styles.quickActionBar}>
-          {QUICK_ACTIONS.map(action => (
-            <Link key={action.href} href={action.href} className={styles.quickActionBarBtn}>
-              <span>{action.icon}</span>
-              <span>{action.title === 'Messages' && totalUnreadCount > 0 ? `${action.title} (${totalUnreadCount})` : action.title}</span>
-            </Link>
-          ))}
+        {/* ── STATS SUMMARY ────────────────────────── */}
+        <div className={styles.statsSummary}>
+          <div className={styles.statCard} onClick={() => router.push('/my-jobs')} style={{ cursor: 'pointer' }}>
+            <span className={styles.statValue}>{activeJobs}</span>
+            <span className={styles.statLabel}>Active Jobs</span>
+            {newJobsThisWeek > 0 && (
+              <span className={styles.statBadge}>+{newJobsThisWeek} this week</span>
+            )}
+          </div>
+          <div className={styles.statCard} onClick={() => router.push('/my-jobs')} style={{ cursor: 'pointer' }}>
+            <span className={styles.statValue}>{totalApplications}</span>
+            <span className={styles.statLabel}>Total Applications</span>
+            {newAppsThisWeek > 0 && (
+              <span className={styles.statBadge}>+{newAppsThisWeek} this week</span>
+            )}
+          </div>
+          <div className={styles.statCard} onClick={() => router.push('/my-jobs?filter=interviewing')} style={{ cursor: 'pointer' }}>
+            <span className={styles.statValue}>{statusCounts['interviewing'] || 0}</span>
+            <span className={styles.statLabel}>Interviewing</span>
+          </div>
+          <div className={styles.statCard} onClick={() => router.push('/messages')} style={{ cursor: 'pointer' }}>
+            <span className={styles.statValue}>{totalUnreadCount || 0}</span>
+            <span className={styles.statLabel}>Unread Messages</span>
+            {totalUnreadCount > 0 && (
+              <span className={styles.statBadge}>New</span>
+            )}
+          </div>
         </div>
 
         {/* ── GETTING STARTED CHECKLIST ───────────────── */}
@@ -605,31 +618,6 @@ export default function EmployerDashboardPage() {
 
           {/* ════════════════ RIGHT COLUMN ════════════════ */}
           <div className={styles.colRight}>
-
-            {/* ── QUICK ACTIONS ─────────────────────────── */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Quick Actions</h2>
-              </div>
-              <div className={styles.cardBody}>
-                <div className={styles.quickActions}>
-                  {QUICK_ACTIONS.map(action => (
-                    <Link key={action.href} href={action.href} className={styles.quickAction}>
-                      <div className={`${styles.quickActionIcon} ${styles[action.iconStyle]}`}>{action.icon}</div>
-                      <div className={styles.quickActionText}>
-                        <span className={styles.quickActionTitle}>
-                          {action.title === 'Messages' && totalUnreadCount > 0
-                            ? `${action.title} (${totalUnreadCount})`
-                            : action.title}
-                        </span>
-                        <span className={styles.quickActionDesc}>{action.desc}</span>
-                      </div>
-                      <span className={styles.quickActionArrow}>&rarr;</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
 
             {/* ── MESSAGES ───────────────────────────────── */}
             <div className={styles.card}>
