@@ -800,8 +800,14 @@ function MyJobsContent() {
                           <span className={styles.cardDot}>·</span>
                           <span>{job.employmentType.join(', ')}</span>
                         </p>
-                        <p className={styles.cardMeta}>📍 {job.location}</p>
-                        <p className={styles.cardMeta}>Posted: {formatDate(job.postedDate)}</p>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.cardAction}
+                        >
+                          📍 {job.location}
+                        </a>
                         {job.expiresDate && (
                           <p className={styles.cardMeta}>Closes: {formatDate(job.expiresDate)}</p>
                         )}
@@ -835,7 +841,12 @@ function MyJobsContent() {
                         >
                           👥 {job.applicationCount} {job.applicationCount === 1 ? 'application' : 'applications'}
                         </button>
-                        <p className={styles.cardMeta}>👁 {job.viewCount} views</p>
+                        <button
+                          className={styles.cardAction}
+                          onClick={() => router.push(`/employer/analytics/${job.id}`)}
+                        >
+                          👁 {job.viewCount} {job.viewCount === 1 ? 'view' : 'views'}
+                        </button>
                         <button
                           className={styles.cardAction}
                           onClick={() => router.push(`/employer/analytics/${job.id}`)}
@@ -877,14 +888,17 @@ function MyJobsContent() {
                         <span className={`${styles.statusBadge} ${job.status === 'active' ? styles.statusActiveGreen : status.className}`}>
                           {status.label}
                         </span>
-                        {job.status !== 'archived' && job.status !== 'filled' && (
-                          <button
-                            className={`${styles.boostBtn} ${jobBoosts[job.id] ? styles.boostBtnActive : ''}`}
-                            onClick={() => { setBoostTargetJob(job); setBoostModalOpen(true) }}
-                          >
-                            ⚡ {jobBoosts[job.id] ? 'Boosted' : 'Boost'}
-                          </button>
-                        )}
+                        <div className={styles.cardBottomRight}>
+                          <span className={styles.postedDate}>Posted {formatDate(job.postedDate)}</span>
+                          {job.status !== 'archived' && job.status !== 'filled' && (
+                            <button
+                              className={`${styles.boostBtn} ${jobBoosts[job.id] ? styles.boostBtnActive : ''}`}
+                              onClick={() => { setBoostTargetJob(job); setBoostModalOpen(true) }}
+                            >
+                              ⚡ {jobBoosts[job.id] ? 'Boosted' : 'Boost'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )
