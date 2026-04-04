@@ -588,7 +588,8 @@ function JobsPageContent() {
 
   const closeJobModal = () => {
     setSelectedJob(null)
-    router.push('/jobs', { scroll: false })
+    const fromParam = searchParams.get('from')
+    router.push(fromParam === 'my-jobs' ? '/my-jobs' : '/jobs', { scroll: false })
   }
 
   const navigateToJob = (direction: 'prev' | 'next') => {
