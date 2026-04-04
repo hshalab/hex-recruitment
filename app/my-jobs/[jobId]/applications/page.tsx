@@ -996,16 +996,6 @@ export default function JobApplicationsPage() {
                           Email
                         </a>
                       )}
-                      {application.candidateCv && (
-                        <a
-                          href={application.candidateCv}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.barBtn}
-                        >
-                          View CV
-                        </a>
-                      )}
                       <button
                         className={styles.barBtnCalendar}
                         onClick={() => handleScheduleInterview(application)}

@@ -376,15 +376,13 @@
 
 /* Action Bar */
 .actionBar {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #f0f0f0;
   display: flex;
-  gap: 0.5rem;
   flex-wrap: wrap;
-  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 
+/* Base style for all action bar buttons */
 .barBtn,
 .barBtnCalendar,
 .barBtnOffer,
@@ -392,78 +390,71 @@
 .barBtnReject,
 .barBtnReset {
   padding: 0.5rem 1rem;
-  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
+  border-radius: 8px;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.2s;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
   border: none;
+  transition: background 0.15s;
 }
 
-/* Email / View CV — black */
+/* Email — dark */
 .barBtn {
-  background: #1a1a1a;
-  color: white;
+  background: var(--dark-gray);
+  color: var(--white);
 }
-
 .barBtn:hover {
   background: #333;
 }
 
-/* Calendar Invite — yellow */
+/* Schedule Interview — yellow */
 .barBtnCalendar {
-  background: #FFCC00;
-  color: #1a1a1a;
+  background: var(--primary-yellow);
+  color: var(--black);
+}
+.barBtnCalendar:hover {
+  background: var(--hover-yellow);
 }
 
-.barBtnCalendar:hover {
-  background: #e6b800;
+/* Shortlist — blue */
+.barBtnShortlist {
+  background: #3b82f6;
+  color: #fff;
+}
+.barBtnShortlist:hover {
+  background: #2563eb;
 }
 
 /* Make Offer — green */
 .barBtnOffer {
-  background: #22c55e;
-  color: white;
-}
-
-.barBtnOffer:hover {
   background: #16a34a;
+  color: #fff;
+}
+.barBtnOffer:hover {
+  background: #15803d;
 }
 
-/* Shortlist — green */
-.barBtnShortlist {
-  background: #059669;
-  color: white;
-  border: 1px solid #059669;
-}
-
-.barBtnShortlist:hover {
-  background: #047857;
-  border-color: #047857;
-}
-
-/* Reject — white with red border */
+/* Reject — outlined red */
 .barBtnReject {
-  background: white;
-  color: #ef4444;
-  border: 1px solid #ef4444;
+  background: transparent;
+  color: #dc2626;
+  border: 1.5px solid #fca5a5;
 }
-
 .barBtnReject:hover {
   background: #fef2f2;
 }
 
-/* Reset Status — gray */
+/* Reset Status — outlined gray */
 .barBtnReset {
-  background: white;
+  background: transparent;
   color: #6b7280;
-  border: 1px solid #e5e7eb;
+  border: 1.5px solid #e5e7eb;
 }
-
 .barBtnReset:hover {
   background: #f9fafb;
   border-color: #d1d5db;
@@ -660,10 +651,11 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.15s;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
   border: none;
   background: #16a34a;
   color: white;
