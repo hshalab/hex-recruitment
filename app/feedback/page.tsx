@@ -108,7 +108,7 @@ export default function FeedbackPage() {
 
   if (loading) {
     return (
-      <main>
+      <main className={styles.page}>
         <Header />
         <div className={styles.container}>
           <div className={styles.loading}>Loading...</div>
@@ -119,7 +119,7 @@ export default function FeedbackPage() {
 
   if (submitted) {
     return (
-      <main>
+      <main className={styles.page}>
         <Header />
         <div className={styles.container}>
           <div className={styles.successCard}>
@@ -133,7 +133,7 @@ export default function FeedbackPage() {
   }
 
   return (
-    <main>
+    <main className={styles.page}>
       <Header />
       <div className={styles.container}>
         <button className={styles.backBtn} onClick={() => router.back()}>

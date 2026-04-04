@@ -1,6 +1,7 @@
 /* Messages Page Layout */
 .container {
-  min-height: 100vh;
+  min-height: unset;
+  height: calc(100dvh - var(--nav-height));
   background: var(--light-gray);
 }
 
@@ -811,7 +812,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: calc(100dvh - var(--nav-height));
   font-size: 1.1rem;
   color: var(--text-gray);
 }

@@ -1,7 +1,11 @@
+.page {
+  min-height: unset;
+}
+
 .container {
-  max-width: 640px;
+  max-width: 680px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  padding: 1.5rem 1rem 3rem;
 }
 
 .loading {
