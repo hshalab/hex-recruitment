@@ -1,13 +1,4 @@
 // UK Postcode lookup using postcodes.io API (free, no API key required)
-// + Ideal Postcodes for individual street addresses (API key required)
-
-export interface StreetAddress {
-  line1: string
-  line2: string
-  city: string
-  county: string
-  postcode: string
-}
 
 export interface PostcodeResult {
   postcode: string
@@ -172,25 +163,3 @@ export async function autocompletePostcode(partial: string): Promise<string[]> {
   }
 }
 
-// Lookup individual street addresses via Ideal Postcodes (server-side proxy)
-export async function lookupAddresses(postcode: string): Promise<StreetAddress[]> {
-  const normalized = normalizePostcode(postcode)
-  if (!isValidPostcodeFormat(normalized)) {
-    return []
-  }
-
-  try {
-    const url = `/api/address-lookup?postcode=${encodeURIComponent(normalized)}`
-    const response = await fetch(url)
-
-    if (!response.ok) {
-      return []
-    }
-
-    const data = await response.json()
-    return data.addresses || []
-  } catch (error) {
-    console.error('[AddressLookup] Error:', error)
-    return []
-  }
-}
