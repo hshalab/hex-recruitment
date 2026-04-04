@@ -896,6 +896,20 @@
     padding-left: 56px;
   }
 
+  /* Prevent hamburger overlapping the job header banner */
+  :global(body[data-sidebar]) .jobHeader {
+    padding-left: 56px;
+  }
+
+  /* Also apply to pages with candidate sidebar */
+  :global(body[data-candidate-sidebar]) .jobHeader {
+    padding-left: 56px;
+  }
+
+  :global(body[data-candidate-sidebar]) .container {
+    padding-left: 56px;
+  }
+
   .jobHeader {
     padding: 1.5rem 1.25rem;
   }

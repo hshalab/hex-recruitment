@@ -73,7 +73,11 @@ export default function CandidateSidebar() {
   useEffect(() => {
     if (!mounted) return
     document.body.setAttribute('data-sidebar', collapsed ? 'collapsed' : 'expanded')
-    return () => { document.body.removeAttribute('data-sidebar') }
+    document.body.setAttribute('data-candidate-sidebar', 'true')
+    return () => {
+      document.body.removeAttribute('data-sidebar')
+      document.body.removeAttribute('data-candidate-sidebar')
+    }
   }, [collapsed, mounted])
 
   const toggleCollapsed = () => {
