@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useState, useEffect, useMemo } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
@@ -72,6 +72,7 @@ function JobAnalyticsSkeleton() {
 function JobAnalyticsContent() {
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const jobId = params.jobId as string
 
   const [loading, setLoading] = useState(true)
@@ -287,7 +288,9 @@ function JobAnalyticsContent() {
         <div className={styles.container}>
           <div className={styles.emptyState}>
             <p>Job not found.</p>
-            <Link href="/dashboard/analytics" className={styles.backLink}>Back to Dashboard</Link>
+            <button className={styles.backLink} onClick={() => router.push(searchParams?.get('from') === 'my-jobs' ? '/my-jobs' : '/dashboard/analytics')}>
+              Back to {searchParams?.get('from') === 'my-jobs' ? 'Manage Job Ads' : 'Analytics Dashboard'}
+            </button>
           </div>
         </div>
       </main>
@@ -300,12 +303,16 @@ function JobAnalyticsContent() {
 
       <div className={styles.container}>
         {/* Back link + Job header */}
-        <Link href="/dashboard/analytics" className={styles.backLink}>
+        <button className={styles.backLink} onClick={() => {
+          const from = searchParams?.get('from')
+          if (from === 'my-jobs') router.push('/my-jobs')
+          else router.push('/dashboard/analytics')
+        }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Back to Dashboard
-        </Link>
+          {searchParams?.get('from') === 'my-jobs' ? 'Back to Manage Job Ads' : 'Back to Analytics Dashboard'}
+        </button>
 
         <div className={styles.jobHeader}>
           <div>

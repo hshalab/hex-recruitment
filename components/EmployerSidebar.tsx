@@ -52,11 +52,25 @@ export default function EmployerSidebar() {
     return () => window.removeEventListener('resize', update)
   }, [mounted])
 
+  const isDetailPage =
+    pathname?.startsWith('/job/') ||
+    pathname?.startsWith('/candidates/') ||
+    pathname?.startsWith('/company/') ||
+    pathname?.startsWith('/employer/analytics/') ||
+    pathname?.startsWith('/my-jobs/') ||
+    pathname?.startsWith('/reviews/') ||
+    pathname === '/post-job' ||
+    (pathname === '/jobs' && searchParams.has('id'))
+
   useEffect(() => {
     if (!mounted) return
+    if (isDetailPage) {
+      document.body.removeAttribute('data-sidebar')
+      return () => {}
+    }
     document.body.setAttribute('data-sidebar', collapsed ? 'collapsed' : 'expanded')
     return () => { document.body.removeAttribute('data-sidebar') }
-  }, [collapsed, mounted])
+  }, [collapsed, mounted, isDetailPage])
 
   const toggleCollapsed = () => {
     const next = !collapsed
@@ -200,15 +214,7 @@ export default function EmployerSidebar() {
     return false
   }
 
-  const hideHamburger =
-    pathname?.startsWith('/job/') ||
-    pathname?.startsWith('/candidates/') ||
-    pathname?.startsWith('/company/') ||
-    pathname?.startsWith('/employer/analytics/') ||
-    pathname?.startsWith('/my-jobs/') ||
-    pathname?.startsWith('/reviews/') ||
-    pathname === '/post-job' ||
-    (pathname === '/jobs' && searchParams.has('id'))
+  const hideHamburger = isDetailPage
 
   if (!mounted) return null
 
