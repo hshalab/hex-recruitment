@@ -180,14 +180,14 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
   )
 }
 
-// ── Applicant avatar slider (non-passive touch) ──
+// ── Applicant card slider (non-passive touch, pipeline-style cards) ──
 function ApplicantSlider({ apps, totalApplications, styles }: {
   apps: any[]
   totalApplications: number
   styles: Record<string, string>
 }) {
-  const CARD_W = 90
-  const maxOffset = Math.max(0, (apps.length - 3.2) * CARD_W)
+  const CARD_W = 163
+  const maxOffset = Math.max(0, (apps.length - 2.2) * CARD_W)
   const trackRef = React.useRef<HTMLDivElement>(null)
   const state = React.useRef({ offset: 0, startX: 0, startY: 0, startOffset: 0, lastX: 0, lastT: 0, vel: 0, isHoriz: null as boolean | null, didMove: false, rafId: 0 })
 
@@ -246,34 +246,56 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
 
   const avatarColors = ['#06b6d4','#8b5cf6','#10b981','#f59e0b','#3b82f6','#ec4899','#14b8a6','#e11d48']
   const getInitials = (name: string) => name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
-  const statusDot: Record<string, string> = { pending: '#f59e0b', reviewing: '#3b82f6', shortlisted: '#8b5cf6', interview: '#06b6d4', offered: '#10b981', hired: '#16a34a', rejected: '#ef4444' }
+  const statusColors: Record<string, { bg: string; text: string }> = {
+    pending:     { bg: '#fef3c7', text: '#92400e' },
+    reviewing:   { bg: '#dbeafe', text: '#1e40af' },
+    shortlisted: { bg: '#ede9fe', text: '#5b21b6' },
+    interview:   { bg: '#cffafe', text: '#0e7490' },
+    offered:     { bg: '#d1fae5', text: '#065f46' },
+    hired:       { bg: '#dcfce7', text: '#14532d' },
+    rejected:    { bg: '#fee2e2', text: '#991b1b' },
+  }
+  const statusLabels: Record<string, string> = {
+    pending: 'Applied', reviewing: 'Reviewing', shortlisted: 'Shortlisted',
+    interview: 'Interview', offered: 'Offered', hired: 'Hired', rejected: 'Rejected',
+  }
 
   return (
     <div>
-      <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: '0 0 1rem', fontWeight: 500 }}>
+      <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: '0 0 0.75rem', fontWeight: 500 }}>
         {totalApplications} total application{totalApplications !== 1 ? 's' : ''}
       </p>
-      <div style={{ overflow: 'hidden', margin: '0 -0.5rem', padding: '0 0.5rem' }}>
-        <div ref={trackRef} style={{ display: 'flex', gap: '0.25rem', willChange: 'transform' }}>
+      <div style={{ overflow: 'hidden', margin: '0 -1rem', padding: '0 1rem' }}>
+        <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform' }}>
           {apps.map((app, i) => {
             const initials = getInitials(app.candidate_name || 'C')
             const bgColor = avatarColors[i % avatarColors.length]
-            const dot = statusDot[app.status] || '#6b7280'
+            const sc = statusColors[app.status] || { bg: '#f3f4f6', text: '#374151' }
+            const label = statusLabels[app.status] || app.status
             return (
-              <div key={app.id} style={{ flex: '0 0 82px', textAlign: 'center', padding: '0.25rem 0' }}>
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#fff', overflow: 'hidden' }}>
+              <div key={app.id} style={{ flex: '0 0 155px', minWidth: 155, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
                     {app.candidate_photo
                       ? <img src={app.candidate_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : initials}
                   </div>
-                  <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: dot, border: '2px solid #fff' }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {(app.candidate_name || 'Candidate').split(' ')[0]}
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {app.job_title || ''}
+                    </div>
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.68rem', fontWeight: 600, color: '#1e293b', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {(app.candidate_name || 'Candidate').split(' ')[0]}
+                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>
+                  {formatRelativeTime(app.created_at)}
                 </div>
-                <div style={{ fontSize: '0.58rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {app.job_title || ''}
+                <div>
+                  <span style={{ display: 'inline-block', fontSize: '0.6rem', fontWeight: 600, padding: '0.1rem 0.4rem', borderRadius: 4, background: sc.bg, color: sc.text }}>
+                    {label}
+                  </span>
                 </div>
               </div>
             )
