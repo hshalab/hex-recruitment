@@ -180,17 +180,16 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
   )
 }
 
-// ── Applicant card slider (non-passive touch, pipeline-style cards) ──
+// ── Applicant card slider (larger cards with city/salary/availability) ──
 function ApplicantSlider({ apps, totalApplications, styles }: {
   apps: any[]
   totalApplications: number
   styles: Record<string, string>
 }) {
-  const CARD_W = 163
-  const maxOffset = Math.max(0, (apps.length - 2.2) * CARD_W)
+  const CARD_W = 210
+  const maxOffset = Math.max(0, (apps.length - 1.7) * CARD_W)
   const trackRef = React.useRef<HTMLDivElement>(null)
   const state = React.useRef({ offset: 0, startX: 0, startY: 0, startOffset: 0, lastX: 0, lastT: 0, vel: 0, isHoriz: null as boolean | null, didMove: false, rafId: 0 })
-
   const clamp = (v: number) => Math.max(0, Math.min(maxOffset, v))
   const setTransform = (x: number) => { if (trackRef.current) trackRef.current.style.transform = `translateX(-${x}px)` }
   const snapTo = (target: number) => {
@@ -204,7 +203,6 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
     }
     state.current.rafId = requestAnimationFrame(step)
   }
-
   React.useEffect(() => {
     const el = trackRef.current
     if (!el) return
@@ -218,30 +216,19 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
     const onMove = (e: TouchEvent) => {
       const dx = s.startX - e.touches[0].clientX
       const dy = s.startY - e.touches[0].clientY
-      if (s.isHoriz === null) {
-        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
-        s.isHoriz = Math.abs(dx) > Math.abs(dy) * 1.2
-      }
+      if (s.isHoriz === null) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; s.isHoriz = Math.abs(dx) > Math.abs(dy) * 1.2 }
       if (!s.isHoriz) return
-      e.preventDefault()
-      s.didMove = true
+      e.preventDefault(); s.didMove = true
       const now = Date.now(); const dt = now - s.lastT
       if (dt > 0) s.vel = (s.lastX - e.touches[0].clientX) / dt
       s.lastX = e.touches[0].clientX; s.lastT = now
       s.offset = clamp(s.startOffset + dx); setTransform(s.offset)
     }
-    const onEnd = () => {
-      if (!s.isHoriz || !s.didMove) return
-      snapTo(s.offset + s.vel * 120)
-    }
+    const onEnd = () => { if (!s.isHoriz || !s.didMove) return; snapTo(s.offset + s.vel * 120) }
     el.addEventListener('touchstart', onStart, { passive: true })
     el.addEventListener('touchmove', onMove, { passive: false })
     el.addEventListener('touchend', onEnd, { passive: true })
-    return () => {
-      el.removeEventListener('touchstart', onStart)
-      el.removeEventListener('touchmove', onMove)
-      el.removeEventListener('touchend', onEnd)
-    }
+    return () => { el.removeEventListener('touchstart', onStart); el.removeEventListener('touchmove', onMove); el.removeEventListener('touchend', onEnd) }
   }, [maxOffset])
 
   const avatarColors = ['#06b6d4','#8b5cf6','#10b981','#f59e0b','#3b82f6','#ec4899','#14b8a6','#e11d48']
@@ -259,6 +246,14 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
     pending: 'Applied', reviewing: 'Reviewing', shortlisted: 'Shortlisted',
     interview: 'Interview', offered: 'Offered', hired: 'Hired', rejected: 'Rejected',
   }
+  const fmtSalary = (min: any, max: any, period: string) => {
+    if (!min && !max) return null
+    const fmt = (n: number) => n >= 1000 ? `£${Math.round(n / 1000)}k` : `£${n}`
+    const suffix = period === 'hour' ? '/hr' : '/yr'
+    if (min && max) return `${fmt(Number(min))}–${fmt(Number(max))}${suffix}`
+    if (min) return `${fmt(Number(min))}+${suffix}`
+    return `Up to ${fmt(Number(max))}${suffix}`
+  }
 
   return (
     <div>
@@ -272,28 +267,53 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
             const bgColor = avatarColors[i % avatarColors.length]
             const sc = statusColors[app.status] || { bg: '#f3f4f6', text: '#374151' }
             const label = statusLabels[app.status] || app.status
+            const salary = fmtSalary(app.candidate_salary_min, app.candidate_salary_max, app.candidate_salary_period)
             return (
-              <div key={app.id} style={{ flex: '0 0 155px', minWidth: 155, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
-                    {app.candidate_photo
-                      ? <img src={app.candidate_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : initials}
+              <div key={app.id} style={{ flex: '0 0 200px', minWidth: 200, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                {/* Avatar + name row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 700, color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
+                    {app.candidate_photo ? <img src={app.candidate_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {(app.candidate_name || 'Candidate').split(' ')[0]}
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {app.candidate_name || 'Candidate'}
                     </div>
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {app.job_title || ''}
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>
-                  {formatRelativeTime(app.created_at)}
+                {/* Divider */}
+                <div style={{ height: 1, background: '#f1f5f9', margin: '0.15rem 0' }} />
+                {/* Data rows */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                  {app.candidate_city && (
+                    <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span>📍</span>
+                      <span>{app.candidate_city}</span>
+                    </div>
+                  )}
+                  {salary && (
+                    <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span>💷</span>
+                      <span>{salary}</span>
+                    </div>
+                  )}
+                  {app.candidate_availability && (
+                    <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span>⏱</span>
+                      <span>{app.candidate_availability}</span>
+                    </div>
+                  )}
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <span>🕐</span>
+                    <span>{formatRelativeTime(app.created_at)}</span>
+                  </div>
                 </div>
-                <div>
-                  <span style={{ display: 'inline-block', fontSize: '0.6rem', fontWeight: 600, padding: '0.1rem 0.4rem', borderRadius: 4, background: sc.bg, color: sc.text }}>
+                {/* Status badge */}
+                <div style={{ marginTop: '0.1rem' }}>
+                  <span style={{ display: 'inline-block', fontSize: '0.62rem', fontWeight: 600, padding: '0.12rem 0.45rem', borderRadius: 4, background: sc.bg, color: sc.text }}>
                     {label}
                   </span>
                 </div>
@@ -575,17 +595,27 @@ export default function EmployerDashboardPage() {
                   try {
                     const { data: profiles } = await supabase
                       .from('candidate_profiles')
-                      .select('user_id, full_name, profile_picture_url')
+                      .select('user_id, full_name, profile_picture_url, city, availability, salary_min, salary_max, salary_period')
                       .in('user_id', candidateIds)
 
                     if (profiles) {
                       const nameMap: Record<string, string> = {}
                       const photoMap: Record<string, string | null> = {}
-                      profiles.forEach((p: any) => { nameMap[p.user_id] = p.full_name; photoMap[p.user_id] = p.profile_picture_url || null })
+                      const profileExtras: Record<string, any> = {}
+                      profiles.forEach((p: any) => {
+                        nameMap[p.user_id] = p.full_name
+                        photoMap[p.user_id] = p.profile_picture_url || null
+                        profileExtras[p.user_id] = { city: p.city, availability: p.availability, salary_min: p.salary_min, salary_max: p.salary_max, salary_period: p.salary_period }
+                      })
                       setApplications(prev => prev.map(a => ({
                         ...a,
                         candidate_name: nameMap[a.candidate_id] || 'Candidate',
                         candidate_photo: photoMap[a.candidate_id] || null,
+                        candidate_city: profileExtras[a.candidate_id]?.city || null,
+                        candidate_availability: profileExtras[a.candidate_id]?.availability || null,
+                        candidate_salary_min: profileExtras[a.candidate_id]?.salary_min || null,
+                        candidate_salary_max: profileExtras[a.candidate_id]?.salary_max || null,
+                        candidate_salary_period: profileExtras[a.candidate_id]?.salary_period || 'year',
                       })))
                     }
                   } catch { /* candidate_profiles may not exist */ }
