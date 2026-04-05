@@ -250,7 +250,7 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
 
   return (
     <div>
-      <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.5rem 0 0.4rem' }}>
+      <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: '0 0 1rem', fontWeight: 500 }}>
         {totalApplications} total application{totalApplications !== 1 ? 's' : ''}
       </p>
       <div style={{ overflow: 'hidden', margin: '0 -0.5rem', padding: '0 0.5rem' }}>
@@ -797,7 +797,16 @@ export default function EmployerDashboardPage() {
                   }
                   return <PipelineSlider stages={stages} stageColors={stageColors} statusCounts={statusCounts} candidatesByStage={candidatesByStage} styles={styles} />
                 })()}
+              </div>
+            </div>
 
+            {/* ── RECENT APPLICANTS ───────────────────────── */}
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>Recent Applicants</h2>
+                <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
+              </div>
+              <div className={styles.cardBody}>
                 {applications.length > 0 ? (
                   <ApplicantSlider apps={recentApps} totalApplications={totalApplications} styles={styles} />
                 ) : (
