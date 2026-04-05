@@ -282,78 +282,47 @@
 }
 
 /* ── Application pipeline ────────────────────────────── */
-.pipelineWrap {
-  position: relative;
-  padding: 0.5rem 0;
-}
-
-/* Gradient connecting track */
-.pipelineTrack {
-  position: absolute;
-  top: 50%;
-  left: 5%;
-  right: 5%;
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    #fef3c7 0%,
-    #dbeafe 30%,
-    #d1fae5 60%,
-    #fee2e2 100%
-  );
-  border-radius: 2px;
-  transform: translateY(-50%);
-  z-index: 0;
-}
-
-.pipeline {
+/* ── Swipeable pipeline cards ────────────────────────── */
+.pipelineScroller {
   display: flex;
-  gap: 0;
-  position: relative;
-  z-index: 1;
-  flex-wrap: wrap;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0.25rem 0 0.75rem;
+  margin: 0 -0.25rem;
 }
+.pipelineScroller::-webkit-scrollbar { display: none; }
 
-.pipelineStage {
-  flex: 1;
-  min-width: 0;
-  text-align: center;
-  padding: 0.5rem 0.15rem;
+.pipelineCard {
+  flex: 0 0 160px;
+  scroll-snap-align: start;
+  background: var(--white);
+  border: 1px solid var(--border-gray);
+  border-top: 3px solid;
+  border-radius: 10px;
+  padding: 0.875rem;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: box-shadow 0.15s;
+  min-height: 120px;
 }
+.pipelineCard:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
-.pipelineCount {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 26px;
-  border-radius: 13px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  margin-bottom: 0.3rem;
-  padding: 0 0.5rem;
-  transition: all 0.2s ease;
-}
+.pipelineCardTop { display: flex; align-items: baseline; gap: 0.5rem; }
+.pipelineCardCount { font-size: 1.75rem; font-weight: 700; line-height: 1; }
+.pipelineCardStage { font-size: 0.75rem; font-weight: 600; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.03em; }
 
-.pipelineCountActive {
-  transform: scale(1.1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-}
-
-.pipelineCountYellow { background: #fef3c7; color: #92400e; }
-.pipelineCountBlue { background: #dbeafe; color: #1d4ed8; }
-.pipelineCountGreen { background: #d1fae5; color: #16a34a; }
-.pipelineCountRed { background: #fee2e2; color: #dc2626; }
-.pipelineCountMuted { background: #f1f5f9; color: #94a3b8; }
-
-.pipelineLabel {
-  display: block;
-  font-size: 0.62rem;
-  font-weight: 600;
-  color: var(--text-gray);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
+.pipelineCardCandidates { display: flex; flex-direction: column; gap: 0.2rem; }
+.pipelineCardCandidate { display: flex; flex-direction: column; }
+.pipelineCardName { font-size: 0.78rem; font-weight: 600; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pipelineCardJob { font-size: 0.68rem; color: var(--text-gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pipelineCardEmpty { font-size: 0.75rem; color: #cbd5e1; font-style: italic; }
+.pipelineCardMore { font-size: 0.7rem; color: var(--text-gray); margin-top: 0.1rem; }
 
 .previewLabel {
   font-size: 0.75rem;
@@ -708,19 +677,6 @@
   .welcomeLeft { gap: 0.75rem; }
   .welcomeDate { display: none; }
 
-  /* Pipeline */
-  .pipelineWrap { overflow: visible; }
-  .pipelineTrack { display: none; }
-  .pipeline {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.25rem;
-  }
-  .pipelineStage { width: auto; padding: 0.35rem 0; }
-  .pipelineCount { min-width: 0; height: 22px; font-size: 0.7rem; padding: 0 0.35rem; }
-  .pipelineCountActive { transform: none; box-shadow: none; }
-  .pipelineLabel { font-size: 0.6rem; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
   /* Grid & cards */
   .grid { gap: 1rem; }
   .card { max-width: 100%; box-sizing: border-box; overflow: visible; }
@@ -751,17 +707,9 @@
   .appCard { flex-direction: column; align-items: flex-start; gap: 0.35rem; }
   .appCardRight { align-self: flex-end; }
 
-  /* Stat cards */
-  /* Pipeline: 3 per row on very small screens — hide labels, show counts only */
-  .pipeline { grid-template-columns: repeat(3, 1fr); }
-  .pipelineLabel { display: none; }
-
   .previewLabel { font-size: 0.7rem; }
 }
 
-@media (max-width: 390px) {
-  .pipelineLabel { font-size: 0.55rem; white-space: normal; }
-}
 
 @media (max-width: 375px) {
   .dashboardWrap { padding: 0.5rem; }

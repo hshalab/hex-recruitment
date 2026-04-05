@@ -62,13 +62,6 @@ function getStatusStyle(status: string): string {
   return 'statusPending'
 }
 
-function getPipelineStyle(status: string): string {
-  if (status === 'pending') return 'pipelineCountYellow'
-  if (status === 'reviewing' || status === 'shortlisted') return 'pipelineCountBlue'
-  if (status === 'interview' || status === 'offered' || status === 'hired') return 'pipelineCountGreen'
-  if (status === 'rejected') return 'pipelineCountRed'
-  return 'pipelineCountYellow'
-}
 
 
 // ── Skeleton placeholder ────────────────────────────────
@@ -300,6 +293,17 @@ export default function EmployerDashboardPage() {
     return counts
   }, [applications])
 
+  const candidatesByStage = useMemo(() => {
+    const map: Record<string, typeof applications> = {}
+    PIPELINE_STAGES.forEach(s => { map[s] = [] })
+    applications.forEach(app => {
+      const s = (app.status || 'pending').toLowerCase()
+      if (map[s]) map[s].push(app)
+      else map['pending'].push(app)
+    })
+    return map
+  }, [applications])
+
   const recentApps = useMemo(() => applications.slice(0, 5), [applications])
 
   const activeJobsList = useMemo(() =>
@@ -473,27 +477,43 @@ export default function EmployerDashboardPage() {
                 <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
               </div>
               <div className={styles.cardBody}>
-                {/* Pipeline always renders all 7 stages */}
-                <div className={styles.pipelineWrap}>
-                  <div className={styles.pipelineTrack} />
-                  <div className={styles.pipeline}>
-                    {PIPELINE_STAGES.map(s => {
-                      const count = statusCounts[s]
-                      const isActive = count > 0
-                      return (
-                        <div key={s} className={styles.pipelineStage}>
-                          <div
-                            className={`${styles.pipelineCount} ${styles[getPipelineStyle(s)]} ${isActive ? styles.pipelineCountActive : styles.pipelineCountMuted}`}
-                          >
-                            {count}
-                          </div>
-                          <span className={styles.pipelineLabel}>
-                            {STATUS_LABELS[s]}
-                          </span>
+                <div className={styles.pipelineScroller}>
+                  {PIPELINE_STAGES.filter(s => s !== 'rejected').map(s => {
+                    const count = statusCounts[s] || 0
+                    const candidates = candidatesByStage[s] || []
+                    const stageColors: Record<string, string> = {
+                      pending: '#f59e0b',
+                      reviewing: '#3b82f6',
+                      shortlisted: '#8b5cf6',
+                      interview: '#06b6d4',
+                      offered: '#10b981',
+                      hired: '#16a34a',
+                    }
+                    const color = stageColors[s] || '#6b7280'
+                    return (
+                      <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={styles.pipelineCard} style={{ borderTopColor: color }}>
+                        <div className={styles.pipelineCardTop}>
+                          <span className={styles.pipelineCardCount} style={{ color }}>{count}</span>
+                          <span className={styles.pipelineCardStage}>{STATUS_LABELS[s]}</span>
                         </div>
-                      )
-                    })}
-                  </div>
+                        <div className={styles.pipelineCardCandidates}>
+                          {candidates.length === 0 ? (
+                            <span className={styles.pipelineCardEmpty}>No candidates</span>
+                          ) : (
+                            candidates.slice(0, 3).map((app, i) => (
+                              <div key={i} className={styles.pipelineCardCandidate}>
+                                <span className={styles.pipelineCardName}>{app.candidate_name || 'Candidate'}</span>
+                                <span className={styles.pipelineCardJob}>{app.job_title || ''}</span>
+                              </div>
+                            ))
+                          )}
+                          {candidates.length > 3 && (
+                            <span className={styles.pipelineCardMore}>+{candidates.length - 3} more</span>
+                          )}
+                        </div>
+                      </Link>
+                    )
+                  })}
                 </div>
 
                 {applications.length > 0 ? (
