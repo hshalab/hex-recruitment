@@ -949,12 +949,8 @@ export default function EmployerDashboardPage() {
                 )}
               </div>
             </div>
-          </div>
 
-          {/* ════════════════ RIGHT COLUMN ════════════════ */}
-          <div className={styles.colRight}>
-
-            {/* ── MESSAGES ───────────────────────────────── */}
+            {/* ── RECENT MESSAGES ─────────────────────────── */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Recent Messages</h2>
@@ -962,26 +958,7 @@ export default function EmployerDashboardPage() {
               </div>
               <div className={styles.cardBody}>
                 {recentConversations.length > 0 ? (
-                  <div className={styles.msgList}>
-                    {recentConversations.map(conv => (
-                      <Link href="/messages" key={conv.id} className={styles.msgItem}>
-                        <div className={styles.msgAvatarWrap}>
-                          <div className={styles.msgAvatar}>
-                            {conv.participantName ? getInitials(conv.participantName) : '?'}
-                          </div>
-                          <span className={conv.unreadCount > 0 ? styles.msgOnline : styles.msgOffline} />
-                        </div>
-                        <div className={styles.msgContent}>
-                          <p className={styles.msgSender}>
-                            {conv.unreadCount > 0 && <span className={styles.unreadDot} />}
-                            {conv.participantName}
-                          </p>
-                          <p className={styles.msgPreview}>{conv.lastMessage}</p>
-                        </div>
-                        <span className={styles.msgTime}>{formatRelativeTime(conv.lastMessageAt)}</span>
-                      </Link>
-                    ))}
-                  </div>
+                  <MessagesSlider conversations={recentConversations} />
                 ) : (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128172;</div>
