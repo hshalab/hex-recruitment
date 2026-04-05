@@ -372,8 +372,8 @@ function JobSlider({ jobs }: { jobs: any[] }) {
   }, [maxOffset])
 
   return (
-    <div style={{ overflow: 'hidden', margin: '0 -0.5rem', padding: '0 0.5rem' }}>
-      <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform' }}>
+    <div style={{ overflow: 'hidden', margin: '0 -1rem', padding: '0 1rem' }}>
+      <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform', paddingRight: '2rem' }}>
         {jobs.map(job => {
           const appCount = job.application_count || 0
           const fillPct = Math.min((appCount / 20) * 100, 100)
@@ -727,7 +727,7 @@ export default function EmployerDashboardPage() {
   const recentApps = useMemo(() => applications.slice(0, 5), [applications])
 
   const activeJobsList = useMemo(() =>
-    jobsData.filter(j => j.status === 'active').slice(0, 5)
+    jobsData.filter(j => j.status === 'active').slice(0, 10)
   , [jobsData])
 
   const recentConversations = useMemo(() =>
