@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -78,6 +78,7 @@ export default function EmployerDashboardPage() {
   const { conversations, totalUnreadCount } = useMessages()
 
   const [user, setUser] = useState<any>(null)
+  const pipelineRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [companyName, setCompanyName] = useState('')
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
@@ -97,6 +98,42 @@ export default function EmployerDashboardPage() {
   // Data
   const [applications, setApplications] = useState<any[]>([])
   const [jobsData, setJobsData] = useState<any[]>([])
+
+  // ── Pipeline drag-scroll for iOS ────────────────────────
+  useEffect(() => {
+    const el = pipelineRef.current
+    if (!el) return
+    let startX = 0
+    let scrollLeft = 0
+    let isDragging = false
+    let moved = false
+
+    const onTouchStart = (e: TouchEvent) => {
+      startX = e.touches[0].clientX
+      scrollLeft = el.scrollLeft
+      isDragging = true
+      moved = false
+    }
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isDragging) return
+      const dx = startX - e.touches[0].clientX
+      if (Math.abs(dx) > 5) moved = true
+      el.scrollLeft = scrollLeft + dx
+    }
+    const onTouchEnd = () => { isDragging = false }
+    const onClickCapture = (e: Event) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false } }
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: true })
+    el.addEventListener('touchend', onTouchEnd, { passive: true })
+    el.addEventListener('click', onClickCapture, true)
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('click', onClickCapture, true)
+    }
+  }, [])
 
   // ── Load data ───────────────────────────────────────────
   useEffect(() => {
@@ -477,7 +514,7 @@ export default function EmployerDashboardPage() {
                 <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
               </div>
               <div className={styles.cardBody}>
-                <div className={styles.pipelineScroller}>
+                <div className={styles.pipelineScroller} ref={pipelineRef}>
                   {PIPELINE_STAGES.filter(s => s !== 'rejected').map(s => {
                     const count = statusCounts[s] || 0
                     const candidates = candidatesByStage[s] || []
