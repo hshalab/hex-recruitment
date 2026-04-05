@@ -403,6 +403,84 @@ function JobSlider({ jobs }: { jobs: any[] }) {
   )
 }
 
+// ── Messages slider ──
+function MessagesSlider({ conversations }: { conversations: any[] }) {
+  const CARD_W = 230
+  const maxOffset = Math.max(0, (conversations.length - 1.4) * CARD_W)
+  const trackRef = React.useRef<HTMLDivElement>(null)
+  const state = React.useRef({ offset: 0, startX: 0, startY: 0, startOffset: 0, lastX: 0, lastT: 0, vel: 0, isHoriz: null as boolean | null, didMove: false, rafId: 0 })
+  const clamp = (v: number) => Math.max(0, Math.min(maxOffset, v))
+  const setTransform = (x: number) => { if (trackRef.current) trackRef.current.style.transform = `translateX(-${x}px)` }
+  const snapTo = (target: number) => {
+    const snapped = clamp(Math.round(target / CARD_W) * CARD_W)
+    let cur = state.current.offset
+    const step = () => {
+      cur += (snapped - cur) * 0.12
+      if (Math.abs(snapped - cur) < 0.5) { state.current.offset = snapped; setTransform(snapped); return }
+      state.current.offset = cur; setTransform(cur)
+      state.current.rafId = requestAnimationFrame(step)
+    }
+    state.current.rafId = requestAnimationFrame(step)
+  }
+  React.useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const s = state.current
+    const onStart = (e: TouchEvent) => {
+      cancelAnimationFrame(s.rafId)
+      s.startX = e.touches[0].clientX; s.startY = e.touches[0].clientY
+      s.startOffset = s.offset; s.lastX = s.startX; s.lastT = Date.now()
+      s.vel = 0; s.isHoriz = null; s.didMove = false
+    }
+    const onMove = (e: TouchEvent) => {
+      const dx = s.startX - e.touches[0].clientX
+      const dy = s.startY - e.touches[0].clientY
+      if (s.isHoriz === null) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; s.isHoriz = Math.abs(dx) > Math.abs(dy) * 1.2 }
+      if (!s.isHoriz) return
+      e.preventDefault(); s.didMove = true
+      const now = Date.now(); const dt = now - s.lastT
+      if (dt > 0) s.vel = (s.lastX - e.touches[0].clientX) / dt
+      s.lastX = e.touches[0].clientX; s.lastT = now
+      s.offset = clamp(s.startOffset + dx); setTransform(s.offset)
+    }
+    const onEnd = () => { if (!s.isHoriz || !s.didMove) return; snapTo(s.offset + s.vel * 350) }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    return () => { el.removeEventListener('touchstart', onStart); el.removeEventListener('touchmove', onMove); el.removeEventListener('touchend', onEnd) }
+  }, [maxOffset])
+  const getInitials = (name: string) => (name || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+  return (
+    <div style={{ overflow: 'hidden', margin: '0 -1rem', padding: '0 1rem' }}>
+      <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform' }}>
+        {conversations.map(conv => (
+          <Link key={conv.id} href={`/messages?conversation=${conv.id}`} style={{ flex: '0 0 220px', minWidth: 220, background: conv.unreadCount > 0 ? '#fffbeb' : '#fff', border: conv.unreadCount > 0 ? '1px solid #fde68a' : '1px solid #e5e7eb', borderRadius: '12px', padding: '1rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.5rem', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ position: 'relative' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#FFE500' }}>
+                  {getInitials(conv.participantName)}
+                </div>
+                {conv.unreadCount > 0 && (
+                  <div style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: '50%', background: '#ef4444', color: '#fff', fontSize: '0.55rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
+                    {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
+                  </div>
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.participantName}</div>
+                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>{formatRelativeTime(conv.lastMessageAt)}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#64748b', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
+              {conv.lastMessage || 'No messages yet'}
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // MAIN COMPONENT
 // ═════════════════════════════════════════════════════════
 
