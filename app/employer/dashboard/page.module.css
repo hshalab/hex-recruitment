@@ -5,7 +5,7 @@
 .pageBackground {
   background: var(--light-gray);
   min-height: unset;
-  overflow-x: hidden;
+  overflow-x: clip;
   width: 100%;
 }
 
@@ -14,7 +14,7 @@
   width: 100%;
   margin: 0 auto;
   padding: 0.25rem 1.5rem 1.5rem;
-  overflow-x: hidden;
+  overflow-x: clip;
   box-sizing: border-box;
 }
 
@@ -279,6 +279,7 @@
 
 .cardBody {
   padding: 1.25rem;
+  overflow: visible;
 }
 
 /* ── Swipeable pipeline cards ────────────────────────── */
@@ -287,12 +288,14 @@
   gap: 0.75rem;
   overflow-x: auto;
   overflow-y: visible;
-  scroll-snap-type: x proximity;
+  scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
   scrollbar-width: none;
   padding: 0.5rem 1rem 1rem;
   margin: 0 -1rem;
   -webkit-transform: translateZ(0);
+  will-change: scroll-position;
 }
 .pipelineScroller::-webkit-scrollbar { display: none; }
 
