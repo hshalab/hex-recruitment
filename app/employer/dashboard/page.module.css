@@ -246,7 +246,7 @@
   background: var(--white);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .cardHeader {
@@ -287,16 +287,15 @@
   display: flex;
   gap: 0.75rem;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  padding: 0.25rem 0 0.75rem;
-  margin: 0 -0.25rem;
+  padding: 0.25rem 0.25rem 0.75rem;
 }
 .pipelineScroller::-webkit-scrollbar { display: none; }
 
 .pipelineCard {
-  flex: 0 0 160px;
+  flex: 0 0 150px;
   scroll-snap-align: start;
   background: var(--white);
   border: 1px solid var(--border-gray);
@@ -309,7 +308,8 @@
   flex-direction: column;
   gap: 0.5rem;
   transition: box-shadow 0.15s;
-  min-height: 120px;
+  min-height: 110px;
+  align-self: flex-start;
 }
 .pipelineCard:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
@@ -679,7 +679,7 @@
 
   /* Grid & cards */
   .grid { gap: 1rem; }
-  .card { max-width: 100%; box-sizing: border-box; overflow: visible; }
+  .card { max-width: 100%; box-sizing: border-box; }
   .cardHeader { padding: 0.75rem 1rem; }
   .cardBody { padding: 0.75rem; }
 
