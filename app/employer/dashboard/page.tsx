@@ -91,7 +91,7 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
     const snapped = clamp(Math.round(target / CARD_W) * CARD_W)
     let cur = state.current.offset
     const step = () => {
-      cur += (snapped - cur) * 0.2
+      cur += (snapped - cur) * 0.12
       if (Math.abs(snapped - cur) < 0.5) { state.current.offset = snapped; setTransform(snapped); return }
       state.current.offset = cur; setTransform(cur)
       state.current.rafId = requestAnimationFrame(step)
@@ -132,7 +132,7 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
         if (stage) router.push(`/my-jobs?filter=${stage === 'interview' ? 'interviewing' : stage === 'offered' ? 'offers' : stage}`)
         return
       }
-      snapTo(s.offset + s.vel * 120)
+      snapTo(s.offset + s.vel * 350)
     }
     el.addEventListener('touchstart', onStart, { passive: true })
     el.addEventListener('touchmove', onMove, { passive: false })
@@ -196,7 +196,7 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
     const snapped = clamp(Math.round(target / CARD_W) * CARD_W)
     let cur = state.current.offset
     const step = () => {
-      cur += (snapped - cur) * 0.2
+      cur += (snapped - cur) * 0.12
       if (Math.abs(snapped - cur) < 0.5) { state.current.offset = snapped; setTransform(snapped); return }
       state.current.offset = cur; setTransform(cur)
       state.current.rafId = requestAnimationFrame(step)
@@ -224,7 +224,7 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
       s.lastX = e.touches[0].clientX; s.lastT = now
       s.offset = clamp(s.startOffset + dx); setTransform(s.offset)
     }
-    const onEnd = () => { if (!s.isHoriz || !s.didMove) return; snapTo(s.offset + s.vel * 120) }
+    const onEnd = () => { if (!s.isHoriz || !s.didMove) return; snapTo(s.offset + s.vel * 350) }
     el.addEventListener('touchstart', onStart, { passive: true })
     el.addEventListener('touchmove', onMove, { passive: false })
     el.addEventListener('touchend', onEnd, { passive: true })
@@ -324,7 +324,7 @@ function JobSlider({ jobs }: { jobs: any[] }) {
     const snapped = clamp(Math.round(target / CARD_W) * CARD_W)
     let cur = state.current.offset
     const step = () => {
-      cur += (snapped - cur) * 0.2
+      cur += (snapped - cur) * 0.12
       if (Math.abs(snapped - cur) < 0.5) { state.current.offset = snapped; setTransform(snapped); return }
       state.current.offset = cur; setTransform(cur)
       state.current.rafId = requestAnimationFrame(step)
@@ -359,7 +359,7 @@ function JobSlider({ jobs }: { jobs: any[] }) {
     }
     const onEnd = () => {
       if (!s.isHoriz || !s.didMove) return
-      snapTo(s.offset + s.vel * 120)
+      snapTo(s.offset + s.vel * 350)
     }
     el.addEventListener('touchstart', onStart, { passive: true })
     el.addEventListener('touchmove', onMove, { passive: false })
