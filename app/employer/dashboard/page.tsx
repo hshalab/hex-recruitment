@@ -895,9 +895,8 @@ export default function EmployerDashboardPage() {
 
 
         <div className={styles.grid}>
-          {/* ════════════════ LEFT COLUMN ═════════════════ */}
-          <div className={styles.colLeft}>
-
+          {/* ════════════════ FULL WIDTH — pipeline + applicants ════════════════ */}
+          <div className={styles.colFull}>
             {/* ── APPLICATION PIPELINE ──────────────────── */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>
@@ -958,8 +957,10 @@ export default function EmployerDashboardPage() {
                 )}
               </div>
             </div>
+          </div>
 
-            {/* ── ACTIVE JOBS ──────────────────────────── */}
+          {/* ════════════════ LEFT COLUMN — active jobs ════════════════ */}
+          <div className={styles.colLeft}>
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Active Jobs</h2>
@@ -1011,29 +1012,9 @@ export default function EmployerDashboardPage() {
                 )}
               </div>
             </div>
-
-            {/* ── RECENT MESSAGES (mobile only) ──────────── */}
-            {isMobile && (
-              <div className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <h2 className={styles.cardTitle}>Recent Messages</h2>
-                  <Link href="/messages" className={styles.cardLink}>View All</Link>
-                </div>
-                <div className={styles.cardBody}>
-                  {recentConversations.length > 0 ? (
-                    <MessagesSlider conversations={recentConversations} />
-                  ) : (
-                    <div className={styles.emptyState}>
-                      <div className={styles.emptyIcon}>&#128172;</div>
-                      <p>No messages yet.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* ════════════════ RIGHT COLUMN (desktop) ════════════════ */}
+          {/* ════════════════ RIGHT COLUMN — messages (desktop) ════════════════ */}
           {!isMobile && (
             <div className={styles.colRight}>
               <div className={styles.card}>
@@ -1063,6 +1044,28 @@ export default function EmployerDashboardPage() {
                         </Link>
                       ))}
                     </div>
+                  ) : (
+                    <div className={styles.emptyState}>
+                      <div className={styles.emptyIcon}>&#128172;</div>
+                      <p>No messages yet.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════ MOBILE MESSAGES (full width) ════════════════ */}
+          {isMobile && (
+            <div className={styles.colFull}>
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Recent Messages</h2>
+                  <Link href="/messages" className={styles.cardLink}>View All</Link>
+                </div>
+                <div className={styles.cardBody}>
+                  {recentConversations.length > 0 ? (
+                    <MessagesSlider conversations={recentConversations} />
                   ) : (
                     <div className={styles.emptyState}>
                       <div className={styles.emptyIcon}>&#128172;</div>
