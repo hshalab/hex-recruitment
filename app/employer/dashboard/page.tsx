@@ -70,7 +70,7 @@ function SkeletonCard({ height = 120 }: { height?: number }) {
 }
 
 // ═════════════════════════════════════════════════════════
-// ── Pipeline touch slider (DOM-ref transform, zero re-renders during scroll) ──
+// ── Pipeline touch slider (non-passive touch listeners) ──
 function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, styles }: {
   stages: readonly string[]
   stageColors: Record<string, string>
@@ -83,98 +83,76 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
   const VISIBLE = 2.2
   const maxOffset = Math.max(0, (stages.length - VISIBLE) * CARD_W)
   const trackRef = React.useRef<HTMLDivElement>(null)
-  const offset = React.useRef(0)
-  const touchStartX = React.useRef(0)
-  const touchStartY = React.useRef(0)
-  const touchStartOffset = React.useRef(0)
-  const isHoriz = React.useRef<boolean | null>(null)
-  const lastX = React.useRef(0)
-  const lastT = React.useRef(0)
-  const velocity = React.useRef(0)
-  const rafId = React.useRef(0)
-  const didMove = React.useRef(false)
+  const state = React.useRef({ offset: 0, startX: 0, startY: 0, startOffset: 0, lastX: 0, lastT: 0, vel: 0, isHoriz: null as boolean | null, didMove: false, rafId: 0 })
 
   const clamp = (v: number) => Math.max(0, Math.min(maxOffset, v))
-
-  const setTransform = (x: number) => {
-    if (trackRef.current) trackRef.current.style.transform = `translateX(-${x}px)`
-  }
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    cancelAnimationFrame(rafId.current)
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-    touchStartOffset.current = offset.current
-    lastX.current = e.touches[0].clientX
-    lastT.current = Date.now()
-    velocity.current = 0
-    isHoriz.current = null
-    didMove.current = false
-  }
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    const dx = touchStartX.current - e.touches[0].clientX
-    const dy = touchStartY.current - e.touches[0].clientY
-    if (isHoriz.current === null) {
-      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return
-      isHoriz.current = Math.abs(dx) > Math.abs(dy)
-    }
-    if (!isHoriz.current) return
-    e.stopPropagation()
-    didMove.current = true
-    const now = Date.now()
-    const dt = now - lastT.current
-    if (dt > 0) velocity.current = (lastX.current - e.touches[0].clientX) / dt
-    lastX.current = e.touches[0].clientX
-    lastT.current = now
-    offset.current = clamp(touchStartOffset.current + dx)
-    setTransform(offset.current)
-  }
-
+  const setTransform = (x: number) => { if (trackRef.current) trackRef.current.style.transform = `translateX(-${x}px)` }
   const snapTo = (target: number) => {
     const snapped = clamp(Math.round(target / CARD_W) * CARD_W)
-    let current = offset.current
+    let cur = state.current.offset
     const step = () => {
-      current += (snapped - current) * 0.2
-      if (Math.abs(snapped - current) < 0.5) {
-        current = snapped
-        offset.current = snapped
-        setTransform(snapped)
+      cur += (snapped - cur) * 0.2
+      if (Math.abs(snapped - cur) < 0.5) { state.current.offset = snapped; setTransform(snapped); return }
+      state.current.offset = cur; setTransform(cur)
+      state.current.rafId = requestAnimationFrame(step)
+    }
+    state.current.rafId = requestAnimationFrame(step)
+  }
+
+  React.useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const s = state.current
+    const onStart = (e: TouchEvent) => {
+      cancelAnimationFrame(s.rafId)
+      s.startX = e.touches[0].clientX; s.startY = e.touches[0].clientY
+      s.startOffset = s.offset; s.lastX = s.startX; s.lastT = Date.now()
+      s.vel = 0; s.isHoriz = null; s.didMove = false
+    }
+    const onMove = (e: TouchEvent) => {
+      const dx = s.startX - e.touches[0].clientX
+      const dy = s.startY - e.touches[0].clientY
+      if (s.isHoriz === null) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+        s.isHoriz = Math.abs(dx) > Math.abs(dy) * 1.2
+      }
+      if (!s.isHoriz) return
+      e.preventDefault()
+      s.didMove = true
+      const now = Date.now(); const dt = now - s.lastT
+      if (dt > 0) s.vel = (s.lastX - e.touches[0].clientX) / dt
+      s.lastX = e.touches[0].clientX; s.lastT = now
+      s.offset = clamp(s.startOffset + dx); setTransform(s.offset)
+    }
+    const onEnd = (e: TouchEvent) => {
+      if (!s.isHoriz) return
+      if (!s.didMove || Math.abs(s.startX - e.changedTouches[0].clientX) < 8) {
+        const idx = Math.round(s.offset / CARD_W)
+        const stage = stages[idx]
+        if (stage) router.push(`/my-jobs?filter=${stage === 'interview' ? 'interviewing' : stage === 'offered' ? 'offers' : stage}`)
         return
       }
-      offset.current = current
-      setTransform(current)
-      rafId.current = requestAnimationFrame(step)
+      snapTo(s.offset + s.vel * 120)
     }
-    rafId.current = requestAnimationFrame(step)
-  }
-
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (!isHoriz.current) return
-    const dx = touchStartX.current - e.changedTouches[0].clientX
-    if (!didMove.current || Math.abs(dx) < 8) {
-      const idx = Math.round(offset.current / CARD_W)
-      const s = stages[idx]
-      if (s) router.push(`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`)
-      return
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
     }
-    const v = velocity.current
-    const projected = offset.current + v * 120
-    snapTo(projected)
-  }
+  }, [maxOffset, stages, router])
 
   return (
-    <div style={{ overflow: 'hidden', margin: '0 -1rem', padding: '0 1rem' }}
-      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
-    >
+    <div style={{ overflow: 'hidden', margin: '0 -1rem', padding: '0 1rem' }}>
       <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform' }}>
         {stages.map(s => {
           const count = statusCounts[s] || 0
           const candidates = candidatesByStage[s] || []
           const color = stageColors[s] || '#6b7280'
-          const href = `/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`
           return (
-            <Link key={s} href={href} className={styles.pipelineCard} style={{ borderTopColor: color }}>
+            <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={styles.pipelineCard} style={{ borderTopColor: color }}>
               <div className={styles.pipelineCardTop}>
                 <span className={styles.pipelineCardCount} style={{ color }}>{count}</span>
                 <span className={styles.pipelineCardStage}>{STATUS_LABELS[s]}</span>
@@ -202,70 +180,80 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
   )
 }
 
-// ── Applicant avatar slider ──
+// ── Applicant avatar slider (non-passive touch) ──
 function ApplicantSlider({ apps, totalApplications, styles }: {
   apps: any[]
   totalApplications: number
   styles: Record<string, string>
 }) {
   const CARD_W = 90
-  const maxOffset = Math.max(0, (apps.length - 3.5) * CARD_W)
+  const maxOffset = Math.max(0, (apps.length - 3.2) * CARD_W)
   const trackRef = React.useRef<HTMLDivElement>(null)
-  const offset = React.useRef(0)
-  const touchStartX = React.useRef(0)
-  const touchStartY = React.useRef(0)
-  const touchStartOffset = React.useRef(0)
-  const isHoriz = React.useRef<boolean | null>(null)
-  const lastX = React.useRef(0)
-  const lastT = React.useRef(0)
-  const velocity = React.useRef(0)
-  const rafId = React.useRef(0)
-  const didMove = React.useRef(false)
+  const state = React.useRef({ offset: 0, startX: 0, startY: 0, startOffset: 0, lastX: 0, lastT: 0, vel: 0, isHoriz: null as boolean | null, didMove: false, rafId: 0 })
+
   const clamp = (v: number) => Math.max(0, Math.min(maxOffset, v))
   const setTransform = (x: number) => { if (trackRef.current) trackRef.current.style.transform = `translateX(-${x}px)` }
-  const avatarColors = ['#06b6d4','#8b5cf6','#10b981','#f59e0b','#3b82f6','#ec4899','#14b8a6','#FFE500']
+  const snapTo = (target: number) => {
+    const snapped = clamp(Math.round(target / CARD_W) * CARD_W)
+    let cur = state.current.offset
+    const step = () => {
+      cur += (snapped - cur) * 0.2
+      if (Math.abs(snapped - cur) < 0.5) { state.current.offset = snapped; setTransform(snapped); return }
+      state.current.offset = cur; setTransform(cur)
+      state.current.rafId = requestAnimationFrame(step)
+    }
+    state.current.rafId = requestAnimationFrame(step)
+  }
+
+  React.useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const s = state.current
+    const onStart = (e: TouchEvent) => {
+      cancelAnimationFrame(s.rafId)
+      s.startX = e.touches[0].clientX; s.startY = e.touches[0].clientY
+      s.startOffset = s.offset; s.lastX = s.startX; s.lastT = Date.now()
+      s.vel = 0; s.isHoriz = null; s.didMove = false
+    }
+    const onMove = (e: TouchEvent) => {
+      const dx = s.startX - e.touches[0].clientX
+      const dy = s.startY - e.touches[0].clientY
+      if (s.isHoriz === null) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+        s.isHoriz = Math.abs(dx) > Math.abs(dy) * 1.2
+      }
+      if (!s.isHoriz) return
+      e.preventDefault()
+      s.didMove = true
+      const now = Date.now(); const dt = now - s.lastT
+      if (dt > 0) s.vel = (s.lastX - e.touches[0].clientX) / dt
+      s.lastX = e.touches[0].clientX; s.lastT = now
+      s.offset = clamp(s.startOffset + dx); setTransform(s.offset)
+    }
+    const onEnd = () => {
+      if (!s.isHoriz || !s.didMove) return
+      snapTo(s.offset + s.vel * 120)
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+    }
+  }, [maxOffset])
+
+  const avatarColors = ['#06b6d4','#8b5cf6','#10b981','#f59e0b','#3b82f6','#ec4899','#14b8a6','#e11d48']
   const getInitials = (name: string) => name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
   const statusDot: Record<string, string> = { pending: '#f59e0b', reviewing: '#3b82f6', shortlisted: '#8b5cf6', interview: '#06b6d4', offered: '#10b981', hired: '#16a34a', rejected: '#ef4444' }
-  const onTouchStart = (e: React.TouchEvent) => {
-    cancelAnimationFrame(rafId.current)
-    touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY
-    touchStartOffset.current = offset.current; lastX.current = e.touches[0].clientX
-    lastT.current = Date.now(); velocity.current = 0; isHoriz.current = null; didMove.current = false
-  }
-  const onTouchMove = (e: React.TouchEvent) => {
-    const dx = touchStartX.current - e.touches[0].clientX
-    const dy = touchStartY.current - e.touches[0].clientY
-    if (isHoriz.current === null) { if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return; isHoriz.current = Math.abs(dx) > Math.abs(dy) }
-    if (!isHoriz.current) return
-    e.stopPropagation(); didMove.current = true
-    const now = Date.now(); const dt = now - lastT.current
-    if (dt > 0) velocity.current = (lastX.current - e.touches[0].clientX) / dt
-    lastX.current = e.touches[0].clientX; lastT.current = now
-    offset.current = clamp(touchStartOffset.current + dx); setTransform(offset.current)
-  }
-  const snapTo = (target: number) => {
-    const snapped = clamp(Math.round(target / CARD_W) * CARD_W); let current = offset.current
-    const step = () => {
-      current += (snapped - current) * 0.2
-      if (Math.abs(snapped - current) < 0.5) { offset.current = snapped; setTransform(snapped); return }
-      offset.current = current; setTransform(current); rafId.current = requestAnimationFrame(step)
-    }
-    rafId.current = requestAnimationFrame(step)
-  }
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (!isHoriz.current) return
-    const dx = touchStartX.current - e.changedTouches[0].clientX
-    if (!didMove.current || Math.abs(dx) < 8) return
-    snapTo(offset.current + velocity.current * 120)
-  }
+
   return (
     <div>
       <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.5rem 0 0.4rem' }}>
         {totalApplications} total application{totalApplications !== 1 ? 's' : ''}
       </p>
-      <div style={{ overflow: 'hidden', margin: '0 -0.5rem', padding: '0 0.5rem' }}
-        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
-      >
+      <div style={{ overflow: 'hidden', margin: '0 -0.5rem', padding: '0 0.5rem' }}>
         <div ref={trackRef} style={{ display: 'flex', gap: '0.25rem', willChange: 'transform' }}>
           {apps.map((app, i) => {
             const initials = getInitials(app.candidate_name || 'C')
@@ -296,59 +284,68 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
   )
 }
 
-// ── Job swipe cards slider ──
+// ── Job swipe cards slider (non-passive touch) ──
 function JobSlider({ jobs }: { jobs: any[] }) {
-  const CARD_W = 148
-  const maxOffset = Math.max(0, (jobs.length - 2.3) * CARD_W)
+  const CARD_W = 152
+  const maxOffset = Math.max(0, (jobs.length - 2.2) * CARD_W)
   const trackRef = React.useRef<HTMLDivElement>(null)
-  const offset = React.useRef(0)
-  const touchStartX = React.useRef(0)
-  const touchStartY = React.useRef(0)
-  const touchStartOffset = React.useRef(0)
-  const isHoriz = React.useRef<boolean | null>(null)
-  const lastX = React.useRef(0)
-  const lastT = React.useRef(0)
-  const velocity = React.useRef(0)
-  const rafId = React.useRef(0)
-  const didMove = React.useRef(false)
+  const state = React.useRef({ offset: 0, startX: 0, startY: 0, startOffset: 0, lastX: 0, lastT: 0, vel: 0, isHoriz: null as boolean | null, didMove: false, rafId: 0 })
+
   const clamp = (v: number) => Math.max(0, Math.min(maxOffset, v))
   const setTransform = (x: number) => { if (trackRef.current) trackRef.current.style.transform = `translateX(-${x}px)` }
-  const onTouchStart = (e: React.TouchEvent) => {
-    cancelAnimationFrame(rafId.current)
-    touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY
-    touchStartOffset.current = offset.current; lastX.current = e.touches[0].clientX
-    lastT.current = Date.now(); velocity.current = 0; isHoriz.current = null; didMove.current = false
-  }
-  const onTouchMove = (e: React.TouchEvent) => {
-    const dx = touchStartX.current - e.touches[0].clientX
-    const dy = touchStartY.current - e.touches[0].clientY
-    if (isHoriz.current === null) { if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return; isHoriz.current = Math.abs(dx) > Math.abs(dy) }
-    if (!isHoriz.current) return
-    e.stopPropagation(); didMove.current = true
-    const now = Date.now(); const dt = now - lastT.current
-    if (dt > 0) velocity.current = (lastX.current - e.touches[0].clientX) / dt
-    lastX.current = e.touches[0].clientX; lastT.current = now
-    offset.current = clamp(touchStartOffset.current + dx); setTransform(offset.current)
-  }
   const snapTo = (target: number) => {
-    const snapped = clamp(Math.round(target / CARD_W) * CARD_W); let current = offset.current
+    const snapped = clamp(Math.round(target / CARD_W) * CARD_W)
+    let cur = state.current.offset
     const step = () => {
-      current += (snapped - current) * 0.2
-      if (Math.abs(snapped - current) < 0.5) { offset.current = snapped; setTransform(snapped); return }
-      offset.current = current; setTransform(current); rafId.current = requestAnimationFrame(step)
+      cur += (snapped - cur) * 0.2
+      if (Math.abs(snapped - cur) < 0.5) { state.current.offset = snapped; setTransform(snapped); return }
+      state.current.offset = cur; setTransform(cur)
+      state.current.rafId = requestAnimationFrame(step)
     }
-    rafId.current = requestAnimationFrame(step)
+    state.current.rafId = requestAnimationFrame(step)
   }
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (!isHoriz.current) return
-    const dx = touchStartX.current - e.changedTouches[0].clientX
-    if (!didMove.current || Math.abs(dx) < 8) return
-    snapTo(offset.current + velocity.current * 120)
-  }
+
+  React.useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const s = state.current
+    const onStart = (e: TouchEvent) => {
+      cancelAnimationFrame(s.rafId)
+      s.startX = e.touches[0].clientX; s.startY = e.touches[0].clientY
+      s.startOffset = s.offset; s.lastX = s.startX; s.lastT = Date.now()
+      s.vel = 0; s.isHoriz = null; s.didMove = false
+    }
+    const onMove = (e: TouchEvent) => {
+      const dx = s.startX - e.touches[0].clientX
+      const dy = s.startY - e.touches[0].clientY
+      if (s.isHoriz === null) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+        s.isHoriz = Math.abs(dx) > Math.abs(dy) * 1.2
+      }
+      if (!s.isHoriz) return
+      e.preventDefault()
+      s.didMove = true
+      const now = Date.now(); const dt = now - s.lastT
+      if (dt > 0) s.vel = (s.lastX - e.touches[0].clientX) / dt
+      s.lastX = e.touches[0].clientX; s.lastT = now
+      s.offset = clamp(s.startOffset + dx); setTransform(s.offset)
+    }
+    const onEnd = () => {
+      if (!s.isHoriz || !s.didMove) return
+      snapTo(s.offset + s.vel * 120)
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+    }
+  }, [maxOffset])
+
   return (
-    <div style={{ overflow: 'hidden', margin: '0 -0.5rem', padding: '0 0.5rem' }}
-      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
-    >
+    <div style={{ overflow: 'hidden', margin: '0 -0.5rem', padding: '0 0.5rem' }}>
       <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform' }}>
         {jobs.map(job => {
           const appCount = job.application_count || 0
@@ -361,11 +358,11 @@ function JobSlider({ jobs }: { jobs: any[] }) {
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>{job.views || 0}</div>
-                  <div style={{ fontSize: '0.6rem', color: '#94a3b8', textTransform: 'uppercase' }}>Views</div>
+                  <div style={{ fontSize: '0.6rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Views</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>{appCount}</div>
-                  <div style={{ fontSize: '0.6rem', color: '#94a3b8', textTransform: 'uppercase' }}>Apps</div>
+                  <div style={{ fontSize: '0.6rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Apps</div>
                 </div>
               </div>
               <div style={{ height: 3, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
