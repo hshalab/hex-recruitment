@@ -246,14 +246,6 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
     pending: 'Applied', reviewing: 'Reviewing', shortlisted: 'Shortlisted',
     interview: 'Interview', offered: 'Offered', hired: 'Hired', rejected: 'Rejected',
   }
-  const fmtSalary = (min: any, max: any, period: string) => {
-    if (!min && !max) return null
-    const fmt = (n: number) => n >= 1000 ? `£${Math.round(n / 1000)}k` : `£${n}`
-    const suffix = period === 'hour' ? '/hr' : '/yr'
-    if (min && max) return `${fmt(Number(min))}–${fmt(Number(max))}${suffix}`
-    if (min) return `${fmt(Number(min))}+${suffix}`
-    return `Up to ${fmt(Number(max))}${suffix}`
-  }
 
   return (
     <div>
@@ -267,7 +259,6 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
             const bgColor = avatarColors[i % avatarColors.length]
             const sc = statusColors[app.status] || { bg: '#f3f4f6', text: '#374151' }
             const label = statusLabels[app.status] || app.status
-            const salary = fmtSalary(app.candidate_salary_min, app.candidate_salary_max, app.candidate_salary_period)
             return (
               <div key={app.id} style={{ flex: '0 0 200px', minWidth: 200, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                 {/* Avatar + name row */}
@@ -279,7 +270,7 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
                     <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {app.candidate_name || 'Candidate'}
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#6b7280', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
                       {app.job_title || ''}
                     </div>
                   </div>
@@ -292,12 +283,6 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
                     <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <span>📍</span>
                       <span>{app.candidate_city}</span>
-                    </div>
-                  )}
-                  {salary && (
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <span>💷</span>
-                      <span>{salary}</span>
                     </div>
                   )}
                   {app.candidate_availability && (
@@ -595,7 +580,7 @@ export default function EmployerDashboardPage() {
                   try {
                     const { data: profiles } = await supabase
                       .from('candidate_profiles')
-                      .select('user_id, full_name, profile_picture_url, city, availability, salary_min, salary_max, salary_period')
+                      .select('user_id, full_name, profile_picture_url, city, availability')
                       .in('user_id', candidateIds)
 
                     if (profiles) {
@@ -605,7 +590,7 @@ export default function EmployerDashboardPage() {
                       profiles.forEach((p: any) => {
                         nameMap[p.user_id] = p.full_name
                         photoMap[p.user_id] = p.profile_picture_url || null
-                        profileExtras[p.user_id] = { city: p.city, availability: p.availability, salary_min: p.salary_min, salary_max: p.salary_max, salary_period: p.salary_period }
+                        profileExtras[p.user_id] = { city: p.city, availability: p.availability }
                       })
                       setApplications(prev => prev.map(a => ({
                         ...a,
@@ -613,9 +598,6 @@ export default function EmployerDashboardPage() {
                         candidate_photo: photoMap[a.candidate_id] || null,
                         candidate_city: profileExtras[a.candidate_id]?.city || null,
                         candidate_availability: profileExtras[a.candidate_id]?.availability || null,
-                        candidate_salary_min: profileExtras[a.candidate_id]?.salary_min || null,
-                        candidate_salary_max: profileExtras[a.candidate_id]?.salary_max || null,
-                        candidate_salary_period: profileExtras[a.candidate_id]?.salary_period || 'year',
                       })))
                     }
                   } catch { /* candidate_profiles may not exist */ }
