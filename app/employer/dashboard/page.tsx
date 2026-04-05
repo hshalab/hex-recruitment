@@ -488,6 +488,14 @@ export default function EmployerDashboardPage() {
   const router = useRouter()
   const { conversations, totalUnreadCount } = useMessages()
 
+  const [isMobile, setIsMobile] = React.useState(false)
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 960)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [companyName, setCompanyName] = useState('')
@@ -920,7 +928,27 @@ export default function EmployerDashboardPage() {
               </div>
               <div className={styles.cardBody}>
                 {applications.length > 0 ? (
-                  <ApplicantSlider apps={recentApps} totalApplications={totalApplications} styles={styles} />
+                  isMobile ? (
+                    <ApplicantSlider apps={recentApps} totalApplications={totalApplications} styles={styles} />
+                  ) : (
+                    <div className={styles.recentApps}>
+                      <p className={styles.previewLabel}>{totalApplications} total applications</p>
+                      {recentApps.map((app: any) => (
+                        <Link href={`/my-jobs/${app.job_id}/applications`} key={app.id} className={styles.appCard}>
+                          <div className={styles.appCardInfo}>
+                            <h4>{app.candidate_name || 'Candidate'}</h4>
+                            <p>{app.job_title || 'Position'} &middot; {formatRelativeTime(app.created_at)}</p>
+                          </div>
+                          <div className={styles.appCardRight}>
+                            <span className={`${styles.statusBadge} ${styles[getStatusStyle(app.status)]}`}>
+                              {STATUS_LABELS[app.status] || app.status}
+                            </span>
+                            <span className={styles.appChevron}>&rsaquo;</span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )
                 ) : (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128196;</div>
@@ -939,7 +967,41 @@ export default function EmployerDashboardPage() {
               </div>
               <div className={styles.cardBody}>
                 {activeJobsList.length > 0 ? (
-                  <JobSlider jobs={activeJobsList} />
+                  isMobile ? (
+                    <JobSlider jobs={activeJobsList} />
+                  ) : (
+                    <div className={styles.jobList}>
+                      {activeJobsList.map((job: any) => {
+                        const appCount = job.application_count || 0
+                        const fillPct = Math.min((appCount / 20) * 100, 100)
+                        return (
+                          <Link href="/my-jobs" key={job.id} className={styles.jobItem}>
+                            <div className={styles.jobItemInfo}>
+                              <h4>{job.title}</h4>
+                              <div className={styles.jobItemMeta}>
+                                <div className={styles.jobProgressWrap}>
+                                  <div className={styles.jobProgressLabel}>{appCount} apps</div>
+                                  <div className={styles.jobProgressBar}>
+                                    <div className={styles.jobProgressFill} style={{ width: `${fillPct}%` }} />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className={styles.jobItemStats}>
+                              <div className={styles.jobItemStat}>
+                                <span className={styles.jobItemStatNum}>{job.views || 0}</span>
+                                <span className={styles.jobItemStatLabel}>Views</span>
+                              </div>
+                              <div className={styles.jobItemStat}>
+                                <span className={styles.jobItemStatNum}>{appCount}</span>
+                                <span className={styles.jobItemStatLabel}>Apps</span>
+                              </div>
+                            </div>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )
                 ) : (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128188;</div>
@@ -950,24 +1012,67 @@ export default function EmployerDashboardPage() {
               </div>
             </div>
 
-            {/* ── RECENT MESSAGES ─────────────────────────── */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Recent Messages</h2>
-                <Link href="/messages" className={styles.cardLink}>View All</Link>
+            {/* ── RECENT MESSAGES (mobile only) ──────────── */}
+            {isMobile && (
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Recent Messages</h2>
+                  <Link href="/messages" className={styles.cardLink}>View All</Link>
+                </div>
+                <div className={styles.cardBody}>
+                  {recentConversations.length > 0 ? (
+                    <MessagesSlider conversations={recentConversations} />
+                  ) : (
+                    <div className={styles.emptyState}>
+                      <div className={styles.emptyIcon}>&#128172;</div>
+                      <p>No messages yet.</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className={styles.cardBody}>
-                {recentConversations.length > 0 ? (
-                  <MessagesSlider conversations={recentConversations} />
-                ) : (
-                  <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>&#128172;</div>
-                    <p>No messages yet.</p>
-                  </div>
-                )}
+            )}
+          </div>
+
+          {/* ════════════════ RIGHT COLUMN (desktop) ════════════════ */}
+          {!isMobile && (
+            <div className={styles.colRight}>
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Recent Messages</h2>
+                  <Link href="/messages" className={styles.cardLink}>View All</Link>
+                </div>
+                <div className={styles.cardBody}>
+                  {recentConversations.length > 0 ? (
+                    <div className={styles.msgList}>
+                      {recentConversations.map((conv: any) => (
+                        <Link href="/messages" key={conv.id} className={styles.msgItem}>
+                          <div className={styles.msgAvatarWrap}>
+                            <div className={styles.msgAvatar}>
+                              {conv.participantName ? getInitials(conv.participantName) : '?'}
+                            </div>
+                            <span className={conv.unreadCount > 0 ? styles.msgOnline : styles.msgOffline} />
+                          </div>
+                          <div className={styles.msgContent}>
+                            <p className={styles.msgSender}>
+                              {conv.unreadCount > 0 && <span className={styles.unreadDot} />}
+                              {conv.participantName}
+                            </p>
+                            <p className={styles.msgPreview}>{conv.lastMessage}</p>
+                          </div>
+                          <span className={styles.msgTime}>{formatRelativeTime(conv.lastMessageAt)}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.emptyState}>
+                      <div className={styles.emptyIcon}>&#128172;</div>
+                      <p>No messages yet.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </main>

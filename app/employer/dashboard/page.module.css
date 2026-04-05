@@ -224,7 +224,7 @@
 /* ── Grid layout ─────────────────────────────────────── */
 .grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 380px;
   gap: 1.5rem;
   align-items: start;
 }
