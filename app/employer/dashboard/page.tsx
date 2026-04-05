@@ -70,7 +70,7 @@ function SkeletonCard({ height = 120 }: { height?: number }) {
 }
 
 // ═════════════════════════════════════════════════════════
-// ── Pipeline touch slider (transform-based, works on iOS) ──
+// ── Pipeline touch slider (transform-based with momentum, works on iOS) ──
 function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, styles }: {
   stages: readonly string[]
   stageColors: Record<string, string>
@@ -86,14 +86,25 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
   const touchStartY = React.useRef(0)
   const touchStartOffset = React.useRef(0)
   const isHoriz = React.useRef<boolean | null>(null)
+  const lastX = React.useRef(0)
+  const lastT = React.useRef(0)
+  const velocity = React.useRef(0)
+  const rafId = React.useRef(0)
   const maxOffset = Math.max(0, (stages.length - VISIBLE) * CARD_W)
 
+  const clamp = (v: number) => Math.max(0, Math.min(maxOffset, v))
+
   const onTouchStart = (e: React.TouchEvent) => {
+    cancelAnimationFrame(rafId.current)
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
     touchStartOffset.current = offset
+    lastX.current = e.touches[0].clientX
+    lastT.current = Date.now()
+    velocity.current = 0
     isHoriz.current = null
   }
+
   const onTouchMove = (e: React.TouchEvent) => {
     const dx = touchStartX.current - e.touches[0].clientX
     const dy = touchStartY.current - e.touches[0].clientY
@@ -103,9 +114,14 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
     }
     if (!isHoriz.current) return
     e.stopPropagation()
-    const next = Math.max(0, Math.min(maxOffset, touchStartOffset.current + dx))
-    setOffset(next)
+    const now = Date.now()
+    const dt = now - lastT.current
+    if (dt > 0) velocity.current = (lastX.current - e.touches[0].clientX) / dt
+    lastX.current = e.touches[0].clientX
+    lastT.current = now
+    setOffset(clamp(touchStartOffset.current + dx))
   }
+
   const onTouchEnd = (e: React.TouchEvent) => {
     if (!isHoriz.current) return
     const dx = touchStartX.current - e.changedTouches[0].clientX
@@ -113,17 +129,31 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
       const idx = Math.round(offset / CARD_W)
       const s = stages[idx]
       if (s) router.push(`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`)
-    } else {
-      const snapped = Math.round(offset / CARD_W) * CARD_W
-      setOffset(Math.max(0, Math.min(maxOffset, snapped)))
+      return
     }
+    // Apply momentum then snap
+    let v = velocity.current
+    let current = offset
+    const decay = 0.92
+    const animate = () => {
+      v *= decay
+      current = clamp(current + v * 16)
+      setOffset(current)
+      if (Math.abs(v) > 0.1 && current > 0 && current < maxOffset) {
+        rafId.current = requestAnimationFrame(animate)
+      } else {
+        const snapped = Math.round(current / CARD_W) * CARD_W
+        setOffset(clamp(snapped))
+      }
+    }
+    rafId.current = requestAnimationFrame(animate)
   }
 
   return (
     <div style={{ overflow: 'hidden', margin: '0 -1rem', padding: '0 1rem' }}
       onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
     >
-      <div style={{ display: 'flex', gap: '0.5rem', transform: `translateX(-${offset}px)`, transition: 'transform 0.25s ease' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', transform: `translateX(-${offset}px)`, transition: 'transform 0.15s ease-out' }}>
         {stages.map(s => {
           const count = statusCounts[s] || 0
           const candidates = candidatesByStage[s] || []
