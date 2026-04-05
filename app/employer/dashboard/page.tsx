@@ -372,8 +372,8 @@ function JobSlider({ jobs }: { jobs: any[] }) {
   }, [maxOffset])
 
   return (
-    <div style={{ overflow: 'hidden', margin: '0 -1rem', padding: '0 1rem' }}>
-      <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform', paddingRight: '2rem' }}>
+    <div style={{ overflow: 'hidden', margin: '0 -1.25rem', paddingBottom: '0.75rem' }}>
+      <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform', paddingLeft: '1.25rem', paddingRight: '3rem', paddingBottom: '0.75rem' }}>
         {jobs.map(job => {
           const appCount = job.application_count || 0
           const fillPct = Math.min((appCount / 20) * 100, 100)
