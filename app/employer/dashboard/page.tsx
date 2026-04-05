@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -70,6 +70,94 @@ function SkeletonCard({ height = 120 }: { height?: number }) {
 }
 
 // ═════════════════════════════════════════════════════════
+// ── Pipeline touch slider (transform-based, works on iOS) ──
+function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, styles }: {
+  stages: readonly string[]
+  stageColors: Record<string, string>
+  statusCounts: Record<string, number>
+  candidatesByStage: Record<string, any[]>
+  styles: Record<string, string>
+}) {
+  const router = useRouter()
+  const CARD_W = 163
+  const VISIBLE = 2.2
+  const [offset, setOffset] = React.useState(0)
+  const touchStartX = React.useRef(0)
+  const touchStartY = React.useRef(0)
+  const touchStartOffset = React.useRef(0)
+  const isHoriz = React.useRef<boolean | null>(null)
+  const maxOffset = Math.max(0, (stages.length - VISIBLE) * CARD_W)
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    touchStartOffset.current = offset
+    isHoriz.current = null
+  }
+  const onTouchMove = (e: React.TouchEvent) => {
+    const dx = touchStartX.current - e.touches[0].clientX
+    const dy = touchStartY.current - e.touches[0].clientY
+    if (isHoriz.current === null) {
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return
+      isHoriz.current = Math.abs(dx) > Math.abs(dy)
+    }
+    if (!isHoriz.current) return
+    e.stopPropagation()
+    const next = Math.max(0, Math.min(maxOffset, touchStartOffset.current + dx))
+    setOffset(next)
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!isHoriz.current) return
+    const dx = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(dx) < 8) {
+      const idx = Math.round(offset / CARD_W)
+      const s = stages[idx]
+      if (s) router.push(`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`)
+    } else {
+      const snapped = Math.round(offset / CARD_W) * CARD_W
+      setOffset(Math.max(0, Math.min(maxOffset, snapped)))
+    }
+  }
+
+  return (
+    <div style={{ overflow: 'hidden', margin: '0 -1rem', padding: '0 1rem' }}
+      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+    >
+      <div style={{ display: 'flex', gap: '0.5rem', transform: `translateX(-${offset}px)`, transition: 'transform 0.25s ease' }}>
+        {stages.map(s => {
+          const count = statusCounts[s] || 0
+          const candidates = candidatesByStage[s] || []
+          const color = stageColors[s] || '#6b7280'
+          const href = `/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`
+          return (
+            <Link key={s} href={href} className={styles.pipelineCard} style={{ borderTopColor: color }}>
+              <div className={styles.pipelineCardTop}>
+                <span className={styles.pipelineCardCount} style={{ color }}>{count}</span>
+                <span className={styles.pipelineCardStage}>{STATUS_LABELS[s]}</span>
+              </div>
+              <div className={styles.pipelineCardCandidates}>
+                {candidates.length === 0 ? (
+                  <span className={styles.pipelineCardEmpty}>No candidates</span>
+                ) : (
+                  candidates.slice(0, 3).map((app: any, i: number) => (
+                    <div key={i} className={styles.pipelineCardCandidate}>
+                      <span className={styles.pipelineCardName}>{app.candidate_name || 'Candidate'}</span>
+                      <span className={styles.pipelineCardJob}>{app.job_title || ''}</span>
+                    </div>
+                  ))
+                )}
+                {candidates.length > 3 && (
+                  <span className={styles.pipelineCardMore}>+{candidates.length - 3} more</span>
+                )}
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // MAIN COMPONENT
 // ═════════════════════════════════════════════════════════
 
@@ -78,7 +166,6 @@ export default function EmployerDashboardPage() {
   const { conversations, totalUnreadCount } = useMessages()
 
   const [user, setUser] = useState<any>(null)
-  const pipelineRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [companyName, setCompanyName] = useState('')
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
@@ -98,42 +185,6 @@ export default function EmployerDashboardPage() {
   // Data
   const [applications, setApplications] = useState<any[]>([])
   const [jobsData, setJobsData] = useState<any[]>([])
-
-  // ── Pipeline drag-scroll for iOS ────────────────────────
-  useEffect(() => {
-    const el = pipelineRef.current
-    if (!el) return
-    let startX = 0
-    let scrollLeft = 0
-    let isDragging = false
-    let moved = false
-
-    const onTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0].clientX
-      scrollLeft = el.scrollLeft
-      isDragging = true
-      moved = false
-    }
-    const onTouchMove = (e: TouchEvent) => {
-      if (!isDragging) return
-      const dx = startX - e.touches[0].clientX
-      if (Math.abs(dx) > 5) moved = true
-      el.scrollLeft = scrollLeft + dx
-    }
-    const onTouchEnd = () => { isDragging = false }
-    const onClickCapture = (e: Event) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false } }
-
-    el.addEventListener('touchstart', onTouchStart, { passive: true })
-    el.addEventListener('touchmove', onTouchMove, { passive: true })
-    el.addEventListener('touchend', onTouchEnd, { passive: true })
-    el.addEventListener('click', onClickCapture, true)
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart)
-      el.removeEventListener('touchmove', onTouchMove)
-      el.removeEventListener('touchend', onTouchEnd)
-      el.removeEventListener('click', onClickCapture, true)
-    }
-  }, [])
 
   // ── Load data ───────────────────────────────────────────
   useEffect(() => {
@@ -514,44 +565,18 @@ export default function EmployerDashboardPage() {
                 <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
               </div>
               <div className={styles.cardBody}>
-                <div className={styles.pipelineScroller} ref={pipelineRef}>
-                  {PIPELINE_STAGES.filter(s => s !== 'rejected').map(s => {
-                    const count = statusCounts[s] || 0
-                    const candidates = candidatesByStage[s] || []
-                    const stageColors: Record<string, string> = {
-                      pending: '#f59e0b',
-                      reviewing: '#3b82f6',
-                      shortlisted: '#8b5cf6',
-                      interview: '#06b6d4',
-                      offered: '#10b981',
-                      hired: '#16a34a',
-                    }
-                    const color = stageColors[s] || '#6b7280'
-                    return (
-                      <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={styles.pipelineCard} style={{ borderTopColor: color }}>
-                        <div className={styles.pipelineCardTop}>
-                          <span className={styles.pipelineCardCount} style={{ color }}>{count}</span>
-                          <span className={styles.pipelineCardStage}>{STATUS_LABELS[s]}</span>
-                        </div>
-                        <div className={styles.pipelineCardCandidates}>
-                          {candidates.length === 0 ? (
-                            <span className={styles.pipelineCardEmpty}>No candidates</span>
-                          ) : (
-                            candidates.slice(0, 3).map((app, i) => (
-                              <div key={i} className={styles.pipelineCardCandidate}>
-                                <span className={styles.pipelineCardName}>{app.candidate_name || 'Candidate'}</span>
-                                <span className={styles.pipelineCardJob}>{app.job_title || ''}</span>
-                              </div>
-                            ))
-                          )}
-                          {candidates.length > 3 && (
-                            <span className={styles.pipelineCardMore}>+{candidates.length - 3} more</span>
-                          )}
-                        </div>
-                      </Link>
-                    )
-                  })}
-                </div>
+                {(() => {
+                  const stages = PIPELINE_STAGES.filter(s => s !== 'rejected')
+                  const stageColors: Record<string, string> = {
+                    pending: '#f59e0b',
+                    reviewing: '#3b82f6',
+                    shortlisted: '#8b5cf6',
+                    interview: '#06b6d4',
+                    offered: '#10b981',
+                    hired: '#16a34a',
+                  }
+                  return <PipelineSlider stages={stages} stageColors={stageColors} statusCounts={statusCounts} candidatesByStage={candidatesByStage} styles={styles} />
+                })()}
 
                 {applications.length > 0 ? (
                   <>
