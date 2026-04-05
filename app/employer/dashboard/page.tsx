@@ -313,7 +313,7 @@ function ApplicantSlider({ apps, totalApplications, styles }: {
 
 // ── Job swipe cards slider (non-passive touch) ──
 function JobSlider({ jobs }: { jobs: any[] }) {
-  const CARD_W = 168
+  const CARD_W = 176
   const maxOffset = Math.max(0, (jobs.length - 2.2) * CARD_W)
   const trackRef = React.useRef<HTMLDivElement>(null)
   const state = React.useRef({ offset: 0, startX: 0, startY: 0, startOffset: 0, lastX: 0, lastT: 0, vel: 0, isHoriz: null as boolean | null, didMove: false, rafId: 0 })
@@ -378,7 +378,7 @@ function JobSlider({ jobs }: { jobs: any[] }) {
           const appCount = job.application_count || 0
           const fillPct = Math.min((appCount / 20) * 100, 100)
           return (
-            <Link key={job.id} href="/my-jobs" style={{ flex: '0 0 156px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.75rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <Link key={job.id} href="/my-jobs" style={{ flex: '0 0 164px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.75rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {job.title}
               </div>
