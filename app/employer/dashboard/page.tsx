@@ -202,6 +202,183 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
   )
 }
 
+// ── Applicant avatar slider ──
+function ApplicantSlider({ apps, totalApplications, styles }: {
+  apps: any[]
+  totalApplications: number
+  styles: Record<string, string>
+}) {
+  const CARD_W = 90
+  const maxOffset = Math.max(0, (apps.length - 3.5) * CARD_W)
+  const trackRef = React.useRef<HTMLDivElement>(null)
+  const offset = React.useRef(0)
+  const touchStartX = React.useRef(0)
+  const touchStartY = React.useRef(0)
+  const touchStartOffset = React.useRef(0)
+  const isHoriz = React.useRef<boolean | null>(null)
+  const lastX = React.useRef(0)
+  const lastT = React.useRef(0)
+  const velocity = React.useRef(0)
+  const rafId = React.useRef(0)
+  const didMove = React.useRef(false)
+  const clamp = (v: number) => Math.max(0, Math.min(maxOffset, v))
+  const setTransform = (x: number) => { if (trackRef.current) trackRef.current.style.transform = `translateX(-${x}px)` }
+  const avatarColors = ['#06b6d4','#8b5cf6','#10b981','#f59e0b','#3b82f6','#ec4899','#14b8a6','#FFE500']
+  const getInitials = (name: string) => name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+  const statusDot: Record<string, string> = { pending: '#f59e0b', reviewing: '#3b82f6', shortlisted: '#8b5cf6', interview: '#06b6d4', offered: '#10b981', hired: '#16a34a', rejected: '#ef4444' }
+  const onTouchStart = (e: React.TouchEvent) => {
+    cancelAnimationFrame(rafId.current)
+    touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY
+    touchStartOffset.current = offset.current; lastX.current = e.touches[0].clientX
+    lastT.current = Date.now(); velocity.current = 0; isHoriz.current = null; didMove.current = false
+  }
+  const onTouchMove = (e: React.TouchEvent) => {
+    const dx = touchStartX.current - e.touches[0].clientX
+    const dy = touchStartY.current - e.touches[0].clientY
+    if (isHoriz.current === null) { if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return; isHoriz.current = Math.abs(dx) > Math.abs(dy) }
+    if (!isHoriz.current) return
+    e.stopPropagation(); didMove.current = true
+    const now = Date.now(); const dt = now - lastT.current
+    if (dt > 0) velocity.current = (lastX.current - e.touches[0].clientX) / dt
+    lastX.current = e.touches[0].clientX; lastT.current = now
+    offset.current = clamp(touchStartOffset.current + dx); setTransform(offset.current)
+  }
+  const snapTo = (target: number) => {
+    const snapped = clamp(Math.round(target / CARD_W) * CARD_W); let current = offset.current
+    const step = () => {
+      current += (snapped - current) * 0.2
+      if (Math.abs(snapped - current) < 0.5) { offset.current = snapped; setTransform(snapped); return }
+      offset.current = current; setTransform(current); rafId.current = requestAnimationFrame(step)
+    }
+    rafId.current = requestAnimationFrame(step)
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!isHoriz.current) return
+    const dx = touchStartX.current - e.changedTouches[0].clientX
+    if (!didMove.current || Math.abs(dx) < 8) return
+    snapTo(offset.current + velocity.current * 120)
+  }
+  return (
+    <div>
+      <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.5rem 0 0.4rem' }}>
+        {totalApplications} total application{totalApplications !== 1 ? 's' : ''}
+      </p>
+      <div style={{ overflow: 'hidden', margin: '0 -0.5rem', padding: '0 0.5rem' }}
+        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+      >
+        <div ref={trackRef} style={{ display: 'flex', gap: '0.25rem', willChange: 'transform' }}>
+          {apps.map((app, i) => {
+            const initials = getInitials(app.candidate_name || 'C')
+            const bgColor = avatarColors[i % avatarColors.length]
+            const dot = statusDot[app.status] || '#6b7280'
+            return (
+              <div key={app.id} style={{ flex: '0 0 82px', textAlign: 'center', padding: '0.25rem 0' }}>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#fff', overflow: 'hidden' }}>
+                    {app.candidate_photo
+                      ? <img src={app.candidate_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : initials}
+                  </div>
+                  <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: dot, border: '2px solid #fff' }} />
+                </div>
+                <div style={{ fontSize: '0.68rem', fontWeight: 600, color: '#1e293b', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {(app.candidate_name || 'Candidate').split(' ')[0]}
+                </div>
+                <div style={{ fontSize: '0.58rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {app.job_title || ''}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Job swipe cards slider ──
+function JobSlider({ jobs }: { jobs: any[] }) {
+  const CARD_W = 148
+  const maxOffset = Math.max(0, (jobs.length - 2.3) * CARD_W)
+  const trackRef = React.useRef<HTMLDivElement>(null)
+  const offset = React.useRef(0)
+  const touchStartX = React.useRef(0)
+  const touchStartY = React.useRef(0)
+  const touchStartOffset = React.useRef(0)
+  const isHoriz = React.useRef<boolean | null>(null)
+  const lastX = React.useRef(0)
+  const lastT = React.useRef(0)
+  const velocity = React.useRef(0)
+  const rafId = React.useRef(0)
+  const didMove = React.useRef(false)
+  const clamp = (v: number) => Math.max(0, Math.min(maxOffset, v))
+  const setTransform = (x: number) => { if (trackRef.current) trackRef.current.style.transform = `translateX(-${x}px)` }
+  const onTouchStart = (e: React.TouchEvent) => {
+    cancelAnimationFrame(rafId.current)
+    touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY
+    touchStartOffset.current = offset.current; lastX.current = e.touches[0].clientX
+    lastT.current = Date.now(); velocity.current = 0; isHoriz.current = null; didMove.current = false
+  }
+  const onTouchMove = (e: React.TouchEvent) => {
+    const dx = touchStartX.current - e.touches[0].clientX
+    const dy = touchStartY.current - e.touches[0].clientY
+    if (isHoriz.current === null) { if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return; isHoriz.current = Math.abs(dx) > Math.abs(dy) }
+    if (!isHoriz.current) return
+    e.stopPropagation(); didMove.current = true
+    const now = Date.now(); const dt = now - lastT.current
+    if (dt > 0) velocity.current = (lastX.current - e.touches[0].clientX) / dt
+    lastX.current = e.touches[0].clientX; lastT.current = now
+    offset.current = clamp(touchStartOffset.current + dx); setTransform(offset.current)
+  }
+  const snapTo = (target: number) => {
+    const snapped = clamp(Math.round(target / CARD_W) * CARD_W); let current = offset.current
+    const step = () => {
+      current += (snapped - current) * 0.2
+      if (Math.abs(snapped - current) < 0.5) { offset.current = snapped; setTransform(snapped); return }
+      offset.current = current; setTransform(current); rafId.current = requestAnimationFrame(step)
+    }
+    rafId.current = requestAnimationFrame(step)
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!isHoriz.current) return
+    const dx = touchStartX.current - e.changedTouches[0].clientX
+    if (!didMove.current || Math.abs(dx) < 8) return
+    snapTo(offset.current + velocity.current * 120)
+  }
+  return (
+    <div style={{ overflow: 'hidden', margin: '0 -0.5rem', padding: '0 0.5rem' }}
+      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+    >
+      <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform' }}>
+        {jobs.map(job => {
+          const appCount = job.application_count || 0
+          const fillPct = Math.min((appCount / 20) * 100, 100)
+          return (
+            <Link key={job.id} href="/my-jobs" style={{ flex: '0 0 140px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.75rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {job.title}
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>{job.views || 0}</div>
+                  <div style={{ fontSize: '0.6rem', color: '#94a3b8', textTransform: 'uppercase' }}>Views</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>{appCount}</div>
+                  <div style={{ fontSize: '0.6rem', color: '#94a3b8', textTransform: 'uppercase' }}>Apps</div>
+                </div>
+              </div>
+              <div style={{ height: 3, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: '#FFE500', borderRadius: 2, width: `${fillPct}%` }} />
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // MAIN COMPONENT
 // ═════════════════════════════════════════════════════════
 
@@ -379,15 +556,17 @@ export default function EmployerDashboardPage() {
                   try {
                     const { data: profiles } = await supabase
                       .from('candidate_profiles')
-                      .select('user_id, full_name')
+                      .select('user_id, full_name, profile_picture_url')
                       .in('user_id', candidateIds)
 
                     if (profiles) {
                       const nameMap: Record<string, string> = {}
-                      profiles.forEach((p: any) => { nameMap[p.user_id] = p.full_name })
+                      const photoMap: Record<string, string | null> = {}
+                      profiles.forEach((p: any) => { nameMap[p.user_id] = p.full_name; photoMap[p.user_id] = p.profile_picture_url || null })
                       setApplications(prev => prev.map(a => ({
                         ...a,
                         candidate_name: nameMap[a.candidate_id] || 'Candidate',
+                        candidate_photo: photoMap[a.candidate_id] || null,
                       })))
                     }
                   } catch { /* candidate_profiles may not exist */ }
@@ -623,25 +802,7 @@ export default function EmployerDashboardPage() {
                 })()}
 
                 {applications.length > 0 ? (
-                  <>
-                  <p className={styles.previewLabel}>Showing {recentApps.length} of {totalApplications} applications</p>
-                  <div className={styles.recentApps}>
-                    {recentApps.map(app => (
-                      <Link href={`/my-jobs/${app.job_id}/applications`} key={app.id} className={styles.appCard}>
-                        <div className={styles.appCardInfo}>
-                          <h4>{app.candidate_name || 'Candidate'}</h4>
-                          <p>{app.job_title || 'Position'} &middot; {formatRelativeTime(app.created_at)}</p>
-                        </div>
-                        <div className={styles.appCardRight}>
-                          <span className={`${styles.statusBadge} ${styles[getStatusStyle(app.status)]}`}>
-                            {STATUS_LABELS[app.status] || app.status}
-                          </span>
-                          <span className={styles.appChevron}>&rsaquo;</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                  </>
+                  <ApplicantSlider apps={recentApps} totalApplications={totalApplications} styles={styles} />
                 ) : (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128196;</div>
@@ -660,38 +821,7 @@ export default function EmployerDashboardPage() {
               </div>
               <div className={styles.cardBody}>
                 {activeJobsList.length > 0 ? (
-                  <div className={styles.jobList}>
-                    {activeJobsList.map(job => {
-                      const appCount = job.application_count || 0
-                      const maxApps = 20
-                      const fillPct = Math.min((appCount / maxApps) * 100, 100)
-                      return (
-                        <Link href="/my-jobs" key={job.id} className={styles.jobItem}>
-                          <div className={styles.jobItemInfo}>
-                            <h4>{job.title}</h4>
-                            <div className={styles.jobItemMeta}>
-                              <div className={styles.jobProgressWrap}>
-                                <div className={styles.jobProgressLabel}>{appCount} apps</div>
-                                <div className={styles.jobProgressBar}>
-                                  <div className={styles.jobProgressFill} style={{ width: `${fillPct}%` }} />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className={styles.jobItemStats}>
-                            <div className={styles.jobItemStat}>
-                              <span className={styles.jobItemStatNum}>{job.views || 0}</span>
-                              <span className={styles.jobItemStatLabel}>Views</span>
-                            </div>
-                            <div className={styles.jobItemStat}>
-                              <span className={styles.jobItemStatNum}>{appCount}</span>
-                              <span className={styles.jobItemStatLabel}>Apps</span>
-                            </div>
-                          </div>
-                        </Link>
-                      )
-                    })}
-                  </div>
+                  <JobSlider jobs={activeJobsList} />
                 ) : (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128188;</div>
