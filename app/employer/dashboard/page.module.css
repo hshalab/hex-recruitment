@@ -136,51 +136,66 @@
 }
 
 /* ── Quick Action Bar (above fold) ────────────────────── */
-.statsSummary {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-
-.statCard {
+/* ── Stats strip ────────────────────────────────────── */
+.statsStrip {
+  display: flex;
+  align-items: center;
   background: var(--white);
   border: 1px solid var(--border-gray);
   border-radius: 12px;
-  padding: 1rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  transition: box-shadow 0.15s, border-color 0.15s;
-}
-.statCard:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.07);
-  border-color: #d1d5db;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
 }
 
-.statValue {
-  font-size: 1.75rem;
+.statPill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  gap: 0.15rem;
+  transition: background 0.15s;
+}
+.statPill:hover {
+  background: #f8fafc;
+}
+
+.statPillNum {
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-dark);
   line-height: 1;
 }
 
-.statLabel {
-  font-size: 0.8rem;
+.statPillLabel {
+  font-size: 0.7rem;
   color: var(--text-gray);
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
-.statBadge {
-  display: inline-block;
-  margin-top: 0.25rem;
-  padding: 0.1rem 0.4rem;
+.statPillBadge {
   background: var(--primary-yellow);
   color: var(--black);
-  border-radius: 4px;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 700;
-  width: fit-content;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+}
+
+.statPillDivider {
+  width: 1px;
+  height: 36px;
+  background: var(--border-gray);
+  flex-shrink: 0;
 }
 
 /* ── Stale applications nudge ────────────────────────── */
@@ -205,88 +220,6 @@
 .staleNudgeLink { font-size: 0.82rem; font-weight: 700; color: #b45309; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
 .staleNudgeLink:hover { text-decoration: underline; }
 
-/* ── Stats row ───────────────────────────────────────── */
-.statsRow {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.statCard {
-  background: var(--dark-gray);
-  border-radius: 10px;
-  padding: 0.75rem 1.25rem;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.2s ease;
-  border-left: 3px solid var(--primary-yellow);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.statCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-}
-
-.statCardGold { border-left-color: #FFD700; }
-.statCardGreen { border-left-color: var(--border-gray); }
-.statCardBlue { border-left-color: var(--border-gray); }
-.statCardPurple { border-left-color: var(--border-gray); }
-
-/* Faded watermark icon */
-.statCard::after {
-  content: attr(data-watermark);
-  position: absolute;
-  bottom: -4px;
-  right: 6px;
-  font-size: 3rem;
-  opacity: 0.06;
-  pointer-events: none;
-  line-height: 1;
-}
-
-.statTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.statLabel {
-  font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.65);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.statTrend {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-}
-
-.statTrendUp {
-  color: #16a34a;
-  background: #f0fdf4;
-}
-
-.statTrendDown {
-  color: #dc2626;
-  background: #fef2f2;
-}
-
-.statNumber {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #FFE500;
-  line-height: 1.2;
-}
 
 /* ── Grid layout ─────────────────────────────────────── */
 .grid {
@@ -763,7 +696,6 @@
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 960px) {
   .grid { grid-template-columns: 1fr; }
-  .statsRow { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
@@ -775,12 +707,6 @@
   .avatarPlaceholder { width: 48px; height: 48px; font-size: 1.15rem; border-radius: 10px; }
   .welcomeLeft { gap: 0.75rem; }
   .welcomeDate { display: none; }
-
-  /* Stats row */
-  .statsRow { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-  .statCard { padding: 0.85rem; }
-  .statNumber { font-size: 1.5rem; }
-  .statLabel { font-size: 0.7rem; }
 
   /* Pipeline */
   .pipelineWrap { overflow: visible; }
@@ -826,10 +752,6 @@
   .appCardRight { align-self: flex-end; }
 
   /* Stat cards */
-  .statCard { padding: 0.75rem; }
-  .statNumber { font-size: 1.35rem; }
-  .statCard::after { font-size: 2rem; }
-
   /* Pipeline: 3 per row on very small screens — hide labels, show counts only */
   .pipeline { grid-template-columns: repeat(3, 1fr); }
   .pipelineLabel { display: none; }

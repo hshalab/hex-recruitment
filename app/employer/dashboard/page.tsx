@@ -336,9 +336,7 @@ export default function EmployerDashboardPage() {
               </div>
             </div>
           </div>
-          <div className={styles.statsRow}>
-            {[1, 2, 3, 4].map(i => <SkeletonCard key={i} height={100} />)}
-          </div>
+          <SkeletonCard height={60} />
           <div className={styles.grid}>
             <div className={styles.colLeft}>
               <SkeletonCard height={260} />
@@ -394,33 +392,29 @@ export default function EmployerDashboardPage() {
           </div>
         </div>
 
-        {/* ── STATS SUMMARY ────────────────────────── */}
-        <div className={styles.statsSummary}>
-          <div className={styles.statCard} onClick={() => router.push('/my-jobs')} style={{ cursor: 'pointer' }}>
-            <span className={styles.statValue}>{activeJobs}</span>
-            <span className={styles.statLabel}>Active Jobs</span>
-            {newJobsThisWeek > 0 && (
-              <span className={styles.statBadge}>+{newJobsThisWeek} this week</span>
-            )}
-          </div>
-          <div className={styles.statCard} onClick={() => router.push('/my-jobs')} style={{ cursor: 'pointer' }}>
-            <span className={styles.statValue}>{totalApplications}</span>
-            <span className={styles.statLabel}>Total Applications</span>
-            {newAppsThisWeek > 0 && (
-              <span className={styles.statBadge}>+{newAppsThisWeek} this week</span>
-            )}
-          </div>
-          <div className={styles.statCard} onClick={() => router.push('/my-jobs?filter=interviewing')} style={{ cursor: 'pointer' }}>
-            <span className={styles.statValue}>{statusCounts['interviewing'] || 0}</span>
-            <span className={styles.statLabel}>Interviewing</span>
-          </div>
-          <div className={styles.statCard} onClick={() => router.push('/messages')} style={{ cursor: 'pointer' }}>
-            <span className={styles.statValue}>{totalUnreadCount || 0}</span>
-            <span className={styles.statLabel}>Unread Messages</span>
-            {totalUnreadCount > 0 && (
-              <span className={styles.statBadge}>New</span>
-            )}
-          </div>
+        {/* ── STATS STRIP ── */}
+        <div className={styles.statsStrip}>
+          <button className={styles.statPill} onClick={() => router.push('/my-jobs')}>
+            <span className={styles.statPillNum}>{activeJobs}</span>
+            <span className={styles.statPillLabel}>Active Jobs</span>
+          </button>
+          <div className={styles.statPillDivider} />
+          <button className={styles.statPill} onClick={() => router.push('/my-jobs')}>
+            <span className={styles.statPillNum}>{totalApplications}</span>
+            <span className={styles.statPillLabel}>
+              Applications{newAppsThisWeek > 0 && <span className={styles.statPillBadge}>+{newAppsThisWeek}</span>}
+            </span>
+          </button>
+          <div className={styles.statPillDivider} />
+          <button className={styles.statPill} onClick={() => router.push('/my-jobs?filter=interviewing')}>
+            <span className={styles.statPillNum}>{statusCounts['interviewing'] || 0}</span>
+            <span className={styles.statPillLabel}>Interviewing</span>
+          </button>
+          <div className={styles.statPillDivider} />
+          <button className={styles.statPill} onClick={() => router.push('/messages')}>
+            <span className={styles.statPillNum}>{totalViews}</span>
+            <span className={styles.statPillLabel}>Views</span>
+          </button>
         </div>
 
         {/* ── GETTING STARTED CHECKLIST ───────────────── */}
@@ -467,39 +461,6 @@ export default function EmployerDashboardPage() {
           </div>
         )}
 
-        {/* ── STATS ROW ──────────────────────────────────── */}
-        <div className={styles.statsRow}>
-          <div className={`${styles.statCard} ${styles.statCardGold}`} data-watermark="&#128188;">
-            <div className={styles.statTop}>
-              <span className={styles.statLabel}>Total Jobs</span>
-              {newJobsThisWeek > 0 && (
-                <span className={`${styles.statTrend} ${styles.statTrendUp}`}>+{newJobsThisWeek} this week</span>
-              )}
-            </div>
-            <span className={styles.statNumber}>{totalJobs}</span>
-          </div>
-          <div className={`${styles.statCard} ${styles.statCardGreen}`} data-watermark="&#9889;">
-            <div className={styles.statTop}>
-              <span className={styles.statLabel}>Active Jobs</span>
-            </div>
-            <span className={styles.statNumber}>{activeJobs}</span>
-          </div>
-          <div className={`${styles.statCard} ${styles.statCardBlue}`} data-watermark="&#128196;">
-            <div className={styles.statTop}>
-              <span className={styles.statLabel}>Applications</span>
-              {newAppsThisWeek > 0 && (
-                <span className={`${styles.statTrend} ${styles.statTrendUp}`}>+{newAppsThisWeek} this week</span>
-              )}
-            </div>
-            <span className={styles.statNumber}>{totalApplications}</span>
-          </div>
-          <div className={`${styles.statCard} ${styles.statCardPurple}`} data-watermark="&#128065;">
-            <div className={styles.statTop}>
-              <span className={styles.statLabel}>Job Views</span>
-            </div>
-            <span className={styles.statNumber}>{totalViews}</span>
-          </div>
-        </div>
 
         <div className={styles.grid}>
           {/* ════════════════ LEFT COLUMN ═════════════════ */}
