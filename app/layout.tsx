@@ -2,6 +2,7 @@ import dynamic from 'next/dynamic'
 const FeedbackWidget = dynamic(() => import('@/components/FeedbackWidget'), { ssr: false })
 import ScrollToTop from '@/components/ScrollToTop'
 import SessionGuard from '@/components/SessionGuard'
+import { MessagesProvider } from '@/lib/MessagesContext'
 import type { Metadata } from 'next'
 import { Inter, Dancing_Script } from 'next/font/google'
 import { Providers } from './providers'
@@ -85,10 +86,12 @@ export default function RootLayout({
     <html lang="en-GB">
       <body className={`${inter.className} ${dancingScript.variable}`}>
         <Providers>
-          <ScrollToTop />
-          <SessionGuard />
-          {children}
-          <FeedbackWidget />
+          <MessagesProvider>
+            <ScrollToTop />
+            <SessionGuard />
+            {children}
+            <FeedbackWidget />
+          </MessagesProvider>
         </Providers>
       </body>
     </html>
