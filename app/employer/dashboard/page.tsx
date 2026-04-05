@@ -70,7 +70,7 @@ function SkeletonCard({ height = 120 }: { height?: number }) {
 }
 
 // ═════════════════════════════════════════════════════════
-// ── Pipeline touch slider (transform-based with momentum, works on iOS) ──
+// ── Pipeline touch slider (DOM-ref transform, zero re-renders during scroll) ──
 function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, styles }: {
   stages: readonly string[]
   stageColors: Record<string, string>
@@ -81,7 +81,9 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
   const router = useRouter()
   const CARD_W = 163
   const VISIBLE = 2.2
-  const [offset, setOffset] = React.useState(0)
+  const maxOffset = Math.max(0, (stages.length - VISIBLE) * CARD_W)
+  const trackRef = React.useRef<HTMLDivElement>(null)
+  const offset = React.useRef(0)
   const touchStartX = React.useRef(0)
   const touchStartY = React.useRef(0)
   const touchStartOffset = React.useRef(0)
@@ -90,19 +92,24 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
   const lastT = React.useRef(0)
   const velocity = React.useRef(0)
   const rafId = React.useRef(0)
-  const maxOffset = Math.max(0, (stages.length - VISIBLE) * CARD_W)
+  const didMove = React.useRef(false)
 
   const clamp = (v: number) => Math.max(0, Math.min(maxOffset, v))
+
+  const setTransform = (x: number) => {
+    if (trackRef.current) trackRef.current.style.transform = `translateX(-${x}px)`
+  }
 
   const onTouchStart = (e: React.TouchEvent) => {
     cancelAnimationFrame(rafId.current)
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
-    touchStartOffset.current = offset
+    touchStartOffset.current = offset.current
     lastX.current = e.touches[0].clientX
     lastT.current = Date.now()
     velocity.current = 0
     isHoriz.current = null
+    didMove.current = false
   }
 
   const onTouchMove = (e: React.TouchEvent) => {
@@ -114,46 +121,53 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
     }
     if (!isHoriz.current) return
     e.stopPropagation()
+    didMove.current = true
     const now = Date.now()
     const dt = now - lastT.current
     if (dt > 0) velocity.current = (lastX.current - e.touches[0].clientX) / dt
     lastX.current = e.touches[0].clientX
     lastT.current = now
-    setOffset(clamp(touchStartOffset.current + dx))
+    offset.current = clamp(touchStartOffset.current + dx)
+    setTransform(offset.current)
+  }
+
+  const snapTo = (target: number) => {
+    const snapped = clamp(Math.round(target / CARD_W) * CARD_W)
+    let current = offset.current
+    const step = () => {
+      current += (snapped - current) * 0.2
+      if (Math.abs(snapped - current) < 0.5) {
+        current = snapped
+        offset.current = snapped
+        setTransform(snapped)
+        return
+      }
+      offset.current = current
+      setTransform(current)
+      rafId.current = requestAnimationFrame(step)
+    }
+    rafId.current = requestAnimationFrame(step)
   }
 
   const onTouchEnd = (e: React.TouchEvent) => {
     if (!isHoriz.current) return
     const dx = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(dx) < 8) {
-      const idx = Math.round(offset / CARD_W)
+    if (!didMove.current || Math.abs(dx) < 8) {
+      const idx = Math.round(offset.current / CARD_W)
       const s = stages[idx]
       if (s) router.push(`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`)
       return
     }
-    // Apply momentum then snap
-    let v = velocity.current
-    let current = offset
-    const decay = 0.92
-    const animate = () => {
-      v *= decay
-      current = clamp(current + v * 16)
-      setOffset(current)
-      if (Math.abs(v) > 0.1 && current > 0 && current < maxOffset) {
-        rafId.current = requestAnimationFrame(animate)
-      } else {
-        const snapped = Math.round(current / CARD_W) * CARD_W
-        setOffset(clamp(snapped))
-      }
-    }
-    rafId.current = requestAnimationFrame(animate)
+    const v = velocity.current
+    const projected = offset.current + v * 120
+    snapTo(projected)
   }
 
   return (
     <div style={{ overflow: 'hidden', margin: '0 -1rem', padding: '0 1rem' }}
       onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
     >
-      <div style={{ display: 'flex', gap: '0.5rem', transform: `translateX(-${offset}px)`, transition: 'transform 0.15s ease-out' }}>
+      <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform' }}>
         {stages.map(s => {
           const count = statusCounts[s] || 0
           const candidates = candidatesByStage[s] || []
