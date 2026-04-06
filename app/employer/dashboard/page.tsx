@@ -232,18 +232,23 @@ function CandidateCardSlider({ apps, totalApplications, styles }: {
 
   return (
     <div>
-      <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: '0 0 0.75rem', fontWeight: 500 }}>
-        {current + 1} of {apps.length}  &middot;  {totalApplications} total
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 0.75rem' }}>
+        <span style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500 }}>
+          {current + 1} of {apps.length}  &middot;  {totalApplications} total
+        </span>
+        {apps.length > 1 && (
+          <span style={{ fontSize: '0.62rem', color: '#94a3b8' }}>&larr; swipe &rarr;</span>
+        )}
+      </div>
       <div ref={trackRef}>
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', maxWidth: '100%', boxSizing: 'border-box' as const }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem' }}>
-            <div style={{ width: 52, height: 52, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 700, color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', fontWeight: 700, color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
               {app.candidate_photo ? <img src={app.candidate_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>{app.candidate_name || 'Candidate'}</div>
-              {app.candidate_job_title && <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{app.candidate_job_title}</div>}
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b' }}>{app.candidate_name || 'Candidate'}</div>
+              {app.candidate_job_title && <div style={{ fontSize: '0.68rem', color: '#64748b' }}>{app.candidate_job_title}</div>}
               <span style={{ display: 'inline-block', fontSize: '0.62rem', fontWeight: 600, padding: '0.1rem 0.4rem', borderRadius: 4, background: sc.bg, color: sc.text, marginTop: '0.25rem' }}>{label}</span>
             </div>
           </div>
@@ -253,7 +258,7 @@ function CandidateCardSlider({ apps, totalApplications, styles }: {
                 &ldquo;{app.candidate_bio.slice(0, 120)}{app.candidate_bio.length > 120 ? '...' : ''}&rdquo;
               </p>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.72rem', color: '#334155' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.72rem', color: '#334155' }}>
               {app.candidate_city && (
                 <div><span style={{ color: '#94a3b8' }}>Location</span><br />{app.candidate_city}</div>
               )}
@@ -1069,16 +1074,16 @@ export default function EmployerDashboardPage() {
                 </div>
                 <div className={styles.cardBody}>
                   {activeJobsList.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', width: '100%' }}>
                       {activeJobsList.map((job: any) => {
                         const appCount = job.application_count || 0
                         const fillPct = Math.min((appCount / 20) * 100, 100)
                         return (
-                          <Link key={job.id} href="/my-jobs" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.75rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
+                          <Link key={job.id} href="/my-jobs" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.625rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.35rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', minHeight: '90px', maxHeight: '90px', overflow: 'hidden', boxSizing: 'border-box' as const }}>
+                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{job.title}</div>
                             <div style={{ display: 'flex', gap: '0.75rem' }}>
-                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{job.views || 0}</div><div style={{ fontSize: '0.55rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Views</div></div>
-                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{appCount}</div><div style={{ fontSize: '0.55rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Apps</div></div>
+                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{job.views || 0}</div><div style={{ fontSize: '0.5rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Views</div></div>
+                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{appCount}</div><div style={{ fontSize: '0.5rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Apps</div></div>
                             </div>
                             <div style={{ height: 3, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', background: '#FFE500', borderRadius: 2, width: `${fillPct}%` }} /></div>
                           </Link>
@@ -1128,9 +1133,9 @@ export default function EmployerDashboardPage() {
                 </div>
                 <div className={styles.cardBody}>
                   {recentConversations.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.5rem', width: '100%' }}>
                       {recentConversations.map((conv: any) => (
-                        <Link href="/messages" key={conv.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: conv.unreadCount > 0 ? '#fffbeb' : '#fff', border: conv.unreadCount > 0 ? '1px solid #fde68a' : '1px solid #e5e7eb', borderRadius: '12px', textDecoration: 'none', color: 'inherit' }}>
+                        <Link href="/messages" key={conv.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: conv.unreadCount > 0 ? '#fffbeb' : '#fff', border: conv.unreadCount > 0 ? '1px solid #fde68a' : '1px solid #e5e7eb', borderRadius: '12px', textDecoration: 'none', color: 'inherit', boxSizing: 'border-box' as const, width: '100%', overflow: 'hidden' }}>
                           <div style={{ position: 'relative' as const, flexShrink: 0 }}>
                             <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#FFE500' }}>
                               {(conv.participantName || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
@@ -1139,7 +1144,7 @@ export default function EmployerDashboardPage() {
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1e293b' }}>{conv.participantName}</div>
-                            <div style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.lastMessage || 'No messages yet'}</div>
+                            <div style={{ fontSize: '0.7rem', color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 'calc(100vw - 140px)' }}>{conv.lastMessage || 'No messages yet'}</div>
                           </div>
                           <span style={{ fontSize: '0.62rem', color: '#94a3b8', flexShrink: 0 }}>{formatRelativeTime(conv.lastMessageAt)}</span>
                         </Link>
