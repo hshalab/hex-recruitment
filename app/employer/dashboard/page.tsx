@@ -919,46 +919,8 @@ export default function EmployerDashboardPage() {
             </div>
           </div>
 
-          {/* ════════════════ LEFT COLUMN — applicants + active jobs ════════════════ */}
+          {/* ════════════════ LEFT COLUMN — active jobs only ════════════════ */}
           <div className={styles.colLeft}>
-            {/* ── RECENT APPLICANTS ───────────────────────── */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Recent Applicants</h2>
-                <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
-              </div>
-              <div className={styles.cardBody}>
-                {applications.length > 0 ? (
-                  isMobile ? (
-                    <ApplicantSlider apps={recentApps} totalApplications={totalApplications} styles={styles} />
-                  ) : (
-                    <div className={styles.recentApps}>
-                      <p className={styles.previewLabel}>{totalApplications} total applications</p>
-                      {recentApps.map((app: any) => (
-                        <Link href={`/my-jobs/${app.job_id}/applications`} key={app.id} className={styles.appCard}>
-                          <div className={styles.appCardInfo}>
-                            <h4>{app.candidate_name || 'Candidate'}</h4>
-                            <p>{app.job_title || 'Position'} &middot; {formatRelativeTime(app.created_at)}</p>
-                          </div>
-                          <div className={styles.appCardRight}>
-                            <span className={`${styles.statusBadge} ${styles[getStatusStyle(app.status)]}`}>
-                              {STATUS_LABELS[app.status] || app.status}
-                            </span>
-                            <span className={styles.appChevron}>&rsaquo;</span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )
-                ) : (
-                  <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>&#128196;</div>
-                    <p>No applications yet. Post a job to start receiving applications!</p>
-                    <Link href="/post-job" className={styles.cardLink}>Post a Job &rarr;</Link>
-                  </div>
-                )}
-              </div>
-            </div>
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Active Jobs</h2>
@@ -1046,6 +1008,63 @@ export default function EmployerDashboardPage() {
                     <div className={styles.emptyState}>
                       <div className={styles.emptyIcon}>&#128172;</div>
                       <p>No messages yet.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* ── RECENT APPLICANTS (desktop, in right column) ── */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Recent Applicants</h2>
+                  <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
+                </div>
+                <div className={styles.cardBody}>
+                  {applications.length > 0 ? (
+                    <div className={styles.recentApps}>
+                      <p className={styles.previewLabel}>{totalApplications} total applications</p>
+                      {recentApps.map((app: any) => (
+                        <Link href={`/my-jobs/${app.job_id}/applications`} key={app.id} className={styles.appCard}>
+                          <div className={styles.appCardInfo}>
+                            <h4>{app.candidate_name || 'Candidate'}</h4>
+                            <p>{app.job_title || 'Position'} &middot; {formatRelativeTime(app.created_at)}</p>
+                          </div>
+                          <div className={styles.appCardRight}>
+                            <span className={`${styles.statusBadge} ${styles[getStatusStyle(app.status)]}`}>
+                              {STATUS_LABELS[app.status] || app.status}
+                            </span>
+                            <span className={styles.appChevron}>&rsaquo;</span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.emptyState}>
+                      <div className={styles.emptyIcon}>&#128196;</div>
+                      <p>No applications yet. Post a job to start receiving applications!</p>
+                      <Link href="/post-job" className={styles.cardLink}>Post a Job &rarr;</Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════ MOBILE SLIDERS (full width) ════════════════ */}
+          {isMobile && (
+            <div className={styles.colFull}>
+              {/* Mobile applicants slider */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Recent Applicants</h2>
+                  <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
+                </div>
+                <div className={styles.cardBody}>
+                  {applications.length > 0 ? (
+                    <ApplicantSlider apps={recentApps} totalApplications={totalApplications} styles={styles} />
+                  ) : (
+                    <div className={styles.emptyState}>
+                      <div className={styles.emptyIcon}>&#128196;</div>
+                      <p>No applications yet.</p>
                     </div>
                   )}
                 </div>
