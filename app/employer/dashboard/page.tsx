@@ -1074,18 +1074,20 @@ export default function EmployerDashboardPage() {
                 </div>
                 <div className={styles.cardBody}>
                   {activeJobsList.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', width: '100%' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.375rem', width: '100%' }}>
                       {activeJobsList.map((job: any) => {
                         const appCount = job.application_count || 0
                         const fillPct = Math.min((appCount / 20) * 100, 100)
                         return (
-                          <Link key={job.id} href="/my-jobs" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.625rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.35rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', minHeight: '90px', maxHeight: '90px', overflow: 'hidden', boxSizing: 'border-box' as const }}>
-                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{job.title}</div>
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{job.views || 0}</div><div style={{ fontSize: '0.5rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Views</div></div>
-                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{appCount}</div><div style={{ fontSize: '0.5rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Apps</div></div>
+                          <Link key={job.id} href="/my-jobs" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.5rem 0.75rem', textDecoration: 'none', color: 'inherit', boxSizing: 'border-box' as const, width: '100%', overflow: 'hidden' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
+                              <div style={{ height: 3, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden', marginTop: '0.25rem' }}><div style={{ height: '100%', background: '#FFE500', borderRadius: 2, width: `${fillPct}%` }} /></div>
                             </div>
-                            <div style={{ height: 3, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', background: '#FFE500', borderRadius: 2, width: `${fillPct}%` }} /></div>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b' }}>{job.views || 0}</div><div style={{ fontSize: '0.5rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Views</div></div>
+                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b' }}>{appCount}</div><div style={{ fontSize: '0.5rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Apps</div></div>
+                            </div>
                           </Link>
                         )
                       })}
