@@ -889,7 +889,8 @@ export default function EmployerDashboardPage() {
 
 
         <div className={styles.grid}>
-          {/* ════════════════ FULL WIDTH — pipeline only ════════════════ */}
+
+          {/* ── FULL WIDTH: Pipeline ── */}
           <div className={styles.colFull}>
             <div className={styles.card}>
               <div className={styles.cardHeader}>
@@ -897,23 +898,44 @@ export default function EmployerDashboardPage() {
                 <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
               </div>
               <div className={styles.cardBody}>
-                {(() => {
-                  const stages = PIPELINE_STAGES.filter(s => s !== 'rejected')
-                  const stageColors: Record<string, string> = {
-                    pending: '#f59e0b',
-                    reviewing: '#3b82f6',
-                    shortlisted: '#8b5cf6',
-                    interview: '#06b6d4',
-                    offered: '#10b981',
-                    hired: '#16a34a',
-                  }
-                  return <PipelineSlider stages={stages} stageColors={stageColors} statusCounts={statusCounts} candidatesByStage={candidatesByStage} styles={styles} />
-                })()}
+                <div className={styles.pipelineScroller}>
+                  {PIPELINE_STAGES.filter(s => s !== 'rejected').map(s => {
+                    const count = statusCounts[s] || 0
+                    const candidates = candidatesByStage[s] || []
+                    const stageColors: Record<string, string> = {
+                      pending: '#f59e0b', reviewing: '#3b82f6', shortlisted: '#8b5cf6',
+                      interview: '#06b6d4', offered: '#10b981', hired: '#16a34a',
+                    }
+                    const color = stageColors[s] || '#6b7280'
+                    return (
+                      <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={styles.pipelineCard} style={{ borderTopColor: color }}>
+                        <div className={styles.pipelineCardTop}>
+                          <span className={styles.pipelineCardCount} style={{ color }}>{count}</span>
+                          <span className={styles.pipelineCardStage}>{STATUS_LABELS[s]}</span>
+                        </div>
+                        <div className={styles.pipelineCardCandidates}>
+                          {candidates.length === 0 ? (
+                            <span className={styles.pipelineCardEmpty}>No candidates</span>
+                          ) : (
+                            candidates.slice(0, 2).map((app: any, i: number) => (
+                              <div key={i} className={styles.pipelineCardCandidate}>
+                                <span className={styles.pipelineCardName}>{app.candidate_name || 'Candidate'}</span>
+                                <span className={styles.pipelineCardJob}>{app.job_title || ''}</span>
+                              </div>
+                            ))
+                          )}
+                          {candidates.length > 2 && <span className={styles.pipelineCardMore}>+{candidates.length - 2} more</span>}
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ════════════════ LEFT COLUMN — active jobs only ════════════════ */}
+
+          {/* ── LEFT COLUMN: Active Jobs ── */}
           <div className={styles.colLeft}>
             <div className={styles.card}>
               <div className={styles.cardHeader}>
@@ -922,56 +944,37 @@ export default function EmployerDashboardPage() {
               </div>
               <div className={styles.cardBody}>
                 {activeJobsList.length > 0 ? (
-                  isMobile ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                      {activeJobsList.map((job: any) => {
-                        const appCount = job.application_count || 0
-                        const fillPct = Math.min((appCount / 20) * 100, 100)
-                        return (
-                          <Link key={job.id} href="/my-jobs" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.75rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                              <div style={{ textAlign: 'center' }}><div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{job.views || 0}</div><div style={{ fontSize: '0.55rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Views</div></div>
-                              <div style={{ textAlign: 'center' }}><div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{appCount}</div><div style={{ fontSize: '0.55rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Apps</div></div>
-                            </div>
-                            <div style={{ height: 3, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', background: '#FFE500', borderRadius: 2, width: `${fillPct}%` }} /></div>
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <div className={styles.jobList}>
-                      {activeJobsList.map((job: any) => {
-                        const appCount = job.application_count || 0
-                        const fillPct = Math.min((appCount / 20) * 100, 100)
-                        return (
-                          <Link href="/my-jobs" key={job.id} className={styles.jobItem}>
-                            <div className={styles.jobItemInfo}>
-                              <h4>{job.title}</h4>
-                              <div className={styles.jobItemMeta}>
-                                <div className={styles.jobProgressWrap}>
-                                  <div className={styles.jobProgressLabel}>{appCount} apps</div>
-                                  <div className={styles.jobProgressBar}>
-                                    <div className={styles.jobProgressFill} style={{ width: `${fillPct}%` }} />
-                                  </div>
+                  <div className={styles.jobList}>
+                    {activeJobsList.map((job: any) => {
+                      const appCount = job.application_count || 0
+                      const fillPct = Math.min((appCount / 20) * 100, 100)
+                      return (
+                        <Link href="/my-jobs" key={job.id} className={styles.jobItem}>
+                          <div className={styles.jobItemInfo}>
+                            <h4>{job.title}</h4>
+                            <div className={styles.jobItemMeta}>
+                              <div className={styles.jobProgressWrap}>
+                                <div className={styles.jobProgressLabel}>{appCount} apps</div>
+                                <div className={styles.jobProgressBar}>
+                                  <div className={styles.jobProgressFill} style={{ width: `${fillPct}%` }} />
                                 </div>
                               </div>
                             </div>
-                            <div className={styles.jobItemStats}>
-                              <div className={styles.jobItemStat}>
-                                <span className={styles.jobItemStatNum}>{job.views || 0}</span>
-                                <span className={styles.jobItemStatLabel}>Views</span>
-                              </div>
-                              <div className={styles.jobItemStat}>
-                                <span className={styles.jobItemStatNum}>{appCount}</span>
-                                <span className={styles.jobItemStatLabel}>Apps</span>
-                              </div>
+                          </div>
+                          <div className={styles.jobItemStats}>
+                            <div className={styles.jobItemStat}>
+                              <span className={styles.jobItemStatNum}>{job.views || 0}</span>
+                              <span className={styles.jobItemStatLabel}>Views</span>
                             </div>
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  )
+                            <div className={styles.jobItemStat}>
+                              <span className={styles.jobItemStatNum}>{appCount}</span>
+                              <span className={styles.jobItemStatLabel}>Apps</span>
+                            </div>
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </div>
                 ) : (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128188;</div>
@@ -983,74 +986,109 @@ export default function EmployerDashboardPage() {
             </div>
           </div>
 
-          {/* ════════════════ RIGHT COLUMN — messages (desktop) ════════════════ */}
-          {!isMobile && (
-            <div className={styles.colRight}>
-              <div className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <h2 className={styles.cardTitle}>Recent Messages</h2>
-                  <Link href="/messages" className={styles.cardLink}>View All</Link>
-                </div>
-                <div className={styles.cardBody}>
-                  {recentConversations.length > 0 ? (
-                    <div className={styles.msgList}>
-                      {recentConversations.map((conv: any) => (
-                        <Link href="/messages" key={conv.id} className={styles.msgItem}>
-                          <div className={styles.msgAvatarWrap}>
-                            <div className={styles.msgAvatar}>
-                              {conv.participantName ? getInitials(conv.participantName) : '?'}
-                            </div>
-                            <span className={conv.unreadCount > 0 ? styles.msgOnline : styles.msgOffline} />
-                          </div>
-                          <div className={styles.msgContent}>
-                            <p className={styles.msgSender}>
-                              {conv.unreadCount > 0 && <span className={styles.unreadDot} />}
-                              {conv.participantName}
-                            </p>
-                            <p className={styles.msgPreview}>{conv.lastMessage}</p>
-                          </div>
-                          <span className={styles.msgTime}>{formatRelativeTime(conv.lastMessageAt)}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className={styles.emptyState}>
-                      <div className={styles.emptyIcon}>&#128172;</div>
-                      <p>No messages yet.</p>
-                    </div>
-                  )}
-                </div>
+          {/* ── RIGHT COLUMN: Messages + Applicants (desktop only via CSS) ── */}
+          <div className={styles.colRight}>
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>Recent Messages</h2>
+                <Link href="/messages" className={styles.cardLink}>View All</Link>
               </div>
-              {/* ── RECENT APPLICANTS (desktop, in right column) ── */}
+              <div className={styles.cardBody}>
+                {recentConversations.length > 0 ? (
+                  <div className={styles.msgList}>
+                    {recentConversations.map((conv: any) => (
+                      <Link href="/messages" key={conv.id} className={styles.msgItem}>
+                        <div className={styles.msgAvatarWrap}>
+                          <div className={styles.msgAvatar}>
+                            {conv.participantName ? getInitials(conv.participantName) : '?'}
+                          </div>
+                          <span className={conv.unreadCount > 0 ? styles.msgOnline : styles.msgOffline} />
+                        </div>
+                        <div className={styles.msgContent}>
+                          <p className={styles.msgSender}>
+                            {conv.unreadCount > 0 && <span className={styles.unreadDot} />}
+                            {conv.participantName}
+                          </p>
+                          <p className={styles.msgPreview}>{conv.lastMessage}</p>
+                        </div>
+                        <span className={styles.msgTime}>{formatRelativeTime(conv.lastMessageAt)}</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.emptyState}>
+                    <div className={styles.emptyIcon}>&#128172;</div>
+                    <p>No messages yet.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>Recent Applicants</h2>
+                <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
+              </div>
+              <div className={styles.cardBody}>
+                {applications.length > 0 ? (
+                  <div className={styles.recentApps}>
+                    <p className={styles.previewLabel}>{totalApplications} total applications</p>
+                    {recentApps.map((app: any) => (
+                      <Link href={`/my-jobs/${app.job_id}/applications`} key={app.id} className={styles.appCard}>
+                        <div className={styles.appCardInfo}>
+                          <h4>{app.candidate_name || 'Candidate'}</h4>
+                          <p>{app.job_title || 'Position'} &middot; {formatRelativeTime(app.created_at)}</p>
+                        </div>
+                        <div className={styles.appCardRight}>
+                          <span className={`${styles.statusBadge} ${styles[getStatusStyle(app.status)]}`}>
+                            {STATUS_LABELS[app.status] || app.status}
+                          </span>
+                          <span className={styles.appChevron}>&rsaquo;</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.emptyState}>
+                    <div className={styles.emptyIcon}>&#128196;</div>
+                    <p>No applications yet.</p>
+                    <Link href="/post-job" className={styles.cardLink}>Post a Job &rarr;</Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── MOBILE ONLY: Active Jobs 2-col grid ── */}
+          {isMobile && (
+            <div className={styles.colFull}>
               <div className={styles.card}>
                 <div className={styles.cardHeader}>
-                  <h2 className={styles.cardTitle}>Recent Applicants</h2>
-                  <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
+                  <h2 className={styles.cardTitle}>Active Jobs</h2>
+                  <Link href="/my-jobs" className={styles.cardLink}>Manage Jobs</Link>
                 </div>
                 <div className={styles.cardBody}>
-                  {applications.length > 0 ? (
-                    <div className={styles.recentApps}>
-                      <p className={styles.previewLabel}>{totalApplications} total applications</p>
-                      {recentApps.map((app: any) => (
-                        <Link href={`/my-jobs/${app.job_id}/applications`} key={app.id} className={styles.appCard}>
-                          <div className={styles.appCardInfo}>
-                            <h4>{app.candidate_name || 'Candidate'}</h4>
-                            <p>{app.job_title || 'Position'} &middot; {formatRelativeTime(app.created_at)}</p>
-                          </div>
-                          <div className={styles.appCardRight}>
-                            <span className={`${styles.statusBadge} ${styles[getStatusStyle(app.status)]}`}>
-                              {STATUS_LABELS[app.status] || app.status}
-                            </span>
-                            <span className={styles.appChevron}>&rsaquo;</span>
-                          </div>
-                        </Link>
-                      ))}
+                  {activeJobsList.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      {activeJobsList.map((job: any) => {
+                        const appCount = job.application_count || 0
+                        const fillPct = Math.min((appCount / 20) * 100, 100)
+                        return (
+                          <Link key={job.id} href="/my-jobs" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.75rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{job.views || 0}</div><div style={{ fontSize: '0.55rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Views</div></div>
+                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{appCount}</div><div style={{ fontSize: '0.55rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Apps</div></div>
+                            </div>
+                            <div style={{ height: 3, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', background: '#FFE500', borderRadius: 2, width: `${fillPct}%` }} /></div>
+                          </Link>
+                        )
+                      })}
                     </div>
                   ) : (
                     <div className={styles.emptyState}>
-                      <div className={styles.emptyIcon}>&#128196;</div>
-                      <p>No applications yet. Post a job to start receiving applications!</p>
-                      <Link href="/post-job" className={styles.cardLink}>Post a Job &rarr;</Link>
+                      <div className={styles.emptyIcon}>&#128188;</div>
+                      <p>No active jobs.</p>
                     </div>
                   )}
                 </div>
@@ -1058,10 +1096,9 @@ export default function EmployerDashboardPage() {
             </div>
           )}
 
-          {/* ════════════════ MOBILE SLIDERS (full width) ════════════════ */}
+          {/* ── MOBILE ONLY: Candidate card slider ── */}
           {isMobile && (
             <div className={styles.colFull}>
-              {/* Mobile applicants slider */}
               <div className={styles.card}>
                 <div className={styles.cardHeader}>
                   <h2 className={styles.cardTitle}>Recent Applicants</h2>
@@ -1081,7 +1118,7 @@ export default function EmployerDashboardPage() {
             </div>
           )}
 
-          {/* ════════════════ MOBILE MESSAGES (full width) ════════════════ */}
+          {/* ── MOBILE ONLY: Messages stacked list ── */}
           {isMobile && (
             <div className={styles.colFull}>
               <div className={styles.card}>
@@ -1091,14 +1128,14 @@ export default function EmployerDashboardPage() {
                 </div>
                 <div className={styles.cardBody}>
                   {recentConversations.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.5rem' }}>
                       {recentConversations.map((conv: any) => (
                         <Link href="/messages" key={conv.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: conv.unreadCount > 0 ? '#fffbeb' : '#fff', border: conv.unreadCount > 0 ? '1px solid #fde68a' : '1px solid #e5e7eb', borderRadius: '12px', textDecoration: 'none', color: 'inherit' }}>
-                          <div style={{ position: 'relative', flexShrink: 0 }}>
+                          <div style={{ position: 'relative' as const, flexShrink: 0 }}>
                             <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#FFE500' }}>
                               {(conv.participantName || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                             </div>
-                            {conv.unreadCount > 0 && <div style={{ position: 'absolute', top: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: '#ef4444', color: '#fff', fontSize: '0.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>{conv.unreadCount}</div>}
+                            {conv.unreadCount > 0 && <div style={{ position: 'absolute' as const, top: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: '#ef4444', color: '#fff', fontSize: '0.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>{conv.unreadCount}</div>}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1e293b' }}>{conv.participantName}</div>
@@ -1118,6 +1155,7 @@ export default function EmployerDashboardPage() {
               </div>
             </div>
           )}
+
         </div>
       </div>
     </main>

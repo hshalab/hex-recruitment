@@ -224,7 +224,7 @@
 /* ── Grid layout ─────────────────────────────────────── */
 .grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 340px;
   gap: 1.5rem;
   align-items: start;
 }
@@ -674,6 +674,7 @@
 @media (max-width: 960px) {
   .grid { grid-template-columns: 1fr; }
   .colFull { grid-column: 1; }
+  .colLeft { display: none; }
   .colRight { display: none; }
   .pipelineScroller {
     overflow-x: auto;
