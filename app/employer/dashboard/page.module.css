@@ -679,19 +679,19 @@
   .pipelineScroller {
     overflow-x: auto;
     flex-wrap: nowrap;
-    scroll-snap-type: x proximity;
+    scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
     scrollbar-width: none;
-    padding: 0.5rem 1rem 1rem;
-    margin: 0 -1rem;
+    padding: 0.5rem 0 0.75rem;
+    margin: 0;
   }
   .pipelineScroller::-webkit-scrollbar { display: none; }
   .pipelineCard {
-    flex: 0 0 110px;
-    min-width: 110px;
-    max-width: 110px;
+    flex: 0 0 155px;
+    min-width: 155px;
+    max-width: 155px;
     height: 130px;
-    font-size: 0.7rem;
   }
   .pipelineCardCount { font-size: 1.3rem; }
   .pipelineCardStage { font-size: 0.55rem; }

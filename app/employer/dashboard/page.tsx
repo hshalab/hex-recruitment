@@ -240,9 +240,9 @@ function CandidateCardSlider({ apps, totalApplications, styles }: {
           <span style={{ fontSize: '0.62rem', color: '#94a3b8' }}>&larr; swipe &rarr;</span>
         )}
       </div>
-      <div ref={trackRef}>
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', maxWidth: '100%', boxSizing: 'border-box' as const }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem' }}>
+      <div ref={trackRef} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' as const, overflow: 'hidden' }}>
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' as const }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 0.875rem' }}>
             <div style={{ width: 44, height: 44, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', fontWeight: 700, color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
               {app.candidate_photo ? <img src={app.candidate_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
             </div>
@@ -252,7 +252,7 @@ function CandidateCardSlider({ apps, totalApplications, styles }: {
               <span style={{ display: 'inline-block', fontSize: '0.62rem', fontWeight: 600, padding: '0.1rem 0.4rem', borderRadius: 4, background: sc.bg, color: sc.text, marginTop: '0.25rem' }}>{label}</span>
             </div>
           </div>
-          <div style={{ padding: '0 1rem 1rem' }}>
+          <div style={{ padding: '0 0.875rem 0.875rem' }}>
             {app.candidate_bio && (
               <p style={{ fontSize: '0.78rem', color: '#475569', fontStyle: 'italic', lineHeight: 1.4, margin: '0 0 0.75rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
                 &ldquo;{app.candidate_bio.slice(0, 120)}{app.candidate_bio.length > 120 ? '...' : ''}&rdquo;
@@ -1074,12 +1074,12 @@ export default function EmployerDashboardPage() {
                 </div>
                 <div className={styles.cardBody}>
                   {activeJobsList.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.375rem', width: '100%' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.375rem', width: '100%', boxSizing: 'border-box' as const }}>
                       {activeJobsList.map((job: any) => {
                         const appCount = job.application_count || 0
                         const fillPct = Math.min((appCount / 20) * 100, 100)
                         return (
-                          <Link key={job.id} href="/my-jobs" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.5rem 0.75rem', textDecoration: 'none', color: 'inherit', boxSizing: 'border-box' as const, width: '100%', overflow: 'hidden' }}>
+                          <Link key={job.id} href="/my-jobs" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.625rem', textDecoration: 'none', color: 'inherit', boxSizing: 'border-box' as const, width: '100%', overflow: 'hidden' }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
                               <div style={{ height: 3, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden', marginTop: '0.25rem' }}><div style={{ height: '100%', background: '#FFE500', borderRadius: 2, width: `${fillPct}%` }} /></div>
