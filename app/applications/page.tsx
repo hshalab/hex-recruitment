@@ -522,8 +522,8 @@ export default function MyJobsPage() {
                         </div>
                         {application.status === 'interview' ? (
                           <div className={styles.interviewCard}>
-                            <div className={styles.interviewCardHeader} style={application.interview?.status === 'cancelled' ? { background: '#6b7280' } : application.interview?.status === 'pending_selection' ? { background: '#f59e0b' } : undefined}>
-                              {application.interview?.status === 'cancelled' ? 'Interview Cancelled' : application.interview?.status === 'pending_selection' ? 'Select a Time' : 'Interview Scheduled'}
+                            <div className={styles.interviewCardHeader} style={application.interview?.status === 'cancelled' ? { background: '#6b7280' } : !application.interview ? { background: '#6b7280' } : application.interview?.status === 'pending_selection' ? { background: '#f59e0b' } : undefined}>
+                              {application.interview?.status === 'cancelled' ? 'Interview Cancelled' : !application.interview ? 'Interview Cancelled' : application.interview?.status === 'pending_selection' ? 'Select a Time' : 'Interview Scheduled'}
                             </div>
                             <div className={styles.interviewCardBody}>
                               {application.interview ? (
