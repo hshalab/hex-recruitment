@@ -242,50 +242,55 @@ function CandidateCardSlider({ apps, totalApplications, styles }: {
       </div>
       <div ref={trackRef} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' as const, overflow: 'hidden' }}>
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' as const }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 0.875rem' }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', fontWeight: 700, color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
+          {/* ── HEADER: Photo + Name + Facts ── */}
+          <div style={{ display: 'flex', gap: '0.75rem', padding: '0.875rem', alignItems: 'flex-start' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
               {app.candidate_photo ? <img src={app.candidate_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b' }}>{app.candidate_name || 'Candidate'}</div>
-              {app.candidate_job_title && <div style={{ fontSize: '0.68rem', color: '#64748b' }}>{app.candidate_job_title}</div>}
-              <span style={{ display: 'inline-block', fontSize: '0.62rem', fontWeight: 600, padding: '0.1rem 0.4rem', borderRadius: 4, background: sc.bg, color: sc.text, marginTop: '0.25rem' }}>{label}</span>
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b' }}>{app.candidate_name || 'Candidate'}</div>
+              {app.candidate_job_title && <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{app.candidate_job_title}</div>}
+              <span style={{ display: 'inline-block', fontSize: '0.62rem', fontWeight: 600, padding: '0.1rem 0.4rem', borderRadius: 4, background: sc.bg, color: sc.text, marginTop: '0.2rem' }}>{label}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.15rem', flexShrink: 0, textAlign: 'right' as const }}>
+              {app.candidate_city && <span style={{ fontSize: '0.62rem', color: '#64748b' }}>📍 {app.candidate_city}</span>}
+              {app.candidate_years_exp && <span style={{ fontSize: '0.62rem', color: '#64748b' }}>⏳ {app.candidate_years_exp} yrs exp</span>}
+              {app.candidate_availability && <span style={{ fontSize: '0.62rem', color: '#64748b' }}>✅ {app.candidate_availability}</span>}
+              {app.candidate_sector && <span style={{ fontSize: '0.62rem', color: '#64748b' }}>🏢 {app.candidate_sector}</span>}
             </div>
           </div>
-          <div style={{ padding: '0 0.875rem 0.875rem' }}>
-            {app.candidate_bio && (
-              <p style={{ fontSize: '0.78rem', color: '#475569', fontStyle: 'italic', lineHeight: 1.4, margin: '0 0 0.75rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
-                &ldquo;{app.candidate_bio.slice(0, 120)}{app.candidate_bio.length > 120 ? '...' : ''}&rdquo;
+
+          {/* ── BIO ── */}
+          <div style={{ padding: '0 0.875rem 0.5rem' }}>
+            {app.candidate_bio ? (
+              <p style={{ fontSize: '0.82rem', color: '#334155', fontStyle: 'italic', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
+                &ldquo;{app.candidate_bio.slice(0, 150)}{app.candidate_bio.length > 150 ? '...' : ''}&rdquo;
               </p>
+            ) : (
+              <p style={{ fontSize: '0.75rem', color: '#cbd5e1', fontStyle: 'italic', margin: 0 }}>No bio added yet</p>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.72rem', color: '#334155' }}>
-              {app.candidate_city && (
-                <div><span style={{ color: '#94a3b8' }}>Location</span><br />{app.candidate_city}</div>
-              )}
-              {app.candidate_years_exp && (
-                <div><span style={{ color: '#94a3b8' }}>Experience</span><br />{app.candidate_years_exp} yrs</div>
-              )}
-              {app.candidate_availability && (
-                <div><span style={{ color: '#94a3b8' }}>Availability</span><br />{app.candidate_availability}</div>
-              )}
-              {app.candidate_sector && (
-                <div><span style={{ color: '#94a3b8' }}>Sector</span><br />{app.candidate_sector}</div>
-              )}
+          </div>
+
+          {/* ── SKILLS ── */}
+          {skills.length > 0 && (
+            <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', padding: '0 0.875rem 0.5rem' }}>
+              {skills.map((skill: string, i: number) => (
+                <span key={i} style={{ fontSize: '0.6rem', padding: '0.15rem 0.5rem', borderRadius: 999, background: '#f1f5f9', color: '#475569', fontWeight: 500 }}>{skill}</span>
+              ))}
             </div>
-            {skills.length > 0 && (
-              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                {skills.map((skill: string, i: number) => (
-                  <span key={i} style={{ fontSize: '0.62rem', padding: '0.15rem 0.5rem', borderRadius: 999, background: '#f1f5f9', color: '#475569' }}>{skill}</span>
-                ))}
-              </div>
-            )}
-            <p style={{ fontSize: '0.68rem', color: '#94a3b8', margin: '0.5rem 0 0' }}>
+          )}
+
+          {/* ── APPLIED FOR ── */}
+          <div style={{ padding: '0 0.875rem 0.75rem' }}>
+            <p style={{ fontSize: '0.68rem', color: '#94a3b8', margin: 0 }}>
               Applied for: {app.job_title || ''} &middot; {formatRelativeTime(app.created_at)}
             </p>
           </div>
+
+          {/* ── ACTIONS ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: '1px solid #e5e7eb' }}>
-            <Link href={`/candidates/${app.candidate_id}`} onClick={(e: any) => e.stopPropagation()} style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.78rem', fontWeight: 600, color: '#1e293b', textDecoration: 'none', borderRight: '1px solid #e5e7eb' }}>View Profile</Link>
-            <Link href={`/messages?candidate=${app.candidate_id}`} onClick={(e: any) => e.stopPropagation()} style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.78rem', fontWeight: 600, color: '#FFE500', background: '#0f172a', textDecoration: 'none', display: 'block' }}>Message</Link>
+            <Link href={`/candidates/${app.candidate_id}`} onClick={(e: any) => e.stopPropagation()} style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.8rem', fontWeight: 600, color: '#1e293b', textDecoration: 'none', borderRight: '1px solid #e5e7eb', borderBottomLeftRadius: '16px' }}>View Profile</Link>
+            <Link href={`/messages?candidate=${app.candidate_id}`} onClick={(e: any) => e.stopPropagation()} style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.8rem', fontWeight: 600, color: '#FFE500', background: '#0f172a', textDecoration: 'none', display: 'block', borderBottomRightRadius: '16px' }}>Message</Link>
           </div>
         </div>
       </div>
