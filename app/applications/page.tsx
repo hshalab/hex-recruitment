@@ -73,23 +73,33 @@ export default function MyJobsPage() {
         console.error('Error fetching applications:', error.message)
         setApplications([])
       } else if (data) {
-        // Fetch interviews for these applications
+        // Fetch interviews for these applications (by application_id OR by candidate+job)
         const applicationIds = data.map((row: any) => row.id)
-        const { data: interviews, error: interviewError } = await supabase
+        const jobIds = data.map((row: any) => row.job_id).filter(Boolean)
+        const { data: interviews } = await supabase
           .from('interviews')
           .select('*')
-          .in('application_id', applicationIds)
+          .eq('candidate_id', session.user.id)
           .in('status', ['pending_selection', 'scheduled', 'confirmed'])
-
-        console.log('[Applications] applicationIds:', applicationIds)
-        console.log('[Applications] interviews fetched:', interviews?.length, interviews)
-        console.log('[Applications] interview fetch error:', interviewError)
 
         const interviewMap: Record<string, any> = {}
         if (interviews) {
-          interviews.forEach((i: any) => { interviewMap[i.application_id] = i })
+          // Map by application_id first
+          interviews.forEach((i: any) => {
+            if (i.application_id && applicationIds.includes(i.application_id)) {
+              interviewMap[i.application_id] = i
+            }
+          })
+          // Fallback: map by job_id for any unmatched interviews
+          interviews.forEach((i: any) => {
+            if (!interviewMap[i.application_id]) {
+              const matchingApp = data.find((row: any) => row.job_id === i.job_id)
+              if (matchingApp) {
+                interviewMap[matchingApp.id] = i
+              }
+            }
+          })
         }
-        console.log('[Applications] interviewMap keys:', Object.keys(interviewMap))
 
         // Fetch offers for these applications
         const { data: offers } = await supabase
