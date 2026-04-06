@@ -130,6 +130,10 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
         throw new Error(insertError.message)
       }
 
+      // Mark as success immediately — steps below are non-blocking
+      setSubmitted(true)
+      onSuccess(job.id)
+
       // 2. Notify employer
       if (job.employerId) {
         try {
@@ -228,9 +232,6 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
           console.warn('Auto-message failed (non-blocking):', convErr)
         }
       }
-
-      setSubmitted(true)
-      onSuccess(job.id)
     } catch (err) {
       console.error('Application error:', err)
       alert('Failed to submit application. Please try again.')
