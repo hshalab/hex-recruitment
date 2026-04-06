@@ -14,14 +14,14 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#2d3748',
+          background: '#0f172a',
           borderRadius: 36,
         }}
       >
-        <svg width="120" height="120" viewBox="0 0 32 32">
-          <polygon points="11,2.1 16.5,5.3 16.5,11.7 11,14.9 5.5,11.7 5.5,5.3" fill="none" stroke="#FFE500" strokeWidth="1.8" strokeLinejoin="round"/>
-          <polygon points="21,2.1 26.5,5.3 26.5,11.7 21,14.9 15.5,11.7 15.5,5.3" fill="none" stroke="#FFE500" strokeWidth="1.8" strokeLinejoin="round"/>
-          <polygon points="16,14.9 21.5,18.1 21.5,24.5 16,27.7 10.5,24.5 10.5,18.1" fill="none" stroke="#FFE500" strokeWidth="1.8" strokeLinejoin="round"/>
+        <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#FFE500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3" />
+          <path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4" />
+          <path d="M5 21h14" />
         </svg>
       </div>
     ),
