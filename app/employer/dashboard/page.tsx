@@ -836,10 +836,15 @@ export default function EmployerDashboardPage() {
           </button>
           <div className={styles.statPillDivider} />
           <button className={styles.statPill} onClick={() => router.push('/my-jobs')}>
-            <span className={styles.statPillNum}>{totalApplications}</span>
-            <span className={styles.statPillLabel}>
-              Applications{newAppsThisWeek > 0 && <span className={styles.statPillBadge}>+{newAppsThisWeek}</span>}
+            <span style={{ position: 'relative', display: 'inline-block' }}>
+              <span className={styles.statPillNum}>{totalApplications}</span>
+              {newAppsThisWeek > 0 && (
+                <span style={{ position: 'absolute', top: -4, right: -12, minWidth: 16, height: 16, borderRadius: 8, background: '#ef4444', color: '#fff', fontSize: '0.55rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', border: '2px solid #fff' }}>
+                  {newAppsThisWeek > 99 ? '99+' : newAppsThisWeek}
+                </span>
+              )}
             </span>
+            <span className={styles.statPillLabel}>Applications</span>
           </button>
           <div className={styles.statPillDivider} />
           <button className={styles.statPill} onClick={() => router.push('/my-jobs?filter=interviewing')}>
