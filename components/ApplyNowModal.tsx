@@ -96,6 +96,20 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
 
       const candidateName = session.user.user_metadata?.full_name || 'Candidate'
 
+      // Check for existing application
+      const { data: existing } = await supabase
+        .from('job_applications')
+        .select('id')
+        .eq('job_id', job.id)
+        .eq('candidate_id', session.user.id)
+        .maybeSingle()
+
+      if (existing) {
+        setSubmitted(true)
+        onSuccess(job.id)
+        return
+      }
+
       // 1. Insert application
       const { error: insertError } = await supabase
         .from('job_applications')
@@ -108,7 +122,12 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
           company: job.company,
         })
       if (insertError) {
-        console.warn('Supabase insert warning:', insertError.message)
+        if (insertError.code === '23505') {
+          setSubmitted(true)
+          onSuccess(job.id)
+          return
+        }
+        throw new Error(insertError.message)
       }
 
       // 2. Notify employer
