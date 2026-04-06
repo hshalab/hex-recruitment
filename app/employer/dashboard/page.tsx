@@ -180,132 +180,114 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
   )
 }
 
-// ── Applicant card slider (larger cards with city/salary/availability) ──
-function ApplicantSlider({ apps, totalApplications, styles }: {
+// ── Candidate profile card slider (swipe one at a time) ──
+function CandidateCardSlider({ apps, totalApplications, styles }: {
   apps: any[]
   totalApplications: number
   styles: Record<string, string>
 }) {
-  const CARD_W = 210
-  const maxOffset = Math.max(0, (apps.length - 1.7) * CARD_W)
+  const [current, setCurrent] = React.useState(0)
   const trackRef = React.useRef<HTMLDivElement>(null)
-  const state = React.useRef({ offset: 0, startX: 0, startY: 0, startOffset: 0, lastX: 0, lastT: 0, vel: 0, isHoriz: null as boolean | null, didMove: false, rafId: 0 })
-  const clamp = (v: number) => Math.max(0, Math.min(maxOffset, v))
-  const setTransform = (x: number) => { if (trackRef.current) trackRef.current.style.transform = `translateX(-${x}px)` }
-  const snapTo = (target: number) => {
-    const snapped = clamp(Math.round(target / CARD_W) * CARD_W)
-    let cur = state.current.offset
-    const step = () => {
-      cur += (snapped - cur) * 0.12
-      if (Math.abs(snapped - cur) < 0.5) { state.current.offset = snapped; setTransform(snapped); return }
-      state.current.offset = cur; setTransform(cur)
-      state.current.rafId = requestAnimationFrame(step)
-    }
-    state.current.rafId = requestAnimationFrame(step)
-  }
-  React.useEffect(() => {
-    const el = trackRef.current
-    if (!el) return
-    const s = state.current
-    const onStart = (e: TouchEvent) => {
-      cancelAnimationFrame(s.rafId)
-      s.startX = e.touches[0].clientX; s.startY = e.touches[0].clientY
-      s.startOffset = s.offset; s.lastX = s.startX; s.lastT = Date.now()
-      s.vel = 0; s.isHoriz = null; s.didMove = false
-    }
-    const onMove = (e: TouchEvent) => {
-      const dx = s.startX - e.touches[0].clientX
-      const dy = s.startY - e.touches[0].clientY
-      if (s.isHoriz === null) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; s.isHoriz = Math.abs(dx) > Math.abs(dy) * 1.2 }
-      if (!s.isHoriz) return
-      e.preventDefault(); s.didMove = true
-      const now = Date.now(); const dt = now - s.lastT
-      if (dt > 0) s.vel = (s.lastX - e.touches[0].clientX) / dt
-      s.lastX = e.touches[0].clientX; s.lastT = now
-      s.offset = clamp(s.startOffset + dx); setTransform(s.offset)
-    }
-    const onEnd = () => { if (!s.isHoriz || !s.didMove) return; snapTo(s.offset + s.vel * 350) }
-    el.addEventListener('touchstart', onStart, { passive: true })
-    el.addEventListener('touchmove', onMove, { passive: false })
-    el.addEventListener('touchend', onEnd, { passive: true })
-    return () => { el.removeEventListener('touchstart', onStart); el.removeEventListener('touchmove', onMove); el.removeEventListener('touchend', onEnd) }
-  }, [maxOffset])
-
+  const state = React.useRef({ startX: 0, startY: 0, isHoriz: null as boolean | null, didMove: false })
+  const getInitials = (name: string) => (name || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
   const avatarColors = ['#06b6d4','#8b5cf6','#10b981','#f59e0b','#3b82f6','#ec4899','#14b8a6','#e11d48']
-  const getInitials = (name: string) => name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
   const statusColors: Record<string, { bg: string; text: string }> = {
-    pending:     { bg: '#fef3c7', text: '#92400e' },
-    reviewing:   { bg: '#dbeafe', text: '#1e40af' },
-    shortlisted: { bg: '#ede9fe', text: '#5b21b6' },
-    interview:   { bg: '#cffafe', text: '#0e7490' },
-    offered:     { bg: '#d1fae5', text: '#065f46' },
-    hired:       { bg: '#dcfce7', text: '#14532d' },
-    rejected:    { bg: '#fee2e2', text: '#991b1b' },
+    pending: { bg: '#fef3c7', text: '#92400e' }, reviewing: { bg: '#dbeafe', text: '#1e40af' },
+    shortlisted: { bg: '#ede9fe', text: '#5b21b6' }, interview: { bg: '#cffafe', text: '#0e7490' },
+    offered: { bg: '#d1fae5', text: '#065f46' }, hired: { bg: '#dcfce7', text: '#14532d' },
+    rejected: { bg: '#fee2e2', text: '#991b1b' },
   }
   const statusLabels: Record<string, string> = {
     pending: 'Applied', reviewing: 'Reviewing', shortlisted: 'Shortlisted',
     interview: 'Interview', offered: 'Offered', hired: 'Hired', rejected: 'Rejected',
   }
+  React.useEffect(() => {
+    const el = trackRef.current; if (!el) return
+    const s = state.current
+    const onStart = (e: TouchEvent) => { s.startX = e.touches[0].clientX; s.startY = e.touches[0].clientY; s.isHoriz = null; s.didMove = false }
+    const onMove = (e: TouchEvent) => {
+      const dx = s.startX - e.touches[0].clientX; const dy = s.startY - e.touches[0].clientY
+      if (s.isHoriz === null) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; s.isHoriz = Math.abs(dx) > Math.abs(dy) * 1.2 }
+      if (!s.isHoriz) return; e.preventDefault(); s.didMove = true
+    }
+    const onEnd = (e: TouchEvent) => {
+      if (!s.isHoriz || !s.didMove) return
+      const dx = s.startX - e.changedTouches[0].clientX
+      if (dx > 40 && current < apps.length - 1) setCurrent(c => c + 1)
+      if (dx < -40 && current > 0) setCurrent(c => c - 1)
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    return () => { el.removeEventListener('touchstart', onStart); el.removeEventListener('touchmove', onMove); el.removeEventListener('touchend', onEnd) }
+  }, [current, apps.length])
+
+  if (apps.length === 0) return null
+  const app = apps[current]
+  const initials = getInitials(app.candidate_name || 'C')
+  const bgColor = avatarColors[current % avatarColors.length]
+  const sc = statusColors[app.status] || { bg: '#f3f4f6', text: '#374151' }
+  const label = statusLabels[app.status] || app.status
+  const skills = Array.isArray(app.candidate_skills) ? app.candidate_skills.slice(0, 3) : []
 
   return (
     <div>
       <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: '0 0 0.75rem', fontWeight: 500 }}>
-        {totalApplications} total application{totalApplications !== 1 ? 's' : ''}
+        {current + 1} of {apps.length}  &middot;  {totalApplications} total
       </p>
-      <div style={{ overflow: 'hidden', margin: '0 -1rem', padding: '0 1rem' }}>
-        <div ref={trackRef} style={{ display: 'flex', gap: '0.5rem', willChange: 'transform' }}>
-          {apps.map((app, i) => {
-            const initials = getInitials(app.candidate_name || 'C')
-            const bgColor = avatarColors[i % avatarColors.length]
-            const sc = statusColors[app.status] || { bg: '#f3f4f6', text: '#374151' }
-            const label = statusLabels[app.status] || app.status
-            return (
-              <div key={app.id} style={{ flex: '0 0 200px', minWidth: 200, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                {/* Avatar + name row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 700, color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
-                    {app.candidate_photo ? <img src={app.candidate_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {app.candidate_name || 'Candidate'}
-                    </div>
-                    <div style={{ fontSize: '0.68rem', color: '#6b7280', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
-                      {app.job_title || ''}
-                    </div>
-                  </div>
-                </div>
-                {/* Divider */}
-                <div style={{ height: 1, background: '#f1f5f9', margin: '0.15rem 0' }} />
-                {/* Data rows */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                  {app.candidate_city && (
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <span>📍</span>
-                      <span>{app.candidate_city}</span>
-                    </div>
-                  )}
-                  {app.candidate_availability && (
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <span>⏱</span>
-                      <span>{app.candidate_availability}</span>
-                    </div>
-                  )}
-                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <span>🕐</span>
-                    <span>{formatRelativeTime(app.created_at)}</span>
-                  </div>
-                </div>
-                {/* Status badge */}
-                <div style={{ marginTop: '0.1rem' }}>
-                  <span style={{ display: 'inline-block', fontSize: '0.62rem', fontWeight: 600, padding: '0.12rem 0.45rem', borderRadius: 4, background: sc.bg, color: sc.text }}>
-                    {label}
-                  </span>
-                </div>
+      <div ref={trackRef}>
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem' }}>
+            <div style={{ width: 52, height: 52, borderRadius: '50%', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 700, color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
+              {app.candidate_photo ? <img src={app.candidate_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>{app.candidate_name || 'Candidate'}</div>
+              {app.candidate_job_title && <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{app.candidate_job_title}</div>}
+              <span style={{ display: 'inline-block', fontSize: '0.62rem', fontWeight: 600, padding: '0.1rem 0.4rem', borderRadius: 4, background: sc.bg, color: sc.text, marginTop: '0.25rem' }}>{label}</span>
+            </div>
+          </div>
+          <div style={{ padding: '0 1rem 1rem' }}>
+            {app.candidate_bio && (
+              <p style={{ fontSize: '0.78rem', color: '#475569', fontStyle: 'italic', lineHeight: 1.4, margin: '0 0 0.75rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
+                &ldquo;{app.candidate_bio.slice(0, 120)}{app.candidate_bio.length > 120 ? '...' : ''}&rdquo;
+              </p>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.72rem', color: '#334155' }}>
+              {app.candidate_city && (
+                <div><span style={{ color: '#94a3b8' }}>Location</span><br />{app.candidate_city}</div>
+              )}
+              {app.candidate_years_exp && (
+                <div><span style={{ color: '#94a3b8' }}>Experience</span><br />{app.candidate_years_exp} yrs</div>
+              )}
+              {app.candidate_availability && (
+                <div><span style={{ color: '#94a3b8' }}>Availability</span><br />{app.candidate_availability}</div>
+              )}
+              {app.candidate_sector && (
+                <div><span style={{ color: '#94a3b8' }}>Sector</span><br />{app.candidate_sector}</div>
+              )}
+            </div>
+            {skills.length > 0 && (
+              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                {skills.map((skill: string, i: number) => (
+                  <span key={i} style={{ fontSize: '0.62rem', padding: '0.15rem 0.5rem', borderRadius: 999, background: '#f1f5f9', color: '#475569' }}>{skill}</span>
+                ))}
               </div>
-            )
-          })}
+            )}
+            <p style={{ fontSize: '0.68rem', color: '#94a3b8', margin: '0.5rem 0 0' }}>
+              Applied for: {app.job_title || ''} &middot; {formatRelativeTime(app.created_at)}
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: '1px solid #e5e7eb' }}>
+            <Link href={`/candidates/${app.candidate_id}`} onClick={(e: any) => e.stopPropagation()} style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.78rem', fontWeight: 600, color: '#1e293b', textDecoration: 'none', borderRight: '1px solid #e5e7eb' }}>View Profile</Link>
+            <Link href={`/messages?candidate=${app.candidate_id}`} onClick={(e: any) => e.stopPropagation()} style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.78rem', fontWeight: 600, color: '#FFE500', background: '#0f172a', textDecoration: 'none', display: 'block' }}>Message</Link>
+          </div>
         </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.3rem', marginTop: '0.75rem' }}>
+        {apps.map((_: any, i: number) => (
+          <button key={i} onClick={() => setCurrent(i)} style={{ width: i === current ? '20px' : '7px', height: '7px', borderRadius: '4px', background: i === current ? '#0f172a' : '#cbd5e1', border: 'none', padding: 0, cursor: 'pointer', transition: 'all 0.2s' }} />
+        ))}
       </div>
     </div>
   )
@@ -666,24 +648,36 @@ export default function EmployerDashboardPage() {
                   try {
                     const { data: profiles } = await supabase
                       .from('candidate_profiles')
-                      .select('user_id, full_name, profile_picture_url, city, availability')
+                      .select('user_id, full_name, profile_picture_url, city, availability, years_experience, job_title, job_sector, skills, bio')
                       .in('user_id', candidateIds)
 
                     if (profiles) {
                       const nameMap: Record<string, string> = {}
-                      const photoMap: Record<string, string | null> = {}
                       const profileExtras: Record<string, any> = {}
                       profiles.forEach((p: any) => {
                         nameMap[p.user_id] = p.full_name
-                        photoMap[p.user_id] = p.profile_picture_url || null
-                        profileExtras[p.user_id] = { city: p.city, availability: p.availability }
+                        profileExtras[p.user_id] = {
+                          photo: p.profile_picture_url || null,
+                          city: p.city || null,
+                          availability: p.availability || null,
+                          yearsExp: p.years_experience || null,
+                          jobTitle: p.job_title || null,
+                          sector: p.job_sector || null,
+                          skills: p.skills || [],
+                          bio: p.bio || null,
+                        }
                       })
                       setApplications(prev => prev.map(a => ({
                         ...a,
                         candidate_name: nameMap[a.candidate_id] || 'Candidate',
-                        candidate_photo: photoMap[a.candidate_id] || null,
+                        candidate_photo: profileExtras[a.candidate_id]?.photo || null,
                         candidate_city: profileExtras[a.candidate_id]?.city || null,
                         candidate_availability: profileExtras[a.candidate_id]?.availability || null,
+                        candidate_years_exp: profileExtras[a.candidate_id]?.yearsExp || null,
+                        candidate_job_title: profileExtras[a.candidate_id]?.jobTitle || null,
+                        candidate_sector: profileExtras[a.candidate_id]?.sector || null,
+                        candidate_skills: profileExtras[a.candidate_id]?.skills || [],
+                        candidate_bio: profileExtras[a.candidate_id]?.bio || null,
                       })))
                     }
                   } catch { /* candidate_profiles may not exist */ }
@@ -732,7 +726,7 @@ export default function EmployerDashboardPage() {
     return map
   }, [applications])
 
-  const recentApps = useMemo(() => applications.slice(0, 5), [applications])
+  const recentApps = useMemo(() => applications.slice(0, 10), [applications])
 
   const activeJobsList = useMemo(() =>
     jobsData.filter(j => j.status === 'active').slice(0, 10)
@@ -929,7 +923,22 @@ export default function EmployerDashboardPage() {
               <div className={styles.cardBody}>
                 {activeJobsList.length > 0 ? (
                   isMobile ? (
-                    <JobSlider jobs={activeJobsList} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      {activeJobsList.map((job: any) => {
+                        const appCount = job.application_count || 0
+                        const fillPct = Math.min((appCount / 20) * 100, 100)
+                        return (
+                          <Link key={job.id} href="/my-jobs" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.75rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                              <div style={{ textAlign: 'center' }}><div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{job.views || 0}</div><div style={{ fontSize: '0.55rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Views</div></div>
+                              <div style={{ textAlign: 'center' }}><div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{appCount}</div><div style={{ fontSize: '0.55rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Apps</div></div>
+                            </div>
+                            <div style={{ height: 3, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', background: '#FFE500', borderRadius: 2, width: `${fillPct}%` }} /></div>
+                          </Link>
+                        )
+                      })}
+                    </div>
                   ) : (
                     <div className={styles.jobList}>
                       {activeJobsList.map((job: any) => {
@@ -1060,7 +1069,7 @@ export default function EmployerDashboardPage() {
                 </div>
                 <div className={styles.cardBody}>
                   {applications.length > 0 ? (
-                    <ApplicantSlider apps={recentApps} totalApplications={totalApplications} styles={styles} />
+                    <CandidateCardSlider apps={recentApps} totalApplications={totalApplications} styles={styles} />
                   ) : (
                     <div className={styles.emptyState}>
                       <div className={styles.emptyIcon}>&#128196;</div>
@@ -1082,7 +1091,23 @@ export default function EmployerDashboardPage() {
                 </div>
                 <div className={styles.cardBody}>
                   {recentConversations.length > 0 ? (
-                    <MessagesSlider conversations={recentConversations} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {recentConversations.map((conv: any) => (
+                        <Link href="/messages" key={conv.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: conv.unreadCount > 0 ? '#fffbeb' : '#fff', border: conv.unreadCount > 0 ? '1px solid #fde68a' : '1px solid #e5e7eb', borderRadius: '12px', textDecoration: 'none', color: 'inherit' }}>
+                          <div style={{ position: 'relative', flexShrink: 0 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#FFE500' }}>
+                              {(conv.participantName || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                            </div>
+                            {conv.unreadCount > 0 && <div style={{ position: 'absolute', top: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: '#ef4444', color: '#fff', fontSize: '0.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>{conv.unreadCount}</div>}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1e293b' }}>{conv.participantName}</div>
+                            <div style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.lastMessage || 'No messages yet'}</div>
+                          </div>
+                          <span style={{ fontSize: '0.62rem', color: '#94a3b8', flexShrink: 0 }}>{formatRelativeTime(conv.lastMessageAt)}</span>
+                        </Link>
+                      ))}
+                    </div>
                   ) : (
                     <div className={styles.emptyState}>
                       <div className={styles.emptyIcon}>&#128172;</div>
