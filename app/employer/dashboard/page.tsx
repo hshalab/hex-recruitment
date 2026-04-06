@@ -895,9 +895,8 @@ export default function EmployerDashboardPage() {
 
 
         <div className={styles.grid}>
-          {/* ════════════════ FULL WIDTH — pipeline + applicants ════════════════ */}
+          {/* ════════════════ FULL WIDTH — pipeline only ════════════════ */}
           <div className={styles.colFull}>
-            {/* ── APPLICATION PIPELINE ──────────────────── */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Application Pipeline</h2>
@@ -918,7 +917,10 @@ export default function EmployerDashboardPage() {
                 })()}
               </div>
             </div>
+          </div>
 
+          {/* ════════════════ LEFT COLUMN — applicants + active jobs ════════════════ */}
+          <div className={styles.colLeft}>
             {/* ── RECENT APPLICANTS ───────────────────────── */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>
@@ -957,10 +959,6 @@ export default function EmployerDashboardPage() {
                 )}
               </div>
             </div>
-          </div>
-
-          {/* ════════════════ LEFT COLUMN — active jobs ════════════════ */}
-          <div className={styles.colLeft}>
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Active Jobs</h2>
