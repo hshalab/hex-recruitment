@@ -80,7 +80,7 @@ export default function MyJobsPage() {
           .from('interviews')
           .select('*')
           .eq('candidate_id', session.user.id)
-          .in('status', ['pending_selection', 'scheduled', 'confirmed'])
+          .in('status', ['pending_selection', 'scheduled', 'confirmed', 'cancelled'])
 
         const interviewMap: Record<string, any> = {}
         if (interviews) {
