@@ -75,16 +75,21 @@ export default function MyJobsPage() {
       } else if (data) {
         // Fetch interviews for these applications
         const applicationIds = data.map((row: any) => row.id)
-        const { data: interviews } = await supabase
+        const { data: interviews, error: interviewError } = await supabase
           .from('interviews')
           .select('*')
           .in('application_id', applicationIds)
           .in('status', ['pending_selection', 'scheduled', 'confirmed'])
 
+        console.log('[Applications] applicationIds:', applicationIds)
+        console.log('[Applications] interviews fetched:', interviews?.length, interviews)
+        console.log('[Applications] interview fetch error:', interviewError)
+
         const interviewMap: Record<string, any> = {}
         if (interviews) {
           interviews.forEach((i: any) => { interviewMap[i.application_id] = i })
         }
+        console.log('[Applications] interviewMap keys:', Object.keys(interviewMap))
 
         // Fetch offers for these applications
         const { data: offers } = await supabase
