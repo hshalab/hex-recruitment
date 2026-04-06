@@ -526,7 +526,7 @@ export default function MyJobsPage() {
                               {application.interview?.status === 'cancelled' ? 'Interview Cancelled' : !application.interview ? 'Interview Cancelled' : application.interview?.status === 'pending_selection' ? 'Select a Time' : 'Interview Scheduled'}
                             </div>
                             <div className={styles.interviewCardBody}>
-                              {application.interview ? (
+                              {application.interview && application.interview.status !== 'cancelled' ? (
                                 (() => {
                                   const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
                                   const interviewDateObj = new Date(y, m - 1, d)
@@ -544,9 +544,7 @@ export default function MyJobsPage() {
                                   </span>
                                 </>
                                 })()
-                              ) : (
-                                <span className={styles.interviewCardDate}>Date pending</span>
-                              )}
+                              ) : null}
                             </div>
                           </div>
                         ) : (
