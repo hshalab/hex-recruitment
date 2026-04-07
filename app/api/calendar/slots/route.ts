@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
         const rules = weekly.filter(w => w.day_of_week === dow)
 
         const pushSlots = (startMin: number, endMin: number, dur: number) => {
-          for (let m = startMin; m + dur <= endMin; m += dur) {
+          for (let m = startMin; m + dur <= endMin; m += 15) {
             const blockedSet = blockedTimes.get(dateStr)
             let overlaps = false
             if (blockedSet) {
