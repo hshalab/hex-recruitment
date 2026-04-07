@@ -36,6 +36,41 @@
   color: #0f172a;
   margin: 0;
 }
+@media (max-width: 767px) {
+  .topTitle { margin-top: 1rem; }
+}
+
+/* 7-dot week indicator (mobile day view) */
+.dotRow {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1.5px solid #d1d5db;
+  padding: 0;
+  cursor: pointer;
+}
+.dotActive {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+
+/* Day view wrapper */
+.dayViewWrap {
+  width: 100%;
+}
+.dayViewBody {
+  display: flex;
+  border-top: 1px solid #f3f4f6;
+  border-left: 1px solid #f3f4f6;
+  touch-action: pan-y;
+}
 
 .headerRow {
   display: flex;

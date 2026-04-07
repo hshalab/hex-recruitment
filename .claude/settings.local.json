@@ -54,7 +54,15 @@
       "Bash(powershell.exe -Command \"Remove-Item ''C:\\\\Users\\\\Paul Davies\\\\AppData\\\\Local\\\\Temp\\\\hex-backup-temp'' -Recurse -Force -ErrorAction SilentlyContinue\")",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "Bash(tee /tmp/dev.log)",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__plugin_playwright_playwright__browser_console_messages",
+      "mcp__plugin_playwright_playwright__browser_close"
     ],
     "additionalDirectories": [
       "c:\\Users\\Paul Davies\\Downloads\\hospitality-hive-nextjs\\hospitality-hive-nextjs\\app\\api\\interviews\\[id]\\book"

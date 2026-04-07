@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import styles from './page.module.css'
 
@@ -100,16 +101,149 @@ function fmtMonth(d: Date): string {
 const initials = (name: string) =>
   name.split(' ').filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase() || '').join('') || '?'
 
+// ───── Single-day mobile view ─────
+function DayView({
+  day,
+  events,
+  availability,
+  now,
+  onSelectEvent,
+  onPrev,
+  onNext,
+}: {
+  day: Date
+  events: Event[]
+  availability: WeeklyRule[]
+  now: Date
+  onSelectEvent: (e: Event) => void
+  onPrev: () => void
+  onNext: () => void
+}) {
+  const touchStartX = useRef<number | null>(null)
+  const gridTotalMinutes = (DAY_GRID_END - DAY_GRID_START) * 60
+  const isToday =
+    day.getFullYear() === now.getFullYear() &&
+    day.getMonth() === now.getMonth() &&
+    day.getDate() === now.getDate()
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current == null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    if (Math.abs(dx) < 40) return
+    if (dx < 0) onNext()
+    else onPrev()
+  }
+
+  return (
+    <div className={styles.dayViewWrap}>
+      <div className={styles.dayViewBody} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div className={styles.timeCol}>
+          {Array.from({ length: DAY_GRID_END - DAY_GRID_START }).map((_, hourIdx) => (
+            <div key={hourIdx} className={styles.timeLabel}>
+              {pad(DAY_GRID_START + hourIdx)}:00
+            </div>
+          ))}
+        </div>
+        <div className={`${styles.dayCol} ${isToday ? styles.dayColToday : ''}`} style={{ flex: 1 }}>
+          {Array.from({ length: DAY_GRID_END - DAY_GRID_START }).map((_, h) => (
+            <div
+              key={`hl-${h}`}
+              className={styles.hourLine}
+              style={{ top: `${h * HOUR_HEIGHT}px` }}
+            />
+          ))}
+          {availability.map((r, idx) => {
+            const sMin = parseHm(String(r.slot_start).slice(0, 5))
+            const eMin = parseHm(String(r.slot_end).slice(0, 5))
+            const topMin = sMin - DAY_GRID_START * 60
+            const heightMin = eMin - sMin
+            if (topMin < 0 || topMin >= gridTotalMinutes) return null
+            return (
+              <div
+                key={`av-${idx}`}
+                className={styles.availBlock}
+                style={{
+                  top: `${(topMin / 60) * HOUR_HEIGHT}px`,
+                  height: `${(heightMin / 60) * HOUR_HEIGHT}px`,
+                }}
+              />
+            )
+          })}
+          {events.map(ev => {
+            const topMin = parseHm(ev.time) - DAY_GRID_START * 60
+            if (topMin < 0 || topMin >= gridTotalMinutes) return null
+            const heightPx = Math.max(22, (ev.duration / 60) * HOUR_HEIGHT - 4)
+            const cls =
+              ev.status === 'confirmed' ? styles.eventConfirmed :
+              ev.status === 'cancelled' ? styles.eventCancelled :
+              styles.eventScheduled
+            return (
+              <div
+                key={ev.id}
+                className={`${styles.event} ${cls}`}
+                style={{
+                  top: `${(topMin / 60) * HOUR_HEIGHT + 2}px`,
+                  height: `${heightPx}px`,
+                }}
+                onClick={() => onSelectEvent(ev)}
+              >
+                <span className={styles.eventName}>{ev.candidateName}</span>
+                <span className={styles.eventMeta}>{fmt12(ev.time)} · {ev.jobTitle}</span>
+              </div>
+            )
+          })}
+          {isToday && (() => {
+            const mins = now.getHours() * 60 + now.getMinutes() - DAY_GRID_START * 60
+            if (mins < 0 || mins > gridTotalMinutes) return null
+            return (
+              <div
+                className={styles.nowLine}
+                style={{ top: `${(mins / 60) * HOUR_HEIGHT}px` }}
+              >
+                <span className={styles.nowDot} />
+              </div>
+            )
+          })()}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CalendarPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [events, setEvents] = useState<Event[]>([])
   const [weeklyRules, setWeeklyRules] = useState<WeeklyRule[]>([])
-  const [view, setView] = useState<'week' | 'month'>('week')
+  const [view, setView] = useState<'day' | 'week' | 'month'>('week')
+  const [isMobile, setIsMobile] = useState(false)
   const [cursor, setCursor] = useState<Date>(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d
   })
+  // selectedDay used by mobile day view
+  const [selectedDay, setSelectedDay] = useState<Date>(() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); return d
+  })
+
+  // Track mobile viewport
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(max-width: 767px)')
+    const update = () => {
+      const mobile = mq.matches
+      setIsMobile(mobile)
+      // When switching to mobile for the first time, default to day view
+      setView(prev => (mobile && prev === 'week' ? 'day' : prev))
+    }
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
   const [selected, setSelected] = useState<Event | null>(null)
   const [rescheduleOpen, setRescheduleOpen] = useState(false)
   const [now, setNow] = useState<Date>(new Date())
@@ -123,6 +257,12 @@ export default function CalendarPage() {
   // Auth / role gate
   useEffect(() => {
     const init = async () => {
+      if (DEV_MODE) {
+        if (getMockUserType() !== 'employer') { router.push('/dashboard'); return }
+        const mockUser = getMockUser()
+        if (mockUser) setUserId(mockUser.id)
+        return
+      }
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
       if (session.user.user_metadata?.role !== 'employer') { router.push('/dashboard'); return }
@@ -133,6 +273,11 @@ export default function CalendarPage() {
 
   // Fetch data for the current range
   const range = useMemo(() => {
+    if (view === 'day') {
+      // For the day view, fetch the whole week so swiping day-to-day is instant
+      const start = startOfWeek(selectedDay)
+      return { start, end: addDays(start, 6) }
+    }
     if (view === 'week') {
       const start = startOfWeek(cursor)
       const end = addDays(start, 6)
@@ -142,7 +287,7 @@ export default function CalendarPage() {
     const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1)
     const last = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0)
     return { start: startOfWeek(first), end: addDays(startOfWeek(last), 6) }
-  }, [view, cursor])
+  }, [view, cursor, selectedDay])
 
   const loadEvents = useCallback(async (uid: string) => {
     setLoading(true)
@@ -286,9 +431,11 @@ export default function CalendarPage() {
   const isSameDay = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 
-  const rangeLabel = view === 'week'
-    ? fmtRange(weekDays[0], weekDays[6])
-    : fmtMonth(cursor)
+  const rangeLabel = view === 'day'
+    ? selectedDay.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
+    : view === 'week'
+      ? fmtRange(weekDays[0], weekDays[6])
+      : fmtMonth(cursor)
 
   if (loading && events.length === 0) {
     return (
@@ -318,25 +465,44 @@ export default function CalendarPage() {
           <div className={styles.navGroup}>
             <button
               className={styles.navBtn}
-              onClick={() => setCursor(view === 'week' ? addDays(cursor, -7) : new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
+              onClick={() => {
+                if (view === 'day') setSelectedDay(addDays(selectedDay, -1))
+                else if (view === 'week') setCursor(addDays(cursor, -7))
+                else setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))
+              }}
             >
               ‹ Prev
             </button>
             <button
               className={styles.navBtn}
-              onClick={() => { const d = new Date(); d.setHours(0,0,0,0); setCursor(d) }}
+              onClick={() => {
+                const d = new Date(); d.setHours(0,0,0,0)
+                setCursor(d); setSelectedDay(d)
+              }}
             >
               Today
             </button>
             <button
               className={styles.navBtn}
-              onClick={() => setCursor(view === 'week' ? addDays(cursor, 7) : new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
+              onClick={() => {
+                if (view === 'day') setSelectedDay(addDays(selectedDay, 1))
+                else if (view === 'week') setCursor(addDays(cursor, 7))
+                else setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))
+              }}
             >
               Next ›
             </button>
           </div>
           <div className={styles.rangeLabel}>{rangeLabel}</div>
           <div className={styles.viewToggle}>
+            {isMobile && (
+              <button
+                className={`${styles.viewBtn} ${view === 'day' ? styles.viewBtnActive : ''}`}
+                onClick={() => setView('day')}
+              >
+                Day
+              </button>
+            )}
             <button
               className={`${styles.viewBtn} ${view === 'week' ? styles.viewBtnActive : ''}`}
               onClick={() => setView('week')}
@@ -352,8 +518,39 @@ export default function CalendarPage() {
           </div>
         </div>
 
+        {/* 7-dot week indicator — mobile day view only */}
+        {view === 'day' && (
+          <div className={styles.dotRow} aria-hidden="true">
+            {Array.from({ length: 7 }).map((_, i) => {
+              const weekStart = startOfWeek(selectedDay)
+              const d = addDays(weekStart, i)
+              const active = isSameDay(d, selectedDay)
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className={`${styles.dot} ${active ? styles.dotActive : ''}`}
+                  onClick={() => setSelectedDay(d)}
+                  aria-label={d.toLocaleDateString('en-GB', { weekday: 'long' })}
+                />
+              )
+            })}
+          </div>
+        )}
+
         <div className={styles.layout}>
           <div className={styles.calCard}>
+            {view === 'day' && (
+              <DayView
+                day={selectedDay}
+                events={eventsForDate(selectedDay)}
+                availability={availabilityForDate(selectedDay)}
+                now={now}
+                onSelectEvent={setSelected}
+                onPrev={() => setSelectedDay(addDays(selectedDay, -1))}
+                onNext={() => setSelectedDay(addDays(selectedDay, 1))}
+              />
+            )}
             {view === 'week' && (
               <div className={styles.weekGrid}>
                 {/* Header row */}
