@@ -76,12 +76,28 @@ export async function GET(req: NextRequest) {
     const bookings = bookingsRes.data || []
     const interviews = interviewsRes.data || []
 
+    // Scheduling rules — pull from first active weekly row (same across days)
+    const firstRule = weekly[0]
+    const bufferMinutes: number = firstRule?.buffer_minutes ?? 0
+    const minNoticeHours: number = firstRule?.min_notice_hours ?? 24
+    const maxAdvanceDays: number = firstRule?.max_advance_days ?? 28
+
+    // Cap the upper bound of the range by the employer's max_advance_days
+    const maxAdvanceCap = new Date()
+    maxAdvanceCap.setHours(0, 0, 0, 0)
+    maxAdvanceCap.setDate(maxAdvanceCap.getDate() + maxAdvanceDays)
+
+    // Minimum-notice cutoff — any slot whose local start datetime is before this is hidden
+    const noticeCutoff = new Date(Date.now() + minNoticeHours * 60 * 60 * 1000)
+
     // Build blocked 15-min slot map keyed by date → Set<minutes>
+    // Buffer is added after each booking's end.
     const blockedTimes = new Map<string, Set<number>>()
     const markBlocked = (date: string, startMin: number, dur: number) => {
       if (!blockedTimes.has(date)) blockedTimes.set(date, new Set())
       const set = blockedTimes.get(date)!
-      for (let m = startMin; m < startMin + dur; m += 15) set.add(m)
+      const totalEnd = startMin + dur + bufferMinutes
+      for (let m = startMin; m < totalEnd; m += 15) set.add(m)
     }
 
     for (const b of bookings) {
@@ -104,8 +120,10 @@ export async function GET(req: NextRequest) {
     const slots: Array<{ date: string; time: string; duration: number }> = []
     const cursor = new Date(from)
     cursor.setHours(0, 0, 0, 0)
-    const end = new Date(to)
+    // Cap end date by max_advance_days from today
+    let end = new Date(to)
     end.setHours(0, 0, 0, 0)
+    if (end > maxAdvanceCap) end = maxAdvanceCap
 
     while (cursor <= end) {
       const dateStr = toDateStr(cursor)
@@ -117,10 +135,17 @@ export async function GET(req: NextRequest) {
 
         const pushSlots = (startMin: number, endMin: number, dur: number) => {
           for (let m = startMin; m + dur <= endMin; m += 15) {
+            // Apply minimum-notice cutoff
+            const slotDt = new Date(cursor)
+            slotDt.setHours(Math.floor(m / 60), m % 60, 0, 0)
+            if (slotDt < noticeCutoff) continue
+
             const blockedSet = blockedTimes.get(dateStr)
             let overlaps = false
             if (blockedSet) {
-              for (let s = m; s < m + dur; s += 15) {
+              // Check slot + buffer window for conflicts with existing bookings
+              const checkEnd = m + dur + bufferMinutes
+              for (let s = m; s < checkEnd; s += 15) {
                 if (blockedSet.has(s)) { overlaps = true; break }
               }
             }

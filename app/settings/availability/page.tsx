@@ -46,6 +46,9 @@ export default function AvailabilitySettingsPage() {
   const [userId, setUserId] = useState<string | null>(null)
 
   const [duration, setDuration] = useState<number>(60)
+  const [bufferMinutes, setBufferMinutes] = useState<number>(0)
+  const [minNoticeHours, setMinNoticeHours] = useState<number>(24)
+  const [maxAdvanceDays, setMaxAdvanceDays] = useState<number>(28)
   const [weekly, setWeekly] = useState<WeeklyRow[]>(DEFAULT_WEEKLY)
   const [overrides, setOverrides] = useState<Override[]>([])
   const [newBlockDate, setNewBlockDate] = useState('')
@@ -74,7 +77,11 @@ export default function AvailabilitySettingsPage() {
         return { enabled: false, start: '09:00', end: '17:00' }
       })
       setWeekly(next)
-      if (weeklyRows[0]?.duration_minutes) setDuration(weeklyRows[0].duration_minutes)
+      const first = weeklyRows[0]
+      if (first?.duration_minutes) setDuration(first.duration_minutes)
+      if (typeof first?.buffer_minutes === 'number') setBufferMinutes(first.buffer_minutes)
+      if (typeof first?.min_notice_hours === 'number') setMinNoticeHours(first.min_notice_hours)
+      if (typeof first?.max_advance_days === 'number') setMaxAdvanceDays(first.max_advance_days)
     }
 
     // overrides
@@ -204,6 +211,9 @@ export default function AvailabilitySettingsPage() {
           slot_start: `${w.start}:00`,
           slot_end: `${w.end}:00`,
           duration_minutes: duration,
+          buffer_minutes: bufferMinutes,
+          min_notice_hours: minNoticeHours,
+          max_advance_days: maxAdvanceDays,
           is_active: w.enabled,
         }))
         .filter(r => r.is_active)
@@ -284,6 +294,85 @@ export default function AvailabilitySettingsPage() {
                   {d} minutes
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Scheduling rules */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Scheduling rules</h2>
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <p className={styles.sectionDescription} style={{ marginBottom: '0.5rem' }}>
+                <strong style={{ color: '#0f172a' }}>Buffer between interviews</strong>
+                <br />Breathing room between consecutive interviews
+              </p>
+              <div className={styles.pillRow}>
+                {[
+                  { v: 0, label: 'None' },
+                  { v: 15, label: '15 min' },
+                  { v: 30, label: '30 min' },
+                  { v: 45, label: '45 min' },
+                  { v: 60, label: '60 min' },
+                ].map(o => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => setBufferMinutes(o.v)}
+                    className={`${styles.pill} ${bufferMinutes === o.v ? styles.pillActive : ''}`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <p className={styles.sectionDescription} style={{ marginBottom: '0.5rem' }}>
+                <strong style={{ color: '#0f172a' }}>Minimum notice</strong>
+                <br />How far in advance candidates must book
+              </p>
+              <div className={styles.pillRow}>
+                {[
+                  { v: 1, label: '1 hour' },
+                  { v: 2, label: '2 hours' },
+                  { v: 4, label: '4 hours' },
+                  { v: 24, label: '24 hours' },
+                  { v: 48, label: '48 hours' },
+                ].map(o => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => setMinNoticeHours(o.v)}
+                    className={`${styles.pill} ${minNoticeHours === o.v ? styles.pillActive : ''}`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className={styles.sectionDescription} style={{ marginBottom: '0.5rem' }}>
+                <strong style={{ color: '#0f172a' }}>Maximum advance booking</strong>
+                <br />How far ahead candidates can book
+              </p>
+              <div className={styles.pillRow}>
+                {[
+                  { v: 7, label: '1 week' },
+                  { v: 14, label: '2 weeks' },
+                  { v: 21, label: '3 weeks' },
+                  { v: 28, label: '4 weeks' },
+                ].map(o => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => setMaxAdvanceDays(o.v)}
+                    className={`${styles.pill} ${maxAdvanceDays === o.v ? styles.pillActive : ''}`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
