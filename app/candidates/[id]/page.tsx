@@ -10,8 +10,8 @@ import { supabaseProfileToCandidate } from '@/lib/types'
 import { FaLinkedinIn, FaInstagram, FaFacebookF } from 'react-icons/fa'
 import {
   MapPin, Clock, Briefcase, GraduationCap, User, Wrench,
-  Award, Heart, Globe, MessageSquare, FileDown, Mail, Phone,
-  Shield, ChevronLeft, Sliders
+  Award, Heart, Globe, MessageSquare, FileDown, Mail,
+  ChevronLeft, Sliders
 } from 'lucide-react'
 import styles from './page.module.css'
 
@@ -208,6 +208,12 @@ export default function CandidateDetailPage() {
   const hasAnyContact = hasVisibleEmail || hasVisiblePhone
   const availStyle = getAvailabilityStyle(candidate.availability)
 
+  const hasSalary = visibility.show_desired_salary && (candidate.salaryMin || candidate.salaryMax || candidate.desiredSalary)
+  const hasPreferencesContent = Boolean(
+    hasSalary ||
+    (candidate.preferredLocations && candidate.preferredLocations.length > 0)
+  )
+
   return (
     <main className={styles.page}>
       <Header />
@@ -215,7 +221,7 @@ export default function CandidateDetailPage() {
       <div className={styles.container}>
         {/* Breadcrumb */}
         <div className={styles.breadcrumb}>
-          <button onClick={() => router.push('/candidates')} className={styles.breadcrumbLink} style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}>
+          <button onClick={() => router.push('/candidates')} className={styles.breadcrumbLink} type="button">
             <ChevronLeft size={16} />
             Back to Candidates
           </button>
@@ -456,14 +462,14 @@ export default function CandidateDetailPage() {
             )}
 
             {/* Preferences */}
-            {(visibility.show_desired_salary || candidate.preferredLocations || candidate.preferredJobTypes) && (
+            {hasPreferencesContent && (
               <div className={styles.card}>
                 <div className={styles.cardHeader}>
                   <Sliders size={20} className={styles.cardIcon} />
                   <h2 className={styles.cardTitle}>Preferences</h2>
                 </div>
                 <div className={styles.prefGrid}>
-                  {visibility.show_desired_salary && (candidate.salaryMin || candidate.salaryMax || candidate.desiredSalary) && (
+                  {hasSalary && (
                     <div className={styles.prefRow}>
                       <span className={styles.prefLabel}>Desired Salary</span>
                       <span className={styles.prefValue}>
@@ -479,28 +485,10 @@ export default function CandidateDetailPage() {
                       </span>
                     </div>
                   )}
-                  {candidate.preferredJobTypes && candidate.preferredJobTypes.length > 0 && (
-                    <div className={styles.prefRow}>
-                      <span className={styles.prefLabel}>Work Type</span>
-                      <span className={styles.prefValue}>{candidate.preferredJobTypes.join(', ')}</span>
-                    </div>
-                  )}
-                  {candidate.workLocationPreferences && candidate.workLocationPreferences.length > 0 && (
-                    <div className={styles.prefRow}>
-                      <span className={styles.prefLabel}>Work Location</span>
-                      <span className={styles.prefValue}>{candidate.workLocationPreferences.join(', ')}</span>
-                    </div>
-                  )}
                   {candidate.preferredLocations && (
                     <div className={styles.prefRow}>
                       <span className={styles.prefLabel}>Preferred Areas</span>
                       <span className={styles.prefValue}>{candidate.preferredLocations}</span>
-                    </div>
-                  )}
-                  {visibility.show_availability && candidate.availability && (
-                    <div className={styles.prefRow}>
-                      <span className={styles.prefLabel}>Availability</span>
-                      <span className={styles.prefValue}>{candidate.availability}</span>
                     </div>
                   )}
                 </div>
@@ -553,7 +541,7 @@ export default function CandidateDetailPage() {
                       </button>
                     )
                   ) : (
-                    <button className={styles.actionBtn} disabled style={{ opacity: 0.5 }}>
+                    <button className={styles.actionBtn} disabled>
                       <Mail size={15} />
                       Contact Private
                     </button>
@@ -564,7 +552,7 @@ export default function CandidateDetailPage() {
                       Download CV
                     </a>
                   ) : (
-                    <button className={styles.actionBtn} disabled style={{ opacity: 0.5 }}>
+                    <button className={styles.actionBtn} disabled>
                       <FileDown size={15} />
                       No CV
                     </button>
@@ -590,34 +578,16 @@ export default function CandidateDetailPage() {
 
               </div>
 
-              {/* Quick Info */}
-              <div className={styles.quickInfo}>
-                <h3 className={styles.quickInfoTitle}>Quick Info</h3>
-                {candidate.jobSector && (
-                  <div className={styles.quickInfoItem}>
-                    <span className={styles.quickInfoLabel}>Sector</span>
-                    <span className={styles.quickInfoValue}>{JOB_SECTOR_LABELS[candidate.jobSector] || candidate.jobSector}</span>
-                  </div>
-                )}
-                <div className={styles.quickInfoItem}>
-                  <span className={styles.quickInfoLabel}>Position</span>
-                  <span className={styles.quickInfoValue}>{candidate.jobTitle}</span>
-                </div>
-                <div className={styles.quickInfoItem}>
-                  <span className={styles.quickInfoLabel}>Location</span>
-                  <span className={styles.quickInfoValue}>{candidate.location}</span>
-                </div>
-                <div className={styles.quickInfoItem}>
-                  <span className={styles.quickInfoLabel}>Experience</span>
-                  <span className={styles.quickInfoValue}>{candidate.yearsExperience} years</span>
-                </div>
-                {visibility.show_date_of_birth && candidate.age && (
+              {/* Quick Info — only fields not already in header */}
+              {(visibility.show_date_of_birth && candidate.age) ? (
+                <div className={styles.quickInfo}>
+                  <h3 className={styles.quickInfoTitle}>Quick Info</h3>
                   <div className={styles.quickInfoItem}>
                     <span className={styles.quickInfoLabel}>Age</span>
                     <span className={styles.quickInfoValue}>{candidate.age} years old</span>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : null}
 
               {/* Social Links */}
               {visibility.show_social_links && (candidate.linkedinUrl || candidate.instagramUrl || candidate.facebookUrl) && (
@@ -646,38 +616,6 @@ export default function CandidateDetailPage() {
                 </div>
               )}
 
-              {/* Verification Badges */}
-              {visibility.show_verification_badges && (candidate.hasNiNumber || candidate.hasBankAccount || candidate.hasRightToWork || candidate.hasP45) && (
-                <div className={styles.quickInfo}>
-                  <h3 className={styles.quickInfoTitle}>Verified Documents</h3>
-                  <div className={styles.verificationBadges}>
-                    {candidate.hasNiNumber && (
-                      <div className={styles.verificationBadge}>
-                        <span className={styles.badgeCheck}>✓</span>
-                        NI Number
-                      </div>
-                    )}
-                    {candidate.hasBankAccount && (
-                      <div className={styles.verificationBadge}>
-                        <span className={styles.badgeCheck}>✓</span>
-                        UK Bank Account
-                      </div>
-                    )}
-                    {candidate.hasRightToWork && (
-                      <div className={styles.verificationBadge}>
-                        <span className={styles.badgeCheck}>✓</span>
-                        Right to Work
-                      </div>
-                    )}
-                    {candidate.hasP45 && (
-                      <div className={styles.verificationBadge}>
-                        <span className={styles.badgeCheck}>✓</span>
-                        P45 Available
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -90,6 +90,15 @@
   color: #64748b;
   text-decoration: none;
   transition: color 0.15s;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .breadcrumbLink:hover {
@@ -450,6 +459,10 @@
 .timelineBody {
   flex: 1;
   padding-bottom: 2rem;
+}
+
+.timelineItem:last-child .timelineBody {
+  padding-bottom: 0;
 }
 
 .timelineRole {
@@ -1134,7 +1147,7 @@
   }
 
   .profileHeader {
-    border-radius: 16px;
+    border-radius: 12px;
     margin-bottom: 1rem;
   }
 
