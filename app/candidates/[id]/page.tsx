@@ -5,7 +5,8 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
-import { Candidate } from '@/lib/mockCandidates'
+import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
+import { DEV_MODE } from '@/lib/mockAuth'
 import { supabaseProfileToCandidate } from '@/lib/types'
 import { FaLinkedinIn, FaInstagram, FaFacebookF } from 'react-icons/fa'
 import {
@@ -96,6 +97,18 @@ export default function CandidateDetailPage() {
   const [completionPct, setCompletionPct] = useState(0)
   useEffect(() => {
     const checkAuth = async () => {
+      // DEV MODE — bypass auth, load from dev mock fixture
+      if (DEV_MODE) {
+        setIsEmployer(true)
+        const mock = devMockCandidates.find(c => c.id === candidateId) || devMockCandidates[0]
+        if (mock) {
+          setCandidate(mock)
+          setLastActive('Active today')
+        }
+        setCheckingAuth(false)
+        return
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {

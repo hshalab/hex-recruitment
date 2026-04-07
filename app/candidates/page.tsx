@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
-import { Candidate } from '@/lib/mockCandidates'
+import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
+import { DEV_MODE } from '@/lib/mockAuth'
 import { supabaseProfileToCandidate } from '@/lib/types'
 import {
   MapPin, Clock, Briefcase, GraduationCap, User, Wrench,
@@ -260,6 +261,15 @@ function CandidatesContent() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // DEV MODE — bypass auth + subscription, render with mock candidates
+      if (DEV_MODE) {
+        setIsEmployer(true)
+        setHasSubscription(true)
+        setAllCandidates(devMockCandidates)
+        setCheckingAuth(false)
+        return
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
