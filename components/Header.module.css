@@ -76,19 +76,20 @@
 .feedbackPill {
   display: inline-flex;
   align-items: center;
-  padding: 0.4rem 0.85rem;
-  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.875rem;
+  border: 1.5px solid #FFE500;
   border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #FFE500;
   text-decoration: none;
+  white-space: nowrap;
   background: transparent;
-  transition: border-color 0.15s, color 0.15s;
+  transition: all 0.15s;
   margin-right: 0.25rem;
 }
 .feedbackPill:hover {
-  border-color: #0f172a;
+  background: #FFE500;
   color: #0f172a;
 }
 @media (max-width: 767px) {
