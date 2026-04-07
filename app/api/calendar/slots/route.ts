@@ -82,13 +82,36 @@ export async function GET(req: NextRequest) {
     const minNoticeHours: number = firstRule?.min_notice_hours ?? 24
     const maxAdvanceDays: number = firstRule?.max_advance_days ?? 28
 
+    // Compute "now" as Europe/London wall-clock, projected into the server's
+    // naive Date space. Slots are built with new Date(y, m-1, d, h, min) which
+    // also lives in that same "wall-clock-as-naive-Date" space, so the
+    // comparison is correct regardless of the server timezone.
+    const londonFmt = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    })
+    const lparts = londonFmt.formatToParts(new Date())
+    const lget = (t: string) => Number(lparts.find(p => p.type === t)!.value)
+    const nowLondon = new Date(
+      lget('year'),
+      lget('month') - 1,
+      lget('day'),
+      lget('hour') === 24 ? 0 : lget('hour'),
+      lget('minute'),
+      lget('second')
+    )
+
+    // "Today" in Europe/London (midnight)
+    const today = new Date(nowLondon)
+    today.setHours(0, 0, 0, 0)
+
     // Cap the upper bound of the range by the employer's max_advance_days
-    const maxAdvanceCap = new Date()
-    maxAdvanceCap.setHours(0, 0, 0, 0)
+    const maxAdvanceCap = new Date(today)
     maxAdvanceCap.setDate(maxAdvanceCap.getDate() + maxAdvanceDays)
 
-    // Minimum-notice cutoff — any slot whose local start datetime is before this is hidden
-    const noticeCutoff = new Date(Date.now() + minNoticeHours * 60 * 60 * 1000)
+    // Minimum-notice cutoff — any slot whose London wall-clock start is before this is hidden
+    const noticeCutoff = new Date(nowLondon.getTime() + minNoticeHours * 60 * 60 * 1000)
 
     // Build blocked 15-min slot map keyed by date → Set<minutes>
     // Buffer is added after each booking's end.
@@ -112,10 +135,6 @@ export async function GET(req: NextRequest) {
       overrides.filter(o => o.is_blocked).map(o => o.override_date as string)
     )
     const extraSlots = overrides.filter(o => !o.is_blocked && o.slot_start && o.slot_end)
-
-    // Today at midnight (local)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
 
     const slots: Array<{ date: string; time: string; duration: number }> = []
     const cursor = new Date(from)
