@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { ukCities } from '@/lib/ukCities'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
 import { useSavedJobs } from '@/lib/useSavedJobs'
+import { Sprout } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const NotificationBell = dynamic(() => import('./NotificationBell'), { ssr: false })
 import HoneycombLogo from './HoneycombLogo'
@@ -353,9 +354,7 @@ export default function Header() {
               window.dispatchEvent(new CustomEvent('open-thrive-chatbot'))
             }}
           >
-            <svg className={styles.dropdownIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" stroke="#FFD700" strokeWidth="2" strokeLinejoin="round" />
-            </svg>
+            <Sprout className={styles.dropdownIcon} size={20} color="#FFE500" strokeWidth={2} />
             Thrive Assistant
           </button>
           <div className={styles.dropdownDivider} />
