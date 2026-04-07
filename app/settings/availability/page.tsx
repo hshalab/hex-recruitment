@@ -45,7 +45,7 @@ export default function AvailabilitySettingsPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
-  const [duration, setDuration] = useState<number>(45)
+  const [duration, setDuration] = useState<number>(60)
   const [weekly, setWeekly] = useState<WeeklyRow[]>(DEFAULT_WEEKLY)
   const [overrides, setOverrides] = useState<Override[]>([])
   const [newBlockDate, setNewBlockDate] = useState('')
@@ -293,8 +293,38 @@ export default function AvailabilitySettingsPage() {
             <p className={styles.sectionDescription}>Turn on days you&apos;re available and pick a window.</p>
             {DAYS.map((day, idx) => {
               const row = weekly[idx]
+              const parseHm = (t: string) => {
+                const [h, m] = t.split(':').map(Number)
+                return h * 60 + m
+              }
+              const fmt12 = (hm: string) => {
+                const [hStr, mStr] = hm.split(':')
+                let h = Number(hStr); const m = Number(mStr)
+                const ap = h >= 12 ? 'pm' : 'am'
+                h = h % 12 || 12
+                return `${h}:${String(m).padStart(2, '0')}${ap}`
+              }
+              let hint: { text: string; warn: boolean } | null = null
+              if (row.enabled) {
+                const s = parseHm(row.start)
+                const e = parseHm(row.end)
+                if (e - s >= duration) {
+                  const count = Math.floor((e - s) / duration)
+                  const lastStart = s + (count - 1) * duration
+                  const lastEnd = lastStart + duration
+                  const toHm = (mins: number) =>
+                    `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`
+                  hint = {
+                    text: `${fmt12(row.start)} – ${fmt12(toHm(lastEnd))} · ${count} slot${count === 1 ? '' : 's'} per day`,
+                    warn: false,
+                  }
+                } else {
+                  hint = { text: 'No slots fit this range with the selected duration', warn: true }
+                }
+              }
               return (
-                <div key={day.value} className={styles.dayRow}>
+                <div key={day.value}>
+                <div className={styles.dayRow}>
                   <label className={styles.switch}>
                     <input
                       type="checkbox"
@@ -321,6 +351,23 @@ export default function AvailabilitySettingsPage() {
                   >
                     {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
+                </div>
+                {hint && (
+                  <div
+                    style={{
+                      marginLeft: 60,
+                      fontSize: '0.78rem',
+                      color: hint.warn ? '#92400e' : '#6b7280',
+                      padding: hint.warn ? '0.3rem 0.5rem' : '0 0 0.4rem 0',
+                      background: hint.warn ? '#fef3c7' : 'transparent',
+                      border: hint.warn ? '1px solid #fde68a' : 'none',
+                      borderRadius: hint.warn ? 6 : 0,
+                      marginBottom: hint.warn ? '0.5rem' : 0,
+                    }}
+                  >
+                    {hint.text}
+                  </div>
+                )}
                 </div>
               )
             })}
