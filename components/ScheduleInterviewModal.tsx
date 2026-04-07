@@ -589,6 +589,25 @@ export default function ScheduleInterviewModal({
         </div>
 
         <div className={styles.body}>
+          {slotsLoading && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', gap: '0.75rem', color: '#6b7280' }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  border: '3px solid #e5e7eb',
+                  borderTopColor: '#0f172a',
+                  borderRadius: '50%',
+                  animation: 'spin 0.8s linear infinite',
+                }}
+              />
+              <p style={{ fontSize: '0.9rem', margin: 0 }}>Loading availability…</p>
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+
+          {!slotsLoading && (
+          <>
           {/* Mode toggle — only when calendar slots are available */}
           {hasCalendarSlots && (
             <div className={styles.modeToggle} role="tablist">
@@ -800,6 +819,8 @@ export default function ScheduleInterviewModal({
             >
               + Add to Google Calendar (optional)
             </button>
+          )}
+          </>
           )}
         </div>
       </div>
