@@ -493,6 +493,7 @@ export default function EmployerDashboardPage() {
   const [companyName, setCompanyName] = useState('')
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
   const [companyDescription, setCompanyDescription] = useState('')
+  const [hasAvailability, setHasAvailability] = useState(false)
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null)
   const [freeUntil, setFreeUntil] = useState<string | null>(null)
   const [dismissChecklist, setDismissChecklist] = useState(false)
@@ -577,6 +578,16 @@ export default function EmployerDashboardPage() {
           setCompanyDescription(empProfile.description)
         }
       } catch { /* employer_profiles may not exist */ }
+
+      // Fetch availability — any active rows mean the employer is set up
+      try {
+        const { count } = await supabase
+          .from('employer_availability')
+          .select('id', { count: 'exact', head: true })
+          .eq('employer_id', userId)
+          .eq('is_active', true)
+        setHasAvailability((count || 0) > 0)
+      } catch { /* table may not exist */ }
 
       // Fetch subscription tier
       try {
@@ -859,11 +870,13 @@ export default function EmployerDashboardPage() {
         </div>
 
         {/* ── GETTING STARTED CHECKLIST ───────────────── */}
-        {totalJobs === 0 && !dismissChecklist && (() => {
+        {(() => {
           const hasLogo = !!companyLogo
           const hasJob = totalJobs > 0
           const hasDescription = companyDescription.length > 50
-          const completed = [hasLogo, hasJob, hasDescription].filter(Boolean).length
+          const allDone = hasLogo && hasJob && hasDescription && hasAvailability
+          if (dismissChecklist || allDone) return null
+          const completed = [hasLogo, hasJob, hasDescription, hasAvailability].filter(Boolean).length
           return (
             <div className={styles.checklistCard}>
               <button className={styles.checklistDismiss} onClick={() => setDismissChecklist(true)} aria-label="Dismiss">×</button>
@@ -885,8 +898,13 @@ export default function EmployerDashboardPage() {
                   <span className={styles.checklistLabel}>Complete your company profile</span>
                   {!hasDescription && <Link href="/settings/company" className={styles.checklistAction}>Complete profile →</Link>}
                 </div>
+                <div className={styles.checklistItem}>
+                  <span className={`${styles.checklistDot} ${hasAvailability ? styles.checklistDotDone : ''}`} />
+                  <span className={styles.checklistLabel}>Set up interview availability</span>
+                  {!hasAvailability && <Link href="/settings/availability" className={styles.checklistAction}>Set up →</Link>}
+                </div>
               </div>
-              <p className={styles.checklistProgress}>{completed} of 3 steps complete</p>
+              <p className={styles.checklistProgress}>{completed} of 4 steps complete</p>
             </div>
           )
         })()}
@@ -899,6 +917,40 @@ export default function EmployerDashboardPage() {
               <strong>{staleApplications} application{staleApplications !== 1 ? 's' : ''}</strong> {staleApplications !== 1 ? 'have' : 'has'} been waiting for review for over 2 weeks.
             </div>
             <Link href="/my-jobs" className={styles.staleNudgeLink}>Review now →</Link>
+          </div>
+        )}
+
+        {/* ── AVAILABILITY NUDGE ─────────────────────────── */}
+        {!hasAvailability && totalJobs > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.85rem',
+              padding: '0.85rem 1.1rem',
+              background: '#fffbeb',
+              border: '1px solid #fde68a',
+              borderRadius: '10px',
+              marginBottom: '1.25rem',
+            }}
+          >
+            <span style={{ fontSize: '1.1rem' }}>📅</span>
+            <div style={{ flex: 1, fontSize: '0.9rem', color: '#92400e' }}>
+              <strong>Enable interview scheduling.</strong> Set your available hours so candidates can book interviews directly through Thrive.
+            </div>
+            <Link
+              href="/settings/availability"
+              style={{
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: '#b45309',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              Set up availability →
+            </Link>
           </div>
         )}
 

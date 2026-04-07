@@ -95,8 +95,8 @@ const PROFILE_FIELDS: ProfileField[] = [
   { key: 'bio', label: 'About me bio', check: c => !!(c.bio || c.personalBio), link: '/settings/profile' },
   { key: 'cvUrl', label: 'Upload CV', check: c => !!c.cvUrl, link: '/settings/profile' },
   { key: 'photo', label: 'Profile photo', check: c => !!c.profilePictureUrl, link: '/settings/profile' },
-  { key: 'jobSector', label: 'Job sector', check: c => !!c.jobSector, link: '/profile' },
-  { key: 'salary', label: 'Salary expectations', check: c => !!(c.salaryMin || c.salaryMax || c.desiredSalary), link: '/profile' },
+  { key: 'jobSector', label: 'Job sector', check: c => !!c.jobSector, link: '/profile#job-preferences' },
+  { key: 'salary', label: 'Salary expectations', check: c => !!(c.salaryMin || c.salaryMax || c.desiredSalary), link: '/profile#job-preferences' },
   { key: 'jobTypes', label: 'Preferred job type', check: c => !!(c.preferredJobTypes && c.preferredJobTypes.length > 0), link: '/profile#job-preferences' },
   { key: 'workStyle', label: 'Work style (remote/hybrid/on-site)', check: c => !!(c.workLocationPreferences && c.workLocationPreferences.length > 0), link: '/profile#job-preferences' },
 ]
