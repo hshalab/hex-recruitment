@@ -62,7 +62,9 @@
       "mcp__plugin_playwright_playwright__browser_resize",
       "mcp__plugin_playwright_playwright__browser_evaluate",
       "mcp__plugin_playwright_playwright__browser_console_messages",
-      "mcp__plugin_playwright_playwright__browser_close"
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Bash(git rm:*)",
+      "Bash(printf '\\\\n.playwright-mcp/\\\\ncal-*.png\\\\ncalendar-unauth.png\\\\n')"
     ],
     "additionalDirectories": [
       "c:\\Users\\Paul Davies\\Downloads\\hospitality-hive-nextjs\\hospitality-hive-nextjs\\app\\api\\interviews\\[id]\\book"

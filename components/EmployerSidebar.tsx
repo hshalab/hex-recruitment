@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { Sprout } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
 import styles from './EmployerSidebar.module.css'
 
 const STORAGE_KEY = 'employer-sidebar-collapsed'
@@ -23,6 +25,17 @@ export default function EmployerSidebar() {
   const [collapsed, setCollapsed] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [companyName, setCompanyName] = useState<string>('')
+
+  useEffect(() => {
+    if (DEV_MODE) {
+      setCompanyName(getMockUser()?.user_metadata?.company_name || '')
+      return
+    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCompanyName(session?.user?.user_metadata?.company_name || '')
+    })
+  }, [])
 
 
   // Close mobile sidebar on route change
@@ -180,8 +193,8 @@ export default function EmployerSidebar() {
       ),
     },
     {
-      label: 'Reviews',
-      href: '/reviews',
+      label: 'My Reviews',
+      href: companyName ? `/company/${encodeURIComponent(companyName)}` : '/reviews',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />

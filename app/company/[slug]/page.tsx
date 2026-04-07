@@ -26,6 +26,8 @@ interface Review {
   employmentStatus: 'current' | 'former'
   helpfulCount: number
   createdAt: string
+  employerResponse: string | null
+  employerResponseAt: string | null
 }
 
 const RATING_LABELS: Record<number, string> = {
@@ -120,6 +122,8 @@ export default function CompanyPage() {
         employmentStatus: r.employment_status,
         helpfulCount: r.helpful_count,
         createdAt: r.created_at,
+        employerResponse: r.employer_response || null,
+        employerResponseAt: r.employer_response_at || null,
       })))
     }
 
@@ -271,7 +275,7 @@ export default function CompanyPage() {
         <div className={styles.breakdownCard}>
           <div className={styles.breakdownHeader}>
             <h2 className={styles.breakdownTitle}>Rating Breakdown</h2>
-            {currentUserId && !hasUserReviewed && (
+            {currentUserId && !hasUserReviewed && currentUserId !== company.employerId && (
               <button className={styles.writeReviewBtn} onClick={() => setShowModal(true)}>
                 Write a Review
               </button>
@@ -383,6 +387,12 @@ export default function CompanyPage() {
                   Helpful {review.helpfulCount > 0 && `(${review.helpfulCount})`}
                 </button>
               </div>
+
+              <EmployerResponseBlock
+                review={review}
+                isOwner={!!currentUserId && currentUserId === company.employerId}
+                onSaved={loadCompanyAndReviews}
+              />
             </div>
           ))
         ) : (
@@ -409,6 +419,163 @@ export default function CompanyPage() {
         />
       )}
     </main>
+  )
+}
+
+// ───── Employer response block ─────
+function EmployerResponseBlock({
+  review,
+  isOwner,
+  onSaved,
+}: {
+  review: Review
+  isOwner: boolean
+  onSaved: () => void | Promise<void>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [text, setText] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  // Existing response
+  if (review.employerResponse) {
+    return (
+      <div
+        style={{
+          marginTop: '0.85rem',
+          marginLeft: '1.25rem',
+          padding: '0.75rem 1rem',
+          background: '#f8fafc',
+          borderLeft: '3px solid #0f172a',
+          borderRadius: '6px',
+        }}
+      >
+        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+          Company response
+        </div>
+        <p style={{ fontSize: '0.9rem', color: '#334155', margin: '0 0 0.4rem 0', whiteSpace: 'pre-wrap' }}>
+          {review.employerResponse}
+        </p>
+        {review.employerResponseAt && (
+          <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+            {new Date(review.employerResponseAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (!isOwner) return null
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        style={{
+          marginTop: '0.6rem',
+          marginLeft: '1.25rem',
+          padding: '0.4rem 0.85rem',
+          background: 'white',
+          border: '1px solid #cbd5e1',
+          borderRadius: '6px',
+          fontSize: '0.78rem',
+          fontWeight: 500,
+          color: '#0f172a',
+          cursor: 'pointer',
+        }}
+      >
+        Respond to this review
+      </button>
+    )
+  }
+
+  const submit = async () => {
+    if (!text.trim()) { setError('Response cannot be empty'); return }
+    setSaving(true)
+    setError('')
+    const { error: dbErr } = await supabase
+      .from('company_reviews')
+      .update({
+        employer_response: text.trim(),
+        employer_response_at: new Date().toISOString(),
+      })
+      .eq('id', review.id)
+    setSaving(false)
+    if (dbErr) {
+      setError(dbErr.message || 'Failed to post response')
+      return
+    }
+    setEditing(false)
+    setText('')
+    await onSaved()
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: '0.6rem',
+        marginLeft: '1.25rem',
+        padding: '0.75rem',
+        background: '#f8fafc',
+        borderLeft: '3px solid #0f172a',
+        borderRadius: '6px',
+      }}
+    >
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Write a public response to this review…"
+        rows={3}
+        style={{
+          width: '100%',
+          padding: '0.5rem 0.65rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          fontSize: '0.85rem',
+          fontFamily: 'inherit',
+          resize: 'vertical',
+          boxSizing: 'border-box',
+        }}
+      />
+      {error && <div style={{ color: '#b91c1c', fontSize: '0.78rem', marginTop: '0.4rem' }}>{error}</div>}
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={saving}
+          style={{
+            padding: '0.45rem 0.9rem',
+            background: '#0f172a',
+            color: '#FFE500',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {saving ? 'Posting…' : 'Post response'}
+        </button>
+        <button
+          type="button"
+          onClick={() => { setEditing(false); setText(''); setError('') }}
+          disabled={saving}
+          style={{
+            padding: '0.45rem 0.9rem',
+            background: 'white',
+            color: '#475569',
+            border: '1px solid #cbd5e1',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            cursor: 'pointer',
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -494,6 +661,8 @@ function ReviewModal({ companyName, employerId, reviewerId, onClose, onSubmit }:
       employmentStatus: data.employment_status,
       helpfulCount: 0,
       createdAt: data.created_at,
+      employerResponse: null,
+      employerResponseAt: null,
     })
   }
 
