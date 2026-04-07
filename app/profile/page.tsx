@@ -50,6 +50,12 @@ export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [profileData, setProfileData] = useState<any>(null)
   const [editMode, setEditMode] = useState(false)
+
+  // Auto-enter edit mode if URL has a deep-link hash like #job-preferences
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.location.hash === '#job-preferences') setEditMode(true)
+  }, [])
   const [employerPreview, setEmployerPreview] = useState(false)
 
   const loadProfile = async () => {

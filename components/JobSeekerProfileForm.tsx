@@ -293,6 +293,18 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const [currentStep, setCurrentStep] = useState(1)
+
+  // Deep-link: if URL has #job-preferences, jump to step 3 and scroll
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.location.hash === '#job-preferences') {
+      setCurrentStep(3)
+      // Wait for step content to render before scrolling
+      setTimeout(() => {
+        document.getElementById('job-preferences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+    }
+  }, [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -1659,10 +1671,11 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         </select>
       </div>
 
+      <div id="job-preferences">
       <div className={styles.formGroup}>
         <label className={styles.label}>Preferred Job Types *</label>
         <div className={styles.skillsGrid}>
-          {['Full-time', 'Part-time', 'Contract', 'Temporary', 'Zero-hours', 'Freelance'].map(type => (
+          {['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'].map(type => (
             <button
               key={type}
               type="button"
@@ -1703,6 +1716,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             </button>
           ))}
         </div>
+      </div>
       </div>
 
       <div className={styles.formGroup}>
