@@ -51,7 +51,13 @@
       "Bash(node --env-file=.env.local scripts/insert-employer-profile.js:*)",
       "Bash(node:*)",
       "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:/Users/Paul Davies/Downloads/hospitality-hive-nextjs/hospitality-hive-nextjs/backup.ps1\")",
-      "Bash(powershell.exe -Command \"Remove-Item ''C:\\\\Users\\\\Paul Davies\\\\AppData\\\\Local\\\\Temp\\\\hex-backup-temp'' -Recurse -Force -ErrorAction SilentlyContinue\")"
+      "Bash(powershell.exe -Command \"Remove-Item ''C:\\\\Users\\\\Paul Davies\\\\AppData\\\\Local\\\\Temp\\\\hex-backup-temp'' -Recurse -Force -ErrorAction SilentlyContinue\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Paul Davies\\Downloads\\hospitality-hive-nextjs\\hospitality-hive-nextjs\\app\\api\\interviews\\[id]\\book"
     ]
   }
 }

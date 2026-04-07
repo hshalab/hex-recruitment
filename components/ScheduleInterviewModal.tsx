@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import styles from './ScheduleInterviewModal.module.css'
 
@@ -9,6 +9,8 @@ const INTERVIEW_TYPES = [
   { value: 'video',     label: 'Video Call' },
   { value: 'phone',     label: 'Phone Call' },
 ]
+
+type Slot = { date: string; time: string; duration: number }
 
 interface ScheduleInterviewModalProps {
   isOpen: boolean
@@ -26,6 +28,29 @@ interface ScheduleInterviewModalProps {
   onSuccess: () => void
 }
 
+// Format "HH:MM" → "9:00am"
+const fmt12 = (hm: string) => {
+  const [hStr, mStr] = hm.split(':')
+  let h = Number(hStr)
+  const m = Number(mStr)
+  const ampm = h >= 12 ? 'pm' : 'am'
+  h = h % 12
+  if (h === 0) h = 12
+  return `${h}:${String(m).padStart(2, '0')}${ampm}`
+}
+
+// Format "YYYY-MM-DD" → { weekday, day, month } pieces
+const formatDateParts = (dateStr: string) => {
+  const [y, mo, d] = dateStr.split('-').map(Number)
+  const dt = new Date(y, mo - 1, d)
+  return {
+    weekday: dt.toLocaleDateString('en-GB', { weekday: 'short' }),
+    day: String(d),
+    month: dt.toLocaleDateString('en-GB', { month: 'short' }),
+    full: dt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+  }
+}
+
 export default function ScheduleInterviewModal({
   isOpen,
   onClose,
@@ -40,11 +65,14 @@ export default function ScheduleInterviewModal({
   existingMeetingLink,
   onSuccess,
 }: ScheduleInterviewModalProps) {
+  // Manual-mode state (unchanged legacy)
   const [slots, setSlots] = useState([
     { date: '', time: '' },
     { date: '', time: '' },
     { date: '', time: '' },
   ])
+
+  // Shared fields
   const [interviewType, setInterviewType] = useState('in-person')
   const [meetingLink, setMeetingLink] = useState(existingMeetingLink || '')
   const [notes, setNotes] = useState('')
@@ -52,7 +80,69 @@ export default function ScheduleInterviewModal({
   const [error, setError] = useState('')
   const [conflictWarning, setConflictWarning] = useState('')
 
+  // Calendar-mode state
+  const [mode, setMode] = useState<'calendar' | 'manual'>('calendar')
+  const [availableSlots, setAvailableSlots] = useState<Slot[]>([])
+  const [slotsLoading, setSlotsLoading] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<string>('')
+  const [selectedTime, setSelectedTime] = useState<string>('')
+
   const interviewTypeLabel = INTERVIEW_TYPES.find(t => t.value === interviewType)?.label ?? 'In-Person'
+
+  // Load availability when modal opens
+  useEffect(() => {
+    if (!isOpen) return
+    let cancelled = false
+    const load = async () => {
+      setSlotsLoading(true)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) { setAvailableSlots([]); return }
+        const from = new Date()
+        const to = new Date(Date.now() + 28 * 86_400_000)
+        const fromStr = from.toISOString().slice(0, 10)
+        const toStr = to.toISOString().slice(0, 10)
+        const res = await fetch(
+          `/api/calendar/slots?employerId=${session.user.id}&from=${fromStr}&to=${toStr}`
+        )
+        const data = await res.json()
+        if (cancelled) return
+        const fetched: Slot[] = data.slots || []
+        setAvailableSlots(fetched)
+        setMode(fetched.length > 0 ? 'calendar' : 'manual')
+      } catch {
+        if (!cancelled) { setAvailableSlots([]); setMode('manual') }
+      } finally {
+        if (!cancelled) setSlotsLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [isOpen])
+
+  // Group slots by date
+  const slotsByDate = useMemo(() => {
+    const map = new Map<string, Slot[]>()
+    for (const s of availableSlots) {
+      if (!map.has(s.date)) map.set(s.date, [])
+      map.get(s.date)!.push(s)
+    }
+    return map
+  }, [availableSlots])
+
+  const availableDates = useMemo(() => Array.from(slotsByDate.keys()).sort(), [slotsByDate])
+
+  // Auto-select first available date when slots load
+  useEffect(() => {
+    if (mode === 'calendar' && availableDates.length > 0 && !selectedDate) {
+      setSelectedDate(availableDates[0])
+    }
+  }, [mode, availableDates, selectedDate])
+
+  const selectedSlotObj = useMemo(() => {
+    if (!selectedDate || !selectedTime) return null
+    return availableSlots.find(s => s.date === selectedDate && s.time === selectedTime) || null
+  }, [availableSlots, selectedDate, selectedTime])
 
   const checkConflict = async (date: string, time: string) => {
     if (!date || !time) { setConflictWarning(''); return }
@@ -105,11 +195,167 @@ export default function ScheduleInterviewModal({
     window.open(url, '_blank')
   }
 
-  const handleSubmit = async () => {
+  // ═══ Helper: find-or-create conversation and post a message
+  const sendCandidateMessage = async (
+    sessionUserId: string,
+    content: string
+  ) => {
+    let conversationId: string | null = null
+    const { data: existingConv } = await supabase
+      .from('conversations')
+      .select('id')
+      .or(`and(participant_1.eq.${sessionUserId},participant_2.eq.${candidateId}),and(participant_1.eq.${candidateId},participant_2.eq.${sessionUserId})`)
+      .eq('related_job_id', jobId)
+      .maybeSingle()
+
+    if (existingConv) {
+      conversationId = existingConv.id
+    } else {
+      const { data: newConv } = await supabase
+        .from('conversations')
+        .insert({
+          participant_1: sessionUserId,
+          participant_2: candidateId,
+          participant_1_name: company,
+          participant_1_role: 'employer',
+          participant_1_company: company,
+          participant_2_name: candidateName,
+          participant_2_role: 'candidate',
+          related_job_id: jobId,
+          related_job_title: jobTitle,
+          last_message: content,
+          last_message_at: new Date().toISOString(),
+        })
+        .select()
+        .single()
+      if (newConv) conversationId = newConv.id
+    }
+
+    if (conversationId) {
+      await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        sender_id: sessionUserId,
+        sender_name: company,
+        sender_role: 'employer',
+        content,
+        is_read: false,
+      })
+      if (existingConv) {
+        await supabase
+          .from('conversations')
+          .update({ last_message: content, last_message_at: new Date().toISOString() })
+          .eq('id', conversationId)
+      }
+    }
+  }
+
+  // ═══ Calendar-mode submit
+  const handleCalendarSubmit = async () => {
+    setError('')
+    if (!selectedSlotObj) { setError('Please pick a date and time'); return }
+    setSubmitting(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { setError('You must be logged in'); setSubmitting(false); return }
+
+      // First create (or reuse) the interview row so we have an interview_id
+      let interviewId = existingInterviewId || ''
+      if (!interviewId) {
+        const { data: newInterview, error: intErr } = await supabase
+          .from('interviews')
+          .insert({
+            application_id: applicationId,
+            job_id: jobId,
+            employer_id: session.user.id,
+            candidate_id: candidateId,
+            interview_date: selectedSlotObj.date,
+            interview_time: selectedSlotObj.time,
+            duration_minutes: selectedSlotObj.duration,
+            interview_type: interviewType,
+            location_or_link: interviewTypeLabel,
+            meeting_link: interviewType === 'video' ? (meetingLink.trim() || null) : null,
+            notes: notes.trim() || null,
+            status: 'confirmed',
+          })
+          .select()
+          .single()
+        if (intErr || !newInterview) throw intErr || new Error('Interview creation failed')
+        interviewId = newInterview.id
+      } else {
+        // Reschedule path
+        await supabase
+          .from('interviews')
+          .update({
+            interview_date: selectedSlotObj.date,
+            interview_time: selectedSlotObj.time,
+            duration_minutes: selectedSlotObj.duration,
+            interview_type: interviewType,
+            location_or_link: interviewTypeLabel,
+            meeting_link: interviewType === 'video' ? (meetingLink.trim() || null) : null,
+            notes: notes.trim() || null,
+            status: 'confirmed',
+          })
+          .eq('id', interviewId)
+      }
+
+      // Book via API
+      const bookRes = await fetch('/api/calendar/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          interviewId,
+          employerId: session.user.id,
+          candidateId,
+          bookedDate: selectedSlotObj.date,
+          bookedTime: selectedSlotObj.time,
+          duration: selectedSlotObj.duration,
+          candidateEmail,
+          jobTitle,
+          companyName: company,
+          candidateName,
+        }),
+      })
+      const bookData = await bookRes.json()
+      if (!bookRes.ok || !bookData.success) {
+        throw new Error(bookData.error || 'Booking failed')
+      }
+
+      // In-app message
+      const parts = formatDateParts(selectedSlotObj.date)
+      const prettyTime = fmt12(selectedSlotObj.time)
+      const firstName = (candidateName || '').split(' ')[0] || candidateName
+      const trimmedLink = interviewType === 'video' ? meetingLink.trim() : ''
+      const msgLines = [
+        `Hi ${firstName}, your interview for ${jobTitle} at ${company} is confirmed.`,
+        '',
+        `${parts.full} at ${prettyTime} (${interviewTypeLabel})`,
+        ...(trimmedLink ? ['', `Join the video call: ${trimmedLink}`] : []),
+        ...(notes.trim() ? ['', notes.trim()] : []),
+        '', 'See you then!', '', 'Best regards,', company,
+      ]
+      await sendCandidateMessage(session.user.id, msgLines.join('\n'))
+
+      onSuccess()
+      onClose()
+      // Reset local state
+      setSelectedDate('')
+      setSelectedTime('')
+      setInterviewType('in-person')
+      setMeetingLink('')
+      setNotes('')
+    } catch (err: any) {
+      console.error('Calendar booking error', err)
+      setError(err.message || 'An unexpected error occurred. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // ═══ Manual-mode submit (UNCHANGED legacy logic)
+  const handleManualSubmit = async () => {
     setError('')
 
     const filledSlots = slots.filter(s => s.date && s.time)
-    // Validate: partial slots (date without time or vice versa)
     const partialSlots = slots.filter(s => (s.date && !s.time) || (!s.date && s.time))
     if (partialSlots.length > 0) {
       setError('Please fill in both date and time for each option')
@@ -135,7 +381,6 @@ export default function ScheduleInterviewModal({
 
       const isReschedule = !!existingInterviewId
 
-      // If rescheduling, mark the old interview as rescheduled
       if (isReschedule) {
         const { error: rescheduleError } = await supabase
           .from('interviews')
@@ -144,13 +389,11 @@ export default function ScheduleInterviewModal({
         if (rescheduleError) console.error('Error marking old interview as rescheduled:', rescheduleError)
       }
 
-      // Update application status to "interviewing"
       await supabase
         .from('job_applications')
         .update({ status: 'interviewing' })
         .eq('id', applicationId)
 
-      // Insert new interview record
       await supabase.from('interviews').insert({
         application_id: applicationId,
         job_id: jobId,
@@ -166,7 +409,6 @@ export default function ScheduleInterviewModal({
         proposed_slots: proposedSlots,
       })
 
-      // Format date for messages and emails
       const interviewDate = proposedSlots[0].date
       const interviewTime = proposedSlots[0].time
       const [year, month, day] = interviewDate.split('-').map(Number)
@@ -174,7 +416,6 @@ export default function ScheduleInterviewModal({
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
       })
 
-      // Build message content
       let messageContent: string
       let notificationTitle: string
       let notificationMessage: string
@@ -260,7 +501,6 @@ export default function ScheduleInterviewModal({
           : `${company} has invited you for an interview for the ${jobTitle} position on ${formattedDate} at ${interviewTime}.`
       }
 
-      // Send in-app notification
       await supabase.from('notifications').insert({
         user_id: candidateId,
         title: notificationTitle,
@@ -272,7 +512,6 @@ export default function ScheduleInterviewModal({
         link: '/applications',
       })
 
-      // Send email notification (fire & forget — never block the save)
       if (candidateEmail) {
         if (isReschedule) {
           fetch('/api/email/send', {
@@ -312,65 +551,10 @@ export default function ScheduleInterviewModal({
         }
       }
 
-      // Find or create conversation
-      let conversationId: string | null = null
-
-      const { data: existingConv } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`and(participant_1.eq.${session.user.id},participant_2.eq.${candidateId}),and(participant_1.eq.${candidateId},participant_2.eq.${session.user.id})`)
-        .eq('related_job_id', jobId)
-        .maybeSingle()
-
-      if (existingConv) {
-        conversationId = existingConv.id
-      } else {
-        const { data: newConv, error: convError } = await supabase
-          .from('conversations')
-          .insert({
-            participant_1: session.user.id,
-            participant_2: candidateId,
-            participant_1_name: company,
-            participant_1_role: 'employer',
-            participant_1_company: company,
-            participant_2_name: candidateName,
-            participant_2_role: 'candidate',
-            related_job_id: jobId,
-            related_job_title: jobTitle,
-            last_message: messageContent,
-            last_message_at: new Date().toISOString(),
-          })
-          .select()
-          .single()
-
-        if (convError) {
-          console.error('Error creating conversation:', convError)
-        } else if (newConv) {
-          conversationId = newConv.id
-        }
-      }
-
-      if (conversationId) {
-        await supabase.from('messages').insert({
-          conversation_id: conversationId,
-          sender_id: session.user.id,
-          sender_name: company,
-          sender_role: 'employer',
-          content: messageContent,
-          is_read: false,
-        })
-
-        if (existingConv) {
-          await supabase
-            .from('conversations')
-            .update({ last_message: messageContent, last_message_at: new Date().toISOString() })
-            .eq('id', conversationId)
-        }
-      }
+      await sendCandidateMessage(session.user.id, messageContent)
 
       onSuccess()
 
-      // Auto-open Google Calendar so employer can add it to their calendar
       if (slots[0].date && slots[0].time) {
         handleOpenCalendar()
       }
@@ -390,6 +574,9 @@ export default function ScheduleInterviewModal({
 
   if (!isOpen) return null
 
+  const hasCalendarSlots = availableSlots.length > 0
+  const selectedDateSlots = selectedDate ? (slotsByDate.get(selectedDate) || []) : []
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -402,50 +589,154 @@ export default function ScheduleInterviewModal({
         </div>
 
         <div className={styles.body}>
-          <div className={styles.slotsSection}>
-            <p className={styles.slotsLabel}>Propose up to 3 date and time options</p>
-            {slots.map((slot, i) => (
-              <div key={i} className={styles.slotRow}>
-                <span className={styles.slotNum}>Option {i + 1}{i > 0 ? ' (optional)' : ''}</span>
-                <input
-                  type="date"
-                  value={slot.date}
-                  onChange={(e) => {
-                    const next = [...slots]
-                    next[i] = { ...next[i], date: e.target.value }
-                    setSlots(next)
-                    if (i === 0) checkConflict(e.target.value, slot.time)
-                  }}
-                  className={styles.slotInput}
-                  min={new Date().toISOString().split('T')[0]}
-                />
-                <input
-                  type="time"
-                  value={slot.time}
-                  onChange={(e) => {
-                    const next = [...slots]
-                    next[i] = { ...next[i], time: e.target.value }
-                    setSlots(next)
-                    if (i === 0) checkConflict(slot.date, e.target.value)
-                  }}
-                  className={styles.slotInput}
-                />
+          {/* Mode toggle — only when calendar slots are available */}
+          {hasCalendarSlots && (
+            <div className={styles.modeToggle} role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'calendar'}
+                className={`${styles.modeBtn} ${mode === 'calendar' ? styles.modeBtnActive : ''}`}
+                onClick={() => setMode('calendar')}
+              >
+                📅 My availability
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'manual'}
+                className={`${styles.modeBtn} ${mode === 'manual' ? styles.modeBtnActive : ''}`}
+                onClick={() => setMode('manual')}
+              >
+                ✏️ Enter manually
+              </button>
+            </div>
+          )}
+
+          {/* No-slots warning (only in manual fallback) */}
+          {!slotsLoading && !hasCalendarSlots && (
+            <div className={styles.noSlots}>
+              No availability configured yet.{' '}
+              <a href="/settings/availability" className={styles.setupLink}>Set up your availability →</a>
+            </div>
+          )}
+
+          {mode === 'calendar' && hasCalendarSlots && (
+            <>
+              <p className={styles.calendarLabel}>Pick a date</p>
+              <div className={styles.dateStrip}>
+                {availableDates.map(dateStr => {
+                  const parts = formatDateParts(dateStr)
+                  const active = dateStr === selectedDate
+                  return (
+                    <button
+                      key={dateStr}
+                      type="button"
+                      className={`${styles.datePill} ${active ? styles.datePillActive : ''}`}
+                      onClick={() => { setSelectedDate(dateStr); setSelectedTime('') }}
+                    >
+                      <span>{parts.weekday}</span>
+                      <span className={styles.datePillDay}>{parts.day}</span>
+                      <span>{parts.month}</span>
+                    </button>
+                  )
+                })}
               </div>
-            ))}
-          </div>
+
+              {selectedDate && (
+                <>
+                  <h3 className={styles.selectedDateHeading}>
+                    {formatDateParts(selectedDate).full}
+                  </h3>
+                  <div className={styles.timeGrid}>
+                    {selectedDateSlots.map(s => {
+                      const active = s.time === selectedTime
+                      return (
+                        <button
+                          key={s.time}
+                          type="button"
+                          className={`${styles.timeBtn} ${active ? styles.timeBtnActive : ''}`}
+                          onClick={() => {
+                            setSelectedTime(s.time)
+                            checkConflict(s.date, s.time)
+                          }}
+                        >
+                          {fmt12(s.time)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {selectedSlotObj && (
+                <div className={styles.confirmBanner}>
+                  ✓ {formatDateParts(selectedSlotObj.date).full} at {fmt12(selectedSlotObj.time)} · {selectedSlotObj.duration} min
+                </div>
+              )}
+            </>
+          )}
+
+          {mode === 'manual' && (
+            <div className={styles.slotsSection}>
+              <p className={styles.slotsLabel}>Propose up to 3 date and time options</p>
+              {slots.map((slot, i) => (
+                <div key={i} className={styles.slotRow}>
+                  <span className={styles.slotNum}>Option {i + 1}{i > 0 ? ' (optional)' : ''}</span>
+                  <input
+                    type="date"
+                    value={slot.date}
+                    onChange={(e) => {
+                      const next = [...slots]
+                      next[i] = { ...next[i], date: e.target.value }
+                      setSlots(next)
+                      if (i === 0) checkConflict(e.target.value, slot.time)
+                    }}
+                    className={styles.slotInput}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                  <input
+                    type="time"
+                    value={slot.time}
+                    onChange={(e) => {
+                      const next = [...slots]
+                      next[i] = { ...next[i], time: e.target.value }
+                      setSlots(next)
+                      if (i === 0) checkConflict(slot.date, e.target.value)
+                    }}
+                    className={styles.slotInput}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className={styles.field}>
-            <label htmlFor="interviewType" className={styles.fieldLabel}>Interview Type</label>
-            <select
-              id="interviewType"
-              value={interviewType}
-              onChange={(e) => setInterviewType(e.target.value)}
-              className={styles.input}
-            >
-              {INTERVIEW_TYPES.map(t => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
+            <label className={styles.fieldLabel}>Interview Type</label>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {INTERVIEW_TYPES.map(t => {
+                const active = interviewType === t.value
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setInterviewType(t.value)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: 999,
+                      border: `1px solid ${active ? '#0f172a' : '#d1d5db'}`,
+                      background: active ? '#0f172a' : 'white',
+                      color: active ? '#FFE500' : '#374151',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           {interviewType === 'video' && (
@@ -491,20 +782,25 @@ export default function ScheduleInterviewModal({
 
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={mode === 'calendar' ? handleCalendarSubmit : handleManualSubmit}
             className={styles.sendBtn}
-            disabled={submitting}
+            disabled={submitting || (mode === 'calendar' && !selectedSlotObj)}
           >
-            {submitting ? 'Sending...' : 'Send Interview Invite'}
+            {submitting
+              ? (mode === 'calendar' ? 'Booking...' : 'Sending...')
+              : (mode === 'calendar' ? 'Confirm Booking' : 'Send Interview Invite')}
           </button>
-          <button
-            type="button"
-            onClick={handleOpenCalendar}
-            className={styles.calendarLink}
-            disabled={submitting}
-          >
-            + Add to Google Calendar (optional)
-          </button>
+
+          {mode === 'manual' && (
+            <button
+              type="button"
+              onClick={handleOpenCalendar}
+              className={styles.calendarLink}
+              disabled={submitting}
+            >
+              + Add to Google Calendar (optional)
+            </button>
+          )}
         </div>
       </div>
     </div>

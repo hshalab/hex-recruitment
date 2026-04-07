@@ -51,6 +51,14 @@ const settingsCards: SettingCard[] = [
     forUserTypes: ['employer'],
   },
   {
+    id: 'availability',
+    title: 'Interview Availability',
+    description: 'Set your available days and hours for candidate interview bookings',
+    icon: '📅',
+    href: '/settings/availability',
+    forUserTypes: ['employer'],
+  },
+  {
     id: 'notifications',
     title: 'Notifications',
     description: 'Manage email and SMS notification preferences',
