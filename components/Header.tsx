@@ -28,6 +28,8 @@ export default function Header() {
 
   // Real-time unread message count
   const [unreadMessageCount, setUnreadMessageCount] = useState(0)
+  // Upcoming interviews (next 7 days) count — employers only
+  const [upcomingInterviewCount, setUpcomingInterviewCount] = useState(0)
 
   useEffect(() => {
     if (!user) return
@@ -52,6 +54,34 @@ export default function Header() {
       .channel('header-unread')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => fetchUnreadCount())
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => fetchUnreadCount())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [user])
+
+  // Fetch upcoming interview count for employers (next 7 days)
+  useEffect(() => {
+    if (!user || user?.user_metadata?.role !== 'employer') {
+      setUpcomingInterviewCount(0)
+      return
+    }
+    const fetchCount = async () => {
+      const today = new Date()
+      const weekAhead = new Date(Date.now() + 7 * 86_400_000)
+      const toDateStr = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const { count } = await supabase
+        .from('interview_bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('employer_id', user.id)
+        .eq('status', 'confirmed')
+        .gte('booked_date', toDateStr(today))
+        .lte('booked_date', toDateStr(weekAhead))
+      setUpcomingInterviewCount(count || 0)
+    }
+    fetchCount()
+    const channel = supabase
+      .channel('header-upcoming-interviews')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'interview_bookings' }, () => fetchCount())
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [user])
@@ -472,6 +502,24 @@ export default function Header() {
           <span className={styles.iconBadge}>{totalUnreadCount + pendingRequestsCount}</span>
         )}
         <span className={styles.navTooltip}>Messages</span>
+      </Link>
+      <Link href="/calendar" className={styles.navIconLink} aria-label="Calendar">
+        <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+          <line x1="8" y1="14" x2="8" y2="14" />
+          <line x1="12" y1="14" x2="12" y2="14" />
+          <line x1="16" y1="14" x2="16" y2="14" />
+          <line x1="8" y1="18" x2="8" y2="18" />
+          <line x1="12" y1="18" x2="12" y2="18" />
+          <line x1="16" y1="18" x2="16" y2="18" />
+        </svg>
+        {upcomingInterviewCount > 0 && (
+          <span className={styles.iconBadge}>{upcomingInterviewCount}</span>
+        )}
+        <span className={styles.navTooltip}>Calendar</span>
       </Link>
       <NotificationBell />
       <ProfileAvatar profilePath="/settings/company" />
