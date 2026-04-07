@@ -232,7 +232,7 @@ export default function CandidateSidebar() {
             <span className={styles.label}>Share Feedback</span>
           </button>
           <button
-            className={styles.item}
+            className={`${styles.item} ${styles.mobileOnly}`}
             data-tooltip="Thrive Assistant"
             title="Thrive Assistant"
             onClick={() => {
