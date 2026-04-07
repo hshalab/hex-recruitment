@@ -72,6 +72,29 @@
   color: var(--primary-yellow);
 }
 
+/* Feedback text pill (employer) */
+.feedbackPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #64748b;
+  text-decoration: none;
+  background: transparent;
+  transition: border-color 0.15s, color 0.15s;
+  margin-right: 0.25rem;
+}
+.feedbackPill:hover {
+  border-color: #0f172a;
+  color: #0f172a;
+}
+@media (max-width: 767px) {
+  .feedbackPill { display: none; }
+}
+
 /* Icon-only nav buttons (employer) */
 .navIconLink {
   position: relative;
