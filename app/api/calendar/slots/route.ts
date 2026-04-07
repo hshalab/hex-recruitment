@@ -135,10 +135,10 @@ export async function GET(req: NextRequest) {
 
         const pushSlots = (startMin: number, endMin: number, dur: number) => {
           for (let m = startMin; m + dur <= endMin; m += 15) {
-            // Apply minimum-notice cutoff
-            const slotDt = new Date(cursor)
-            slotDt.setHours(Math.floor(m / 60), m % 60, 0, 0)
-            if (slotDt < noticeCutoff) continue
+            // Apply minimum-notice cutoff — build full slot datetime from strings
+            const [yy, mm, dd] = dateStr.split('-').map(Number)
+            const slotDatetime = new Date(yy, mm - 1, dd, Math.floor(m / 60), m % 60, 0, 0)
+            if (slotDatetime <= noticeCutoff) continue
 
             const blockedSet = blockedTimes.get(dateStr)
             let overlaps = false
