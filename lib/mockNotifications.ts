@@ -13,6 +13,7 @@ export type NotificationType =
   | 'employer_message'
   | 'profile_view'
   | 'job_saved'
+  | 'interview_interest'
 
 export interface Notification {
   id: string

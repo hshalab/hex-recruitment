@@ -65,10 +65,12 @@
       "mcp__plugin_playwright_playwright__browser_close",
       "Bash(git rm:*)",
       "Bash(printf '\\\\n.playwright-mcp/\\\\ncal-*.png\\\\ncalendar-unauth.png\\\\n')",
-      "mcp__plugin_playwright_playwright__browser_tabs"
+      "mcp__plugin_playwright_playwright__browser_tabs",
+      "Bash(wmic process:*)"
     ],
     "additionalDirectories": [
-      "c:\\Users\\Paul Davies\\Downloads\\hospitality-hive-nextjs\\hospitality-hive-nextjs\\app\\api\\interviews\\[id]\\book"
+      "c:\\Users\\Paul Davies\\Downloads\\hospitality-hive-nextjs\\hospitality-hive-nextjs\\app\\api\\interviews\\[id]\\book",
+      "C:\\Users\\Paul Davies\\AppData\\Local\\ms-playwright\\mcp-chrome-9cfb249"
     ]
   }
 }

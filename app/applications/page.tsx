@@ -24,6 +24,7 @@ interface JobApplication {
   employerId?: string
   viewedAt?: string
   shortlistedAt?: string
+  interviewInterestStatus?: 'pending' | 'interested' | 'not_interested' | null
 }
 
 const STATUS_CONFIG: Record<ApplicationStatus, { label: string; icon: string; className: string }> = {
@@ -65,7 +66,7 @@ export default function MyJobsPage() {
       // Fetch from Supabase with JOIN to jobs table for title/company/employer_id
       const { data, error } = await supabase
         .from('job_applications')
-        .select('id, job_id, status, applied_at, cover_letter, job_title, company, viewed_at, shortlisted_at, jobs(title, company, employer_id)')
+        .select('id, job_id, status, applied_at, cover_letter, job_title, company, viewed_at, shortlisted_at, interview_interest_status, jobs(title, company, employer_id)')
         .eq('candidate_id', session.user.id)
         .order('applied_at', { ascending: false })
 
@@ -126,6 +127,7 @@ export default function MyJobsPage() {
             employerId: row.jobs?.employer_id || undefined,
             viewedAt: row.viewed_at || undefined,
             shortlistedAt: row.shortlisted_at || undefined,
+            interviewInterestStatus: row.interview_interest_status || null,
             interview: interview ? {
               id: interview.id,
               applicationId: interview.application_id,
@@ -218,6 +220,69 @@ export default function MyJobsPage() {
       reached: i <= currentIndex,
       active: i === currentIndex,
     }))
+  }
+
+  const handleAcceptInterest = async (application: JobApplication) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    const { error } = await supabase
+      .from('job_applications')
+      .update({ interview_interest_status: 'interested' })
+      .eq('id', application.id)
+
+    if (error) {
+      alert('Something went wrong. Please try again.')
+      return
+    }
+
+    if (application.employerId) {
+      await supabase.from('notifications').insert({
+        user_id: application.employerId,
+        title: 'Candidate Interested',
+        message: `${candidateName} is interested in interviewing for ${application.jobTitle}`,
+        type: 'application_status_change',
+        read: false,
+        related_id: application.id,
+        related_type: 'application',
+        link: `/my-jobs/${application.jobId}/applications`,
+      })
+    }
+
+    setApplications(prev => prev.map(a => a.id === application.id ? { ...a, interviewInterestStatus: 'interested' } : a))
+  }
+
+  const handleDeclineInterest = async (application: JobApplication) => {
+    const confirmed = confirm("Are you sure? This will let the employer know you're no longer interested.")
+    if (!confirmed) return
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    const { error } = await supabase
+      .from('job_applications')
+      .update({ interview_interest_status: 'not_interested' })
+      .eq('id', application.id)
+
+    if (error) {
+      alert('Something went wrong. Please try again.')
+      return
+    }
+
+    if (application.employerId) {
+      await supabase.from('notifications').insert({
+        user_id: application.employerId,
+        title: 'Interview Invitation Declined',
+        message: `${candidateName} has declined the interview invitation for ${application.jobTitle}`,
+        type: 'application_status_change',
+        read: false,
+        related_id: application.id,
+        related_type: 'application',
+        link: `/my-jobs/${application.jobId}/applications`,
+      })
+    }
+
+    setApplications(prev => prev.map(a => a.id === application.id ? { ...a, interviewInterestStatus: 'not_interested' } : a))
   }
 
   const handleAcceptInterview = async (interviewId: string, employerId: string) => {
@@ -551,6 +616,9 @@ export default function MyJobsPage() {
                           <div className={`${styles.statusBanner} ${styles[config.className]}`}>
                             {config.icon && <span className={styles.bannerIcon}>{config.icon}</span>}
                             <span className={styles.bannerLabel}>{config.label}</span>
+                            {!application.interview && application.interviewInterestStatus === 'pending' && (
+                              <span className={styles.actionRequiredDot} aria-label="Action required" title="Action required" />
+                            )}
                           </div>
                         )}
                       </div>
@@ -578,8 +646,48 @@ export default function MyJobsPage() {
                         ))}
                       </div>
 
+                      {/* Interview interest check — only when no interview exists yet */}
+                      {!application.interview && application.interviewInterestStatus === 'pending' && (
+                        <div className={styles.interestCard}>
+                          <div className={styles.interestCardContent}>
+                            <h4 className={styles.interestCardTitle}>
+                              <span aria-hidden>🎉</span> Interview Invitation
+                            </h4>
+                            <p className={styles.interestCardSub}>
+                              {application.company} would like to interview you for {application.jobTitle}
+                            </p>
+                          </div>
+                          <div className={styles.interestCardActions}>
+                            <button
+                              type="button"
+                              className={styles.interestBtnYes}
+                              onClick={() => handleAcceptInterest(application)}
+                            >
+                              ✅ Yes, I&apos;m interested!
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.interestBtnNo}
+                              onClick={() => handleDeclineInterest(application)}
+                            >
+                              ❌ No thanks
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {!application.interview && application.interviewInterestStatus === 'interested' && (
+                        <div className={styles.interestResolvedPositive}>
+                          Great! The employer will be in touch to schedule your interview.
+                        </div>
+                      )}
+                      {!application.interview && application.interviewInterestStatus === 'not_interested' && (
+                        <div className={styles.interestResolvedNeutral}>
+                          You&apos;ve declined this interview invitation.
+                        </div>
+                      )}
+
                       {/* Prominent status callout for key milestones */}
-                      {application.status === 'shortlisted' && (
+                      {application.status === 'shortlisted' && !application.interviewInterestStatus && (
                         <div className={styles.shortlistedCallout}>
                           <span className={styles.shortlistedCalloutStar}>&#9733;</span>
                           <div>

@@ -29,6 +29,7 @@ interface Application {
   candidateCv: string | null
   interview?: Interview
   offer?: Offer
+  interviewInterestStatus?: 'pending' | 'interested' | 'not_interested' | null
 }
 
 export default function JobApplicationsPage() {
@@ -153,6 +154,7 @@ export default function JobApplicationsPage() {
             candidatePosition: profile?.job_title || 'Job Seeker',
             candidateCity: profile?.location || profile?.city || '',
             candidateCv: profile?.cv_url || null,
+            interviewInterestStatus: row.interview_interest_status || null,
             interview: interview ? {
               id: interview.id,
               applicationId: interview.application_id,
@@ -267,6 +269,7 @@ export default function JobApplicationsPage() {
           candidatePosition: profile?.job_title || 'Job Seeker',
           candidateCity: profile?.location || profile?.city || '',
           candidateCv: profile?.cv_url || null,
+          interviewInterestStatus: row.interview_interest_status || null,
           interview: interview ? {
             id: interview.id,
             applicationId: interview.application_id,
@@ -391,6 +394,88 @@ export default function JobApplicationsPage() {
   const handleScheduleInterview = (application: Application) => {
     setSelectedApplication(application)
     setScheduleModalOpen(true)
+  }
+
+  const handleInviteToInterview = async (application: Application) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    // 1. Update interest status to 'pending'
+    const { error: updateError } = await supabase
+      .from('job_applications')
+      .update({ interview_interest_status: 'pending' })
+      .eq('id', application.id)
+
+    if (updateError) {
+      alert('Failed to send invitation. Please try again.')
+      return
+    }
+
+    // 2. Insert notification for candidate
+    await supabase.from('notifications').insert({
+      user_id: application.candidateId,
+      title: 'Interview Invitation',
+      message: `${application.company} would like to invite you to interview for ${application.jobTitle}. Are you interested?`,
+      type: 'interview_interest',
+      read: false,
+      related_id: application.id,
+      related_type: 'application',
+      link: '/applications',
+    })
+
+    // 3. Send in-app message via find-or-create conversation
+    const firstName = (application.candidateName || 'there').split(' ')[0]
+    const messageContent = `Hi ${firstName}, we'd love to invite you to interview for the ${application.jobTitle} role at ${application.company}. Please let us know if you're interested by visiting your applications page.`
+
+    let conversationId: string | null = null
+    const { data: existingConv } = await supabase
+      .from('conversations')
+      .select('id')
+      .or(`and(participant_1.eq.${session.user.id},participant_2.eq.${application.candidateId}),and(participant_1.eq.${application.candidateId},participant_2.eq.${session.user.id})`)
+      .eq('related_job_id', application.jobId)
+      .maybeSingle()
+
+    if (existingConv) {
+      conversationId = existingConv.id
+      await supabase
+        .from('conversations')
+        .update({ last_message: messageContent, last_message_at: new Date().toISOString() })
+        .eq('id', conversationId)
+    } else {
+      const { data: newConv } = await supabase
+        .from('conversations')
+        .insert({
+          participant_1: session.user.id,
+          participant_2: application.candidateId,
+          participant_1_name: application.company,
+          participant_1_role: 'employer',
+          participant_1_company: application.company,
+          participant_2_name: application.candidateName,
+          participant_2_role: 'candidate',
+          related_job_id: application.jobId,
+          related_job_title: application.jobTitle,
+          last_message: messageContent,
+          last_message_at: new Date().toISOString(),
+        })
+        .select()
+        .single()
+      conversationId = newConv?.id || null
+    }
+
+    if (conversationId) {
+      await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        sender_id: session.user.id,
+        sender_name: application.company,
+        sender_role: 'employer',
+        content: messageContent,
+        is_read: false,
+      })
+    }
+
+    // 4. Update local state + toast
+    setApplications(prev => prev.map(a => a.id === application.id ? { ...a, interviewInterestStatus: 'pending' } : a))
+    alert(`Interview invitation sent to ${application.candidateName}`)
   }
 
   const handleConfirmHire = async (application: Application) => {
@@ -996,12 +1081,44 @@ export default function JobApplicationsPage() {
                           Email
                         </a>
                       )}
-                      <button
-                        className={styles.barBtnCalendar}
-                        onClick={() => handleScheduleInterview(application)}
-                      >
-                        {application.interview ? 'Reschedule' : 'Schedule Interview'}
-                      </button>
+                      {application.interview ? (
+                        <button
+                          className={styles.barBtnCalendar}
+                          onClick={() => handleScheduleInterview(application)}
+                        >
+                          Reschedule
+                        </button>
+                      ) : application.interviewInterestStatus === 'interested' ? (
+                        <button
+                          className={styles.barBtnCalendar}
+                          onClick={() => handleScheduleInterview(application)}
+                        >
+                          Schedule Interview
+                        </button>
+                      ) : application.interviewInterestStatus === 'pending' ? (
+                        <button
+                          className={styles.barBtnCalendar}
+                          disabled
+                          style={{ opacity: 0.6, cursor: 'not-allowed' }}
+                          title="Waiting for the candidate to respond"
+                        >
+                          Awaiting Response…
+                        </button>
+                      ) : application.interviewInterestStatus === 'not_interested' ? (
+                        <span
+                          style={{ color: '#94a3b8', fontSize: '0.85rem', fontStyle: 'italic', padding: '0.5rem 0.75rem' }}
+                          title="Candidate declined the interview invitation"
+                        >
+                          Candidate Declined
+                        </span>
+                      ) : (
+                        <button
+                          className={styles.barBtnCalendar}
+                          onClick={() => handleInviteToInterview(application)}
+                        >
+                          Invite to Interview
+                        </button>
+                      )}
                       {['interviewing', 'offered'].includes(application.status) && !application.offer && (
                         <button
                           className={styles.barBtnOffer}

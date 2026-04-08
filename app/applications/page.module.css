@@ -850,3 +850,169 @@
     padding-top: 0.75rem;
   }
 }
+
+/* ============================
+   Interview Interest Check Card
+   ============================ */
+.interestCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  margin: 0.75rem 0;
+  padding: 1rem 1.25rem;
+  background: #0f172a;
+  border: 1px solid rgba(255, 229, 0, 0.25);
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.15);
+  animation: interestCardFadeIn 0.35s ease-out;
+}
+
+@keyframes interestCardFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.interestCardContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.interestCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFE500;
+  line-height: 1.2;
+}
+
+.interestCardSub {
+  margin: 0;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.4;
+}
+
+.interestCardActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.interestBtnYes {
+  min-width: 140px;
+  padding: 0.625rem 1rem;
+  background: #FFE500;
+  color: #0f172a;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.interestBtnYes:hover {
+  background: #fff066;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(255, 229, 0, 0.28);
+}
+
+.interestBtnNo {
+  min-width: 140px;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  color: #9ca3af;
+  border: 1px solid #6b7280;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.interestBtnNo:hover {
+  color: #d1d5db;
+  border-color: #9ca3af;
+}
+
+.interestResolvedPositive {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 8px;
+  color: #166534;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.interestResolvedNeutral {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+/* Pulsing "action required" dot on the status banner */
+.actionRequiredDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 0.5rem;
+  border-radius: 50%;
+  background: #FFE500;
+  box-shadow: 0 0 0 0 rgba(255, 229, 0, 0.7);
+  animation: actionRequiredPulse 1.6s ease-out infinite;
+}
+
+@keyframes actionRequiredPulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 229, 0, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 229, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 229, 0, 0); }
+}
+
+/* Mobile overrides: stacked layout with larger tap targets */
+@media (max-width: 640px) {
+  .interestCard {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.875rem;
+    padding: 1rem;
+  }
+
+  .interestCardContent {
+    text-align: left;
+  }
+
+  .interestCardTitle {
+    font-size: 1.05rem;
+  }
+
+  .interestCardSub {
+    font-size: 0.9rem;
+  }
+
+  .interestCardActions {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .interestBtnYes,
+  .interestBtnNo {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+}

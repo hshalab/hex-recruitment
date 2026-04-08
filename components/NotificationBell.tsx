@@ -20,6 +20,9 @@ export default function NotificationBell({ className }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  // Tracks locally-resolved interview_interest notifications so their inline
+  // action buttons flip to a confirmation without waiting for the next poll.
+  const [resolvedInterest, setResolvedInterest] = useState<Record<string, 'interested' | 'not_interested'>>({})
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Track if notifications table is available
@@ -128,6 +131,74 @@ export default function NotificationBell({ className }: NotificationBellProps) {
     }
   }
 
+  // Respond to an interview_interest notification directly from the dropdown.
+  // Mirrors the logic in app/applications/page.tsx so the candidate can act
+  // without navigating there first.
+  const handleInterestResponse = async (
+    e: React.MouseEvent,
+    notification: Notification,
+    response: 'interested' | 'not_interested'
+  ) => {
+    e.stopPropagation()
+    if (!notification.related_id) return
+
+    if (response === 'not_interested') {
+      const ok = confirm("Are you sure? This will let the employer know you're no longer interested.")
+      if (!ok) return
+    }
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    // Optimistic local resolution
+    setResolvedInterest(prev => ({ ...prev, [notification.id]: response }))
+
+    const { data: appRow, error: updateError } = await supabase
+      .from('job_applications')
+      .update({ interview_interest_status: response })
+      .eq('id', notification.related_id)
+      .select('id, job_id, job_title, candidate_id, jobs(title, company, employer_id)')
+      .single()
+
+    if (updateError) {
+      // Roll back optimistic state
+      setResolvedInterest(prev => {
+        const next = { ...prev }
+        delete next[notification.id]
+        return next
+      })
+      alert('Something went wrong. Please try again.')
+      return
+    }
+
+    // Mark the notification as read
+    await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', notification.id)
+    setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n))
+    setUnreadCount(prev => Math.max(0, prev - (notification.read ? 0 : 1)))
+
+    // Notify the employer
+    const employerId = (appRow as any)?.jobs?.employer_id
+    const jobTitle = (appRow as any)?.jobs?.title || (appRow as any)?.job_title || 'the role'
+    const candidateName = session.user.user_metadata?.full_name || 'A candidate'
+    if (employerId) {
+      await supabase.from('notifications').insert({
+        user_id: employerId,
+        title: response === 'interested' ? 'Candidate Interested' : 'Interview Invitation Declined',
+        message: response === 'interested'
+          ? `${candidateName} is interested in interviewing for ${jobTitle}`
+          : `${candidateName} has declined the interview invitation for ${jobTitle}`,
+        type: 'application_status_change',
+        read: false,
+        related_id: notification.related_id,
+        related_type: 'application',
+        link: `/my-jobs/${(appRow as any)?.job_id}/applications`,
+      })
+    }
+  }
+
   // Toggle dropdown
   const toggleDropdown = () => {
     setIsOpen(!isOpen)
@@ -191,33 +262,88 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                 <p className={styles.emptyText}>No notifications yet</p>
               </div>
             ) : (
-              notifications.map(notification => (
-                <button
-                  key={notification.id}
-                  className={`${styles.notificationItem} ${!notification.read ? styles.unread : ''}`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <span className={styles.notificationIcon}>
-                    {getNotificationIcon(notification.type)}
-                  </span>
-                  <div className={styles.notificationContent}>
-                    <span className={styles.notificationTitle}>
-                      {notification.title}
+              notifications.map(notification => {
+                const isInterest = notification.type === 'interview_interest'
+                const resolvedResponse = resolvedInterest[notification.id]
+                return (
+                  <div
+                    key={notification.id}
+                    className={`${styles.notificationItem} ${!notification.read ? styles.unread : ''}`}
+                    role={isInterest ? undefined : 'button'}
+                    tabIndex={isInterest ? -1 : 0}
+                    onClick={() => { if (!isInterest) handleNotificationClick(notification) }}
+                    style={{ cursor: isInterest ? 'default' : 'pointer' }}
+                  >
+                    <span className={styles.notificationIcon}>
+                      {getNotificationIcon(notification.type)}
                     </span>
-                    {notification.message && (
-                      <span className={styles.notificationMessage}>
-                        {notification.message}
+                    <div className={styles.notificationContent}>
+                      <span className={styles.notificationTitle}>
+                        {notification.title}
                       </span>
+                      {notification.message && (
+                        <span className={styles.notificationMessage}>
+                          {notification.message}
+                        </span>
+                      )}
+                      <span className={styles.notificationTime}>
+                        {formatNotificationTime(notification.created_at)}
+                      </span>
+                      {isInterest && !resolvedResponse && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button
+                            type="button"
+                            onClick={(e) => handleInterestResponse(e, notification, 'interested')}
+                            style={{
+                              flex: 1,
+                              padding: '0.5rem 0.75rem',
+                              background: '#FFE500',
+                              color: '#0f172a',
+                              border: 'none',
+                              borderRadius: 999,
+                              fontWeight: 700,
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✅ Yes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleInterestResponse(e, notification, 'not_interested')}
+                            style={{
+                              flex: 1,
+                              padding: '0.5rem 0.75rem',
+                              background: 'transparent',
+                              color: '#6b7280',
+                              border: '1px solid #6b7280',
+                              borderRadius: 999,
+                              fontWeight: 600,
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ❌ No
+                          </button>
+                        </div>
+                      )}
+                      {isInterest && resolvedResponse === 'interested' && (
+                        <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#166534', fontWeight: 600 }}>
+                          ✓ You&apos;re interested — the employer will be in touch.
+                        </div>
+                      )}
+                      {isInterest && resolvedResponse === 'not_interested' && (
+                        <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic' }}>
+                          You declined this invitation.
+                        </div>
+                      )}
+                    </div>
+                    {!notification.read && (
+                      <span className={styles.unreadDot} aria-label="Unread" />
                     )}
-                    <span className={styles.notificationTime}>
-                      {formatNotificationTime(notification.created_at)}
-                    </span>
                   </div>
-                  {!notification.read && (
-                    <span className={styles.unreadDot} aria-label="Unread" />
-                  )}
-                </button>
-              ))
+                )
+              })
             )}
           </div>
 
