@@ -9,3 +9,5 @@ hex-recruitment.zip
 .playwright-mcp/
 cal-*.png
 calendar-unauth.png
+candidates-list-*.png
+tsconfig.tsbuildinfo
