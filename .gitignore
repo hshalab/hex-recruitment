@@ -7,7 +7,16 @@ hex-recruitment.zip
 .env.test
 
 .playwright-mcp/
-cal-*.png
-calendar-unauth.png
-candidates-list-*.png
+
+# Images — ignore everywhere except intentional assets under public/
+*.png
+*.jpg
+*.jpeg
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.jpeg
+!public/**/*.svg
+
+# TypeScript incremental build info
 tsconfig.tsbuildinfo
+*.tsbuildinfo
