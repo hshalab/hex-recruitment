@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -38,7 +38,7 @@ const DEFAULT_WEEKLY: WeeklyRow[] = DAYS.map((_, i) => ({
   end: '17:00',
 }))
 
-export default function AvailabilitySettingsPage() {
+function AvailabilitySettingsContent() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -618,5 +618,13 @@ export default function AvailabilitySettingsPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function AvailabilitySettingsPage() {
+  return (
+    <Suspense fallback={<main><Header /><div style={{ padding: '2rem' }}>Loading…</div></main>}>
+      <AvailabilitySettingsContent />
+    </Suspense>
   )
 }
