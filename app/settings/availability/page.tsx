@@ -137,16 +137,17 @@ export default function AvailabilitySettingsPage() {
   const handleDisconnectGcal = async () => {
     if (!userId) return
     if (!confirm('Disconnect Google Calendar? Future interviews will no longer sync to your Google Calendar.')) return
-    const { error } = await supabase
-      .from('employer_profiles')
-      .update({
-        gcal_access_token: null,
-        gcal_refresh_token: null,
-        gcal_calendar_id: null,
-      })
-      .eq('user_id', userId)
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/auth/google/disconnect', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setMessage({ type: 'error', text: data?.error || 'Failed to disconnect Google Calendar' })
       return
     }
     setGcalConnected(false)

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import {
   getValidAccessToken,
   createCalendarEvent,
+  updateCalendarEvent,
   buildLondonIso,
   addMinutesToLondonIso,
 } from '@/lib/googleCalendar'
@@ -37,7 +38,33 @@ export async function POST(req: NextRequest) {
 
     const dur = Number(duration) || 45
 
-    // Insert booking
+    // If this is a reschedule of an existing interview, find the prior
+    // booking so we can carry the Google Calendar event id forward and
+    // PUT (update) the existing event instead of creating a new one.
+    let priorGcalEventId: string | null = null
+    if (interviewId) {
+      const { data: priorBooking } = await supabaseAdmin
+        .from('interview_bookings')
+        .select('id, gcal_event_id_employer')
+        .eq('interview_id', interviewId)
+        .not('gcal_event_id_employer', 'is', null)
+        .order('booked_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      priorGcalEventId = priorBooking?.gcal_event_id_employer || null
+
+      // Mark any prior bookings for this interview as cancelled so they
+      // don't pile up. We keep the gcal_event_id_employer cleared on the
+      // prior row since we're taking it over on the new row.
+      if (priorBooking?.id) {
+        await supabaseAdmin
+          .from('interview_bookings')
+          .update({ status: 'cancelled', gcal_event_id_employer: null, cancelled_at: new Date().toISOString() })
+          .eq('id', priorBooking.id)
+      }
+    }
+
+    // Insert booking — carry forward the prior Google event id if we're rescheduling
     const { data: booking, error: bookErr } = await supabaseAdmin
       .from('interview_bookings')
       .insert({
@@ -48,6 +75,7 @@ export async function POST(req: NextRequest) {
         booked_time: bookedTime,
         duration_minutes: dur,
         status: 'confirmed',
+        gcal_event_id_employer: priorGcalEventId,
       })
       .select()
       .single()
@@ -144,7 +172,7 @@ export async function POST(req: NextRequest) {
             : { data: null as any }
           const interviewType = interviewRow?.interview_type || 'Interview'
 
-          const gEvent = await createCalendarEvent(accessToken, calendarId, {
+          const eventPayload = {
             summary: `Interview: ${candidateName || 'Candidate'} — ${jobTitle || 'Role'}`,
             description: [
               'Interview via Thrive',
@@ -156,7 +184,19 @@ export async function POST(req: NextRequest) {
             endIso,
             timeZone: 'Europe/London',
             attendees: candidateEmail ? [candidateEmail] : [],
-          })
+          }
+
+          // Reschedule path: update the existing event. Initial booking path:
+          // create a new event. If the update fails (e.g. the event was
+          // deleted directly in Google Calendar) fall through and create
+          // a fresh one.
+          let gEvent = null as Awaited<ReturnType<typeof createCalendarEvent>>
+          if (priorGcalEventId) {
+            gEvent = await updateCalendarEvent(accessToken, calendarId, priorGcalEventId, eventPayload)
+          }
+          if (!gEvent) {
+            gEvent = await createCalendarEvent(accessToken, calendarId, eventPayload)
+          }
 
           if (gEvent?.id) {
             await supabaseAdmin
