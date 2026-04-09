@@ -288,6 +288,13 @@ export default function InterviewsPage() {
         .update({ status: 'cancelled' })
         .eq('id', interview.interviewId)
 
+      // Remove the mirrored Google Calendar event (if any) — fire-and-forget
+      fetch('/api/calendar/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interviewId: interview.interviewId }),
+      }).catch(() => {})
+
       const formattedDate = formatLongDate(interview.interviewDate)
 
       const { error: notifCancelErr } = await supabase.from('notifications').insert({

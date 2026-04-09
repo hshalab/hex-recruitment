@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import {
+  getValidAccessToken,
+  createCalendarEvent,
+  buildLondonIso,
+  addMinutesToLondonIso,
+} from '@/lib/googleCalendar'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -114,6 +120,56 @@ export async function POST(req: NextRequest) {
       },
     ]
     await supabaseAdmin.from('notifications').insert(notifications)
+
+    // Create Google Calendar event on the employer's connected calendar (soft-fail).
+    try {
+      const { data: profile } = await supabaseAdmin
+        .from('employer_profiles')
+        .select('gcal_calendar_id')
+        .eq('user_id', employerId)
+        .maybeSingle()
+
+      const calendarId = profile?.gcal_calendar_id
+      if (calendarId) {
+        const accessToken = await getValidAccessToken(employerId)
+        if (accessToken) {
+          const startIso = buildLondonIso(bookedDate, bookedTime)
+          const endIso = addMinutesToLondonIso(startIso, dur)
+          const { data: interviewRow } = interviewId
+            ? await supabaseAdmin
+                .from('interviews')
+                .select('interview_type')
+                .eq('id', interviewId)
+                .maybeSingle()
+            : { data: null as any }
+          const interviewType = interviewRow?.interview_type || 'Interview'
+
+          const gEvent = await createCalendarEvent(accessToken, calendarId, {
+            summary: `Interview: ${candidateName || 'Candidate'} — ${jobTitle || 'Role'}`,
+            description: [
+              'Interview via Thrive',
+              `Candidate: ${candidateName || 'Candidate'}`,
+              `Job: ${jobTitle || 'Role'}`,
+              `Type: ${interviewType}`,
+            ].join('\n'),
+            startIso,
+            endIso,
+            timeZone: 'Europe/London',
+            attendees: candidateEmail ? [candidateEmail] : [],
+          })
+
+          if (gEvent?.id) {
+            await supabaseAdmin
+              .from('interview_bookings')
+              .update({ gcal_event_id_employer: gEvent.id })
+              .eq('id', booking.id)
+          }
+        }
+      }
+    } catch (err) {
+      // Never block the booking on a calendar sync failure
+      console.error('[calendar/book] gcal sync failed', err)
+    }
 
     // Fire-and-forget email to candidate
     if (candidateEmail) {

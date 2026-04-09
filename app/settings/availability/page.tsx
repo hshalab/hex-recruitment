@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
@@ -55,6 +55,8 @@ export default function AvailabilitySettingsPage() {
   const [newBlockReason, setNewBlockReason] = useState('')
   const [feedUrl, setFeedUrl] = useState('')
   const [copied, setCopied] = useState(false)
+  const [gcalConnected, setGcalConnected] = useState(false)
+  const searchParams = useSearchParams()
 
   const loadAll = useCallback(async (uid: string) => {
     // weekly
@@ -95,16 +97,17 @@ export default function AvailabilitySettingsPage() {
       .order('override_date')
     setOverrides((ov || []).map(o => ({ id: o.id, override_date: o.override_date, reason: o.reason })))
 
-    // ICS feed token
+    // ICS feed token + Google Calendar connection status
     const { data: profile } = await supabase
       .from('employer_profiles')
-      .select('ics_feed_token')
+      .select('ics_feed_token, gcal_calendar_id')
       .eq('user_id', uid)
       .maybeSingle()
     if (profile?.ics_feed_token) {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       setFeedUrl(`${siteUrl}/api/calendar/feed/${profile.ics_feed_token}.ics`)
     }
+    setGcalConnected(Boolean(profile?.gcal_calendar_id))
   }, [])
 
   useEffect(() => {
@@ -118,6 +121,37 @@ export default function AvailabilitySettingsPage() {
     }
     init()
   }, [router, loadAll])
+
+  // Surface Google Calendar connection result from ?gcal= query param
+  useEffect(() => {
+    const gcal = searchParams.get('gcal')
+    if (!gcal) return
+    if (gcal === 'connected') {
+      setMessage({ type: 'success', text: 'Google Calendar connected — interviews will sync automatically.' })
+    } else if (gcal === 'error') {
+      const reason = searchParams.get('reason') || 'unknown'
+      setMessage({ type: 'error', text: `Couldn't connect Google Calendar (${reason}). Please try again.` })
+    }
+  }, [searchParams])
+
+  const handleDisconnectGcal = async () => {
+    if (!userId) return
+    if (!confirm('Disconnect Google Calendar? Future interviews will no longer sync to your Google Calendar.')) return
+    const { error } = await supabase
+      .from('employer_profiles')
+      .update({
+        gcal_access_token: null,
+        gcal_refresh_token: null,
+        gcal_calendar_id: null,
+      })
+      .eq('user_id', userId)
+    if (error) {
+      setMessage({ type: 'error', text: error.message })
+      return
+    }
+    setGcalConnected(false)
+    setMessage({ type: 'success', text: 'Google Calendar disconnected.' })
+  }
 
   const toggleDay = (idx: number) => {
     setWeekly(prev => prev.map((w, i) => i === idx ? { ...w, enabled: !w.enabled } : w))
@@ -511,6 +545,38 @@ export default function AvailabilitySettingsPage() {
                 Block date
               </button>
             </div>
+          </div>
+
+          {/* Google Calendar two-way sync */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Google Calendar</h2>
+            {gcalConnected ? (
+              <>
+                <p className={styles.sectionDescription}>
+                  <span style={{ color: '#16a34a', fontWeight: 700 }}>✓ Connected</span> — Interviews are syncing automatically.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleDisconnectGcal}
+                  className={styles.regenBtn}
+                >
+                  Disconnect Google Calendar
+                </button>
+              </>
+            ) : (
+              <>
+                <p className={styles.sectionDescription}>
+                  Interviews will automatically appear in your Google Calendar when booked.
+                </p>
+                <a
+                  href="/api/auth/google"
+                  className={styles.blockBtn}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}
+                >
+                  📅 Connect Google Calendar
+                </a>
+              </>
+            )}
           </div>
 
           {/* Calendar feed */}

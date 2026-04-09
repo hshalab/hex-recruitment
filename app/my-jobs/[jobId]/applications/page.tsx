@@ -601,6 +601,13 @@ export default function JobApplicationsPage() {
       .update({ status: 'cancelled' })
       .eq('id', interviewId)
 
+    // Remove the mirrored Google Calendar event (if any) — fire-and-forget
+    fetch('/api/calendar/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interviewId }),
+    }).catch(() => {})
+
     // Notify candidate in-app
     if (application) {
       supabase.from('notifications').insert({
