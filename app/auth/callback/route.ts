@@ -72,6 +72,17 @@ export async function GET(req: NextRequest) {
 
   // Resolve the role: prefer existing metadata; fall back to the query param
   const existingRole = (user.user_metadata?.role as 'employer' | 'employee' | undefined) || undefined
+
+  // Mismatch: user has an existing role and clicked the *other* role's
+  // Google button. Sign them out and bounce to the matching login page
+  // with an error explaining what happened.
+  if (existingRole && roleParam && existingRole !== roleParam) {
+    await supabase.auth.signOut()
+    const target = roleParam === 'employer' ? '/login/employer' : '/login/employee'
+    console.warn('[auth/callback] role mismatch', { existingRole, roleParam, userId: user.id })
+    return NextResponse.redirect(`${origin}${target}?error=wrong_account&have=${existingRole}`)
+  }
+
   const role: 'employer' | 'employee' | undefined = existingRole || roleParam || undefined
 
   if (!role) {

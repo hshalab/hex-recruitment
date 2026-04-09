@@ -15,7 +15,12 @@ function EmployeeLoginPageContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(() => {
+    if (searchParams.get('error') === 'wrong_account') {
+      return 'This Google account is registered as an employer. Please use the employer login.'
+    }
+    return ''
+  })
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
 

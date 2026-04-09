@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
@@ -9,12 +9,18 @@ import PasswordInput from '@/components/PasswordInput'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 import styles from '../page.module.css'
 
-export default function EmployerLoginPage() {
+function EmployerLoginPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(() => {
+    if (searchParams.get('error') === 'wrong_account') {
+      return 'This Google account is registered as a candidate. Please use the candidate login.'
+    }
+    return ''
+  })
   const [loading, setLoading] = useState(false)
 
   // If already authenticated as employer, redirect
@@ -171,5 +177,13 @@ export default function EmployerLoginPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function EmployerLoginPage() {
+  return (
+    <Suspense fallback={<main><Header /><div style={{ textAlign: 'center', padding: '4rem' }}>Loading…</div></main>}>
+      <EmployerLoginPageContent />
+    </Suspense>
   )
 }
