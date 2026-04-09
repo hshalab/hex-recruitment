@@ -134,6 +134,31 @@ function AvailabilitySettingsContent() {
     }
   }, [searchParams])
 
+  const handleConnectGcal = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) {
+      setMessage({ type: 'error', text: 'Please sign in again to connect Google Calendar.' })
+      return
+    }
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.authUrl) {
+        setMessage({ type: 'error', text: data?.error || 'Failed to start Google Calendar connection' })
+        return
+      }
+      window.location.href = data.authUrl
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err?.message || 'Failed to start Google Calendar connection' })
+    }
+  }
+
   const handleDisconnectGcal = async () => {
     if (!userId) return
     if (!confirm('Disconnect Google Calendar? Future interviews will no longer sync to your Google Calendar.')) return
@@ -569,13 +594,14 @@ function AvailabilitySettingsContent() {
                 <p className={styles.sectionDescription}>
                   Interviews will automatically appear in your Google Calendar when booked.
                 </p>
-                <a
-                  href="/api/auth/google"
+                <button
+                  type="button"
+                  onClick={handleConnectGcal}
                   className={styles.blockBtn}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   📅 Connect Google Calendar
-                </a>
+                </button>
               </>
             )}
           </div>
