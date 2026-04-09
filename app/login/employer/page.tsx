@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
+import GoogleSignInButton from '@/components/GoogleSignInButton'
 import styles from '../page.module.css'
 
 export default function EmployerLoginPage() {
@@ -84,6 +85,9 @@ export default function EmployerLoginPage() {
             <h1 className={styles.title}>Employer Login</h1>
           </div>
           <p className={styles.subtitle}>Access your recruitment dashboard</p>
+
+          <GoogleSignInButton role="employer" className={styles.googleBtn} />
+          <div className={styles.divider}><span>or</span></div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             {error && <div className={styles.error}>{error}</div>}

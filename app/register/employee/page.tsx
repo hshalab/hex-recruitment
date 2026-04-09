@@ -4,6 +4,8 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import JobSeekerProfileForm from '@/components/JobSeekerProfileForm'
+import GoogleSignInButton from '@/components/GoogleSignInButton'
+import loginStyles from '../../login/page.module.css'
 import styles from './page.module.css'
 
 function RegisterEmployeePageContent() {
@@ -16,6 +18,11 @@ function RegisterEmployeePageContent() {
           <p className={styles.subtitle}>
             Join Thrive and connect with top employers across the UK
           </p>
+        </div>
+
+        <div style={{ maxWidth: 480, margin: '0 auto 1.5rem' }}>
+          <GoogleSignInButton role="employee" className={loginStyles.googleBtn} label="Sign up with Google" />
+          <div className={loginStyles.divider}><span>or</span></div>
         </div>
 
         <JobSeekerProfileForm mode="register" />

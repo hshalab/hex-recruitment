@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
+import GoogleSignInButton from '@/components/GoogleSignInButton'
 import { supabase } from '@/lib/supabase'
 import loginStyles from '../../login/page.module.css'
 import styles from './page.module.css'
@@ -152,6 +153,9 @@ export default function RegisterEmployerFreePage() {
           <p className={loginStyles.subtitle}>Join the first 1000 employers on Thrive — post jobs free, no card needed.</p>
 
           {error && <div className={loginStyles.error}>{error}</div>}
+
+          <GoogleSignInButton role="employer" className={loginStyles.googleBtn} label="Sign up with Google" />
+          <div className={loginStyles.divider}><span>or</span></div>
 
           <form className={loginStyles.form} onSubmit={handleSubmit}>
             <div className={loginStyles.formGroup}>
