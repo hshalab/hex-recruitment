@@ -97,7 +97,7 @@ export async function POST(req: Request) {
 
     switch (type) {
       case 'welcome':
-        email = welcomeEmail(data.companyName)
+        email = welcomeEmail(data.contactName || data.companyName, data.companyName)
         break
       case 'candidate_welcome':
         email = candidateWelcomeEmail(data.candidateName)

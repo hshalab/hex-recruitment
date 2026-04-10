@@ -135,7 +135,7 @@ function RegisterEmployerPageContent() {
           body: JSON.stringify({
             to: formData.email,
             type: 'welcome',
-            data: { companyName: formData.companyName },
+            data: { contactName: formData.contactName, companyName: formData.companyName },
           }),
         }).catch(() => {})
 

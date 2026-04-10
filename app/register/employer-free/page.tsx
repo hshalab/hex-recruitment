@@ -122,7 +122,7 @@ export default function RegisterEmployerFreePage() {
           body: JSON.stringify({
             to: email,
             type: 'welcome',
-            data: { companyName },
+            data: { contactName, companyName },
           }),
         }).catch(() => {})
 

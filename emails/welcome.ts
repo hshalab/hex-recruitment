@@ -1,10 +1,11 @@
 import { emailLayout, ctaButton, BASE_URL } from './layout'
 
-export function welcomeEmail(companyName: string): { subject: string; html: string } {
+export function welcomeEmail(contactName: string, companyName: string): { subject: string; html: string } {
+  const firstName = (contactName || '').split(' ')[0] || companyName || 'there'
   const subject = "Welcome to Thrive — let's get you hiring"
 
   const html = emailLayout(subject, `
-    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Welcome to Thrive, ${companyName}!</h1>
+    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Welcome to Thrive, ${firstName}!</h1>
     <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
       You're all set to start finding great hospitality talent. Here's how to get started:
     </p>
