@@ -69,6 +69,8 @@ export default function CompanySettingsPage() {
   const [logoUploadError, setLogoUploadError] = useState('')
   const [logoFileName, setLogoFileName] = useState('')
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [scrapeUrl, setScrapeUrl] = useState('')
+  const [scraping, setScraping] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
 
   const [formData, setFormData] = useState<CompanyFormData>({
@@ -90,6 +92,40 @@ export default function CompanySettingsPage() {
     description: '',
   })
   const [addressFound, setAddressFound] = useState(false)
+
+  const handleScrape = async () => {
+    if (!scrapeUrl.trim()) return
+    setScraping(true)
+    setMessage(null)
+    try {
+      const res = await fetch('/api/company/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: scrapeUrl.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.data) {
+        setMessage({ type: 'error', text: json.error || "Couldn't import from that URL — please fill in manually" })
+        setScraping(false)
+        return
+      }
+      const d = json.data as Record<string, string>
+      // Only overwrite fields that are currently empty
+      setFormData(prev => ({
+        ...prev,
+        companyName: prev.companyName || d.companyName || prev.companyName,
+        description: prev.description || d.description || prev.description,
+        city: prev.city || d.location || prev.city,
+        website: prev.website || d.website || prev.website,
+        logoUrl: prev.logoUrl || d.logoUrl || prev.logoUrl,
+      }))
+      setIsDirty(true)
+      setMessage({ type: 'success', text: 'Profile imported — review and save your details' })
+    } catch {
+      setMessage({ type: 'error', text: "Couldn't import from that URL — please fill in manually" })
+    }
+    setScraping(false)
+  }
 
   useEffect(() => {
     const loadCompanyData = async () => {
@@ -527,6 +563,34 @@ export default function CompanySettingsPage() {
         )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          {/* Import from website */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Import from website</h2>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.75rem' }}>
+              Paste your company website and we&apos;ll auto-fill your profile.
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type="url"
+                value={scrapeUrl}
+                onChange={e => setScrapeUrl(e.target.value)}
+                placeholder="https://yourcompany.com"
+                className={styles.input}
+                style={{ flex: 1 }}
+                disabled={scraping}
+              />
+              <button
+                type="button"
+                onClick={handleScrape}
+                disabled={scraping || !scrapeUrl.trim()}
+                className={styles.saveBtn}
+                style={{ whiteSpace: 'nowrap', minWidth: 'auto', padding: '0.5rem 1.25rem' }}
+              >
+                {scraping ? 'Importing…' : 'Auto-fill'}
+              </button>
+            </div>
+          </div>
+
           {/* Company Logo */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Company Logo</h2>
