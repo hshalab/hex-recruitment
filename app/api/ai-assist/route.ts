@@ -65,7 +65,7 @@ ${data.additionalContext ? `Additional context: ${data.additionalContext}` : ''}
 
       systemPrompt = isEnhance
         ? `You are a UK recruitment copywriter. The user will give you rough notes about a job. Write a compelling, professional job advertisement with these sections: About the Role, Key Responsibilities, What We're Looking For, What We Offer. Be concise and engaging. Respond ONLY with a valid JSON object in this exact format, no markdown, no extra text: {"description": "full html formatted job ad here"}`
-        : `You are an expert UK hospitality recruitment copywriter. Write a compelling, professional UK job advertisement for the hospitality sector. Return ONLY a valid JSON object with these fields: title (string), description (string, HTML formatted with <p> and <ul>/<li> tags), requirements (string, HTML formatted), benefits (string, HTML formatted or empty string). No markdown fences, no extra text outside the JSON object.`
+        : `You are an expert UK recruitment copywriter covering all job sectors. Write a compelling, professional UK job advertisement. Return ONLY a valid JSON object with these fields: title (string), description (string, HTML formatted with <p> and <ul>/<li> tags), requirements (string, HTML formatted), benefits (string, HTML formatted or empty string). No markdown fences, no extra text outside the JSON object.`
 
       if (isEnhance) {
         userPrompt = `Write a job ad from these notes:

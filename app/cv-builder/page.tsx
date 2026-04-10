@@ -803,7 +803,7 @@ export default function CVBuilderPage() {
               <textarea
                 value={cvData.summary}
                 onChange={e => setCvData(prev => ({ ...prev, summary: e.target.value }))}
-                placeholder="Experienced hospitality professional with 5+ years in fast-paced restaurant environments..."
+                placeholder="Experienced professional with 5+ years in fast-paced environments. Summarise your key strengths and career highlights..."
                 rows={6}
               />
             </div>
@@ -833,7 +833,7 @@ export default function CVBuilderPage() {
                 <div className={styles.formGrid}>
                   <div className={styles.formGroup}>
                     <label>Job Title</label>
-                    <input value={entry.jobTitle} onChange={e => updateWorkEntry(i, 'jobTitle', e.target.value)} placeholder="Head Chef" />
+                    <input value={entry.jobTitle} onChange={e => updateWorkEntry(i, 'jobTitle', e.target.value)} placeholder="e.g. Project Manager" />
                   </div>
                   <div className={styles.formGroup}>
                     <label>Company</label>
@@ -1179,7 +1179,7 @@ export default function CVBuilderPage() {
                     <input
                       value={aiInput.jobTitle}
                       onChange={e => setAiInput(prev => ({ ...prev, jobTitle: e.target.value }))}
-                      placeholder="e.g. Senior Chef, Hotel Manager"
+                      placeholder="e.g. Project Manager, Software Engineer"
                     />
                   </div>
                 </>

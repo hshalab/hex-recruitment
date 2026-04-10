@@ -358,7 +358,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     phone: existingData?.phone || '',
     email: existingData?.email || '',
     preferredLocations: (existingData as any)?.preferredLocations || '',
-    jobSector: (existingData as any)?.jobSector || 'hospitality',
+    jobSector: (existingData as any)?.jobSector || '',
     currentPosition: existingData?.currentPosition || '',
     aboutMe: (existingData as any)?.aboutMe || '',
     personalBio: (existingData as any)?.personalBio || '',
@@ -1650,7 +1650,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           value={formData.currentPosition}
           onChange={handleInputChange}
           className={styles.input}
-          placeholder="e.g. Head Chef, Restaurant Manager, Bartender"
+          placeholder="e.g. Project Manager, Software Engineer, Nurse"
           autoComplete="organization-title"
         />
       </div>
@@ -1793,7 +1793,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           Skills for {JOB_SECTORS.find(s => s.id === formData.jobSector)?.label || 'your sector'} (choose up to 10)
         </p>
         <div className={styles.skillsGrid}>
-          {(SECTOR_SKILLS[formData.jobSector] || SECTOR_SKILLS.hospitality).map(skill => (
+          {(SECTOR_SKILLS[formData.jobSector] || []).map(skill => (
             <button
               key={skill}
               type="button"
@@ -1896,7 +1896,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
                 value={exp.role}
                 onChange={(e) => handleWorkExperienceChange(index, 'role', e.target.value)}
                 className={styles.input}
-                placeholder="e.g. Head Chef"
+                placeholder="e.g. Senior Developer"
                 autoComplete="organization-title"
               />
             </div>
@@ -2032,7 +2032,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
                 value={edu.fieldOfStudy}
                 onChange={(e) => handleEducationChange(index, 'fieldOfStudy', e.target.value)}
                 className={styles.input}
-                placeholder="e.g. Hospitality Management"
+                placeholder="e.g. Business Management"
                 autoComplete="off"
               />
             </div>

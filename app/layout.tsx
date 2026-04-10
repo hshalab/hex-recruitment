@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     template: '%s | Thrive',
   },
   description: 'Find jobs or hire great people across all UK sectors. Post unlimited jobs free — no agency fees, no card needed. Search candidates, manage applications and schedule interviews in one platform.',
-  keywords: ['UK jobs', 'job board', 'find jobs UK', 'hire staff UK', 'no agency fees', 'free job posting', 'hospitality jobs', 'healthcare jobs', 'Thrive'],
+  keywords: ['UK jobs', 'job board', 'find jobs UK', 'hire staff UK', 'no agency fees', 'free job posting', 'jobs across all sectors', 'Thrive'],
   authors: [{ name: 'Thrive' }],
   creator: 'Thrive',
   publisher: 'Thrive',

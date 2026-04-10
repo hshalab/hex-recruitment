@@ -7,7 +7,7 @@ export function welcomeEmail(contactName: string, companyName: string): { subjec
   const html = emailLayout(subject, `
     <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Welcome to Thrive, ${firstName}!</h1>
     <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
-      You're all set to start finding great hospitality talent. Here's how to get started:
+      You're all set to start finding great talent. Here's how to get started:
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
       <tr>

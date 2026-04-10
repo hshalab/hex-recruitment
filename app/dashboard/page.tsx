@@ -206,12 +206,12 @@ export default function DashboardPage() {
           userId: mockUser?.id || '',
           fullName: mockUser?.user_metadata?.full_name || 'James Wilson',
           profilePictureUrl: null,
-          jobTitle: 'Senior Chef',
-          jobSector: 'hospitality',
+          jobTitle: 'Marketing Manager',
+          jobSector: 'marketing',
           location: 'Manchester',
           yearsExperience: 5,
-          bio: 'Passionate chef with 5 years of experience.',
-          skills: ['Cooking', 'Menu Planning', 'Food Safety'],
+          bio: 'Results-driven marketing professional with 5 years of experience across digital and traditional channels.',
+          skills: ['Digital Marketing', 'Campaign Management', 'Analytics'],
           workHistory: [],
           cvUrl: null,
           availability: 'Immediately',
@@ -227,9 +227,9 @@ export default function DashboardPage() {
 
         // Mock applications
         setApplications([
-          { id: '1', job_title: 'Head Chef', company: 'The Grand Hotel', status: 'shortlisted', created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
-          { id: '2', job_title: 'Sous Chef', company: "Claridge's", status: 'pending', created_at: new Date(Date.now() - 5 * 86400000).toISOString() },
-          { id: '3', job_title: 'Pastry Chef', company: 'The Ritz', status: 'interview', created_at: new Date(Date.now() - 7 * 86400000).toISOString() },
+          { id: '1', job_title: 'Senior Marketing Executive', company: 'Acme Corp', status: 'shortlisted', created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+          { id: '2', job_title: 'Content Strategist', company: 'MediaWorks', status: 'pending', created_at: new Date(Date.now() - 5 * 86400000).toISOString() },
+          { id: '3', job_title: 'Brand Manager', company: 'Bright Agency', status: 'interview', created_at: new Date(Date.now() - 7 * 86400000).toISOString() },
         ])
 
         setProfileViews7d(12)
@@ -237,14 +237,14 @@ export default function DashboardPage() {
 
         // Mock activity feed data
         setProfileViewEvents([
-          { id: 'pv1', viewed_at: new Date(Date.now() - 2 * 3600000).toISOString(), company_name: 'The Savoy Hotel', source: 'search' },
-          { id: 'pv2', viewed_at: new Date(Date.now() - 8 * 3600000).toISOString(), company_name: 'Hilton London', source: 'recommendation' },
+          { id: 'pv1', viewed_at: new Date(Date.now() - 2 * 3600000).toISOString(), company_name: 'Acme Corp', source: 'search' },
+          { id: 'pv2', viewed_at: new Date(Date.now() - 8 * 3600000).toISOString(), company_name: 'TechFlow Ltd', source: 'recommendation' },
           { id: 'pv3', viewed_at: new Date(Date.now() - 26 * 3600000).toISOString(), company_name: null, source: 'search' },
-          { id: 'pv4', viewed_at: new Date(Date.now() - 3 * 86400000).toISOString(), company_name: "Claridge's", source: null },
+          { id: 'pv4', viewed_at: new Date(Date.now() - 3 * 86400000).toISOString(), company_name: 'Bright Agency', source: null },
         ])
         setStatusChangeEvents([
-          { id: 'sc1', job_title: 'Head Chef', company: 'The Grand Hotel', status: 'shortlisted', updated_at: new Date(Date.now() - 4 * 3600000).toISOString() },
-          { id: 'sc2', job_title: 'Pastry Chef', company: 'The Ritz', status: 'interview', updated_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+          { id: 'sc1', job_title: 'Senior Marketing Executive', company: 'Acme Corp', status: 'shortlisted', updated_at: new Date(Date.now() - 4 * 3600000).toISOString() },
+          { id: 'sc2', job_title: 'Brand Manager', company: 'Bright Agency', status: 'interview', updated_at: new Date(Date.now() - 2 * 86400000).toISOString() },
         ])
 
         setLoading(false)

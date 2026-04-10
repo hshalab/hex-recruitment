@@ -79,7 +79,7 @@ export default function ProfilePage() {
             postcode: profile.postcode || '',
             phone: profile.phone || '',
             email: profile.email || '',
-            jobSector: profile.jobSector || 'hospitality',
+            jobSector: profile.jobSector || '',
             currentPosition: profile.currentPosition || '',
             aboutMe: profile.aboutMe || '',
             personalBio: profile.personalBio || '',
