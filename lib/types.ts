@@ -123,6 +123,7 @@ export function supabaseJobToJob(row: any): Job {
     viewCount: row.view_count || 0,
     applicationCount: row.application_count || 0,
     status: row.status || 'active',
+    screeningQuestions: row.screening_questions || [],
   }
 }
 
@@ -160,6 +161,7 @@ export function jobToSupabaseInsert(job: Partial<Job> & { company: string; title
     urgent: job.urgent || false,
     no_experience: job.noExperience || false,
     status: job.status || 'active',
+    screening_questions: (job as any).screeningQuestions || [],
   }
 }
 

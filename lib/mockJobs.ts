@@ -44,6 +44,7 @@ export interface Job {
   viewCount: number
   applicationCount: number
   status: 'active' | 'expired' | 'filled'
+  screeningQuestions?: { id: string; question: string; required: boolean }[]
 }
 
 // Mock data removed — all jobs now come from Supabase

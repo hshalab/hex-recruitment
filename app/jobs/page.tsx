@@ -219,6 +219,7 @@ function JobsPageContent() {
   const [coverLetter, setCoverLetter] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [applicationSubmitted, setApplicationSubmitted] = useState(false)
+  const [screeningAnswers, setScreeningAnswers] = useState<Record<string, string>>({})
   const [hasApplied, setHasApplied] = useState(false)
   const [checkingApplied, setCheckingApplied] = useState(false)
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
@@ -665,17 +666,37 @@ function JobsPageContent() {
     }
     if (hasApplied) return
     trackClickEvent(selectedJob.id, 'apply_click')
+    setScreeningAnswers({})
     setShowApplyModal(true)
   }
 
   const submitApplication = async () => {
     if (!selectedJob) return
+
+    // Validate required screening questions
+    const questions = selectedJob.screeningQuestions || []
+    for (const q of questions) {
+      if (q.required && !(screeningAnswers[q.id] || '').trim()) {
+        alert('Please answer all required screening questions before applying.')
+        return
+      }
+    }
+
     setIsSubmitting(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Not authenticated')
 
       const candidateName = session.user.user_metadata?.full_name || 'Candidate'
+
+      // Build screening answers array
+      const answersPayload = questions
+        .filter(q => (screeningAnswers[q.id] || '').trim())
+        .map(q => ({
+          questionId: q.id,
+          question: q.question,
+          answer: (screeningAnswers[q.id] || '').trim(),
+        }))
 
       // 1. Insert into job_applications
       const { error: insertError } = await supabase
@@ -687,6 +708,7 @@ function JobsPageContent() {
           cover_letter: coverLetter || null,
           job_title: selectedJob.title,
           company: selectedJob.company,
+          screening_answers: answersPayload.length > 0 ? answersPayload : null,
         })
       if (insertError) {
         console.warn('Supabase insert warning:', insertError.message)
@@ -1295,6 +1317,27 @@ function JobsPageContent() {
                       style={{ fontSize: '1rem' }}
                     />
                   </div>
+                  {/* Screening Questions */}
+                  {selectedJob.screeningQuestions && selectedJob.screeningQuestions.length > 0 && (
+                    <div className={styles.applyField}>
+                      <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>Screening Questions</label>
+                      {selectedJob.screeningQuestions.map(q => (
+                        <div key={q.id} style={{ marginBottom: '0.75rem' }}>
+                          <p style={{ fontSize: '0.9rem', color: '#1e293b', margin: '0 0 0.375rem', fontWeight: 500 }}>
+                            {q.question}{q.required && <span style={{ color: '#ef4444' }}> *</span>}
+                          </p>
+                          <textarea
+                            value={screeningAnswers[q.id] || ''}
+                            onChange={e => setScreeningAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                            placeholder="Your answer..."
+                            rows={2}
+                            style={{ fontSize: '0.95rem', width: '100%' }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className={styles.applyCvSection}>
                     <p className={styles.applyCvNote}>Your profile CV will be attached automatically. Make sure it&apos;s up to date!</p>
                     <Link href="/cv-builder" className={styles.applyUpdateCvLink}>Update your CV →</Link>

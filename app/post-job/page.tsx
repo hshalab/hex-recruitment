@@ -84,6 +84,8 @@ function PostJobContent() {
     tags: new Set<string>(),
   })
 
+  const [screeningQuestions, setScreeningQuestions] = useState<{ id: string; question: string; required: boolean }[]>([])
+
   const [isEmployer, setIsEmployer] = useState(false)
   const [hasSubscription, setHasSubscription] = useState(false)
   const [currentUser, setCurrentUser] = useState<{ id: string; companyName: string } | null>(null)
@@ -205,6 +207,11 @@ function PostJobContent() {
           expiresAt: jobToEdit.expiresDate || '',
           tags,
         })
+
+        // Load screening questions
+        if (jobToEdit.screeningQuestions && jobToEdit.screeningQuestions.length > 0) {
+          setScreeningQuestions(jobToEdit.screeningQuestions)
+        }
 
         // Set logo success if there's a logo
         if (jobToEdit.companyLogo && !jobToEdit.companyLogo.includes('unsplash.com')) {
@@ -528,6 +535,7 @@ function PostJobContent() {
         viewCount: 0,
         applicationCount: 0,
         status: 'active' as const,
+        screeningQuestions: screeningQuestions.filter(q => q.question.trim()),
       }
 
       let newJob: any = null
@@ -1217,6 +1225,66 @@ function PostJobContent() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Pre-screening Questions */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              <span className={styles.sectionIcon}>❓</span>
+              Pre-screening Questions (optional)
+            </h2>
+            <p className={styles.helperText} style={{ marginBottom: '1rem' }}>
+              Candidates will answer these before applying. Helps filter out unsuitable applicants.
+            </p>
+            {screeningQuestions.map((q, i) => (
+              <div key={q.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <input
+                  type="text"
+                  value={q.question}
+                  onChange={e => {
+                    const updated = [...screeningQuestions]
+                    updated[i] = { ...q, question: e.target.value }
+                    setScreeningQuestions(updated)
+                  }}
+                  placeholder={`Question ${i + 1}`}
+                  className={styles.input}
+                  style={{ flex: 1 }}
+                />
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={q.required}
+                    onChange={e => {
+                      const updated = [...screeningQuestions]
+                      updated[i] = { ...q, required: e.target.checked }
+                      setScreeningQuestions(updated)
+                    }}
+                  />
+                  Required
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setScreeningQuestions(prev => prev.filter((_, j) => j !== i))}
+                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem', padding: '0.25rem' }}
+                  title="Remove question"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            {screeningQuestions.length < 5 && (
+              <button
+                type="button"
+                onClick={() => setScreeningQuestions(prev => [...prev, { id: crypto.randomUUID(), question: '', required: false }])}
+                className={styles.uploadLabel}
+                style={{ fontSize: '0.85rem' }}
+              >
+                + Add question
+              </button>
+            )}
+            {screeningQuestions.length >= 5 && (
+              <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.5rem' }}>Maximum 5 questions reached</p>
+            )}
           </div>
 
           {/* Tags */}

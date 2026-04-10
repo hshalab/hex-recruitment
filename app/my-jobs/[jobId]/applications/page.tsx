@@ -30,6 +30,7 @@ interface Application {
   interview?: Interview
   offer?: Offer
   interviewInterestStatus?: 'pending' | 'interested' | 'not_interested' | null
+  screeningAnswers?: { questionId: string; question: string; answer: string }[]
 }
 
 export default function JobApplicationsPage() {
@@ -144,6 +145,7 @@ export default function JobApplicationsPage() {
             jobTitle: foundJob?.title || row.job_title || 'Unknown',
             company: foundJob?.company || row.company || 'Unknown',
             coverLetter: row.cover_letter || '',
+            screeningAnswers: row.screening_answers || [],
             appliedAt: row.applied_at,
             status: row.status === 'pending' ? 'pending' : row.status,
             candidateId: row.candidate_id,
@@ -1082,6 +1084,19 @@ export default function JobApplicationsPage() {
                           </button>
                         )
                       )}
+                    </div>
+                  )}
+
+                  {/* Screening Answers */}
+                  {application.screeningAnswers && application.screeningAnswers.length > 0 && (
+                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', marginTop: '0.75rem' }}>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', margin: '0 0 0.75rem' }}>Screening Answers</h4>
+                      {application.screeningAnswers.map((a, i) => (
+                        <div key={a.questionId || i} style={{ marginBottom: i < application.screeningAnswers!.length - 1 ? '0.75rem' : 0 }}>
+                          <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', margin: '0 0 0.25rem' }}>{a.question}</p>
+                          <p style={{ fontSize: '0.875rem', color: '#1e293b', margin: 0, lineHeight: 1.5 }}>{a.answer}</p>
+                        </div>
+                      ))}
                     </div>
                   )}
 
