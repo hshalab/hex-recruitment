@@ -323,29 +323,69 @@ export default function JobApplicationsPage() {
       return
     }
 
-    // Send explicit notification for rejection (no generic trigger)
-    if (newStatus === 'rejected' && application) {
-      await supabase.from('notifications').insert({
-        user_id: application.candidateId,
-        type: 'application_update',
-        title: 'Application Update',
-        message: `Your application for ${application.jobTitle} at ${application.company} was not selected to move forward.`,
-        read: false,
-        related_id: applicationId,
-        related_type: 'application',
-        link: '/applications',
-      })
+    // Notify the candidate on key status transitions
+    if (application) {
+      const notifMap: Record<string, { title: string; message: string }> = {
+        reviewing: {
+          title: 'Application Under Review',
+          message: `Your application for ${application.jobTitle} at ${application.company} is being reviewed. We'll be in touch soon.`,
+        },
+        rejected: {
+          title: 'Application Update',
+          message: `Your application for ${application.jobTitle} at ${application.company} was not selected to move forward.`,
+        },
+        offered: {
+          title: 'Job Offer Received',
+          message: `You have received a job offer for ${application.jobTitle} at ${application.company}! Check your messages for details.`,
+        },
+        hired: {
+          title: 'Congratulations!',
+          message: `Congratulations! You've been hired for ${application.jobTitle} at ${application.company}.`,
+        },
+      }
+      const notif = notifMap[newStatus]
+      if (notif) {
+        await supabase.from('notifications').insert({
+          user_id: application.candidateId,
+          type: 'application_update',
+          title: notif.title,
+          message: notif.message,
+          read: false,
+          related_id: applicationId,
+          related_type: 'application',
+          link: '/applications',
+        })
 
-      // Send email notification
-      fetch('/api/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: application.candidateEmail,
-          type: 'application_status',
-          data: { status: 'rejected', companyName: application.company, jobTitle: application.jobTitle },
-        }),
-      }).catch(() => {})
+        if (application.candidateEmail) {
+          fetch('/api/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: application.candidateEmail,
+              type: 'application_status',
+              data: {
+                status: newStatus,
+                companyName: application.company,
+                jobTitle: application.jobTitle,
+                candidateName: application.candidateName,
+              },
+            }),
+          }).catch(() => {})
+        }
+      }
+
+      // When hired: check if all applications for this job are resolved → mark job filled
+      if (newStatus === 'hired') {
+        const { data: remaining } = await supabase
+          .from('job_applications')
+          .select('id')
+          .eq('job_id', application.jobId)
+          .not('status', 'in', '("hired","rejected")')
+          .limit(1)
+        if (!remaining || remaining.length === 0) {
+          await supabase.from('jobs').update({ status: 'filled' }).eq('id', application.jobId)
+        }
+      }
     }
 
     setApplications(prev =>

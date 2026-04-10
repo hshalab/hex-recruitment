@@ -147,6 +147,10 @@ export async function POST(req: Request) {
       case 'activation_day30':
         email = activationDay30Email(data.companyName)
         break
+      case 'raw':
+        // Pre-rendered subject + html passed directly (used by cron jobs)
+        email = { subject: data.subject, html: data.html }
+        break
       default:
         return NextResponse.json({ error: `Unknown email type: ${type}` }, { status: 400 })
     }
