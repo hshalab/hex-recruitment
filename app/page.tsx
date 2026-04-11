@@ -113,14 +113,14 @@ export default function Home() {
           </h1>
           <p className={styles.heroSubtitle}>
             Post jobs, search candidates, manage your pipeline, schedule interviews —
-            one platform, all UK sectors. Free for the first 1000 employers.
+            one platform, all UK sectors. 6 months free for the first 600 employers.
           </p>
           <div className={styles.spotsCounter}>
             <div className={styles.spotsBar}>
-              <div className={styles.spotsBarFill} style={{ width: `${Math.min((employerCount ?? 0) / 1000 * 100, 100)}%` }} />
+              <div className={styles.spotsBarFill} style={{ width: `${Math.min((employerCount ?? 0) / 600 * 100, 100)}%` }} />
             </div>
             <p className={styles.spotsText}>
-              <span className={styles.spotsFree}>{employerCount ?? '—'} of 1000</span> free spots claimed — <span className={styles.spotsFree}>no card needed</span>
+              <span className={styles.spotsFree}>{employerCount ?? '—'} of 600</span> free spots claimed — <span className={styles.spotsFree}>no card needed</span>
             </p>
           </div>
           <div className={styles.heroCtas}>
@@ -189,7 +189,7 @@ export default function Home() {
       <section className={`${styles.benefits}`}>
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>Everything you need to hire — completely free</h2>
-          <p className={styles.sectionSubtitle}>The first 1000 employers get the full platform. No card. No catch.</p>
+          <p className={styles.sectionSubtitle}>The first 600 employers get 6 months free. No card. No catch.</p>
           <div className={`${styles.benefitsGrid}`}>
             <div className={styles.benefitCard}>
               <div className={styles.benefitIcon}>
@@ -246,7 +246,7 @@ export default function Home() {
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
               <h3 className={styles.stepTitle}>No agency fees</h3>
-              <p className={styles.stepText}>Agencies charge 15-25% of salary per hire. Thrive gives you the same tools for free — no subscription needed for the first 1000 employers.</p>
+              <p className={styles.stepText}>Agencies charge 15-25% of salary per hire. Thrive gives you the same tools for free — no subscription needed for the first 600 employers.</p>
             </div>
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>

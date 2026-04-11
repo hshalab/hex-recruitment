@@ -822,7 +822,7 @@ export default function EmployerDashboardPage() {
                 {companyName}
                 {subscriptionTier && (
                   <span style={{ marginLeft: '0.5rem', fontSize: '0.72rem', fontWeight: 600, color: subscriptionTier === 'free' ? '#d97706' : '#16a34a', background: subscriptionTier === 'free' ? '#fffbeb' : '#f0fdf4', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
-                    {subscriptionTier === 'free' ? 'Free Launch — 12 months' : subscriptionTier === 'professional' ? 'Professional Plan' : 'Standard Plan'}
+                    {subscriptionTier === 'free' ? 'Free Launch — 6 months' : subscriptionTier === 'professional' ? 'Professional Plan' : 'Standard Plan'}
                   </span>
                 )}
               </p>

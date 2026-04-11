@@ -161,7 +161,7 @@ function EmployerLoginPageContent() {
           <div className={styles.benefits}>
             <h3 className={styles.benefitsTitle}>Employer Benefits</h3>
             <ul className={styles.benefitsList}>
-              <li>Free for first 1000 employers</li>
+              <li>6 months free for first 600 employers</li>
               <li>Post unlimited jobs</li>
               <li>Search &amp; message candidates</li>
               <li>Full hiring pipeline</li>
