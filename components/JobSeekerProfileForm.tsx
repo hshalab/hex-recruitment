@@ -1705,9 +1705,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
               onClick={() => {
                 setFormData(prev => ({
                   ...prev,
-                  workLocationPreferences: prev.workLocationPreferences.includes(loc)
-                    ? prev.workLocationPreferences.filter(l => l !== loc)
-                    : [...prev.workLocationPreferences, loc]
+                  workLocationPreferences: prev.workLocationPreferences.includes(loc) ? [] : [loc]
                 }))
               }}
               className={`${styles.skillPill} ${formData.workLocationPreferences.includes(loc) ? styles.skillPillActive : ''}`}
