@@ -833,24 +833,18 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             trial_expires_at: trialExpiresAt.toISOString(),
         }
 
-        // Use upsert first — it inserts if no row exists, updates if it does.
-        // The unique constraint on user_id is required for onConflict to work.
-        const { data: upsertData, error: upsertError } = await supabase
-          .from('candidate_profiles')
-          .upsert(profilePayload, { onConflict: 'user_id' })
-          .select('user_id')
-
-        if (upsertError) {
-          console.error('[Registration] Upsert failed:', upsertError.message, upsertError.details)
-          // Fallback: try direct insert
-          const { data: insertData, error: insertError } = await supabase
-            .from('candidate_profiles')
-            .insert(profilePayload)
-            .select('user_id')
-
-          if (insertError) {
-            console.error('[Registration] Insert also failed:', insertError.message, insertError.details)
-          }
+        // Use the server endpoint to create the profile with the service-role
+        // client. With email confirmation enabled, the anon client has no
+        // session yet (signUp returns user but no session), so RLS blocks
+        // direct inserts. The server route bypasses RLS.
+        const createRes = await fetch('/api/profile/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: authData.user.id, profile: profilePayload }),
+        })
+        if (!createRes.ok) {
+          const errBody = await createRes.json().catch(() => ({}))
+          console.error('[Registration] Profile create failed:', errBody)
         }
 
         // Welcome email is sent from /auth/callback after the user

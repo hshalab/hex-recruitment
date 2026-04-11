@@ -86,15 +86,15 @@ interface ProfileField {
 }
 
 const PROFILE_FIELDS: ProfileField[] = [
-  { key: 'fullName', label: 'Full name', check: c => !!c.fullName, link: '/settings/profile' },
-  { key: 'phone', label: 'Phone number', check: c => !!c.phone, link: '/settings/profile' },
-  { key: 'location', label: 'Location', check: c => !!c.location, link: '/settings/profile' },
-  { key: 'jobTitle', label: 'Job title', check: c => !!c.jobTitle, link: '/settings/profile' },
-  { key: 'experience', label: 'Years of experience', check: c => c.yearsExperience > 0, link: '/settings/profile' },
-  { key: 'skills', label: 'Skills (at least 3)', check: c => (c.skills || []).length >= 3, link: '/settings/profile' },
-  { key: 'bio', label: 'About me bio', check: c => !!(c.bio || c.personalBio), link: '/settings/profile' },
-  { key: 'cvUrl', label: 'Upload CV', check: c => !!c.cvUrl, link: '/settings/profile' },
-  { key: 'photo', label: 'Profile photo', check: c => !!c.profilePictureUrl, link: '/settings/profile' },
+  { key: 'fullName', label: 'Full name', check: c => !!c.fullName, link: '/profile' },
+  { key: 'phone', label: 'Phone number', check: c => !!c.phone, link: '/profile' },
+  { key: 'location', label: 'Location', check: c => !!c.location, link: '/profile' },
+  { key: 'jobTitle', label: 'Job title', check: c => !!c.jobTitle, link: '/profile' },
+  { key: 'experience', label: 'Years of experience', check: c => c.yearsExperience > 0, link: '/profile' },
+  { key: 'skills', label: 'Skills (at least 3)', check: c => (c.skills || []).length >= 3, link: '/profile' },
+  { key: 'bio', label: 'About me bio', check: c => !!(c.bio || c.personalBio), link: '/profile' },
+  { key: 'cvUrl', label: 'Upload CV', check: c => !!c.cvUrl, link: '/profile' },
+  { key: 'photo', label: 'Profile photo', check: c => !!c.profilePictureUrl, link: '/profile' },
   { key: 'jobSector', label: 'Job sector', check: c => !!c.jobSector, link: '/profile#job-preferences' },
   { key: 'salary', label: 'Salary expectations', check: c => !!(c.salaryMin || c.salaryMax || c.desiredSalary), link: '/profile#job-preferences' },
   { key: 'jobTypes', label: 'Preferred job type', check: c => !!(c.preferredJobTypes && c.preferredJobTypes.length > 0), link: '/profile#job-preferences' },
@@ -653,7 +653,7 @@ export default function DashboardPage() {
           </div>
           <div className={styles.welcomeActions}>
             <Link href="/jobs" className={styles.welcomeActionPrimary}>Browse Jobs</Link>
-            <Link href="/settings/profile" className={styles.welcomeActionSecondary}>Edit Profile</Link>
+            <Link href="/profile" className={styles.welcomeActionSecondary}>Edit Profile</Link>
           </div>
         </div>
 
@@ -687,7 +687,7 @@ export default function DashboardPage() {
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Profile Completion</h2>
-                <Link href="/settings/profile" className={styles.cardLink}>Edit Profile</Link>
+                <Link href="/profile" className={styles.cardLink}>Edit Profile</Link>
               </div>
               <div className={styles.cardBody}>
                 <div className={styles.progressRow}>
@@ -713,7 +713,7 @@ export default function DashboardPage() {
                     {missingFields.length > 4 && (
                       <div className={styles.missingItem}>
                         <span>+ {missingFields.length - 4} more fields</span>
-                        <Link href="/settings/profile">Complete &rarr;</Link>
+                        <Link href="/profile">Complete &rarr;</Link>
                       </div>
                     )}
                   </div>
@@ -812,7 +812,7 @@ export default function DashboardPage() {
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#127919;</div>
                     <p>Complete your profile to get personalised job recommendations.</p>
-                    <Link href="/settings/profile" className={styles.cardLink}>Complete Profile &rarr;</Link>
+                    <Link href="/profile" className={styles.cardLink}>Complete Profile &rarr;</Link>
                   </div>
                 ) : (
                   <div className={styles.emptyState}>
@@ -839,7 +839,7 @@ export default function DashboardPage() {
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128202;</div>
                     <p>Set your job sector to see career insights tailored to your industry.</p>
-                    <Link href="/settings/profile" className={styles.cardLink}>Complete Profile &rarr;</Link>
+                    <Link href="/profile" className={styles.cardLink}>Complete Profile &rarr;</Link>
                   </div>
                 ) : (
                   <>
@@ -921,7 +921,7 @@ export default function DashboardPage() {
                               {skill}
                               <span className={styles.skillPillCount}>{count}</span>
                               {!matched && (
-                                <Link href="/settings/profile" className={styles.skillPillAdd} onClick={(e) => e.stopPropagation()}>
+                                <Link href="/profile" className={styles.skillPillAdd} onClick={(e) => e.stopPropagation()}>
                                   +Add
                                 </Link>
                               )}
