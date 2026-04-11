@@ -132,6 +132,20 @@ export async function GET(req: NextRequest) {
           { onConflict: 'user_id', ignoreDuplicates: false }
         )
       if (upsertErr) console.error('[auth/callback] employer_profiles upsert failed', upsertErr)
+
+      // Ensure a subscription row exists — free launch tier for new employers
+      const { error: subErr } = await admin
+        .from('employer_subscriptions')
+        .upsert(
+          {
+            user_id: user.id,
+            subscription_status: 'active',
+            subscription_tier: 'free',
+            trial_ends_at: new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          { onConflict: 'user_id', ignoreDuplicates: true }
+        )
+      if (subErr) console.error('[auth/callback] employer_subscriptions upsert failed', subErr)
     } else {
       const { error: upsertErr } = await admin
         .from('candidate_profiles')

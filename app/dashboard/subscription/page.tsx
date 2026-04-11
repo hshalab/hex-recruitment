@@ -210,8 +210,41 @@ export default function SubscriptionPage() {
           </div>
         )}
 
-        {/* Current Plan Card */}
-        {isActive && subscription?.subscription_tier ? (
+        {/* Free Launch Plan */}
+        {isActive && subscription?.subscription_tier === 'free' ? (
+          <div className={styles.currentPlan}>
+            <div className={styles.planHeader}>
+              <div>
+                <h2 className={styles.planName}>Free Launch Plan 🎉</h2>
+                <span className={`${styles.statusBadge} ${styles.activeBadge}`}>Active</span>
+              </div>
+            </div>
+            <div className={styles.planDetails}>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Plan</span>
+                <span className={styles.detailValue}>6 months free — part of the first 600 employers</span>
+              </div>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Free access until</span>
+                <span className={styles.detailValue}>{formatDate(subscription.trial_ends_at)}</span>
+              </div>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Days remaining</span>
+                <span className={styles.detailValue}>{trialDaysRemaining} days</span>
+              </div>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Includes</span>
+                <span className={styles.detailValue}>Unlimited jobs, candidate search, pipeline, interviews, analytics</span>
+              </div>
+            </div>
+            <div className={styles.planActions}>
+              <Link href="/employer/dashboard" className={styles.manageBtn} style={{ textDecoration: 'none', textAlign: 'center' }}>
+                Back to Dashboard
+              </Link>
+            </div>
+          </div>
+        ) : isActive && subscription?.subscription_tier ? (
+          /* Paid Plan Card */
           <div className={styles.currentPlan}>
             <div className={styles.planHeader}>
               <div>

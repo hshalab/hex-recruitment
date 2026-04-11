@@ -98,25 +98,31 @@ export default function RegisterEmployerFreePage() {
       if (authData.user) {
         const freeUntil = new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString()
 
-        // Create employer profile
-        await supabase.from('employer_profiles').upsert({
-          user_id: authData.user.id,
-          company_name: companyName,
-          contact_name: contactName,
-          email,
-          phone: null,
-          location: null,
-          business_address: null,
-        }, { onConflict: 'user_id' })
+        // Use server endpoints (service-role client) to bypass RLS —
+        // with email confirmation enabled, the anon client has no session
+        // at this point so direct upserts are silently blocked.
+        await fetch('/api/profile/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: authData.user.id,
+            profile: {
+              company_name: companyName,
+              contact_name: contactName,
+              email,
+            },
+            table: 'employer_profiles',
+          }),
+        }).catch(() => {})
 
-        // Create subscription record for free launch
-        await supabase.from('employer_subscriptions').upsert({
-          user_id: authData.user.id,
-          subscription_status: 'active',
-          subscription_tier: 'free',
-          trial_ends_at: freeUntil,
-          current_period_end: freeUntil,
-        }, { onConflict: 'user_id' })
+        await fetch('/api/subscription/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: authData.user.id,
+            trialEndsAt: freeUntil,
+          }),
+        }).catch(() => {})
 
         // Welcome email is sent from /auth/callback after email confirmation.
         setEmailSent(true)
