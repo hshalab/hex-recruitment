@@ -392,6 +392,16 @@ export default function CompanySettingsPage() {
       return
     }
 
+    if (formData.website.trim()) {
+      try {
+        new URL(formData.website.trim())
+      } catch {
+        setMessage({ type: 'error', text: 'Please enter a valid website URL (e.g. https://www.yourcompany.com)' })
+        setSaving(false)
+        return
+      }
+    }
+
     try {
       if (DEV_MODE) {
         // Save to localStorage
@@ -571,9 +581,13 @@ export default function CompanySettingsPage() {
             </p>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
-                type="url"
+                type="text"
                 value={scrapeUrl}
                 onChange={e => setScrapeUrl(e.target.value)}
+                onBlur={e => {
+                  const v = e.target.value.trim()
+                  if (v && !v.match(/^https?:\/\//i)) setScrapeUrl('https://' + v)
+                }}
                 placeholder="https://yourcompany.com"
                 className={styles.input}
                 style={{ flex: 1 }}
@@ -703,11 +717,17 @@ export default function CompanySettingsPage() {
             <div className={styles.field}>
               <label htmlFor="website" className={styles.label}>Website</label>
               <input
-                type="url"
+                type="text"
                 id="website"
                 name="website"
                 value={formData.website}
                 onChange={handleChange}
+                onBlur={e => {
+                  const v = e.target.value.trim()
+                  if (v && !v.match(/^https?:\/\//i)) {
+                    setFormData(prev => ({ ...prev, website: 'https://' + v }))
+                  }
+                }}
                 className={styles.input}
                 placeholder="https://www.yourcompany.com"
                 autoComplete="url"
