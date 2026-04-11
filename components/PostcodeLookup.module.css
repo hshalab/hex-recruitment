@@ -290,6 +290,55 @@
   color: var(--primary-yellow);
 }
 
+/* Address Dropdown */
+.addressDropdown {
+  margin-top: 0.5rem;
+  border: 1px solid var(--border-gray);
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: dropIn 0.15s ease-out;
+  overflow: hidden;
+}
+
+.addressCount {
+  margin: 0;
+  padding: 0.625rem 1rem;
+  font-size: 0.8rem;
+  color: var(--text-gray);
+  border-bottom: 1px solid var(--border-gray);
+}
+
+.addressList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.addressItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  color: var(--black);
+  cursor: pointer;
+  transition: background 0.1s ease;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.addressItem:last-child {
+  border-bottom: none;
+}
+
+.addressItem:hover,
+.addressItem:focus-visible {
+  background: rgba(255, 229, 0, 0.08);
+  outline: none;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
   .lookupRow {

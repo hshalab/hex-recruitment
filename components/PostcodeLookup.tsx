@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { lookupPostcode, autocompletePostcode, normalizePostcode, isValidPostcodeFormat } from '@/lib/postcodeLookup'
+import { useState, useRef, useEffect } from 'react'
+import { normalizePostcode, isValidPostcodeFormat } from '@/lib/postcodeLookup'
 import styles from './PostcodeLookup.module.css'
 
 export interface AddressData {
@@ -10,6 +10,15 @@ export interface AddressData {
   city: string
   county: string
   postcode: string
+}
+
+interface AddressOption {
+  line_1: string
+  line_2: string
+  town_or_city: string
+  county: string
+  postcode: string
+  formatted: string
 }
 
 interface PostcodeLookupProps {
@@ -28,60 +37,34 @@ export default function PostcodeLookup({
   const [postcode, setPostcode] = useState(initialPostcode)
   const [isLooking, setIsLooking] = useState(false)
   const [lookupError, setLookupError] = useState('')
-  const [lookupSuccess, setLookupSuccess] = useState(false)
-  const [foundAddress, setFoundAddress] = useState<{ city: string; county: string; postcode: string } | null>(null)
-  const [suggestions, setSuggestions] = useState<string[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const [addresses, setAddresses] = useState<AddressOption[]>([])
+  const [showAddresses, setShowAddresses] = useState(false)
+  const [selectedAddress, setSelectedAddress] = useState<AddressOption | null>(null)
   const [manualMode, setManualMode] = useState(false)
 
-  const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Handle click outside to close dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false)
+        setShowAddresses(false)
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  // Debounced autocomplete
-  const fetchSuggestions = useCallback(async (value: string) => {
-    if (value.length < 2) {
-      setSuggestions([])
-      return
-    }
-
-    const results = await autocompletePostcode(value)
-    setSuggestions(results)
-    setShowSuggestions(results.length > 0)
   }, [])
 
   const handlePostcodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toUpperCase()
     setPostcode(value)
     setLookupError('')
-    setLookupSuccess(false)
-    setFoundAddress(null)
-    setHighlightedIndex(-1)
-
-    // Debounce autocomplete
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current)
-    }
-    debounceRef.current = setTimeout(() => {
-      fetchSuggestions(value)
-    }, 300)
+    setAddresses([])
+    setShowAddresses(false)
+    setSelectedAddress(null)
   }
 
-  const performLookup = async (postcodeToLookup: string) => {
-    const normalized = normalizePostcode(postcodeToLookup)
+  const performLookup = async () => {
+    const normalized = normalizePostcode(postcode)
 
     if (!isValidPostcodeFormat(normalized)) {
       setLookupError('Please enter a valid UK postcode')
@@ -90,83 +73,56 @@ export default function PostcodeLookup({
 
     setIsLooking(true)
     setLookupError('')
-    setLookupSuccess(false)
-    setShowSuggestions(false)
+    setAddresses([])
+    setShowAddresses(false)
+    setSelectedAddress(null)
 
-    const areaResult = await lookupPostcode(normalized)
+    try {
+      const res = await fetch(`/api/lookup-postcode?postcode=${encodeURIComponent(normalized)}`)
+      const data = await res.json()
 
-    if (areaResult) {
-      setPostcode(areaResult.postcode)
-      setFoundAddress({
-        city: areaResult.city,
-        county: areaResult.county,
-        postcode: areaResult.postcode,
-      })
-      const addressData = {
-        addressLine1: '',
-        addressLine2: '',
-        city: areaResult.city,
-        county: areaResult.county,
-        postcode: areaResult.postcode,
+      if (!res.ok) {
+        setLookupError(data.error || 'Postcode not found. Please check and try again.')
+        setIsLooking(false)
+        return
       }
-      onAddressFound(addressData)
-      setLookupSuccess(true)
-    } else {
-      setLookupError('Postcode not found. Please check and try again.')
-      setLookupSuccess(false)
+
+      if (data.addresses && data.addresses.length > 0) {
+        setAddresses(data.addresses)
+        setShowAddresses(true)
+        setPostcode(data.postcode || normalized)
+      } else {
+        setLookupError('No addresses found for this postcode.')
+      }
+    } catch {
+      setLookupError('Lookup failed. Please try again or enter address manually.')
     }
 
     setIsLooking(false)
   }
 
-  const handleFindAddress = () => {
-    performLookup(postcode)
+  const selectAddress = (addr: AddressOption) => {
+    setSelectedAddress(addr)
+    setShowAddresses(false)
+    onAddressFound({
+      addressLine1: addr.line_1,
+      addressLine2: addr.line_2,
+      city: addr.town_or_city,
+      county: addr.county,
+      postcode: addr.postcode,
+    })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (showSuggestions && suggestions.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        setHighlightedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0))
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        setHighlightedIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1))
-      } else if (e.key === 'Enter') {
-        e.preventDefault()
-        if (highlightedIndex >= 0) {
-          selectSuggestion(suggestions[highlightedIndex])
-        } else {
-          performLookup(postcode)
-        }
-      } else if (e.key === 'Escape') {
-        setShowSuggestions(false)
-      }
-    } else if (e.key === 'Enter') {
+    if (e.key === 'Enter') {
       e.preventDefault()
-      performLookup(postcode)
+      performLookup()
     }
-  }
-
-  const selectSuggestion = (suggestion: string) => {
-    setPostcode(suggestion)
-    setSuggestions([])
-    setShowSuggestions(false)
-    setHighlightedIndex(-1)
-    performLookup(suggestion)
-  }
-
-  const handleBlur = () => {
-    // Delay to allow click on suggestion
-    setTimeout(() => {
-      if (postcode && isValidPostcodeFormat(postcode) && !showSuggestions) {
-        performLookup(postcode)
-      }
-    }, 200)
   }
 
   const handleManualMode = () => {
     setManualMode(true)
-    setShowSuggestions(false)
+    setShowAddresses(false)
     onAddressFound({
       addressLine1: '',
       addressLine2: '',
@@ -198,45 +154,19 @@ export default function PostcodeLookup({
       <div className={styles.lookupRow}>
         <div className={styles.inputWrapper}>
           <input
-            ref={inputRef}
             type="text"
             value={postcode}
             onChange={handlePostcodeChange}
             onKeyDown={handleKeyDown}
-            onBlur={handleBlur}
-            onFocus={() => postcode.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
             placeholder="Enter postcode (e.g. SW1A 1AA)"
             className={`${styles.input} ${error || lookupError ? styles.inputError : ''}`}
             autoComplete="postal-code"
             aria-label="Postcode"
-            aria-expanded={showSuggestions}
-            aria-autocomplete="list"
-            aria-controls="postcode-suggestions"
           />
-          {showSuggestions && suggestions.length > 0 && (
-            <ul
-              id="postcode-suggestions"
-              className={styles.suggestions}
-              role="listbox"
-            >
-              {suggestions.map((suggestion, index) => (
-                <li
-                  key={suggestion}
-                  className={`${styles.suggestionItem} ${index === highlightedIndex ? styles.highlighted : ''}`}
-                  onClick={() => selectSuggestion(suggestion)}
-                  role="option"
-                  aria-selected={index === highlightedIndex}
-                >
-                  <span className={styles.suggestionIcon}>📍</span>
-                  {suggestion}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
         <button
           type="button"
-          onClick={handleFindAddress}
+          onClick={performLookup}
           disabled={isLooking || !postcode.trim()}
           className={styles.findButton}
         >
@@ -258,21 +188,39 @@ export default function PostcodeLookup({
         <p className={styles.errorText}>{error || lookupError}</p>
       )}
 
-      {lookupSuccess && !lookupError && foundAddress && (
+      {showAddresses && addresses.length > 0 && (
+        <div className={styles.addressDropdown}>
+          <p className={styles.addressCount}>
+            {addresses.length} address{addresses.length !== 1 ? 'es' : ''} found — select yours:
+          </p>
+          <ul className={styles.addressList} role="listbox">
+            {addresses.map((addr, i) => (
+              <li
+                key={i}
+                className={styles.addressItem}
+                onClick={() => selectAddress(addr)}
+                role="option"
+                tabIndex={0}
+                onKeyDown={e => { if (e.key === 'Enter') selectAddress(addr) }}
+              >
+                <span className={styles.suggestionIcon}>📍</span>
+                {addr.formatted}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {selectedAddress && (
         <div className={styles.foundAddressCard}>
           <div className={styles.foundAddressHeader}>
             <span className={styles.checkIcon}>✓</span>
-            <span className={styles.foundTitle}>Postcode found!</span>
+            <span className={styles.foundTitle}>Address selected</span>
           </div>
           <div className={styles.foundAddressDetails}>
-            <p className={styles.foundLocation}>
-              {[foundAddress.city, foundAddress.county].filter(Boolean).join(', ')}
-            </p>
-            <p className={styles.foundPostcode}>{foundAddress.postcode}</p>
+            <p className={styles.foundLocation}>{selectedAddress.formatted}</p>
+            <p className={styles.foundPostcode}>{selectedAddress.postcode}</p>
           </div>
-          <p className={styles.enterStreetPrompt}>
-            Please enter your street address (house number and street name) in the Address Line 1 field below.
-          </p>
         </div>
       )}
 

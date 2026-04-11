@@ -69,7 +69,8 @@
       "Bash(wmic process:*)",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_snapshot"
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_snapshot",
+      "Bash(printf \"fc-ad679ba45270412aae0168514467f008\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Paul Davies\\Downloads\\hospitality-hive-nextjs\\hospitality-hive-nextjs\\app\\api\\interviews\\[id]\\book",
