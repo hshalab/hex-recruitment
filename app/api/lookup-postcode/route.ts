@@ -19,13 +19,15 @@ export async function GET(req: NextRequest) {
   try {
     const res = await fetch(url)
 
-    if (res.status === 404) {
-      return NextResponse.json({ error: 'Postcode not found' }, { status: 404 })
-    }
-    if (res.status === 401) {
-      return NextResponse.json({ error: 'Address lookup API key invalid' }, { status: 500 })
-    }
     if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      console.error('[lookup-postcode] getAddress.io error', { status: res.status, postcode: clean, body })
+      if (res.status === 404) {
+        return NextResponse.json({ error: 'Postcode not found' }, { status: 404 })
+      }
+      if (res.status === 401) {
+        return NextResponse.json({ error: 'Address lookup API key invalid' }, { status: 500 })
+      }
       return NextResponse.json({ error: `Lookup failed (${res.status})` }, { status: 502 })
     }
 
