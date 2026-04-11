@@ -574,11 +574,14 @@
   cursor: pointer;
   transition: all 0.2s;
   color: var(--text-gray);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.skillPill:hover {
-  border-color: var(--primary-yellow);
-  background: rgba(255, 229, 0, 0.1);
+@media (hover: hover) {
+  .skillPill:hover {
+    border-color: var(--primary-yellow);
+    background: rgba(255, 229, 0, 0.1);
+  }
 }
 
 .skillPillActive {
