@@ -20,6 +20,7 @@ export default function RegisterEmployerFreePage() {
   const [agreeAll, setAgreeAll] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [emailSent, setEmailSent] = useState(false)
   const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null)
 
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function RegisterEmployerFreePage() {
 
     try {
       // Create auth user
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -80,6 +82,7 @@ export default function RegisterEmployerFreePage() {
             company_name: companyName,
             role: 'employer',
           },
+          emailRedirectTo: `${siteUrl}/auth/callback?role=employer`,
         },
       })
 
@@ -115,18 +118,8 @@ export default function RegisterEmployerFreePage() {
           current_period_end: freeUntil,
         }, { onConflict: 'user_id' })
 
-        // Send welcome email (non-blocking)
-        fetch('/api/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: email,
-            type: 'welcome',
-            data: { contactName, companyName },
-          }),
-        }).catch(() => {})
-
-        router.push('/employer/dashboard')
+        // Welcome email is sent from /auth/callback after email confirmation.
+        setEmailSent(true)
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.')
@@ -149,6 +142,19 @@ export default function RegisterEmployerFreePage() {
                 : `\ud83d\udfe1 ${spotsRemaining} of 1000 free employer spots remaining \u2014 no card needed.`}
           </div>
 
+          {emailSent ? (
+            <div style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📧</div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: '0 0 0.75rem' }}>Check your email</h2>
+              <p style={{ fontSize: '1rem', color: '#475569', lineHeight: 1.6, margin: '0 0 1rem', maxWidth: 400, marginLeft: 'auto', marginRight: 'auto' }}>
+                We&apos;ve sent a confirmation link to <strong>{email}</strong>. Click it to activate your account and start hiring.
+              </p>
+              <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+                Can&apos;t find it? Check your spam folder.
+              </p>
+            </div>
+          ) : (
+          <>
           <h1 className={loginStyles.title}>Start hiring for free</h1>
           <p className={loginStyles.subtitle}>Join the first 1000 employers on Thrive — post jobs free, no card needed.</p>
 
@@ -240,6 +246,8 @@ export default function RegisterEmployerFreePage() {
           <div className={loginStyles.links}>
             <span>Already have an account? <Link href="/login/employer" className={loginStyles.link}>Log in</Link></span>
           </div>
+          </>
+          )}
         </div>
       </div>
     </main>

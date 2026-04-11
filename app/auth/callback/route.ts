@@ -145,6 +145,31 @@ export async function GET(req: NextRequest) {
         )
       if (upsertErr) console.error('[auth/callback] candidate_profiles upsert failed', upsertErr)
     }
+
+    // Send the appropriate welcome email now that the user is verified.
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
+    if (role === 'employer') {
+      const companyName = (user.user_metadata?.company_name as string | undefined) || companyNameFromEmail(user.email)
+      fetch(`${siteUrl}/api/email/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: user.email,
+          type: 'welcome',
+          data: { contactName: displayName, companyName },
+        }),
+      }).catch(() => {})
+    } else {
+      fetch(`${siteUrl}/api/email/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: user.email,
+          type: 'candidate_welcome',
+          data: { candidateName: displayName },
+        }),
+      }).catch(() => {})
+    }
   }
 
   const destination = role === 'employer' ? '/employer/dashboard' : '/dashboard'

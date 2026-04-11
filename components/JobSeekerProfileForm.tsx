@@ -732,6 +732,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         }
 
         // Production mode: Use Supabase
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -739,7 +740,8 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             data: {
               full_name: `${formData.firstName} ${formData.lastName}`,
               role: 'employee'
-            }
+            },
+            emailRedirectTo: `${siteUrl}/auth/callback?role=employee`,
           }
         })
 
@@ -851,21 +853,11 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           }
         }
 
-        // Send candidate welcome email
-        fetch('/api/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: formData.email,
-            type: 'candidate_welcome',
-            data: { candidateName: `${formData.firstName} ${formData.lastName}` },
-          }),
-        }).catch(() => {}) // fire and forget
-
+        // Welcome email is sent from /auth/callback after the user
+        // clicks the confirmation link — not here at signUp time.
         setSuccess(true)
-        setTimeout(() => {
-          router.push('/login/employee?registered=true')
-        }, 2000)
+        // Don't redirect — show the "check your email" screen instead.
+        // The user must click the confirmation link in their email.
 
       } else {
         // Edit mode - update existing profile
@@ -2359,14 +2351,19 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
 
       {error && <div className={styles.error}>{error}</div>}
       {success && mode === 'register' && (
-        <div className={styles.success}>
-          {isTestingMode
-            ? 'Test profile created! Redirecting to login...'
-            : 'Account created successfully! Redirecting to login...'
-          }
+        <div style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📧</div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: '0 0 0.75rem' }}>Check your email</h2>
+          <p style={{ fontSize: '1rem', color: '#475569', lineHeight: 1.6, margin: '0 0 1rem', maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto' }}>
+            We&apos;ve sent a confirmation link to <strong>{formData.email}</strong>. Click it to activate your account and access your dashboard.
+          </p>
+          <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+            Can&apos;t find it? Check your spam folder.
+          </p>
         </div>
       )}
 
+      {!(success && mode === 'register') && (
       <div className={styles.stepWrapper}>
         {currentStep === 1 && renderStep1()}
         {currentStep === 2 && renderStep2()}
@@ -2374,7 +2371,9 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         {currentStep === 4 && renderStep4()}
         {currentStep === 5 && renderStep5()}
       </div>
+      )}
 
+      {!(success && mode === 'register') && (
       <div className={styles.navigation}>
         {currentStep > 1 && (
           <button
@@ -2409,6 +2408,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           </button>
         )}
       </div>
+      )}
     </div>
 
     {/* Fixed-position toast for edit mode */}

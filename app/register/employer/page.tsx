@@ -91,10 +91,12 @@ function RegisterEmployerPageContent() {
 
     try {
       // Create auth user
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo: `${siteUrl}/auth/callback?role=employer`,
           data: {
             full_name: formData.contactName,
             company_name: formData.companyName,
@@ -128,18 +130,8 @@ function RegisterEmployerPageContent() {
           },
         }, { onConflict: 'user_id' })
 
-        // Send welcome email (non-blocking)
-        fetch('/api/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: formData.email,
-            type: 'welcome',
-            data: { contactName: formData.contactName, companyName: formData.companyName },
-          }),
-        }).catch(() => {})
-
-        alert('Registration successful! Please check your email to verify your account. You can start posting jobs after verification.')
+        // Welcome email is sent from /auth/callback after email confirmation.
+        alert('Registration successful! Please check your email to verify your account.')
         router.push('/login/employer')
       }
     } catch (err: any) {
