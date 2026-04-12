@@ -95,6 +95,14 @@ export default function RegisterEmployerFreePage() {
         return
       }
 
+      // Supabase returns a user with empty identities[] when the email
+      // is already registered (anti-enumeration). Detect this and show
+      // a clear error instead of the misleading "check your email".
+      if (authData.user && (!authData.user.identities || authData.user.identities.length === 0)) {
+        setError('This email is already registered. Try logging in instead, or use "Continue with Google" if you signed up with Google.')
+        return
+      }
+
       if (authData.user) {
         const freeUntil = new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString()
 

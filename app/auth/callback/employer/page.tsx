@@ -6,24 +6,23 @@ import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 
 // Client-side callback for employer Google OAuth.
-// The Supabase client automatically exchanges the code fragment for a
-// session (using the PKCE verifier stored in localStorage). We then
-// stamp role='employer' on the user metadata and create the profile.
+// Uses onAuthStateChange to wait for Supabase to finish processing the
+// OAuth hash fragment (#access_token=...) before reading the session.
+// getSession() alone races and often returns null.
 export default function EmployerCallbackPage() {
   const router = useRouter()
   const [status, setStatus] = useState('Setting up your employer account…')
 
   useEffect(() => {
-    const setup = async () => {
-      try {
-        // Wait for Supabase to process the auth hash/code from the URL
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        if (sessionError || !session?.user) {
-          console.error('[employer-callback] no session', sessionError)
-          router.replace('/login/employer?error=auth_failed')
-          return
-        }
+    let handled = false
 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Only act on SIGNED_IN or INITIAL_SESSION with a valid user
+      if (handled) return
+      if (!session?.user) return
+      handled = true
+
+      try {
         const user = session.user
         const existingRole = user.user_metadata?.role as string | undefined
 
@@ -52,23 +51,27 @@ export default function EmployerCallbackPage() {
           data: { role: 'employer', full_name: displayName },
         })
 
-        // Create employer profile via server endpoint (bypasses RLS)
-        const companyName = user.email?.split('@')[1]?.split('.')[0] || 'My Company'
-        const isGeneric = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'live', 'aol', 'protonmail'].includes(companyName.toLowerCase())
+        // Create employer profile
+        const domain = user.email?.split('@')[1]?.split('.')[0] || ''
+        const isGeneric = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'live', 'aol', 'protonmail'].includes(domain.toLowerCase())
+        const companyName = isGeneric ? 'My Company' : domain.charAt(0).toUpperCase() + domain.slice(1)
 
-        await fetch('/api/profile/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            table: 'employer_profiles',
-            profile: {
-              company_name: isGeneric ? 'My Company' : companyName.charAt(0).toUpperCase() + companyName.slice(1),
-              contact_name: displayName,
-              email: user.email || '',
-            },
-          }),
-        }).catch(() => {})
+        try {
+          const profileRes = await fetch('/api/profile/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              table: 'employer_profiles',
+              profile: {
+                company_name: companyName,
+                contact_name: displayName,
+                email: user.email || '',
+              },
+            }),
+          })
+          if (!profileRes.ok) console.error('[employer-callback] profile create failed', await profileRes.text().catch(() => ''))
+        } catch (e) { console.error('[employer-callback] profile create error', e) }
 
         // Create subscription
         try {
@@ -77,23 +80,17 @@ export default function EmployerCallbackPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: user.id }),
           })
-          if (!subRes.ok) {
-            const subErr = await subRes.json().catch(() => ({}))
-            console.error('[employer-callback] subscription create failed', subRes.status, subErr)
-          }
-        } catch (subErr) {
-          console.error('[employer-callback] subscription create error', subErr)
-        }
+          if (!subRes.ok) console.error('[employer-callback] subscription create failed', await subRes.text().catch(() => ''))
+        } catch (e) { console.error('[employer-callback] subscription create error', e) }
 
-        // Welcome email
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-        fetch(`${siteUrl}/api/email/send`, {
+        // Welcome email (fire and forget)
+        fetch('/api/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: user.email,
             type: 'welcome',
-            data: { contactName: displayName, companyName: isGeneric ? 'My Company' : companyName },
+            data: { contactName: displayName, companyName },
           }),
         }).catch(() => {})
 
@@ -102,8 +99,20 @@ export default function EmployerCallbackPage() {
         console.error('[employer-callback] error', err)
         router.replace('/login/employer?error=setup_failed')
       }
+    })
+
+    // Fallback: if no auth event fires within 10 seconds, redirect
+    const timeout = setTimeout(() => {
+      if (!handled) {
+        console.error('[employer-callback] timeout — no auth event received')
+        router.replace('/login/employer?error=timeout')
+      }
+    }, 10000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
     }
-    setup()
   }, [router])
 
   return (
