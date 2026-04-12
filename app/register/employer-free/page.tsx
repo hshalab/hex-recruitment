@@ -82,7 +82,7 @@ export default function RegisterEmployerFreePage() {
             company_name: companyName,
             role: 'employer',
           },
-          emailRedirectTo: `${siteUrl}/auth/callback?role=employer`,
+          emailRedirectTo: `${siteUrl}/auth/confirm?role=employer`,
         },
       })
 

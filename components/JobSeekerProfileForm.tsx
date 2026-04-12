@@ -741,7 +741,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
               full_name: `${formData.firstName} ${formData.lastName}`,
               role: 'employee'
             },
-            emailRedirectTo: `${siteUrl}/auth/callback?role=employee`,
+            emailRedirectTo: `${siteUrl}/auth/confirm?role=employee`,
           }
         })
 

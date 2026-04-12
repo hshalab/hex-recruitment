@@ -96,7 +96,7 @@ function RegisterEmployerPageContent() {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${siteUrl}/auth/callback?role=employer`,
+          emailRedirectTo: `${siteUrl}/auth/confirm?role=employer`,
           data: {
             full_name: formData.contactName,
             company_name: formData.companyName,
