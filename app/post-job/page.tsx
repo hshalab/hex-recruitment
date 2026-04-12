@@ -367,7 +367,7 @@ function PostJobContent() {
     // Build the description text to send — from guided fields or existing editor content
     const descriptionText = descView === 'guided'
       ? [
-          guidedFields.whatIsJob ? `What is the job: ${guidedFields.whatIsJob}` : '',
+          formData.title ? `What is the job: ${formData.title}` : '',
           guidedFields.dayToDay ? `Day to day: ${guidedFields.dayToDay}` : '',
           guidedFields.experienceNeeded ? `Experience needed: ${guidedFields.experienceNeeded}` : '',
           guidedFields.whatWeOffer ? `What we offer: ${guidedFields.whatWeOffer}` : '',
@@ -380,9 +380,13 @@ function PostJobContent() {
       : { source: 'editor', description: formData.description }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/ai-assist', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           type: 'job-ad-enhance',
           data: {
@@ -1023,20 +1027,6 @@ function PostJobContent() {
 
             {descView === 'guided' ? (
               <div>
-                <div className={styles.formGroup}>
-                  <label className={styles.label} htmlFor="desc_whatIsJob">
-                    What is the job? <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="desc_whatIsJob"
-                    className={styles.input}
-                    placeholder="e.g. Head Chef, Senior Developer, Marketing Manager"
-                    value={guidedFields.whatIsJob}
-                    onChange={e => setGuidedFields(prev => ({ ...prev, whatIsJob: e.target.value }))}
-                  />
-                </div>
-
                 <div className={styles.formGroup}>
                   <label className={styles.label} htmlFor="desc_dayToDay">
                     What will they be doing day to day?
