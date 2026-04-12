@@ -39,14 +39,23 @@ export async function GET(req: NextRequest) {
   const origin = getOrigin(req)
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
-  const roleParam = url.searchParams.get('role') as 'employer' | 'employee' | null
   const errorParam = url.searchParams.get('error')
   const errorDesc = url.searchParams.get('error_description')
+
+  // Role from query param (email signUp flow) or cookie (Google OAuth
+  // flow — Supabase strips query params from redirectTo during OAuth).
+  let roleParam = url.searchParams.get('role') as 'employer' | 'employee' | null
+  if (!roleParam) {
+    const cookieHeader = req.headers.get('cookie') || ''
+    const match = cookieHeader.match(/oauth_intended_role=(employer|employee)/)
+    if (match) roleParam = match[1] as 'employer' | 'employee'
+  }
 
   console.log('[auth/callback] GET', {
     origin,
     hasCode: Boolean(code),
     roleParam,
+    roleSource: url.searchParams.get('role') ? 'query' : 'cookie',
     errorParam,
   })
 
@@ -188,5 +197,8 @@ export async function GET(req: NextRequest) {
 
   const destination = role === 'employer' ? '/employer/dashboard' : '/dashboard'
   console.log('[auth/callback] success', { userId: user.id, role, destination, isNewUser: !existingRole })
-  return NextResponse.redirect(`${origin}${destination}`)
+  const response = NextResponse.redirect(`${origin}${destination}`)
+  // Clear the role cookie so it doesn't linger
+  response.cookies.set('oauth_intended_role', '', { path: '/', maxAge: 0 })
+  return response
 }
