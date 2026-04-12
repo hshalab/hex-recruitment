@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         url: parsedUrl.toString(),
-        formats: ['markdown', 'links'],
-        onlyMainContent: true,
+        formats: ['markdown', 'links', 'rawHtml'],
+        onlyMainContent: false,
       }),
     })
 
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
 
     const scrapeData = await scrapeRes.json()
     const markdown: string = scrapeData?.data?.markdown || ''
+    const rawHtml: string = scrapeData?.data?.rawHtml || ''
     const links: string[] = (scrapeData?.data?.links || []).map((l: any) => typeof l === 'string' ? l : l?.url || '').filter(Boolean)
 
     if (!markdown || markdown.length < 50) {
@@ -56,6 +57,22 @@ export async function POST(req: NextRequest) {
         { status: 422 }
       )
     }
+
+    // Extract og:image and favicon from raw HTML
+    const ogImageMatch = rawHtml.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+      || rawHtml.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+    const faviconMatch = rawHtml.match(/<link[^>]+rel=["'](?:icon|shortcut icon|apple-touch-icon)["'][^>]+href=["']([^"']+)["']/i)
+    const ogImage = ogImageMatch?.[1] || null
+    const favicon = faviconMatch?.[1] || null
+
+    // Make relative URLs absolute
+    const makeAbsolute = (url: string | null) => {
+      if (!url) return null
+      if (url.startsWith('http')) return url
+      if (url.startsWith('//')) return 'https:' + url
+      return `${parsedUrl.origin}${url.startsWith('/') ? '' : '/'}${url}`
+    }
+    const logoHints = [makeAbsolute(ogImage), makeAbsolute(favicon)].filter(Boolean)
 
     // Truncate to avoid blowing the context window on a huge page
     const truncatedMarkdown = markdown.slice(0, 6000)
@@ -75,16 +92,21 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: 'user',
-            content: `Extract company information from this webpage content. Return ONLY a JSON object with these fields (omit any you can't find):
+            content: `Extract company information from this webpage content. Return ONLY a JSON object with these fields (use null for any you can't find):
 {
   "companyName": "string",
   "description": "string (2-3 sentence summary of what the company does, professional tone)",
   "location": "string (city and country if found)",
   "website": "string (the original URL)",
-  "logoUrl": "string (absolute URL to the company logo if found in the page links/content)"
+  "logoUrl": "string or null (use the best logo/image URL from the hints below, or from the page content)",
+  "industry": "string or null (the company's primary industry sector — e.g. Technology, Healthcare, Finance, Retail, Hospitality, Manufacturing, Education, Construction, Energy, Marketing, Media, Legal, Transport, etc.)",
+  "companySize": "string or null (number of employees if mentioned — return as a range like '1-10', '11-50', '51-200', '201-500', '501-1000', or '1000+')"
 }
 
 Page URL: ${parsedUrl.toString()}
+
+Logo/image hints from page metadata:
+${logoHints.length > 0 ? logoHints.join('\n') : '(none found)'}
 
 Page content:
 ${truncatedMarkdown}

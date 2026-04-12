@@ -109,7 +109,55 @@ export default function CompanySettingsPage() {
         setScraping(false)
         return
       }
-      const d = json.data as Record<string, string>
+      const d = json.data as Record<string, string | null>
+
+      // Map AI-extracted industry to the closest dropdown option
+      const matchIndustry = (raw: string | null): string => {
+        if (!raw) return ''
+        const lower = raw.toLowerCase()
+        const match = INDUSTRY_OPTIONS.find(opt => opt.toLowerCase().includes(lower) || lower.includes(opt.toLowerCase().split(',')[0]))
+        if (match) return match
+        // Fuzzy match common synonyms
+        const map: Record<string, string> = {
+          technology: 'Digital & Information Technology', tech: 'Digital & Information Technology', software: 'Digital & Information Technology', it: 'Digital & Information Technology',
+          finance: 'Accountancy, Banking & Finance', banking: 'Accountancy, Banking & Finance',
+          healthcare: 'Healthcare & Social Care', health: 'Healthcare & Social Care', medical: 'Healthcare & Social Care',
+          hospitality: 'Hospitality, Tourism & Sport', hotel: 'Hospitality, Tourism & Sport', tourism: 'Hospitality, Tourism & Sport',
+          retail: 'Retail & Sales', sales: 'Retail & Sales', ecommerce: 'Retail & Sales',
+          education: 'Teaching & Education', training: 'Teaching & Education',
+          construction: 'Property & Construction', property: 'Property & Construction', 'real estate': 'Property & Construction',
+          manufacturing: 'Engineering & Manufacturing', engineering: 'Engineering & Manufacturing',
+          marketing: 'Marketing, Advertising & PR', advertising: 'Marketing, Advertising & PR', pr: 'Marketing, Advertising & PR',
+          media: 'Media & Internet', publishing: 'Media & Internet',
+          legal: 'Law & Legal Services', law: 'Law & Legal Services',
+          energy: 'Energy & Utilities', utilities: 'Energy & Utilities',
+          transport: 'Transport & Logistics', logistics: 'Transport & Logistics',
+          charity: 'Charity & Voluntary Work', nonprofit: 'Charity & Voluntary Work',
+          consulting: 'Business, Consulting & Management', management: 'Business, Consulting & Management',
+          recruitment: 'Recruitment & HR', hr: 'Recruitment & HR',
+          science: 'Science & Pharmaceuticals', pharma: 'Science & Pharmaceuticals',
+          creative: 'Creative Arts & Design', design: 'Creative Arts & Design',
+          agriculture: 'Environment & Agriculture', environment: 'Environment & Agriculture',
+          government: 'Public Services & Administration', 'public sector': 'Public Services & Administration',
+        }
+        return map[lower] || 'Other'
+      }
+
+      // Map AI-extracted size to dropdown option
+      const matchSize = (raw: string | null): string => {
+        if (!raw) return ''
+        const num = parseInt(raw.replace(/[^0-9]/g, ''), 10)
+        if (raw.includes('1000+') || num >= 1000) return '1000+ employees'
+        if (num >= 501) return '501-1000 employees'
+        if (num >= 201) return '201-500 employees'
+        if (num >= 51) return '51-200 employees'
+        if (num >= 11) return '11-50 employees'
+        if (num >= 1) return '1-10 employees'
+        // Try matching the raw string directly
+        const match = COMPANY_SIZE_OPTIONS.find(opt => raw.includes(opt.split(' ')[0]))
+        return match || ''
+      }
+
       // Only overwrite fields that are currently empty
       setFormData(prev => ({
         ...prev,
@@ -118,6 +166,8 @@ export default function CompanySettingsPage() {
         city: prev.city || d.location || prev.city,
         website: prev.website || d.website || prev.website,
         logoUrl: prev.logoUrl || d.logoUrl || prev.logoUrl,
+        industry: prev.industry || matchIndustry(d.industry) || prev.industry,
+        companySize: prev.companySize || matchSize(d.companySize) || prev.companySize,
       }))
       setIsDirty(true)
       setMessage({ type: 'success', text: 'Profile imported — review and save your details' })
