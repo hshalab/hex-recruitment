@@ -71,11 +71,19 @@ export default function EmployerCallbackPage() {
         }).catch(() => {})
 
         // Create subscription
-        await fetch('/api/subscription/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id }),
-        }).catch(() => {})
+        try {
+          const subRes = await fetch('/api/subscription/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id }),
+          })
+          if (!subRes.ok) {
+            const subErr = await subRes.json().catch(() => ({}))
+            console.error('[employer-callback] subscription create failed', subRes.status, subErr)
+          }
+        } catch (subErr) {
+          console.error('[employer-callback] subscription create error', subErr)
+        }
 
         // Welcome email
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin

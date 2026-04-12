@@ -102,35 +102,34 @@ function PostJobContent() {
         return
       }
 
+      // Check subscription status — do this BEFORE the role check so we
+      // can use the subscription record to confirm employer status even if
+      // the session metadata is stale (common after Google OAuth).
+      const { data: subData } = await supabase
+        .from('employer_subscriptions')
+        .select('subscription_status, subscription_tier')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+
       const userRole = session.user.user_metadata?.role
-      if (userRole !== 'employer') {
+      const hasActiveSub = subData && (subData.subscription_status === 'active' || subData.subscription_status === 'trialing')
+
+      // Accept as employer if: metadata says employer, OR they have an
+      // active employer subscription (covers stale session metadata)
+      if (userRole !== 'employer' && !hasActiveSub) {
         setIsEmployer(false)
         setCheckingAuth(false)
         return
       }
 
       setIsEmployer(true)
+      setHasSubscription(!!hasActiveSub)
 
       const companyName = session.user.user_metadata?.company_name || 'Your Company'
-      const employerId = session.user.id
       setCurrentUser({
-        id: employerId,
+        id: session.user.id,
         companyName
       })
-
-      // Check subscription status from employer_subscriptions table
-      const { data: subData } = await supabase
-        .from('employer_subscriptions')
-        .select('subscription_status')
-        .eq('user_id', session.user.id)
-        .single()
-
-      // Free launch employers have status 'active' so they pass this gate
-      if (subData && (subData.subscription_status === 'active' || subData.subscription_status === 'trialing')) {
-        setHasSubscription(true)
-      } else {
-        setHasSubscription(false)
-      }
 
       setCheckingAuth(false)
     }
