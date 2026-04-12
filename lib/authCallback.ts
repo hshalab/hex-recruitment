@@ -54,32 +54,35 @@ export async function handleAuthCallback(
   }
 
   const supabase = createRouteHandlerClient({ cookies })
+  console.log('[auth/callback] step:exchange')
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
   if (exchangeError) {
-    console.error('[auth/callback] exchangeCodeForSession failed', exchangeError)
+    console.error('[auth/callback] exchangeCodeForSession FAILED', exchangeError.message)
     return NextResponse.redirect(`${origin}/login?auth_error=${encodeURIComponent(exchangeError.message)}`)
   }
+  console.log('[auth/callback] step:exchange OK')
 
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) {
-    console.error('[auth/callback] getUser failed', userError)
+    console.error('[auth/callback] getUser FAILED', userError?.message)
     return NextResponse.redirect(`${origin}/login?auth_error=no_user`)
   }
+  console.log('[auth/callback] step:getUser OK', { userId: user.id, existingMetaRole: user.user_metadata?.role })
 
   const existingRole = (user.user_metadata?.role as 'employer' | 'employee' | undefined) || undefined
 
-  // Mismatch check: existing role doesn't match the intended role
   if (existingRole && roleParam && existingRole !== roleParam) {
+    console.warn('[auth/callback] step:mismatch', { existingRole, roleParam })
     await supabase.auth.signOut()
     const target = roleParam === 'employer' ? '/login/employer' : '/login/employee'
-    console.warn('[auth/callback] role mismatch', { existingRole, roleParam, userId: user.id })
     return NextResponse.redirect(`${origin}${target}?error=wrong_account&have=${existingRole}`)
   }
 
   const role: 'employer' | 'employee' | undefined = existingRole || roleParam || undefined
+  console.log('[auth/callback] step:resolveRole', { existingRole, roleParam, resolvedRole: role })
 
   if (!role) {
-    console.warn('[auth/callback] no role available', { userId: user.id })
+    console.warn('[auth/callback] step:noRole')
     return NextResponse.redirect(`${origin}/login?auth_error=missing_role`)
   }
 
@@ -100,16 +103,23 @@ export async function handleAuthCallback(
     // but the new values aren't reflected in the session cookie that was
     // already set by exchangeCodeForSession — so the client-side
     // dashboard would see the old metadata (no role) and redirect away.
+    console.log('[auth/callback] step:updateMeta', { userId: user.id, role })
     const { error: metaError } = await admin.auth.admin.updateUserById(user.id, {
       user_metadata: { ...user.user_metadata, role, full_name: displayName },
     })
-    if (metaError) console.error('[auth/callback] updateUserById failed', metaError)
+    if (metaError) {
+      console.error('[auth/callback] updateUserById FAILED', metaError.message)
+    } else {
+      console.log('[auth/callback] step:updateMeta OK')
+    }
 
-    // Refresh the session so the cookie picks up the new metadata.
-    // Without this, the client-side getSession() would return the old
-    // user_metadata (no role) because the cookie was set BEFORE the
-    // metadata update.
-    await supabase.auth.refreshSession()
+    console.log('[auth/callback] step:refreshSession')
+    const { error: refreshError } = await supabase.auth.refreshSession()
+    if (refreshError) {
+      console.error('[auth/callback] refreshSession FAILED', refreshError.message)
+    } else {
+      console.log('[auth/callback] step:refreshSession OK')
+    }
 
     if (role === 'employer') {
       const { error: profileErr } = await admin
