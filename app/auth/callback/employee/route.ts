@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { handleAuthCallback } from '@/lib/authCallback'
 
-// Email/password flow callback — reads role from ?role= query param.
+// Google OAuth callback for candidates — role is hard-coded to 'employee'.
 export async function GET(req: NextRequest) {
-  return handleAuthCallback(req)
+  return handleAuthCallback(req, 'employee')
 }

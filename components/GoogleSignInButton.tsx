@@ -24,15 +24,14 @@ export default function GoogleSignInButton({ role, className, label }: GoogleSig
     setLoading(true)
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      // Store the intended role in a cookie before redirecting to Google.
-      // Supabase OAuth strips custom query params from redirectTo, so
-      // ?role=employer gets lost. The server-side callback reads the
-      // cookie as a fallback.
-      document.cookie = `oauth_intended_role=${role}; path=/; max-age=600; SameSite=Lax`
+      // Use role-specific callback paths so the role survives the OAuth
+      // redirect chain. Supabase strips query params from redirectTo,
+      // so /auth/callback?role=employer doesn't work — but
+      // /auth/callback/employer does.
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/auth/callback?role=${role}`,
+          redirectTo: `${origin}/auth/callback/${role}`,
           scopes: 'email profile',
         },
       })
