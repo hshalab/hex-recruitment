@@ -30,6 +30,9 @@ export async function handleAuthCallback(
   hardcodedRole?: 'employer' | 'employee'
 ) {
   const origin = getOrigin(req)
+
+  try {
+
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
   const errorParam = url.searchParams.get('error')
@@ -53,7 +56,13 @@ export async function handleAuthCallback(
     return NextResponse.redirect(`${origin}/login?auth_error=missing_code`)
   }
 
-  const supabase = createRouteHandlerClient({ cookies })
+  let supabase: ReturnType<typeof createRouteHandlerClient>
+  try {
+    supabase = createRouteHandlerClient({ cookies })
+  } catch (err: any) {
+    console.error('[auth/callback] createRouteHandlerClient CRASHED', err?.message, err?.stack)
+    return NextResponse.redirect(`${origin}/login?auth_error=client_init_failed`)
+  }
   console.log('[auth/callback] step:exchange')
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
   if (exchangeError) {
@@ -168,4 +177,9 @@ export async function handleAuthCallback(
   const destination = role === 'employer' ? '/employer/dashboard' : '/dashboard'
   console.log('[auth/callback] success', { userId: user.id, role, destination, isNewUser: !existingRole })
   return NextResponse.redirect(`${origin}${destination}`)
+
+  } catch (err: any) {
+    console.error('[auth/callback] UNHANDLED ERROR', err?.message, err?.stack?.slice(0, 500))
+    return NextResponse.redirect(`${origin}/login?auth_error=${encodeURIComponent(err?.message || 'unknown_error')}`)
+  }
 }
