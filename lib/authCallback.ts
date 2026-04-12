@@ -89,16 +89,27 @@ export async function handleAuthCallback(
 
   // New user: stamp role + create profile
   if (!existingRole) {
-    const { error: metaError } = await supabase.auth.updateUser({
-      data: { role, full_name: displayName },
-    })
-    if (metaError) console.error('[auth/callback] updateUser failed', metaError)
-
     const admin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { auth: { persistSession: false } }
     )
+
+    // Use admin.auth.admin.updateUserById to stamp role directly in the
+    // database. The route-handler client's updateUser() updates metadata
+    // but the new values aren't reflected in the session cookie that was
+    // already set by exchangeCodeForSession — so the client-side
+    // dashboard would see the old metadata (no role) and redirect away.
+    const { error: metaError } = await admin.auth.admin.updateUserById(user.id, {
+      user_metadata: { ...user.user_metadata, role, full_name: displayName },
+    })
+    if (metaError) console.error('[auth/callback] updateUserById failed', metaError)
+
+    // Refresh the session so the cookie picks up the new metadata.
+    // Without this, the client-side getSession() would return the old
+    // user_metadata (no role) because the cookie was set BEFORE the
+    // metadata update.
+    await supabase.auth.refreshSession()
 
     if (role === 'employer') {
       const { error: profileErr } = await admin
