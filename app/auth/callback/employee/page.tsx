@@ -1,91 +1,87 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 
-// Client-side callback for candidate Google OAuth.
 export default function EmployeeCallbackPage() {
   const router = useRouter()
   const [status, setStatus] = useState('Setting up your account…')
+  const handled = useRef(false)
+
+  const handleSession = async (session: { user: any } | null) => {
+    if (handled.current) return
+    if (!session?.user) return
+    handled.current = true
+
+    try {
+      const user = session.user
+      const existingRole = user.user_metadata?.role as string | undefined
+
+      if (existingRole && existingRole !== 'employee') {
+        await supabase.auth.signOut()
+        router.replace('/login/employee?error=wrong_account&have=' + existingRole)
+        return
+      }
+
+      if (existingRole === 'employee') {
+        router.replace('/dashboard')
+        return
+      }
+
+      setStatus('Creating your profile…')
+
+      const displayName = user.user_metadata?.full_name
+        || user.user_metadata?.name
+        || user.email?.split('@')[0] || 'User'
+
+      await supabase.auth.updateUser({
+        data: { role: 'employee', full_name: displayName },
+      })
+
+      await fetch('/api/profile/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, profile: { full_name: displayName, email: user.email || '' } }),
+      }).catch(() => {})
+
+      fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: user.email, type: 'candidate_welcome', data: { candidateName: displayName } }),
+      }).catch(() => {})
+
+      router.replace('/dashboard')
+    } catch (err: any) {
+      console.error('[employee-callback] error', err)
+      router.replace('/login/employee?error=setup_failed')
+    }
+  }
 
   useEffect(() => {
-    let handled = false
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) handleSession(session)
+    })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (handled) return
-      if (!session?.user) return
-      handled = true
-
-      try {
-        const user = session.user
-        const existingRole = user.user_metadata?.role as string | undefined
-
-        if (existingRole && existingRole !== 'employee') {
-          await supabase.auth.signOut()
-          router.replace('/login/employee?error=wrong_account&have=' + existingRole)
-          return
-        }
-
-        if (existingRole === 'employee') {
-          router.replace('/dashboard')
-          return
-        }
-
-        setStatus('Creating your profile…')
-
-        const displayName = user.user_metadata?.full_name
-          || user.user_metadata?.name
-          || user.email?.split('@')[0] || 'User'
-
-        await supabase.auth.updateUser({
-          data: { role: 'employee', full_name: displayName },
-        })
-
-        try {
-          await fetch('/api/profile/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.id,
-              profile: {
-                full_name: displayName,
-                email: user.email || '',
-              },
-            }),
-          })
-        } catch (e) { console.error('[employee-callback] profile create error', e) }
-
-        fetch('/api/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: user.email,
-            type: 'candidate_welcome',
-            data: { candidateName: displayName },
-          }),
-        }).catch(() => {})
-
-        router.replace('/dashboard')
-      } catch (err: any) {
-        console.error('[employee-callback] error', err)
-        router.replace('/login/employee?error=setup_failed')
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        handleSession(session)
       }
     })
 
     const timeout = setTimeout(() => {
-      if (!handled) {
+      if (!handled.current) {
         console.error('[employee-callback] timeout')
         router.replace('/login/employee?error=timeout')
       }
-    }, 10000)
+    }, 15000)
 
     return () => {
       subscription.unsubscribe()
       clearTimeout(timeout)
     }
-  }, [router])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <main>
