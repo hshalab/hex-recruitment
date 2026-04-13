@@ -263,25 +263,25 @@ function AvailabilitySettingsContent() {
         .eq('employer_id', userId)
       if (delErr) throw delErr
 
-      // Re-insert active days
-      const rows = weekly
-        .map((w, i) => ({
-          employer_id: userId,
-          day_of_week: i,
-          slot_start: `${w.start}:00`,
-          slot_end: `${w.end}:00`,
-          duration_minutes: duration,
-          buffer_minutes: bufferMinutes,
-          min_notice_hours: minNoticeHours,
-          max_advance_days: maxAdvanceDays,
-          is_active: w.enabled,
-        }))
-        .filter(r => r.is_active)
+      // Re-insert all 7 days (with is_active flag for each) so the load
+      // function always finds rows for every day and can correctly display
+      // which are toggled on/off. Previously only active days were saved,
+      // which meant disabled days had no row — causing them to show as
+      // disabled but losing their start/end times if re-enabled later.
+      const rows = weekly.map((w, i) => ({
+        employer_id: userId,
+        day_of_week: i,
+        slot_start: `${w.start}:00`,
+        slot_end: `${w.end}:00`,
+        duration_minutes: duration,
+        buffer_minutes: bufferMinutes,
+        min_notice_hours: minNoticeHours,
+        max_advance_days: maxAdvanceDays,
+        is_active: w.enabled,
+      }))
 
-      if (rows.length) {
-        const { error: insErr } = await supabase.from('employer_availability').insert(rows)
-        if (insErr) throw insErr
-      }
+      const { error: insErr } = await supabase.from('employer_availability').insert(rows)
+      if (insErr) throw insErr
 
       setMessage({ type: 'success', text: 'Availability saved successfully!' })
       window.scrollTo({ top: 0, behavior: 'smooth' })
