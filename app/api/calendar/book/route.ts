@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
         read: false,
         related_id: applicationId,
         related_type: 'application',
-        link: '/applicants',
+        link: '/interviews',
       },
     ]
     await supabaseAdmin.from('notifications').insert(notifications)

@@ -787,7 +787,7 @@ export default function CalendarPage() {
               {selected.applicationId && (
                 <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
                   <Link
-                    href="/applicants"
+                    href="/interviews"
                     className={styles.sideLink}
                   >
                     View application →

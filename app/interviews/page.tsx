@@ -42,7 +42,7 @@ const TYPE_BADGE_CLASS: Record<string, string> = {
   'phone': styles.typePhone,
 }
 
-async function sendHexMessage(params: {
+async function sendThriveMessage(params: {
   senderId: string
   senderName: string
   recipientId: string
@@ -308,7 +308,7 @@ export default function InterviewsPage() {
       })
       if (notifCancelErr) console.error('Notification error:', notifCancelErr)
 
-      await sendHexMessage({
+      await sendThriveMessage({
         senderId: employerId,
         senderName: companyName,
         recipientId: interview.candidateId,

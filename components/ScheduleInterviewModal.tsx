@@ -391,7 +391,7 @@ export default function ScheduleInterviewModal({
 
       await supabase
         .from('job_applications')
-        .update({ status: 'interviewing' })
+        .update({ status: 'interview' })
         .eq('id', applicationId)
 
       await supabase.from('interviews').insert({
