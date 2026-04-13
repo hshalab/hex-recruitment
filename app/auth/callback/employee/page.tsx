@@ -5,17 +5,26 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 
+// Candidate Google OAuth callback — polling approach.
 export default function EmployeeCallbackPage() {
   const router = useRouter()
   const [status, setStatus] = useState('Setting up your account…')
   const handled = useRef(false)
 
-  const handleSession = async (session: { user: any } | null) => {
-    if (handled.current) return
-    if (!session?.user) return
-    handled.current = true
+  useEffect(() => {
+    let pollTimer: ReturnType<typeof setInterval> | null = null
+    let timeoutTimer: ReturnType<typeof setTimeout> | null = null
 
-    try {
+    const processSession = async () => {
+      if (handled.current) return
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+
+      handled.current = true
+      if (pollTimer) clearInterval(pollTimer)
+      if (timeoutTimer) clearTimeout(timeoutTimer)
+
       const user = session.user
       const existingRole = user.user_metadata?.role as string | undefined
 
@@ -30,58 +39,52 @@ export default function EmployeeCallbackPage() {
         return
       }
 
-      setStatus('Creating your profile…')
+      try {
+        setStatus('Creating your profile…')
 
-      const displayName = user.user_metadata?.full_name
-        || user.user_metadata?.name
-        || user.email?.split('@')[0] || 'User'
+        const displayName = user.user_metadata?.full_name
+          || user.user_metadata?.name
+          || user.email?.split('@')[0] || 'User'
 
-      await supabase.auth.updateUser({
-        data: { role: 'employee', full_name: displayName },
-      })
+        await supabase.auth.updateUser({
+          data: { role: 'employee', full_name: displayName },
+        })
 
-      await fetch('/api/profile/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, profile: { full_name: displayName, email: user.email || '' } }),
-      }).catch(() => {})
+        await fetch('/api/profile/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, profile: { full_name: displayName, email: user.email || '' } }),
+        }).catch(() => {})
 
-      fetch('/api/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: user.email, type: 'candidate_welcome', data: { candidateName: displayName } }),
-      }).catch(() => {})
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: user.email, type: 'candidate_welcome', data: { candidateName: displayName } }),
+        }).catch(() => {})
 
-      router.replace('/dashboard')
-    } catch (err: any) {
-      console.error('[employee-callback] error', err)
-      router.replace('/login/employee?error=setup_failed')
-    }
-  }
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) handleSession(session)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        handleSession(session)
+        router.replace('/dashboard')
+      } catch (err: any) {
+        console.error('[employee-callback] error', err)
+        router.replace('/login/employee?error=setup_failed')
       }
-    })
+    }
 
-    const timeout = setTimeout(() => {
+    processSession()
+    pollTimer = setInterval(processSession, 300)
+
+    timeoutTimer = setTimeout(() => {
       if (!handled.current) {
-        console.error('[employee-callback] timeout')
+        handled.current = true
+        if (pollTimer) clearInterval(pollTimer)
         router.replace('/login/employee?error=timeout')
       }
-    }, 15000)
+    }, 10000)
 
     return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeout)
+      if (pollTimer) clearInterval(pollTimer)
+      if (timeoutTimer) clearTimeout(timeoutTimer)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router])
 
   return (
     <main>

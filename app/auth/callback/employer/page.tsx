@@ -5,122 +5,108 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 
-// Client-side callback for employer Google OAuth.
-//
-// Strategy: try getSession() immediately (the Supabase client may
-// have already processed the hash fragment). If no session, fall back
-// to onAuthStateChange which fires once the hash is processed. This
-// avoids the timeout that occurred when getSession() raced the hash
-// processing.
+// Employer Google OAuth callback — polling approach.
+// Does NOT use onAuthStateChange. Polls getSession() every 300ms
+// until the Supabase client finishes processing the hash fragment.
 export default function EmployerCallbackPage() {
   const router = useRouter()
   const [status, setStatus] = useState('Setting up your employer account…')
   const handled = useRef(false)
 
-  const handleSession = async (session: { user: any } | null) => {
-    if (handled.current) return
-    if (!session?.user) return
-    handled.current = true
+  useEffect(() => {
+    let pollTimer: ReturnType<typeof setInterval> | null = null
+    let timeoutTimer: ReturnType<typeof setTimeout> | null = null
 
-    try {
+    const processSession = async () => {
+      if (handled.current) return
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return // Not ready yet — keep polling
+
+      handled.current = true
+      if (pollTimer) clearInterval(pollTimer)
+      if (timeoutTimer) clearTimeout(timeoutTimer)
+
       const user = session.user
       const existingRole = user.user_metadata?.role as string | undefined
 
+      // Wrong role — sign out and redirect
       if (existingRole && existingRole !== 'employer') {
         await supabase.auth.signOut()
         router.replace('/login/employer?error=wrong_account&have=' + existingRole)
         return
       }
 
+      // Returning employer — go to dashboard
       if (existingRole === 'employer') {
         router.replace('/employer/dashboard')
         return
       }
 
       // New user — stamp role + create profile
-      setStatus('Creating your employer profile…')
+      try {
+        setStatus('Creating your employer profile…')
 
-      const displayName = user.user_metadata?.full_name
-        || user.user_metadata?.name
-        || user.email?.split('@')[0] || 'User'
+        const displayName = user.user_metadata?.full_name
+          || user.user_metadata?.name
+          || user.email?.split('@')[0] || 'User'
 
-      // Stamp role — uses getSession token, not getUser network call
-      await supabase.auth.updateUser({
-        data: { role: 'employer', full_name: displayName },
-      })
+        await supabase.auth.updateUser({
+          data: { role: 'employer', full_name: displayName },
+        })
 
-      const domain = user.email?.split('@')[1]?.split('.')[0] || ''
-      const isGeneric = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'live', 'aol', 'protonmail'].includes(domain.toLowerCase())
-      const companyName = isGeneric ? 'My Company' : domain.charAt(0).toUpperCase() + domain.slice(1)
+        const domain = user.email?.split('@')[1]?.split('.')[0] || ''
+        const isGeneric = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'live', 'aol', 'protonmail'].includes(domain.toLowerCase())
+        const companyName = isGeneric ? 'My Company' : domain.charAt(0).toUpperCase() + domain.slice(1)
 
-      // Create profile + subscription via server endpoints (bypass RLS)
-      const [profileRes, subRes] = await Promise.allSettled([
-        fetch('/api/profile/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            table: 'employer_profiles',
-            profile: { company_name: companyName, contact_name: displayName, email: user.email || '' },
+        await Promise.allSettled([
+          fetch('/api/profile/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              table: 'employer_profiles',
+              profile: { company_name: companyName, contact_name: displayName, email: user.email || '' },
+            }),
           }),
-        }),
-        fetch('/api/subscription/create', {
+          fetch('/api/subscription/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id }),
+          }),
+        ])
+
+        fetch('/api/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id }),
-        }),
-      ])
+          body: JSON.stringify({ to: user.email, type: 'welcome', data: { contactName: displayName, companyName } }),
+        }).catch(() => {})
 
-      if (profileRes.status === 'rejected' || (profileRes.status === 'fulfilled' && !profileRes.value.ok)) {
-        console.error('[employer-callback] profile create failed')
+        router.replace('/employer/dashboard')
+      } catch (err: any) {
+        console.error('[employer-callback] error', err)
+        router.replace('/login/employer?error=setup_failed')
       }
-      if (subRes.status === 'rejected' || (subRes.status === 'fulfilled' && !subRes.value.ok)) {
-        console.error('[employer-callback] subscription create failed')
-      }
-
-      // Welcome email (fire and forget)
-      fetch('/api/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: user.email, type: 'welcome', data: { contactName: displayName, companyName } }),
-      }).catch(() => {})
-
-      router.replace('/employer/dashboard')
-    } catch (err: any) {
-      console.error('[employer-callback] error', err)
-      router.replace('/login/employer?error=setup_failed')
     }
-  }
 
-  useEffect(() => {
-    // 1. Try getSession immediately — the hash may already be processed
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        handleSession(session)
-      }
-    })
+    // Try immediately, then poll every 300ms
+    processSession()
+    pollTimer = setInterval(processSession, 300)
 
-    // 2. Also listen for SIGNED_IN as a fallback — fires once the hash
-    //    fragment is processed if it wasn't ready for getSession above
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        handleSession(session)
-      }
-    })
-
-    // 3. Timeout fallback — 15 seconds
-    const timeout = setTimeout(() => {
+    // Hard timeout after 10 seconds
+    timeoutTimer = setTimeout(() => {
       if (!handled.current) {
-        console.error('[employer-callback] timeout — no session after 15s')
+        handled.current = true
+        if (pollTimer) clearInterval(pollTimer)
         router.replace('/login/employer?error=timeout')
       }
-    }, 15000)
+    }, 10000)
 
     return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeout)
+      if (pollTimer) clearInterval(pollTimer)
+      if (timeoutTimer) clearTimeout(timeoutTimer)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router])
 
   return (
     <main>
