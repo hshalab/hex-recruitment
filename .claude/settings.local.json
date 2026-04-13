@@ -74,7 +74,10 @@
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__click",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__wait_for",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_pages",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages"
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages",
+      "Bash(tar --exclude=./node_modules --exclude=./.next --exclude=./.git --exclude=./public/uploads --exclude=./.env --exclude=./.env.local --exclude=./.env.test --exclude=./.claude --exclude=./.playwright-mcp --exclude=./playwright-report --exclude=./_backup --exclude=./.agents '--exclude=./~' --exclude=./hex-recruitment.zip --exclude=./hex-recruitment-export.zip '--exclude=*.tsbuildinfo' --exclude=./.vercel --exclude=./test-results '--exclude=./cal-*.png' '--exclude=./candidates-list-*.png' '--exclude=./calendar-*.png' --exclude=./thrive-handover.tar.gz --exclude=./handover_thrive_2026-04-12.tar.gz -czf handover_thrive_2026-04-12.tar.gz .)",
+      "Bash(tar -tzf handover_thrive_2026-04-12.tar.gz)",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_network_requests"
     ],
     "additionalDirectories": [
       "c:\\Users\\Paul Davies\\Downloads\\hospitality-hive-nextjs\\hospitality-hive-nextjs\\app\\api\\interviews\\[id]\\book",

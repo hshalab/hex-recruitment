@@ -24,10 +24,11 @@ export default function GoogleSignInButton({ role, className, label }: GoogleSig
     setLoading(true)
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      // Use role-specific callback paths so the role survives the OAuth
-      // redirect chain. Supabase strips query params from redirectTo,
-      // so /auth/callback?role=employer doesn't work — but
-      // /auth/callback/employer does.
+      // Store intended role in a cookie so SessionGuard can pick it up
+      // on whichever page the user lands on after OAuth (Supabase may
+      // redirect to a different page if the callback URL isn't in the
+      // allowlist).
+      document.cookie = `oauth_intended_role=${role}; path=/; max-age=600; SameSite=Lax`
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
