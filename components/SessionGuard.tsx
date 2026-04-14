@@ -7,24 +7,20 @@ import { supabase } from '@/lib/supabase'
 /**
  * Global session guard that runs on every page (mounted in layout.tsx).
  *
- * 1. Volatile session cleanup — signs out users who logged in without
- *    "Remember me" when the browser is closed and reopened.
- *
- * 2. OAuth landing redirect — after Google OAuth, if the user lands on
- *    a login/register page with a valid session, redirect them to the
- *    correct dashboard. Does NOT call updateUser or any Supabase API
- *    that hits the network — uses only the local session from getSession()
- *    to avoid CORS issues during the OAuth redirect transition.
- *
- *    Role stamping and profile creation happen in the dedicated callback
- *    pages (/auth/callback/employer, /auth/callback/employee).
+ * Handles two scenarios:
+ * 1. Volatile session cleanup on browser restart
+ * 2. OAuth code landing on wrong page — if ?code= arrives on the homepage
+ *    (because Supabase's redirect allowlist doesn't include /auth/callback/*),
+ *    the client-side Supabase processes the code via detectSessionInUrl,
+ *    fires SIGNED_IN, and this guard routes the user to the right place.
+ *    For new users without a role, it reads the oauth_intended_role cookie
+ *    and calls the profile/subscription creation endpoints.
  */
 export default function SessionGuard() {
   const router = useRouter()
   const pathname = usePathname()
   const handled = useRef(false)
 
-  // Volatile session cleanup (runs once on mount)
   useEffect(() => {
     const sessionStarted = sessionStorage.getItem('hex_session_started')
     if (!sessionStarted) {
@@ -37,9 +33,6 @@ export default function SessionGuard() {
     }
   }, [])
 
-  // OAuth landing redirect — listen for SIGNED_IN event and route
-  // to the correct dashboard. Only uses local session data (getSession),
-  // never calls updateUser/getUser to avoid CORS on Supabase endpoints.
   useEffect(() => {
     if (pathname?.startsWith('/employer/dashboard') || pathname?.startsWith('/dashboard') || pathname?.startsWith('/auth/callback')) return
 
@@ -53,16 +46,73 @@ export default function SessionGuard() {
       if (event !== 'SIGNED_IN' || !session?.user) return
       handled.current = true
 
-      const role = session.user.user_metadata?.role as string | undefined
+      const user = session.user
+      const role = user.user_metadata?.role as string | undefined
 
+      // Returning user with role already set
       if (role === 'employer') {
         router.replace('/employer/dashboard')
-      } else if (role === 'employee') {
+        return
+      }
+      if (role === 'employee') {
+        router.replace('/dashboard')
+        return
+      }
+
+      // New OAuth user — no role yet. Read intended role from cookie.
+      const cookieMatch = document.cookie.match(/oauth_intended_role=(employer|employee)/)
+      const intendedRole = cookieMatch?.[1] as 'employer' | 'employee' | undefined
+      if (!intendedRole) return
+
+      // Clear cookie
+      document.cookie = 'oauth_intended_role=; path=/; max-age=0'
+
+      const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
+
+      // Stamp role (client-side updateUser — session is established at this point)
+      await supabase.auth.updateUser({ data: { role: intendedRole, full_name: displayName } })
+
+      // Create profile + subscription via server endpoints
+      if (intendedRole === 'employer') {
+        const domain = user.email?.split('@')[1]?.split('.')[0] || ''
+        const isGeneric = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'live', 'aol', 'protonmail'].includes(domain.toLowerCase())
+        const companyName = isGeneric ? 'My Company' : domain.charAt(0).toUpperCase() + domain.slice(1)
+
+        await Promise.allSettled([
+          fetch('/api/profile/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, table: 'employer_profiles', profile: { company_name: companyName, contact_name: displayName, email: user.email || '' } }),
+          }),
+          fetch('/api/subscription/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id }),
+          }),
+        ])
+
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: user.email, type: 'welcome', data: { contactName: displayName, companyName } }),
+        }).catch(() => {})
+
+        router.replace('/employer/dashboard')
+      } else {
+        await fetch('/api/profile/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, profile: { full_name: displayName, email: user.email || '' } }),
+        }).catch(() => {})
+
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: user.email, type: 'candidate_welcome', data: { candidateName: displayName } }),
+        }).catch(() => {})
+
         router.replace('/dashboard')
       }
-      // If no role yet (new OAuth user), don't redirect — let the
-      // callback page handle it. If the callback page wasn't reached,
-      // the user will see the login page and can try again.
     })
 
     return () => subscription.unsubscribe()
