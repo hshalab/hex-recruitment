@@ -23,7 +23,11 @@ export default function GoogleSignInButton({ role, className, label }: GoogleSig
     setError('')
     setLoading(true)
     try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      // Use the env var for a stable, known-good origin — window.location.origin
+      // can be unreliable during SSR or in edge cases.
+      const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+      const redirectTo = `${siteUrl}/auth/callback/${role}`
+      console.log('[GoogleSignIn] redirectTo:', redirectTo)
       // Store intended role in a cookie so SessionGuard can pick it up
       // on whichever page the user lands on after OAuth (Supabase may
       // redirect to a different page if the callback URL isn't in the
@@ -32,7 +36,7 @@ export default function GoogleSignInButton({ role, className, label }: GoogleSig
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/auth/callback/${role}`,
+          redirectTo,
           scopes: 'email profile',
         },
       })
