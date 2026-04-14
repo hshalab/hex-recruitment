@@ -1,26 +1,32 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+  return match ? match[2] : null
+}
+
 /**
- * Global session guard that runs on every page (mounted in layout.tsx).
+ * Global session guard — runs on every page (mounted in layout.tsx).
  *
- * Handles two scenarios:
- * 1. Volatile session cleanup on browser restart
- * 2. OAuth code landing on wrong page — if ?code= arrives on the homepage
- *    (because Supabase's redirect allowlist doesn't include /auth/callback/*),
- *    the client-side Supabase processes the code via detectSessionInUrl,
- *    fires SIGNED_IN, and this guard routes the user to the right place.
- *    For new users without a role, it reads the oauth_intended_role cookie
- *    and calls the profile/subscription creation endpoints.
+ * 1. Detects ?code= in the URL (PKCE auth code from Supabase/Google OAuth)
+ *    and exchanges it for a session client-side. This handles the case where
+ *    Supabase redirects to the homepage instead of /auth/callback/employer.
+ *
+ * 2. After exchange (or if session already exists), reads the role and
+ *    redirects to the correct dashboard.
+ *
+ * 3. For new OAuth users, reads the oauth_intended_role cookie, stamps
+ *    the role, and creates profile + subscription.
+ *
+ * 4. Volatile session cleanup on browser restart.
  */
 export default function SessionGuard() {
-  const router = useRouter()
-  const pathname = usePathname()
   const handled = useRef(false)
 
+  // Volatile session cleanup
   useEffect(() => {
     const sessionStarted = sessionStorage.getItem('hex_session_started')
     if (!sessionStarted) {
@@ -33,90 +39,135 @@ export default function SessionGuard() {
     }
   }, [])
 
+  // OAuth code exchange + redirect
   useEffect(() => {
-    if (pathname?.startsWith('/employer/dashboard') || pathname?.startsWith('/dashboard') || pathname?.startsWith('/auth/callback')) return
+    if (handled.current) return
 
-    const isAuthPage = pathname?.startsWith('/login') || pathname?.startsWith('/register') || pathname === '/'
-    if (!isAuthPage) return
+    const handleAuth = async () => {
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
 
-    handled.current = false
+      if (code) {
+        console.log('[SessionGuard] Found ?code= in URL — exchanging for session')
+        handled.current = true
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (handled.current) return
-      if (event !== 'SIGNED_IN' || !session?.user) return
-      handled.current = true
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-      const user = session.user
-      const role = user.user_metadata?.role as string | undefined
+          // Clean the URL regardless of outcome
+          window.history.replaceState({}, '', window.location.pathname)
 
-      // Returning user with role already set
-      if (role === 'employer') {
-        router.replace('/employer/dashboard')
+          if (error) {
+            console.error('[SessionGuard] Exchange error:', error.message)
+            return
+          }
+
+          if (!data.session?.user) {
+            console.error('[SessionGuard] No session after exchange')
+            return
+          }
+
+          await routeUser(data.session.user)
+        } catch (err) {
+          console.error('[SessionGuard] Exchange failed:', err)
+          window.history.replaceState({}, '', window.location.pathname)
+        }
         return
       }
-      if (role === 'employee') {
-        router.replace('/dashboard')
-        return
+
+      // No ?code= — check for existing session (e.g. returning user on login page)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        const role = session.user.user_metadata?.role as string | undefined
+        const isAuthPage = ['/', '/login', '/register'].some(p =>
+          window.location.pathname === p || window.location.pathname.startsWith(p + '/')
+        )
+        if (isAuthPage && role) {
+          handled.current = true
+          if (role === 'employer') {
+            window.location.href = '/employer/dashboard'
+          } else {
+            window.location.href = '/dashboard'
+          }
+        }
       }
+    }
 
-      // New OAuth user — no role yet. Read intended role from cookie.
-      const cookieMatch = document.cookie.match(/oauth_intended_role=(employer|employee)/)
-      const intendedRole = cookieMatch?.[1] as 'employer' | 'employee' | undefined
-      if (!intendedRole) return
-
-      // Clear cookie
-      document.cookie = 'oauth_intended_role=; path=/; max-age=0'
-
-      const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
-
-      // Stamp role (client-side updateUser — session is established at this point)
-      await supabase.auth.updateUser({ data: { role: intendedRole, full_name: displayName } })
-
-      // Create profile + subscription via server endpoints
-      if (intendedRole === 'employer') {
-        const domain = user.email?.split('@')[1]?.split('.')[0] || ''
-        const isGeneric = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'live', 'aol', 'protonmail'].includes(domain.toLowerCase())
-        const companyName = isGeneric ? 'My Company' : domain.charAt(0).toUpperCase() + domain.slice(1)
-
-        await Promise.allSettled([
-          fetch('/api/profile/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, table: 'employer_profiles', profile: { company_name: companyName, contact_name: displayName, email: user.email || '' } }),
-          }),
-          fetch('/api/subscription/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id }),
-          }),
-        ])
-
-        fetch('/api/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: user.email, type: 'welcome', data: { contactName: displayName, companyName } }),
-        }).catch(() => {})
-
-        router.replace('/employer/dashboard')
-      } else {
-        await fetch('/api/profile/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, profile: { full_name: displayName, email: user.email || '' } }),
-        }).catch(() => {})
-
-        fetch('/api/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: user.email, type: 'candidate_welcome', data: { candidateName: displayName } }),
-        }).catch(() => {})
-
-        router.replace('/dashboard')
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [pathname, router])
+    handleAuth()
+  }, [])
 
   return null
+}
+
+async function routeUser(user: any) {
+  const role = user.user_metadata?.role as string | undefined
+
+  // Returning user with role set
+  if (role === 'employer') {
+    window.location.href = '/employer/dashboard'
+    return
+  }
+  if (role === 'employee') {
+    window.location.href = '/dashboard'
+    return
+  }
+
+  // New user — read intended role from cookie
+  const intendedRole = getCookie('oauth_intended_role') as 'employer' | 'employee' | null
+  if (!intendedRole) {
+    console.warn('[SessionGuard] New user but no oauth_intended_role cookie')
+    return
+  }
+
+  // Clear cookie
+  document.cookie = 'oauth_intended_role=; path=/; max-age=0'
+
+  const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
+
+  console.log('[SessionGuard] New user — stamping role:', intendedRole)
+
+  // Stamp role
+  await supabase.auth.updateUser({ data: { role: intendedRole, full_name: displayName } })
+
+  // Create profile + subscription
+  if (intendedRole === 'employer') {
+    const domain = user.email?.split('@')[1]?.split('.')[0] || ''
+    const isGeneric = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'live', 'aol', 'protonmail'].includes(domain.toLowerCase())
+    const companyName = isGeneric ? 'My Company' : domain.charAt(0).toUpperCase() + domain.slice(1)
+
+    await Promise.allSettled([
+      fetch('/api/profile/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, table: 'employer_profiles', profile: { company_name: companyName, contact_name: displayName, email: user.email || '' } }),
+      }),
+      fetch('/api/subscription/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      }),
+    ])
+
+    fetch('/api/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: user.email, type: 'welcome', data: { contactName: displayName, companyName } }),
+    }).catch(() => {})
+
+    window.location.href = '/employer/dashboard'
+  } else {
+    await fetch('/api/profile/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, profile: { full_name: displayName, email: user.email || '' } }),
+    }).catch(() => {})
+
+    fetch('/api/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: user.email, type: 'candidate_welcome', data: { candidateName: displayName } }),
+    }).catch(() => {})
+
+    window.location.href = '/dashboard'
+  }
 }
