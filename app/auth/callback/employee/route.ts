@@ -1,6 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 function getOrigin(req: NextRequest): string {
@@ -23,20 +22,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login/employee?error=no-code`)
   }
 
-  const cookieStore = cookies()
+  const redirectTo = `${origin}/dashboard`
+  const response = NextResponse.redirect(redirectTo)
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value
+          return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          try { cookieStore.set({ name, value, ...options }) } catch {}
+          response.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: CookieOptions) {
-          try { cookieStore.delete({ name, ...options }) } catch {}
+          response.cookies.set({ name, value: '', ...options })
         },
       },
     }
@@ -53,14 +54,13 @@ export async function GET(request: NextRequest) {
   const existingRole = user.user_metadata?.role as string | undefined
 
   if (existingRole === 'employee') {
-    return NextResponse.redirect(`${origin}/dashboard`)
+    return response
   }
 
   if (existingRole && existingRole !== 'employee') {
     return NextResponse.redirect(`${origin}/login/employee?error=wrong-role&have=${existingRole}`)
   }
 
-  // New user
   const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
 
   const admin = createClient(
@@ -84,5 +84,5 @@ export async function GET(request: NextRequest) {
     body: JSON.stringify({ to: user.email, type: 'candidate_welcome', data: { candidateName: displayName } }),
   }).catch(() => {})
 
-  return NextResponse.redirect(`${origin}/dashboard`)
+  return response
 }

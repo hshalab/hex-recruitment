@@ -1,6 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 function getOrigin(req: NextRequest): string {
@@ -34,21 +33,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login/employer?error=no-code`)
   }
 
-  // Use @supabase/ssr — reads the same cookies as @supabase/supabase-js v2
-  const cookieStore = cookies()
+  // Prepare the redirect response FIRST — we'll set cookies on it
+  // so they're included in the 307 redirect. cookies().set() in
+  // Next.js 14 route handlers doesn't propagate to redirect responses.
+  const redirectTo = `${origin}/employer/dashboard`
+  const response = NextResponse.redirect(redirectTo)
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value
+          return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          try { cookieStore.set({ name, value, ...options }) } catch {}
+          response.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: CookieOptions) {
-          try { cookieStore.delete({ name, ...options }) } catch {}
+          response.cookies.set({ name, value: '', ...options })
         },
       },
     }
@@ -66,9 +69,9 @@ export async function GET(request: NextRequest) {
 
   console.log('[employer-callback] session ok', { userId: user.id, existingRole })
 
-  // Returning employer
+  // Returning employer — redirect is already set to /employer/dashboard
   if (existingRole === 'employer') {
-    return NextResponse.redirect(`${origin}/employer/dashboard`)
+    return response
   }
 
   // Wrong role
@@ -80,7 +83,6 @@ export async function GET(request: NextRequest) {
   const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
   const companyName = companyNameFromEmail(user.email)
 
-  // Use admin client for profile/subscription creation (bypasses RLS)
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -101,7 +103,6 @@ export async function GET(request: NextRequest) {
     { onConflict: 'user_id', ignoreDuplicates: true }
   )
 
-  // Welcome email (fire and forget)
   fetch(`${origin}/api/email/send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -109,5 +110,5 @@ export async function GET(request: NextRequest) {
   }).catch(() => {})
 
   console.log('[employer-callback] new employer created', { userId: user.id })
-  return NextResponse.redirect(`${origin}/employer/dashboard`)
+  return response
 }
