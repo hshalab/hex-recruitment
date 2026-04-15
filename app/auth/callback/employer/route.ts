@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const error = searchParams.get('error')
 
+  console.log('[cb] cookies:', request.cookies.getAll().map(c => c.name))
   console.log('[employer-callback] GET', { origin, hasCode: Boolean(code), error })
 
   if (error) {
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
 
   if (exchangeError || !data.session?.user) {
     console.error('[employer-callback] exchange failed', exchangeError?.message)
-    return NextResponse.redirect(`${origin}/login/employer?error=exchange-failed`)
+    return NextResponse.redirect(`${origin}/login/employer?error=${encodeURIComponent(exchangeError?.message || 'exchange-failed')}`)
   }
 
   const user = data.session.user
