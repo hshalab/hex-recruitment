@@ -24,22 +24,30 @@ function getChunkedSession(): { access_token: string; refresh_token: string } | 
   try {
     const cookieName = `sb-${PROJECT_REF}-auth-token`
 
-    // Try single (non-chunked) cookie first
+    // Collect cookie value — single or chunked
+    let combined = ''
     const single = getCookie(cookieName)
     if (single) {
-      return JSON.parse(decodeURIComponent(single))
+      combined = single
+    } else {
+      for (let i = 0; i <= 10; i++) {
+        const chunk = getCookie(`${cookieName}.${i}`)
+        if (!chunk) break
+        combined += chunk
+      }
     }
 
-    // Try chunked cookies (.0, .1, .2, ...)
-    let combined = ''
-    for (let i = 0; i <= 10; i++) {
-      const chunk = getCookie(`${cookieName}.${i}`)
-      if (!chunk) break
-      combined += chunk
+    if (!combined) return null
+
+    // @supabase/ssr stores cookies with a "base64-" prefix
+    let jsonStr: string
+    if (combined.startsWith('base64-')) {
+      jsonStr = atob(combined.slice(7))
+    } else {
+      jsonStr = decodeURIComponent(combined)
     }
-    if (combined) {
-      return JSON.parse(decodeURIComponent(combined))
-    }
+
+    return JSON.parse(jsonStr)
   } catch (e) {
     console.error('[SessionGuard] Cookie parse error:', e)
   }
