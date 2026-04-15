@@ -10,6 +10,15 @@ function getCookie(name: string): string | null {
   return match ? match[2] : null
 }
 
+function clearStaleCookies() {
+  const cookieName = `sb-${PROJECT_REF}-auth-token`
+  const clear = (n: string) => { document.cookie = `${n}=; path=/; max-age=0` }
+  clear(cookieName)
+  for (let i = 0; i <= 10; i++) clear(`${cookieName}.${i}`)
+  clear(`${cookieName}-code-verifier`)
+  console.log('[SessionGuard] Cleared stale session cookies')
+}
+
 function isAuthPage(): boolean {
   const p = window.location.pathname
   return p === '/' || p.startsWith('/login') || p.startsWith('/register')
@@ -116,6 +125,7 @@ export default function SessionGuard() {
 
         if (error) {
           console.error('[SessionGuard] setSession error:', error.message)
+          clearStaleCookies()
           return
         }
 
