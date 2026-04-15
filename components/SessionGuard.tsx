@@ -8,20 +8,22 @@ function getCookie(name: string): string | null {
   return match ? match[2] : null
 }
 
+const PROJECT_REF = 'aaljufxcniacfggqiuls'
+const CHUNKED_COOKIE_NAME = `sb-${PROJECT_REF}-auth-token.0`
+
+function isAuthPage(): boolean {
+  const p = window.location.pathname
+  return p === '/' || p.startsWith('/login') || p.startsWith('/register')
+}
+
 /**
  * Global session guard — runs on every page (mounted in layout.tsx).
  *
- * 1. Detects ?code= in the URL (PKCE auth code from Supabase/Google OAuth)
- *    and exchanges it for a session client-side. This handles the case where
- *    Supabase redirects to the homepage instead of /auth/callback/employer.
- *
- * 2. After exchange (or if session already exists), reads the role and
- *    redirects to the correct dashboard.
- *
- * 3. For new OAuth users, reads the oauth_intended_role cookie, stamps
- *    the role, and creates profile + subscription.
- *
- * 4. Volatile session cleanup on browser restart.
+ * After Google OAuth with PKCE, the server-side callback (/auth/callback/
+ * employer) writes the session as chunked cookies (sb-*-auth-token.0, .1).
+ * The client-side Supabase (localStorage-based) doesn't see those cookies
+ * via getSession(). This guard detects the mismatch and reloads once so
+ * the Supabase client picks up the cookie session on the next render.
  */
 export default function SessionGuard() {
   const handled = useRef(false)
@@ -39,85 +41,56 @@ export default function SessionGuard() {
     }
   }, [])
 
-  // OAuth code exchange + redirect
+  // Session detection + redirect
   useEffect(() => {
-    console.log('[SessionGuard] useEffect fired', {
-      pathname: window.location.pathname,
-      search: window.location.search,
-      hash: window.location.hash ? '#(present)' : '#(empty)',
-      handled: handled.current,
-      cookies: document.cookie.split(';').map(c => c.trim().split('=')[0]).join(', '),
-    })
-
-    if (handled.current) {
-      console.log('[SessionGuard] already handled — skipping')
-      return
-    }
+    if (handled.current) return
+    if (!isAuthPage()) return
 
     const handleAuth = async () => {
-      const params = new URLSearchParams(window.location.search)
-      const code = params.get('code')
+      // 1. Check for existing session in localStorage
+      const { data: { session } } = await supabase.auth.getSession()
 
-      console.log('[SessionGuard] code param:', code ? code.substring(0, 10) + '...' : 'null')
-      console.log('[SessionGuard] PKCE verifier cookie:', document.cookie.includes('code-verifier') ? 'FOUND' : 'NOT FOUND')
+      if (session?.user) {
+        const role = session.user.user_metadata?.role as string | undefined
+        console.log('[SessionGuard] session found, role:', role)
+        if (role) {
+          handled.current = true
+          window.location.href = role === 'employer' ? '/employer/dashboard' : '/dashboard'
+          return
+        }
 
-      if (code) {
-        console.log('[SessionGuard] Exchanging code for session...')
-        handled.current = true
-
-        try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-
-          console.log('[SessionGuard] Exchange result:', {
-            hasSession: !!data?.session,
-            hasUser: !!data?.session?.user,
-            error: error?.message || null,
-            role: data?.session?.user?.user_metadata?.role || null,
-          })
-
-          // Clean the URL regardless of outcome
-          window.history.replaceState({}, '', window.location.pathname)
-
-          if (error) {
-            console.error('[SessionGuard] Exchange error:', error.message)
-            return
-          }
-
-          if (!data.session?.user) {
-            console.error('[SessionGuard] No session after exchange')
-            return
-          }
-
-          await routeUser(data.session.user)
-        } catch (err: any) {
-          console.error('[SessionGuard] Exchange threw:', err?.message || err)
-          window.history.replaceState({}, '', window.location.pathname)
+        // Session exists but no role — new user. Check cookie for intended role.
+        const intendedRole = getCookie('oauth_intended_role') as 'employer' | 'employee' | null
+        if (intendedRole) {
+          handled.current = true
+          await routeNewUser(session.user, intendedRole)
+          return
         }
         return
       }
 
-      // No ?code= — check for existing session (e.g. returning user on login page)
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log('[SessionGuard] Existing session check:', {
-        hasSession: !!session,
-        role: session?.user?.user_metadata?.role || null,
-        pathname: window.location.pathname,
-      })
+      // 2. No session in localStorage — check if server wrote chunked cookies
+      //    (from the /auth/callback/employer route handler via @supabase/ssr)
+      const hasChunkedCookie = !!getCookie(CHUNKED_COOKIE_NAME)
+      console.log('[SessionGuard] no localStorage session, chunked cookie:', hasChunkedCookie ? 'FOUND' : 'NOT FOUND')
 
-      if (session?.user) {
-        const role = session.user.user_metadata?.role as string | undefined
-        const isAuthPage = ['/', '/login', '/register'].some(p =>
-          window.location.pathname === p || window.location.pathname.startsWith(p + '/')
-        )
-        if (isAuthPage && role) {
-          console.log('[SessionGuard] Redirecting existing user:', role)
-          handled.current = true
-          if (role === 'employer') {
-            window.location.href = '/employer/dashboard'
-          } else {
-            window.location.href = '/dashboard'
-          }
+      if (hasChunkedCookie) {
+        // Server wrote the session as cookies but the client doesn't know.
+        // Reload once — on the next render the Supabase client will pick
+        // up the cookies (with detectSessionInUrl + persistSession).
+        // Use a sessionStorage flag to prevent infinite reload loops.
+        const reloadKey = 'session_guard_reloaded'
+        if (!sessionStorage.getItem(reloadKey)) {
+          sessionStorage.setItem(reloadKey, '1')
+          console.log('[SessionGuard] Reloading to sync cookie session...')
+          window.location.reload()
+          return
         }
+        // Already reloaded once — session still not found. The chunked
+        // cookies might be from a stale/deleted session. Clear the flag
+        // and let the user proceed to the login page.
+        sessionStorage.removeItem(reloadKey)
+        console.log('[SessionGuard] Already reloaded — stale cookies, proceeding')
       }
     }
 
@@ -127,37 +100,14 @@ export default function SessionGuard() {
   return null
 }
 
-async function routeUser(user: any) {
-  const role = user.user_metadata?.role as string | undefined
-
-  // Returning user with role set
-  if (role === 'employer') {
-    window.location.href = '/employer/dashboard'
-    return
-  }
-  if (role === 'employee') {
-    window.location.href = '/dashboard'
-    return
-  }
-
-  // New user — read intended role from cookie
-  const intendedRole = getCookie('oauth_intended_role') as 'employer' | 'employee' | null
-  if (!intendedRole) {
-    console.warn('[SessionGuard] New user but no oauth_intended_role cookie')
-    return
-  }
-
-  // Clear cookie
+async function routeNewUser(user: any, intendedRole: 'employer' | 'employee') {
   document.cookie = 'oauth_intended_role=; path=/; max-age=0'
 
   const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
-
   console.log('[SessionGuard] New user — stamping role:', intendedRole)
 
-  // Stamp role
   await supabase.auth.updateUser({ data: { role: intendedRole, full_name: displayName } })
 
-  // Create profile + subscription
   if (intendedRole === 'employer') {
     const domain = user.email?.split('@')[1]?.split('.')[0] || ''
     const isGeneric = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'live', 'aol', 'protonmail'].includes(domain.toLowerCase())
