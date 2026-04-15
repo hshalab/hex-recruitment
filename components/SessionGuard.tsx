@@ -41,18 +41,39 @@ export default function SessionGuard() {
 
   // OAuth code exchange + redirect
   useEffect(() => {
-    if (handled.current) return
+    console.log('[SessionGuard] useEffect fired', {
+      pathname: window.location.pathname,
+      search: window.location.search,
+      hash: window.location.hash ? '#(present)' : '#(empty)',
+      handled: handled.current,
+      cookies: document.cookie.split(';').map(c => c.trim().split('=')[0]).join(', '),
+    })
+
+    if (handled.current) {
+      console.log('[SessionGuard] already handled — skipping')
+      return
+    }
 
     const handleAuth = async () => {
       const params = new URLSearchParams(window.location.search)
       const code = params.get('code')
 
+      console.log('[SessionGuard] code param:', code ? code.substring(0, 10) + '...' : 'null')
+      console.log('[SessionGuard] PKCE verifier cookie:', document.cookie.includes('code-verifier') ? 'FOUND' : 'NOT FOUND')
+
       if (code) {
-        console.log('[SessionGuard] Found ?code= in URL — exchanging for session')
+        console.log('[SessionGuard] Exchanging code for session...')
         handled.current = true
 
         try {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+          console.log('[SessionGuard] Exchange result:', {
+            hasSession: !!data?.session,
+            hasUser: !!data?.session?.user,
+            error: error?.message || null,
+            role: data?.session?.user?.user_metadata?.role || null,
+          })
 
           // Clean the URL regardless of outcome
           window.history.replaceState({}, '', window.location.pathname)
@@ -68,8 +89,8 @@ export default function SessionGuard() {
           }
 
           await routeUser(data.session.user)
-        } catch (err) {
-          console.error('[SessionGuard] Exchange failed:', err)
+        } catch (err: any) {
+          console.error('[SessionGuard] Exchange threw:', err?.message || err)
           window.history.replaceState({}, '', window.location.pathname)
         }
         return
@@ -77,12 +98,19 @@ export default function SessionGuard() {
 
       // No ?code= — check for existing session (e.g. returning user on login page)
       const { data: { session } } = await supabase.auth.getSession()
+      console.log('[SessionGuard] Existing session check:', {
+        hasSession: !!session,
+        role: session?.user?.user_metadata?.role || null,
+        pathname: window.location.pathname,
+      })
+
       if (session?.user) {
         const role = session.user.user_metadata?.role as string | undefined
         const isAuthPage = ['/', '/login', '/register'].some(p =>
           window.location.pathname === p || window.location.pathname.startsWith(p + '/')
         )
         if (isAuthPage && role) {
+          console.log('[SessionGuard] Redirecting existing user:', role)
           handled.current = true
           if (role === 'employer') {
             window.location.href = '/employer/dashboard'
