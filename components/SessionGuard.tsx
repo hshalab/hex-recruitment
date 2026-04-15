@@ -3,13 +3,12 @@
 import { useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 
+const PROJECT_REF = 'aaljufxcniacfggqiuls'
+
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
   return match ? match[2] : null
 }
-
-const PROJECT_REF = 'aaljufxcniacfggqiuls'
-const CHUNKED_COOKIE_NAME = `sb-${PROJECT_REF}-auth-token.0`
 
 function isAuthPage(): boolean {
   const p = window.location.pathname
@@ -17,13 +16,44 @@ function isAuthPage(): boolean {
 }
 
 /**
+ * Parse the chunked session cookies written by @supabase/ssr on the
+ * server side. These are split across sb-*-auth-token.0, .1, .2 etc.
+ * and contain a JSON object with access_token + refresh_token.
+ */
+function getChunkedSession(): { access_token: string; refresh_token: string } | null {
+  try {
+    const cookieName = `sb-${PROJECT_REF}-auth-token`
+
+    // Try single (non-chunked) cookie first
+    const single = getCookie(cookieName)
+    if (single) {
+      return JSON.parse(decodeURIComponent(single))
+    }
+
+    // Try chunked cookies (.0, .1, .2, ...)
+    let combined = ''
+    for (let i = 0; i <= 10; i++) {
+      const chunk = getCookie(`${cookieName}.${i}`)
+      if (!chunk) break
+      combined += chunk
+    }
+    if (combined) {
+      return JSON.parse(decodeURIComponent(combined))
+    }
+  } catch (e) {
+    console.error('[SessionGuard] Cookie parse error:', e)
+  }
+  return null
+}
+
+/**
  * Global session guard — runs on every page (mounted in layout.tsx).
  *
- * After Google OAuth with PKCE, the server-side callback (/auth/callback/
- * employer) writes the session as chunked cookies (sb-*-auth-token.0, .1).
- * The client-side Supabase (localStorage-based) doesn't see those cookies
- * via getSession(). This guard detects the mismatch and reloads once so
- * the Supabase client picks up the cookie session on the next render.
+ * After Google OAuth with PKCE, the server callback writes the session
+ * as chunked cookies via @supabase/ssr. The client-side Supabase uses
+ * localStorage and can't see those cookies via getSession(). This guard
+ * parses the chunked cookies directly and hydrates the client session
+ * via setSession().
  */
 export default function SessionGuard() {
   const handled = useRef(false)
@@ -47,19 +77,17 @@ export default function SessionGuard() {
     if (!isAuthPage()) return
 
     const handleAuth = async () => {
-      // 1. Check for existing session in localStorage
+      // 1. Check localStorage session first
       const { data: { session } } = await supabase.auth.getSession()
 
       if (session?.user) {
         const role = session.user.user_metadata?.role as string | undefined
-        console.log('[SessionGuard] session found, role:', role)
         if (role) {
           handled.current = true
           window.location.href = role === 'employer' ? '/employer/dashboard' : '/dashboard'
           return
         }
-
-        // Session exists but no role — new user. Check cookie for intended role.
+        // Session but no role — new user, check cookie
         const intendedRole = getCookie('oauth_intended_role') as 'employer' | 'employee' | null
         if (intendedRole) {
           handled.current = true
@@ -69,28 +97,38 @@ export default function SessionGuard() {
         return
       }
 
-      // 2. No session in localStorage — check if server wrote chunked cookies
-      //    (from the /auth/callback/employer route handler via @supabase/ssr)
-      const hasChunkedCookie = !!getCookie(CHUNKED_COOKIE_NAME)
-      console.log('[SessionGuard] no localStorage session, chunked cookie:', hasChunkedCookie ? 'FOUND' : 'NOT FOUND')
+      // 2. No localStorage session — try to hydrate from chunked SSR cookies
+      const cookieSession = getChunkedSession()
+      if (cookieSession?.access_token && cookieSession?.refresh_token) {
+        console.log('[SessionGuard] Hydrating session from chunked cookies')
+        const { data, error } = await supabase.auth.setSession({
+          access_token: cookieSession.access_token,
+          refresh_token: cookieSession.refresh_token,
+        })
 
-      if (hasChunkedCookie) {
-        // Server wrote the session as cookies but the client doesn't know.
-        // Reload once — on the next render the Supabase client will pick
-        // up the cookies (with detectSessionInUrl + persistSession).
-        // Use a sessionStorage flag to prevent infinite reload loops.
-        const reloadKey = 'session_guard_reloaded'
-        if (!sessionStorage.getItem(reloadKey)) {
-          sessionStorage.setItem(reloadKey, '1')
-          console.log('[SessionGuard] Reloading to sync cookie session...')
-          window.location.reload()
+        if (error) {
+          console.error('[SessionGuard] setSession error:', error.message)
           return
         }
-        // Already reloaded once — session still not found. The chunked
-        // cookies might be from a stale/deleted session. Clear the flag
-        // and let the user proceed to the login page.
-        sessionStorage.removeItem(reloadKey)
-        console.log('[SessionGuard] Already reloaded — stale cookies, proceeding')
+
+        if (data.session?.user) {
+          const role = data.session.user.user_metadata?.role as string | undefined
+          console.log('[SessionGuard] Session hydrated, role:', role)
+
+          if (role) {
+            handled.current = true
+            window.location.href = role === 'employer' ? '/employer/dashboard' : '/dashboard'
+            return
+          }
+
+          // New user — check intended role cookie
+          const intendedRole = getCookie('oauth_intended_role') as 'employer' | 'employee' | null
+          if (intendedRole) {
+            handled.current = true
+            await routeNewUser(data.session.user, intendedRole)
+            return
+          }
+        }
       }
     }
 
