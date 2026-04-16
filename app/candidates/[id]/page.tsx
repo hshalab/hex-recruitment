@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
 import { DEV_MODE } from '@/lib/mockAuth'
 import { supabaseProfileToCandidate } from '@/lib/types'
@@ -109,10 +110,10 @@ export default function CandidateDetailPage() {
         return
       }
 
-      const { data: { session } } = await supabase.auth.getSession()
+      const session = await getSessionWithRetry()
 
       if (!session) {
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
 

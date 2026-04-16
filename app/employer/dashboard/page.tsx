@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import { useMessages } from '@/lib/MessagesContext'
 import Header from '@/components/Header'
@@ -554,8 +555,8 @@ export default function EmployerDashboardPage() {
       }
 
       // PRODUCTION MODE
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login'); return }
+      const session = await getSessionWithRetry()
+      if (!session) { router.push('/login/employer'); return }
       if (session.user.user_metadata?.role !== 'employer') { router.replace('/dashboard'); return }
 
       setUser(session.user)

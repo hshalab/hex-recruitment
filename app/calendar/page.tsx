@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import styles from './page.module.css'
@@ -263,8 +264,8 @@ export default function CalendarPage() {
         if (mockUser) setUserId(mockUser.id)
         return
       }
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login'); return }
+      const session = await getSessionWithRetry()
+      if (!session) { router.push('/login/employer'); return }
       if (session.user.user_metadata?.role !== 'employer') { router.push('/dashboard'); return }
       setUserId(session.user.id)
     }

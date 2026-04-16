@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import { supabase } from '@/lib/supabase'
+import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import styles from './page.module.css'
 
 interface InterviewItem {
@@ -121,9 +122,9 @@ export default function InterviewsPage() {
   useEffect(() => { loadInterviews() }, [])
 
   const loadInterviews = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
+    const session = await getSessionWithRetry()
     if (!session || session.user.user_metadata?.role !== 'employer') {
-      router.push('/login')
+      router.push('/login/employer')
       return
     }
     const eid = session.user.id

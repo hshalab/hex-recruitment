@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import MakeOfferModal from '@/components/MakeOfferModal'
 import { supabase } from '@/lib/supabase'
+import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { useJobs } from '@/lib/JobsContext'
 import { Interview, Offer } from '@/lib/types'
 import styles from './page.module.css'
@@ -53,9 +54,9 @@ export default function JobApplicationsPage() {
 
   useEffect(() => {
     const checkAuthAndLoadData = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      const session = await getSessionWithRetry()
       if (!session || session.user.user_metadata?.role !== 'employer') {
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
       setIsEmployer(true)

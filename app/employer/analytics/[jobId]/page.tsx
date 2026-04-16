@@ -5,6 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
@@ -89,10 +90,10 @@ function JobAnalyticsContent() {
 
   useEffect(() => {
     const loadData = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      const session = await getSessionWithRetry()
 
       if (!session || session.user.user_metadata?.role !== 'employer') {
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
 
