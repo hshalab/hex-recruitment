@@ -3,9 +3,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Cookies from 'js-cookie'
+import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import { useMessages } from '@/lib/MessagesContext'
 import Header from '@/components/Header'
@@ -514,65 +513,16 @@ export default function EmployerDashboardPage() {
 
   // ── Load data ───────────────────────────────────────────
   useEffect(() => {
-    const load = async () => {
-      // DEV MODE
-      if (DEV_MODE) {
-        const mockUser = getMockUser()
-        const userType = getMockUserType()
+    let unsubscribe: (() => void) | null = null
+    let safetyTimer: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
 
-        if (userType !== 'employer') {
-          router.replace('/dashboard')
-          return
-        }
-
-        setUser(mockUser)
-        setCompanyName(mockUser?.user_metadata?.company_name || 'Your Company')
-
-        // Load company logo from localStorage profile
-        const savedProfile = localStorage.getItem('employerProfile')
-        if (savedProfile) {
-          const profile = JSON.parse(savedProfile)
-          if (profile.logoUrl) setCompanyLogo(profile.logoUrl)
-        }
-
-        setTotalJobs(8)
-        setActiveJobs(5)
-        setTotalApplications(34)
-        setTotalViews(287)
-        setApplications([
-          { id: '1', candidate_name: 'Sarah Johnson', job_title: 'Head Chef', status: 'pending', created_at: new Date(Date.now() - 3600000).toISOString() },
-          { id: '2', candidate_name: 'Michael Brown', job_title: 'Sous Chef', status: 'shortlisted', created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
-          { id: '3', candidate_name: 'Emma Wilson', job_title: 'Pastry Chef', status: 'interview', created_at: new Date(Date.now() - 4 * 86400000).toISOString() },
-          { id: '4', candidate_name: 'James Taylor', job_title: 'Kitchen Porter', status: 'hired', created_at: new Date(Date.now() - 6 * 86400000).toISOString() },
-          { id: '5', candidate_name: 'Olivia Davis', job_title: 'Waitress', status: 'rejected', created_at: new Date(Date.now() - 8 * 86400000).toISOString() },
-        ])
-        setJobsData([
-          { id: 'j1', title: 'Head Chef', status: 'active', views: 84, application_count: 12 },
-          { id: 'j2', title: 'Sous Chef', status: 'active', views: 67, application_count: 9 },
-          { id: 'j3', title: 'Pastry Chef', status: 'active', views: 52, application_count: 7 },
-        ])
-        setLoading(false)
+    const loadDashboardData = async (session: Session) => {
+      if (cancelled) return
+      if (session.user.user_metadata?.role !== 'employer') {
+        router.replace('/dashboard')
         return
       }
-
-      // PRODUCTION MODE
-      let session = await getSessionWithRetry(5, 800)
-
-      if (!session) {
-        // Check if user just came from OAuth — session may still be settling
-        const oauthRole = Cookies.get('oauth_intended_role')
-        if (oauthRole === 'employer') {
-          console.log('[dashboard] OAuth session settling — waiting 2s before redirect')
-          await new Promise(r => setTimeout(r, 2000))
-          session = await getSessionWithRetry(3, 500)
-        }
-      }
-
-      if (!session) {
-        router.push('/login/employer')
-        return
-      }
-      if (session.user.user_metadata?.role !== 'employer') { router.replace('/dashboard'); return }
 
       setUser(session.user)
       const userId = session.user.id
@@ -736,7 +686,91 @@ export default function EmployerDashboardPage() {
       setLoading(false)
     }
 
-    load()
+    const init = async () => {
+      // DEV MODE
+      if (DEV_MODE) {
+        const mockUser = getMockUser()
+        const userType = getMockUserType()
+
+        if (userType !== 'employer') {
+          router.replace('/dashboard')
+          return
+        }
+
+        setUser(mockUser)
+        setCompanyName(mockUser?.user_metadata?.company_name || 'Your Company')
+
+        // Load company logo from localStorage profile
+        const savedProfile = localStorage.getItem('employerProfile')
+        if (savedProfile) {
+          const profile = JSON.parse(savedProfile)
+          if (profile.logoUrl) setCompanyLogo(profile.logoUrl)
+        }
+
+        setTotalJobs(8)
+        setActiveJobs(5)
+        setTotalApplications(34)
+        setTotalViews(287)
+        setApplications([
+          { id: '1', candidate_name: 'Sarah Johnson', job_title: 'Head Chef', status: 'pending', created_at: new Date(Date.now() - 3600000).toISOString() },
+          { id: '2', candidate_name: 'Michael Brown', job_title: 'Sous Chef', status: 'shortlisted', created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+          { id: '3', candidate_name: 'Emma Wilson', job_title: 'Pastry Chef', status: 'interview', created_at: new Date(Date.now() - 4 * 86400000).toISOString() },
+          { id: '4', candidate_name: 'James Taylor', job_title: 'Kitchen Porter', status: 'hired', created_at: new Date(Date.now() - 6 * 86400000).toISOString() },
+          { id: '5', candidate_name: 'Olivia Davis', job_title: 'Waitress', status: 'rejected', created_at: new Date(Date.now() - 8 * 86400000).toISOString() },
+        ])
+        setJobsData([
+          { id: 'j1', title: 'Head Chef', status: 'active', views: 84, application_count: 12 },
+          { id: 'j2', title: 'Sous Chef', status: 'active', views: 67, application_count: 9 },
+          { id: 'j3', title: 'Pastry Chef', status: 'active', views: 52, application_count: 7 },
+        ])
+        setLoading(false)
+        return
+      }
+
+      // PRODUCTION MODE
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (session) {
+        await loadDashboardData(session)
+        return
+      }
+
+      // No session yet — check if we're in an OAuth flow
+      const oauthCookie = typeof window !== 'undefined'
+        ? document.cookie.includes('oauth_intended_role')
+        : false
+
+      if (!oauthCookie) {
+        router.push('/login/employer')
+        return
+      }
+
+      // OAuth flow — wait for session via onAuthStateChange
+      console.log('[dashboard] waiting for OAuth session via onAuthStateChange')
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, authSession) => {
+          if (event === 'SIGNED_IN' && authSession) {
+            subscription.unsubscribe()
+            if (safetyTimer) { clearTimeout(safetyTimer); safetyTimer = null }
+            await loadDashboardData(authSession)
+          }
+        }
+      )
+      unsubscribe = () => subscription.unsubscribe()
+
+      // Safety timeout — if no session after 15s, redirect
+      safetyTimer = setTimeout(() => {
+        subscription.unsubscribe()
+        if (!cancelled) router.push('/login/employer')
+      }, 15000)
+    }
+
+    init()
+    return () => {
+      cancelled = true
+      if (unsubscribe) unsubscribe()
+      if (safetyTimer) clearTimeout(safetyTimer)
+    }
   }, [router])
 
   // ── Derived data ────────────────────────────────────────
