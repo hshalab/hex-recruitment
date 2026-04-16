@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Cookies from 'js-cookie'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
@@ -555,20 +556,22 @@ export default function EmployerDashboardPage() {
       }
 
       // PRODUCTION MODE
-      const session = await getSessionWithRetry(5, 800)
+      let session = await getSessionWithRetry(5, 800)
+
       if (!session) {
-        // One-time reload fallback: after an OAuth redirect the SSR-written
-        // cookies can take a beat to hydrate into the client. Give them one
-        // more chance before bouncing the user back to login.
-        if (typeof window !== 'undefined' && !sessionStorage.getItem('dashboardReloadAttempted')) {
-          sessionStorage.setItem('dashboardReloadAttempted', '1')
-          window.location.reload()
-          return
+        // Check if user just came from OAuth — session may still be settling
+        const oauthRole = Cookies.get('oauth_intended_role')
+        if (oauthRole === 'employer') {
+          console.log('[dashboard] OAuth session settling — waiting 2s before redirect')
+          await new Promise(r => setTimeout(r, 2000))
+          session = await getSessionWithRetry(3, 500)
         }
+      }
+
+      if (!session) {
         router.push('/login/employer')
         return
       }
-      if (typeof window !== 'undefined') sessionStorage.removeItem('dashboardReloadAttempted')
       if (session.user.user_metadata?.role !== 'employer') { router.replace('/dashboard'); return }
 
       setUser(session.user)
