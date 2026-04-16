@@ -2,21 +2,11 @@
 
 import { useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-
-const PROJECT_REF = 'aaljufxcniacfggqiuls'
+import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
   return match ? match[2] : null
-}
-
-function clearStaleCookies() {
-  const cookieName = `sb-${PROJECT_REF}-auth-token`
-  const clear = (n: string) => { document.cookie = `${n}=; path=/; max-age=0` }
-  clear(cookieName)
-  for (let i = 0; i <= 10; i++) clear(`${cookieName}.${i}`)
-  clear(`${cookieName}-code-verifier`)
-  console.log('[SessionGuard] Cleared stale session cookies')
 }
 
 function isAuthPage(): boolean {
@@ -25,52 +15,17 @@ function isAuthPage(): boolean {
 }
 
 /**
- * Parse the chunked session cookies written by @supabase/ssr on the
- * server side. These are split across sb-*-auth-token.0, .1, .2 etc.
- * and contain a JSON object with access_token + refresh_token.
- */
-function getChunkedSession(): { access_token: string; refresh_token: string } | null {
-  try {
-    const cookieName = `sb-${PROJECT_REF}-auth-token`
-
-    // Collect cookie value — single or chunked
-    let combined = ''
-    const single = getCookie(cookieName)
-    if (single) {
-      combined = single
-    } else {
-      for (let i = 0; i <= 10; i++) {
-        const chunk = getCookie(`${cookieName}.${i}`)
-        if (!chunk) break
-        combined += chunk
-      }
-    }
-
-    if (!combined) return null
-
-    // @supabase/ssr stores cookies with a "base64-" prefix
-    let jsonStr: string
-    if (combined.startsWith('base64-')) {
-      jsonStr = atob(combined.slice(7))
-    } else {
-      jsonStr = decodeURIComponent(combined)
-    }
-
-    return JSON.parse(jsonStr)
-  } catch (e) {
-    console.error('[SessionGuard] Cookie parse error:', e)
-  }
-  return null
-}
-
-/**
  * Global session guard — runs on every page (mounted in layout.tsx).
  *
- * After Google OAuth with PKCE, the server callback writes the session
- * as chunked cookies via @supabase/ssr. The client-side Supabase uses
- * localStorage and can't see those cookies via getSession(). This guard
- * parses the chunked cookies directly and hydrates the client session
- * via setSession().
+ * After Google OAuth with PKCE, the server callback writes the session as
+ * chunked cookies via @supabase/ssr. The client-side Supabase uses
+ * localStorage and can't see those cookies via getSession(). On auth pages
+ * (/, /login/*, /register/*) this guard hydrates the client from the
+ * chunked cookies and redirects the user to their dashboard.
+ *
+ * Non-auth pages do their own hydration (see app/employer/dashboard) so
+ * users landing directly on a protected route after OAuth don't have to
+ * bounce through an auth page.
  */
 export default function SessionGuard() {
   const handled = useRef(false)
@@ -114,41 +69,24 @@ export default function SessionGuard() {
         return
       }
 
-      // 2. No localStorage session — try to hydrate from chunked SSR cookies.
-      // Use refreshSession rather than setSession: the access_token in the
-      // cookies may have already expired by the time this code runs (it's
-      // short-lived), and setSession validates it via GET /user. refreshSession
-      // only needs a valid refresh_token and mints a fresh access_token.
-      const cookieSession = getChunkedSession()
-      if (cookieSession?.refresh_token) {
-        console.log('[SessionGuard] Hydrating session from chunked cookies via refreshSession')
-        const { data, error } = await supabase.auth.refreshSession({
-          refresh_token: cookieSession.refresh_token,
-        })
+      // 2. No localStorage session — try to hydrate from chunked SSR cookies
+      const hydrated = await hydrateSessionFromCookies()
+      if (hydrated?.user) {
+        const role = hydrated.user.user_metadata?.role as string | undefined
+        console.log('[SessionGuard] Session hydrated, role:', role)
 
-        if (error) {
-          console.error('[SessionGuard] refreshSession error:', error.message)
-          clearStaleCookies()
+        if (role) {
+          handled.current = true
+          window.location.href = role === 'employer' ? '/employer/dashboard' : '/dashboard'
           return
         }
 
-        if (data.session?.user) {
-          const role = data.session.user.user_metadata?.role as string | undefined
-          console.log('[SessionGuard] Session hydrated, role:', role)
-
-          if (role) {
-            handled.current = true
-            window.location.href = role === 'employer' ? '/employer/dashboard' : '/dashboard'
-            return
-          }
-
-          // New user — check intended role cookie
-          const intendedRole = getCookie('oauth_intended_role') as 'employer' | 'employee' | null
-          if (intendedRole) {
-            handled.current = true
-            await routeNewUser(data.session.user, intendedRole)
-            return
-          }
+        // New user — check intended role cookie
+        const intendedRole = getCookie('oauth_intended_role') as 'employer' | 'employee' | null
+        if (intendedRole) {
+          handled.current = true
+          await routeNewUser(hydrated.user, intendedRole)
+          return
         }
       }
     }

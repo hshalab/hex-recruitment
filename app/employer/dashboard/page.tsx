@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import { useMessages } from '@/lib/MessagesContext'
 import Header from '@/components/Header'
@@ -735,7 +736,19 @@ export default function EmployerDashboardPage() {
         return
       }
 
-      // No session yet — check if we're in an OAuth flow
+      // No localStorage session — try to hydrate from the chunked cookies
+      // written by the server OAuth callback. This is the common case on the
+      // first load after Google sign-in: server cookies are present but
+      // localStorage is empty until we call refreshSession.
+      const hydrated = await hydrateSessionFromCookies()
+      if (hydrated) {
+        await loadDashboardData(hydrated)
+        return
+      }
+
+      // No cookies either — check if we're still inside an OAuth flow (the
+      // oauth_intended_role cookie is set by the sign-in button and cleared
+      // when the callback completes).
       const oauthCookie = typeof window !== 'undefined'
         ? document.cookie.includes('oauth_intended_role')
         : false
@@ -745,11 +758,11 @@ export default function EmployerDashboardPage() {
         return
       }
 
-      // OAuth flow — wait for session via onAuthStateChange
+      // Still mid-OAuth — fall back to auth-state subscription as a last resort
       console.log('[dashboard] waiting for OAuth session via onAuthStateChange')
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, authSession) => {
-          if (event === 'SIGNED_IN' && authSession) {
+          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && authSession) {
             subscription.unsubscribe()
             if (safetyTimer) { clearTimeout(safetyTimer); safetyTimer = null }
             await loadDashboardData(authSession)
