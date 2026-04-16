@@ -880,14 +880,7 @@ export default function EmployerDashboardPage() {
             </div>
             <div className={styles.welcomeText}>
               <h1>{getGreeting()}, {displayName.split(' ')[0]}</h1>
-              <p className={styles.companyLabel}>
-                {companyName}
-                {subscriptionTier && (
-                  <span style={{ marginLeft: '0.5rem', fontSize: '0.72rem', fontWeight: 600, color: subscriptionTier === 'free' ? '#d97706' : '#16a34a', background: subscriptionTier === 'free' ? '#fffbeb' : '#f0fdf4', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
-                    {subscriptionTier === 'free' ? 'Free Launch — 6 months' : subscriptionTier === 'professional' ? 'Professional Plan' : 'Standard Plan'}
-                  </span>
-                )}
-              </p>
+              <p className={styles.companyLabel}>{companyName}</p>
               <p className={styles.welcomeSub}>
                 {subscriptionTier === 'free' && freeUntil
                   ? `Free access until ${new Date(freeUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
