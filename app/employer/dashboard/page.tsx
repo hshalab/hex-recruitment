@@ -555,8 +555,20 @@ export default function EmployerDashboardPage() {
       }
 
       // PRODUCTION MODE
-      const session = await getSessionWithRetry()
-      if (!session) { router.push('/login/employer'); return }
+      const session = await getSessionWithRetry(5, 800)
+      if (!session) {
+        // One-time reload fallback: after an OAuth redirect the SSR-written
+        // cookies can take a beat to hydrate into the client. Give them one
+        // more chance before bouncing the user back to login.
+        if (typeof window !== 'undefined' && !sessionStorage.getItem('dashboardReloadAttempted')) {
+          sessionStorage.setItem('dashboardReloadAttempted', '1')
+          window.location.reload()
+          return
+        }
+        router.push('/login/employer')
+        return
+      }
+      if (typeof window !== 'undefined') sessionStorage.removeItem('dashboardReloadAttempted')
       if (session.user.user_metadata?.role !== 'employer') { router.replace('/dashboard'); return }
 
       setUser(session.user)
@@ -594,13 +606,13 @@ export default function EmployerDashboardPage() {
       try {
         const { data: subData } = await supabase
           .from('employer_subscriptions')
-          .select('subscription_tier, current_period_end, trial_ends_at')
+          .select('subscription_tier, trial_ends_at')
           .eq('user_id', userId)
           .maybeSingle()
         if (subData) {
           setSubscriptionTier(subData.subscription_tier || null)
           if (subData.subscription_tier === 'free') {
-            setFreeUntil(subData.current_period_end || subData.trial_ends_at || null)
+            setFreeUntil(subData.trial_ends_at || null)
           }
         }
       } catch { /* subscription table may not exist */ }
