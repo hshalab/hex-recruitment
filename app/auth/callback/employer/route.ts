@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const error = searchParams.get('error')
 
-  console.log('[cb] cookies:', request.cookies.getAll().map(c => c.name))
   console.log('[employer-callback] GET', { origin, hasCode: Boolean(code), error })
 
   if (error) {

@@ -759,7 +759,6 @@ export default function EmployerDashboardPage() {
       }
 
       // Still mid-OAuth — fall back to auth-state subscription as a last resort
-      console.log('[dashboard] waiting for OAuth session via onAuthStateChange')
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, authSession) => {
           if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && authSession) {
