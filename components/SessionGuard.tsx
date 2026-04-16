@@ -114,17 +114,20 @@ export default function SessionGuard() {
         return
       }
 
-      // 2. No localStorage session — try to hydrate from chunked SSR cookies
+      // 2. No localStorage session — try to hydrate from chunked SSR cookies.
+      // Use refreshSession rather than setSession: the access_token in the
+      // cookies may have already expired by the time this code runs (it's
+      // short-lived), and setSession validates it via GET /user. refreshSession
+      // only needs a valid refresh_token and mints a fresh access_token.
       const cookieSession = getChunkedSession()
-      if (cookieSession?.access_token && cookieSession?.refresh_token) {
-        console.log('[SessionGuard] Hydrating session from chunked cookies')
-        const { data, error } = await supabase.auth.setSession({
-          access_token: cookieSession.access_token,
+      if (cookieSession?.refresh_token) {
+        console.log('[SessionGuard] Hydrating session from chunked cookies via refreshSession')
+        const { data, error } = await supabase.auth.refreshSession({
           refresh_token: cookieSession.refresh_token,
         })
 
         if (error) {
-          console.error('[SessionGuard] setSession error:', error.message)
+          console.error('[SessionGuard] refreshSession error:', error.message)
           clearStaleCookies()
           return
         }
