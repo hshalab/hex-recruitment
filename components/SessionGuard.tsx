@@ -11,6 +11,9 @@ function getCookie(name: string): string | null {
 
 function isAuthPage(): boolean {
   const p = window.location.pathname
+  // Exclude /register/employer/payment — that's the Stripe card-collection
+  // step and must not be interrupted by SessionGuard redirects.
+  if (p === '/register/employer/payment') return false
   return p === '/' || p.startsWith('/login') || p.startsWith('/register')
 }
 
@@ -56,7 +59,19 @@ export default function SessionGuard() {
         const role = session.user.user_metadata?.role as string | undefined
         if (role) {
           handled.current = true
-          window.location.href = role === 'employer' ? '/employer/dashboard' : '/dashboard'
+          if (role === 'employer') {
+            // Check if the employer has completed payment setup
+            const { data: sub } = await supabase
+              .from('employer_subscriptions')
+              .select('stripe_subscription_id')
+              .eq('user_id', session.user.id)
+              .maybeSingle()
+            window.location.href = sub?.stripe_subscription_id
+              ? '/employer/dashboard'
+              : '/register/employer/payment'
+          } else {
+            window.location.href = '/dashboard'
+          }
           return
         }
         // Session but no role — new user, check cookie
@@ -77,7 +92,18 @@ export default function SessionGuard() {
 
         if (role) {
           handled.current = true
-          window.location.href = role === 'employer' ? '/employer/dashboard' : '/dashboard'
+          if (role === 'employer') {
+            const { data: sub } = await supabase
+              .from('employer_subscriptions')
+              .select('stripe_subscription_id')
+              .eq('user_id', hydrated.user.id)
+              .maybeSingle()
+            window.location.href = sub?.stripe_subscription_id
+              ? '/employer/dashboard'
+              : '/register/employer/payment'
+          } else {
+            window.location.href = '/dashboard'
+          }
           return
         }
 

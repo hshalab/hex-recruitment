@@ -69,8 +69,27 @@ export async function GET(request: NextRequest) {
 
   console.log('[employer-callback] session ok', { userId: user.id, existingRole })
 
-  // Returning employer — redirect is already set to /employer/dashboard
+  // Returning employer — check if they've completed payment setup
   if (existingRole === 'employer') {
+    const admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } }
+    )
+    const { data: sub } = await admin
+      .from('employer_subscriptions')
+      .select('stripe_subscription_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!sub?.stripe_subscription_id) {
+      // No Stripe subscription yet — send to payment page
+      const paymentRedirect = NextResponse.redirect(`${origin}/register/employer/payment`)
+      response.cookies.getAll().forEach(cookie => {
+        paymentRedirect.cookies.set(cookie)
+      })
+      return paymentRedirect
+    }
     return response
   }
 

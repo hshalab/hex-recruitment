@@ -176,11 +176,29 @@ export async function handleAuthCallback(
     }
   }
 
-  // New employers go to payment page to set up their trial subscription.
-  // Returning employers (who already have a role) go straight to dashboard.
-  const destination = role === 'employer'
-    ? (!existingRole ? '/register/employer/payment' : '/employer/dashboard')
-    : '/dashboard'
+  // Route decision: employers need a Stripe subscription to reach the
+  // dashboard. New employers always go to payment; returning employers go
+  // to payment only if they haven't completed card setup.
+  let destination = '/dashboard'
+  if (role === 'employer') {
+    if (!existingRole) {
+      destination = '/register/employer/payment'
+    } else {
+      const checkAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { persistSession: false } }
+      )
+      const { data: sub } = await checkAdmin
+        .from('employer_subscriptions')
+        .select('stripe_subscription_id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      destination = sub?.stripe_subscription_id
+        ? '/employer/dashboard'
+        : '/register/employer/payment'
+    }
+  }
   console.log('[auth/callback] success', { userId: user.id, role, destination, isNewUser: !existingRole })
   return NextResponse.redirect(`${origin}${destination}`)
 
