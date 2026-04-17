@@ -98,17 +98,20 @@ export async function GET(request: NextRequest) {
     { onConflict: 'user_id', ignoreDuplicates: false }
   )
 
-  await admin.from('employer_subscriptions').upsert(
-    { user_id: user.id, subscription_status: 'active', subscription_tier: 'free', trial_ends_at: new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString() },
-    { onConflict: 'user_id', ignoreDuplicates: true }
-  )
-
   fetch(`${origin}/api/email/send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ to: user.email, type: 'welcome', data: { contactName: displayName, companyName } }),
   }).catch(() => {})
 
-  console.log('[employer-callback] new employer created', { userId: user.id })
-  return response
+  // New employer → payment page (trial subscription created there)
+  // Copy session cookies from the exchange response so the payment page
+  // can read the authenticated session.
+  const paymentRedirect = NextResponse.redirect(`${origin}/register/employer/payment`)
+  response.cookies.getAll().forEach(cookie => {
+    paymentRedirect.cookies.set(cookie)
+  })
+
+  console.log('[employer-callback] new employer → payment', { userId: user.id })
+  return paymentRedirect
 }

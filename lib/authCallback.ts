@@ -139,10 +139,12 @@ export async function handleAuthCallback(
         )
       if (profileErr) console.error('[auth/callback] employer_profiles upsert failed', profileErr)
 
+      // Bootstrap an inactive subscription row — the payment page
+      // (/register/employer/payment) will upgrade it after card setup.
       const { error: subErr } = await admin
         .from('employer_subscriptions')
         .upsert(
-          { user_id: user.id, subscription_status: 'active', subscription_tier: 'free', trial_ends_at: new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString() },
+          { user_id: user.id, subscription_status: 'inactive', subscription_tier: 'standard' },
           { onConflict: 'user_id', ignoreDuplicates: true }
         )
       if (subErr) console.error('[auth/callback] employer_subscriptions upsert failed', subErr)
@@ -174,7 +176,11 @@ export async function handleAuthCallback(
     }
   }
 
-  const destination = role === 'employer' ? '/employer/dashboard' : '/dashboard'
+  // New employers go to payment page to set up their trial subscription.
+  // Returning employers (who already have a role) go straight to dashboard.
+  const destination = role === 'employer'
+    ? (!existingRole ? '/register/employer/payment' : '/employer/dashboard')
+    : '/dashboard'
   console.log('[auth/callback] success', { userId: user.id, role, destination, isNewUser: !existingRole })
   return NextResponse.redirect(`${origin}${destination}`)
 

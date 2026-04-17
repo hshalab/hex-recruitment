@@ -110,18 +110,11 @@ async function routeNewUser(user: any, intendedRole: 'employer' | 'employee') {
     const isGeneric = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'live', 'aol', 'protonmail'].includes(domain.toLowerCase())
     const companyName = isGeneric ? 'My Company' : domain.charAt(0).toUpperCase() + domain.slice(1)
 
-    await Promise.allSettled([
-      fetch('/api/profile/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, table: 'employer_profiles', profile: { company_name: companyName, contact_name: displayName, email: user.email || '' } }),
-      }),
-      fetch('/api/subscription/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
-      }),
-    ])
+    await fetch('/api/profile/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, table: 'employer_profiles', profile: { company_name: companyName, contact_name: displayName, email: user.email || '' } }),
+    }).catch(() => {})
 
     fetch('/api/email/send', {
       method: 'POST',
@@ -129,7 +122,8 @@ async function routeNewUser(user: any, intendedRole: 'employer' | 'employee') {
       body: JSON.stringify({ to: user.email, type: 'welcome', data: { contactName: displayName, companyName } }),
     }).catch(() => {})
 
-    window.location.href = '/employer/dashboard'
+    // New employer → payment page (trial subscription created there)
+    window.location.href = '/register/employer/payment'
   } else {
     await fetch('/api/profile/create', {
       method: 'POST',

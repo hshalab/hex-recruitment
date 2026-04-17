@@ -104,8 +104,6 @@ export default function RegisterEmployerFreePage() {
       }
 
       if (authData.user) {
-        const freeUntil = new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString()
-
         // Use server endpoints (service-role client) to bypass RLS —
         // with email confirmation enabled, the anon client has no session
         // at this point so direct upserts are silently blocked.
@@ -126,13 +124,11 @@ export default function RegisterEmployerFreePage() {
         await fetch('/api/subscription/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: authData.user.id,
-            trialEndsAt: freeUntil,
-          }),
+          body: JSON.stringify({ userId: authData.user.id }),
         }).catch(() => {})
 
-        // Welcome email is sent from /auth/callback after email confirmation.
+        // After email confirmation, /auth/confirm redirects to
+        // /register/employer/payment for card collection + trial setup.
         setEmailSent(true)
       }
     } catch (err: any) {

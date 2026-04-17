@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Creates the free-launch employer subscription row using the
-// service-role client so RLS doesn't block the insert before email
-// confirmation completes. Same pattern as /api/profile/create.
+// Creates a placeholder employer subscription row. The actual Stripe
+// subscription is created by /api/stripe/confirm-trial after the employer
+// saves their card on the payment page. This route is still called by
+// the email-registration flow to bootstrap the row before payment.
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +15,7 @@ const supabaseAdmin = createClient(
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { userId, trialEndsAt } = body
+    const { userId } = body
 
     if (!userId) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 })
@@ -25,11 +26,10 @@ export async function POST(req: NextRequest) {
       .upsert(
         {
           user_id: userId,
-          subscription_status: 'active',
-          subscription_tier: 'free',
-          trial_ends_at: trialEndsAt || new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString(),
+          subscription_status: 'inactive',
+          subscription_tier: 'standard',
         },
-        { onConflict: 'user_id' }
+        { onConflict: 'user_id', ignoreDuplicates: true }
       )
       .select('user_id')
 
