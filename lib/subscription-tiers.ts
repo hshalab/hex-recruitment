@@ -1,27 +1,22 @@
 // Client-safe subscription tier config (no server secrets)
+//
+// Single-plan pricing. A row with `subscription_tier: 'standard'` in
+// employer_subscriptions means the employer is on the paid plan (either in
+// trial or active). Historical rows with 'free' or 'professional' are
+// treated as 'standard' by hasFeatureAccess in lib/subscription.ts.
 export const SUBSCRIPTION_TIERS = {
   standard: {
     name: 'Standard',
-    price: 29.99,
-    trialDays: 14,
-    maxActiveJobs: 3,
-    features: [
-      'Up to 3 active job listings',
-      'Browse and contact candidates',
-      'Manage applications in dashboard',
-      '1 week cancellation notice',
-    ],
-  },
-  professional: {
-    name: 'Professional',
-    price: 59.99,
-    trialDays: 14,
+    price: 149.99,
+    trialDays: 182, // 6-month free trial
     maxActiveJobs: Infinity,
     features: [
       'Unlimited job listings',
-      'Priority candidate access',
-      'Advanced analytics dashboard',
+      'Browse and contact candidates',
+      'Manage applications in dashboard',
+      'Analytics dashboard',
       'Dedicated account support',
+      'Cancel anytime',
     ],
   },
 } as const

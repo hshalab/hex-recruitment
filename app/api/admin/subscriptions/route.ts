@@ -80,16 +80,15 @@ export async function GET(req: Request) {
       )
     }
 
-    // Revenue summary
+    // Revenue summary — single plan at £149.99/month
     const { data: allActive } = await db
       .from('employer_subscriptions')
-      .select('subscription_tier, subscription_status')
+      .select('subscription_status')
       .in('subscription_status', ['active', 'trialing'])
 
-    const standardActive = (allActive || []).filter(s => s.subscription_tier === 'standard' && s.subscription_status === 'active').length
-    const standardTrialing = (allActive || []).filter(s => s.subscription_tier === 'standard' && s.subscription_status === 'trialing').length
-    const proActive = (allActive || []).filter(s => s.subscription_tier === 'professional' && s.subscription_status === 'active').length
-    const proTrialing = (allActive || []).filter(s => s.subscription_tier === 'professional' && s.subscription_status === 'trialing').length
+    const totalActive = (allActive || []).filter(s => s.subscription_status === 'active').length
+    const totalTrialing = (allActive || []).filter(s => s.subscription_status === 'trialing').length
+    const PLAN_PRICE = 149.99
 
     return NextResponse.json({
       subscriptions,
@@ -97,11 +96,9 @@ export async function GET(req: Request) {
       page,
       totalPages: Math.ceil((count || 0) / PAGE_SIZE),
       revenue: {
-        mrr: (standardActive * 29.99) + (proActive * 59.99),
-        standard: { active: standardActive, trialing: standardTrialing, revenue: standardActive * 29.99 },
-        professional: { active: proActive, trialing: proTrialing, revenue: proActive * 59.99 },
-        totalActive: standardActive + proActive,
-        totalTrialing: standardTrialing + proTrialing,
+        mrr: totalActive * PLAN_PRICE,
+        totalActive,
+        totalTrialing,
       },
     })
   } catch (error: any) {

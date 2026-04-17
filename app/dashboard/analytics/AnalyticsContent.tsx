@@ -2717,7 +2717,7 @@ export default function AnalyticsContent() {
               market benchmarking, and more.
             </p>
             <Link href="/dashboard/subscription" className={styles.upgradeBtnLink}>
-              Upgrade Now — £59.99/month
+              Subscribe — £149.99/month
             </Link>
           </div>
         </div>
@@ -4195,7 +4195,7 @@ export default function AnalyticsContent() {
                 <div className={styles.cphBreakdownCard}>
                   <div className={styles.cphBreakdownLabel}>Total Spent</div>
                   <div className={styles.cphBreakdownValue}>£{costPerHire.totalCost.toFixed(2)}</div>
-                  <div className={styles.cphBreakdownSub}>{costPerHire.totalMonths} month{costPerHire.totalMonths !== 1 ? 's' : ''} × £29.99</div>
+                  <div className={styles.cphBreakdownSub}>{costPerHire.totalMonths} month{costPerHire.totalMonths !== 1 ? 's' : ''} × £149.99</div>
                 </div>
                 <div className={styles.cphBreakdownCard}>
                   <div className={styles.cphBreakdownLabel}>Total Hires</div>
@@ -4207,7 +4207,7 @@ export default function AnalyticsContent() {
                 <div className={styles.cphBreakdownCard}>
                   <div className={styles.cphBreakdownLabel}>Member Since</div>
                   <div className={styles.cphBreakdownValue} style={{ fontSize: '1rem' }}>{costPerHire.memberSince}</div>
-                  <div className={styles.cphBreakdownSub}>£29.99/month subscription</div>
+                  <div className={styles.cphBreakdownSub}>£149.99/month subscription</div>
                 </div>
               </div>
             </div>

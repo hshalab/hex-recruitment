@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe, STRIPE_PRICES } from '@/lib/stripe'
+import { stripe, STRIPE_PRICE_ID } from '@/lib/stripe'
+import { TRIAL_DURATION_DAYS } from '@/lib/trialUtils'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseAdmin = createClient(
@@ -20,29 +21,21 @@ export async function POST(req: NextRequest) {
       sessionEmail = user?.email || null
     }
 
-    const { tier, userId, email } = await req.json()
+    const { userId, email } = await req.json()
     // Use session values if available, fall back to request body for backwards compat
     const safeUserId = sessionUserId || userId
     const safeEmail = sessionEmail || email
 
-    if (!tier || !safeUserId || !safeEmail) {
+    if (!safeUserId || !safeEmail) {
       return NextResponse.json(
-        { error: 'Missing required fields: tier, userId, email' },
+        { error: 'Missing required fields: userId, email' },
         { status: 400 }
       )
     }
 
-    if (tier !== 'standard' && tier !== 'professional') {
+    if (!STRIPE_PRICE_ID) {
       return NextResponse.json(
-        { error: 'Invalid tier. Must be "standard" or "professional"' },
-        { status: 400 }
-      )
-    }
-
-    const priceId = STRIPE_PRICES[tier as keyof typeof STRIPE_PRICES]
-    if (!priceId) {
-      return NextResponse.json(
-        { error: 'Stripe price ID not configured for this tier' },
+        { error: 'STRIPE_PRICE_ID is not configured' },
         { status: 500 }
       )
     }
@@ -87,22 +80,22 @@ export async function POST(req: NextRequest) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
+          price: STRIPE_PRICE_ID,
           quantity: 1,
         },
       ],
       subscription_data: {
-        trial_period_days: 14,
+        trial_period_days: TRIAL_DURATION_DAYS,
         metadata: {
           supabase_user_id: safeUserId,
-          tier,
+          tier: 'standard',
         },
       },
       success_url: `${baseUrl}/employer/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/subscribe`,
       metadata: {
-        supabase_user_id: userId,
-        tier,
+        supabase_user_id: safeUserId,
+        tier: 'standard',
       },
     })
 

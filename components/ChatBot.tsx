@@ -30,7 +30,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── GENERAL / ABOUT ──
   {
     keywords: ['what is thrive', 'about thrive', 'how does it work', 'tell me about', 'what does thrive do'],
-    response: "Thrive | Talent Recruitment is the UK's recruitment platform connecting employers across all industries with qualified professionals.\n\n**For Job Seekers:** Completely free! Create your profile, upload your CV, browse jobs, and apply directly.\n\n**For Employers:** Post jobs, browse candidate profiles, schedule interviews, send offers, and track your hiring pipeline. Start with a 14-day free trial, then from £29.99/month.",
+    response: "Thrive | Talent Recruitment is the UK's recruitment platform connecting employers across all industries with qualified professionals.\n\n**For Job Seekers:** Completely free! Create your profile, upload your CV, browse jobs, and apply directly.\n\n**For Employers:** Post jobs, browse candidate profiles, schedule interviews, send offers, and track your hiring pipeline. Start with a 6-month free trial, then £149.99/month.",
     links: [{ text: 'Learn More', href: '/' }]
   },
   {
@@ -61,7 +61,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── PRICING & SUBSCRIPTION ──
   {
     keywords: ['cost', 'price', 'pay', 'how much', 'pricing', 'fee', 'charge', 'subscription', 'plan'],
-    response: "Great question! Thrive offers a 14-day FREE trial, then two plans:\n\n**Standard:** £29.99/month\n• Up to 3 active job listings\n• Browse candidate profiles\n• Direct messaging\n• Interview scheduling\n\n**Professional:** £59.99/month\n• Unlimited job listings\n• Priority candidate access\n• Full analytics dashboard\n• All Standard features\n\nJust give 1 week's notice to cancel. No hidden fees.",
+    response: "Great question! Thrive offers a **6-month FREE trial**, then just **£149.99/month**.\n\nYour plan includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nCancel anytime. No hidden fees.",
     links: [{ text: 'View Plans', href: '/subscribe' }]
   },
   {
@@ -71,12 +71,12 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   },
   {
     keywords: ['standard plan', 'basic plan', 'starter plan'],
-    response: "The **Standard plan** is £29.99/month and includes:\n• Up to 3 active job listings at a time\n• Browse and contact candidates\n• Direct messaging\n• Interview scheduling\n• Offer management\n\nPerfect for small businesses or occasional hiring!",
+    response: "The **Standard plan** is £149.99/month and includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nStart with a 6-month free trial — cancel anytime!",
     links: [{ text: 'Subscribe', href: '/subscribe' }]
   },
   {
     keywords: ['professional plan', 'pro plan', 'premium plan', 'unlimited'],
-    response: "The **Professional plan** is £59.99/month and includes:\n• Unlimited active job listings\n• Priority access to new candidates\n• Full analytics dashboard with charts, trends, and performance metrics\n• All Standard features included\n\nIdeal for businesses with ongoing recruitment needs!",
+    response: "We now have a single plan at **£149.99/month** which includes everything:\n• Unlimited job listings\n• Priority candidate access\n• Full analytics dashboard\n• Dedicated account support\n\nStart with a 6-month free trial — cancel anytime!",
     links: [{ text: 'Subscribe', href: '/subscribe' }]
   },
   {
@@ -151,7 +151,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── EMPLOYER: ANALYTICS ──
   {
     keywords: ['analytics', 'dashboard', 'stats', 'statistics', 'performance', 'metrics', 'report', 'chart'],
-    response: "The Analytics dashboard gives you insights into your recruitment performance:\n\n• Job posting views and application rates\n• Candidate pipeline breakdown\n• Hiring funnel conversion rates\n• Trend charts over time\n• Top-performing job listings\n\nThe full analytics dashboard is available on the Professional plan (£59.99/month).",
+    response: "The Analytics dashboard gives you insights into your recruitment performance:\n\n• Job posting views and application rates\n• Candidate pipeline breakdown\n• Hiring funnel conversion rates\n• Trend charts over time\n• Top-performing job listings\n\nThe analytics dashboard is included in your plan (£149.99/month after 6-month free trial).",
     links: [{ text: 'View Analytics', href: '/dashboard/analytics' }]
   },
 

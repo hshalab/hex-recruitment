@@ -1,7 +1,9 @@
 import { supabase } from './supabase'
 import { DEV_MODE, getMockUser, getSubscriptionStatus } from './mockAuth'
 
-export type SubscriptionTier = 'standard' | 'professional' | 'free' | null
+// Single paid tier. 'free' is kept for backward compatibility with historical
+// rows — treated as 'standard' by the access checks below.
+export type SubscriptionTier = 'standard' | 'free' | null
 export type SubscriptionStatus = 'inactive' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid'
 
 export interface UserSubscription {
@@ -15,31 +17,23 @@ export interface UserSubscription {
 }
 
 /**
- * Feature gating configuration
- * Defines which features require which subscription level
+ * Features gated behind an active subscription. With a single plan, any
+ * active (or trialing) employer gets access to everything.
  */
-const GATED_FEATURES = {
-  // Any active subscription (standard or professional)
-  any: [
-    'post_job',
-    'view_candidate_contact',
-    'view_candidate_cv',
-    'download_cv',
-    'send_message',
-  ],
-  // Professional tier only
-  professional: [
-    'analytics_dashboard',
-    'demographics_data',
-    'benchmarking',
-    'priority_candidate_access',
-    'unlimited_jobs',
-  ],
-} as const
+const GATED_FEATURES = [
+  'post_job',
+  'view_candidate_contact',
+  'view_candidate_cv',
+  'download_cv',
+  'send_message',
+  'analytics_dashboard',
+  'demographics_data',
+  'benchmarking',
+  'priority_candidate_access',
+  'unlimited_jobs',
+] as const
 
-type AnyFeature = (typeof GATED_FEATURES.any)[number]
-type ProFeature = (typeof GATED_FEATURES.professional)[number]
-type GatedFeature = AnyFeature | ProFeature
+type GatedFeature = (typeof GATED_FEATURES)[number]
 
 /**
  * Fetch the current user's subscription from the database
@@ -50,7 +44,7 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
     const status = getSubscriptionStatus()
     return {
       status: status === 'trial' ? 'trialing' : status === 'active' ? 'active' : 'inactive',
-      tier: 'professional', // Dev mode gets full access
+      tier: 'standard',
       isActive: status === 'trial' || status === 'active',
       isTrial: status === 'trial',
       trialEndsAt: null,
@@ -92,37 +86,23 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
 }
 
 /**
- * Check if the user has access to a specific feature
+ * Check if the user has access to a specific feature.
+ * Single-plan: any active/trialing subscription unlocks everything.
  */
 export function hasFeatureAccess(
   subscription: UserSubscription,
   feature: GatedFeature
 ): boolean {
   if (!subscription.isActive) return false
-
-  // Free launch tier gets full access (same as professional)
-  if (subscription.tier === 'free') return true
-
-  // Check if it's a "professional only" feature
-  if ((GATED_FEATURES.professional as readonly string[]).includes(feature)) {
-    return subscription.tier === 'professional'
-  }
-
-  // Check if it's an "any subscription" feature
-  if ((GATED_FEATURES.any as readonly string[]).includes(feature)) {
-    return true // Any active subscription
-  }
-
-  return false
+  return (GATED_FEATURES as readonly string[]).includes(feature)
 }
 
 /**
- * Get the maximum number of active jobs allowed for the subscription tier
+ * Get the maximum number of active jobs allowed. With a single plan every
+ * active subscription is unlimited.
  */
 export function getMaxActiveJobs(tier: SubscriptionTier): number {
-  if (tier === 'free') return Infinity
-  if (tier === 'professional') return Infinity
-  if (tier === 'standard') return 3
+  if (tier === 'standard' || tier === 'free') return Infinity
   return 0
 }
 

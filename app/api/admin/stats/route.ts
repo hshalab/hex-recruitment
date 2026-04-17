@@ -63,12 +63,11 @@ export async function GET(req: Request) {
         .eq('is_flagged', true),
     ])
 
-    // Count subscriptions by tier
+    // Count active + trialing subs — single plan at £149.99/month
     const allSubs = [...(subsActive.data || []), ...(subsTrialing.data || [])]
-    const standardCount = allSubs.filter(s => s.subscription_tier === 'standard').length
-    const professionalCount = allSubs.filter(s => s.subscription_tier === 'professional').length
+    const activeCount = (subsActive.data || []).length
     const trialCount = (subsTrialing.data || []).length
-    const monthlyRevenue = (standardCount * 29.99) + (professionalCount * 59.99)
+    const monthlyRevenue = activeCount * 149.99
 
     // Build monthly growth data
     const months: string[] = []
@@ -100,8 +99,7 @@ export async function GET(req: Request) {
       activeJobs: jobsActive.count || 0,
       totalApplications: applicationsTotal.count || 0,
       subscriptions: {
-        standard: standardCount,
-        professional: professionalCount,
+        active: activeCount,
         trials: trialCount,
         total: allSubs.length,
       },

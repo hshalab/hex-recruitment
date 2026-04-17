@@ -7,11 +7,9 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
-// Stripe Price IDs - set these after creating products in Stripe Dashboard
-export const STRIPE_PRICES = {
-  standard: process.env.STRIPE_STANDARD_PRICE_ID || '',
-  professional: process.env.STRIPE_PROFESSIONAL_PRICE_ID || '',
-}
+// Single-plan Stripe Price ID. Create the £149.99/month recurring price in
+// the Stripe dashboard and set STRIPE_PRICE_ID in .env.local.
+export const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || ''
 
 // Re-export tier config for convenience in server code
 export { SUBSCRIPTION_TIERS, type SubscriptionTier } from './subscription-tiers'

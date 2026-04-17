@@ -110,8 +110,7 @@ function pctChange(current: number, previous: number): number {
   return Math.round(((current - previous) / previous) * 100)
 }
 
-const STANDARD_PRICE = 29.99
-const PROFESSIONAL_PRICE = 59.99
+const PLAN_PRICE = 149.99
 
 // ============================================================
 // Section Handlers
@@ -221,12 +220,10 @@ async function fetchKPI(db: any, startDate: string, granularity: 'day' | 'week' 
   const newApps30d = totalAppsCount - prevAppsCount
   const prevConversion = totalViewsCount > 0 ? (prevAppsCount / Math.max(totalViewsCount, 1)) * 100 : 0
 
-  // MRR calculation
+  // MRR calculation — single plan
   const subs = subscriptions.data || []
   const activeSubs = subs.filter((s: any) => s.subscription_status === 'active')
-  const standardActive = activeSubs.filter((s: any) => s.subscription_tier === 'standard').length
-  const proActive = activeSubs.filter((s: any) => s.subscription_tier === 'professional').length
-  const mrr = Math.round((standardActive * STANDARD_PRICE + proActive * PROFESSIONAL_PRICE) * 100) / 100
+  const mrr = Math.round(activeSubs.length * PLAN_PRICE * 100) / 100
 
   // Churn: canceled in last 30d / active at start of period
   const canceledLast30 = subs.filter((s: any) =>
@@ -640,25 +637,19 @@ async function fetchRevenue(db: any, startDate: string, granularity: 'day' | 'we
     const endOfMonth = new Date(parseInt(month.slice(0, 4)), parseInt(month.slice(5, 7)), 0, 23, 59, 59)
     const startOfMonth = new Date(parseInt(month.slice(0, 4)), parseInt(month.slice(5, 7)) - 1, 1)
 
-    let standard = 0
-    let professional = 0
+    let activeCount = 0
     subs.forEach((s: any) => {
       const created = new Date(s.created_at)
       const canceled = s.cancel_at ? new Date(s.cancel_at) : null
       const isActive = created <= endOfMonth &&
         (s.subscription_status === 'active' || s.subscription_status === 'trialing') &&
         (!canceled || canceled > startOfMonth)
-      if (isActive) {
-        if (s.subscription_tier === 'standard') standard++
-        else if (s.subscription_tier === 'professional') professional++
-      }
+      if (isActive) activeCount++
     })
 
     return {
       period: month,
-      mrr: Math.round((standard * STANDARD_PRICE + professional * PROFESSIONAL_PRICE) * 100) / 100,
-      standard: Math.round(standard * STANDARD_PRICE * 100) / 100,
-      professional: Math.round(professional * PROFESSIONAL_PRICE * 100) / 100,
+      mrr: Math.round(activeCount * PLAN_PRICE * 100) / 100,
     }
   })
 

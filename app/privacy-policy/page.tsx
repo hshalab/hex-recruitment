@@ -214,7 +214,7 @@ export default function PrivacyPolicyPage() {
               <li>
                 <strong>Subscribed Employers:</strong> Job seeker profiles (including CV, skills,
                 experience, and contact details) are visible to registered employers with an active
-                paid subscription (from &pound;29.99/month) or during their 14-day free trial. Employers
+                paid subscription (&pound;149.99/month) or during their 6-month free trial. Employers
                 must agree to our Terms of Service and comply with UK GDPR when handling your data.
               </li>
               <li>

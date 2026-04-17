@@ -20,8 +20,6 @@ interface Subscription {
 
 interface Revenue {
   mrr: number
-  standard: { active: number; trialing: number; revenue: number }
-  professional: { active: number; trialing: number; revenue: number }
   totalActive: number
   totalTrialing: number
 }
@@ -119,8 +117,7 @@ export default function AdminSubscriptionsPage() {
       {revenue && (
         <div className={styles.revenueGrid}>
           <StatsCard title="Monthly Recurring Revenue" value={`£${revenue.mrr.toFixed(2)}`} icon="💰" color="#16a34a" />
-          <StatsCard title="Standard" value={`${revenue.standard.active} active`} change={`${revenue.standard.trialing} trialing`} icon="📦" />
-          <StatsCard title="Professional" value={`${revenue.professional.active} active`} change={`${revenue.professional.trialing} trialing`} icon="⭐" color="#8b5cf6" />
+          <StatsCard title="Active Subscriptions" value={revenue.totalActive} icon="📦" />
           <StatsCard title="Total Trials" value={revenue.totalTrialing} icon="⏳" color="#f59e0b" />
         </div>
       )}
@@ -129,7 +126,7 @@ export default function AdminSubscriptionsPage() {
         <select className={styles.select} value={tier} onChange={(e) => setTier(e.target.value)}>
           <option value="">All Tiers</option>
           <option value="standard">Standard</option>
-          <option value="professional">Professional</option>
+          <option value="free">Free</option>
         </select>
         <select className={styles.select} value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All Statuses</option>

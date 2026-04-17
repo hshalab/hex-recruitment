@@ -34,7 +34,7 @@ export function trialEndingEmail(
       </tr>
     </table>
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
-      Plans start from just <strong>&pound;29.99/month</strong>. Choose the plan that works for you.
+      Your subscription will be <strong>&pound;149.99/month</strong>. Cancel anytime.
     </p>
     ${ctaButton('Subscribe Now', `${BASE_URL}/dashboard/subscription`)}
     <p style="margin:0;font-size:14px;color:#94a3b8;">

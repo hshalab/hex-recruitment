@@ -20,7 +20,7 @@ interface Stats {
   totalJobs: number
   activeJobs: number
   totalApplications: number
-  subscriptions: { standard: number; professional: number; trials: number; total: number }
+  subscriptions: { active: number; trials: number; total: number }
   monthlyRevenue: number
   growth: {
     candidates: { month: string; count: number }[]
@@ -78,8 +78,7 @@ export default function AdminOverviewPage() {
   }))
 
   const subsPie = [
-    { name: 'Professional', value: stats.subscriptions.professional },
-    { name: 'Standard', value: stats.subscriptions.standard },
+    { name: 'Active', value: stats.subscriptions.active },
     { name: 'Trials', value: stats.subscriptions.trials },
   ].filter(s => s.value > 0)
 
@@ -128,12 +127,8 @@ export default function AdminOverviewPage() {
         </div>
         <div className={styles.revenueBreakdown}>
           <div className={styles.revenueItem}>
-            <span className={styles.revLabel}>Standard ({stats.subscriptions.standard})</span>
-            <span>£{(stats.subscriptions.standard * 29.99).toFixed(2)}</span>
-          </div>
-          <div className={styles.revenueItem}>
-            <span className={styles.revLabel}>Professional ({stats.subscriptions.professional})</span>
-            <span>£{(stats.subscriptions.professional * 59.99).toFixed(2)}</span>
+            <span className={styles.revLabel}>Active ({stats.subscriptions.active})</span>
+            <span>£{(stats.subscriptions.active * 149.99).toFixed(2)}</span>
           </div>
           <div className={styles.revenueItem}>
             <span className={styles.revLabel}>Trials</span>

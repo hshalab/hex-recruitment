@@ -225,7 +225,7 @@ export default function TermsPage() {
             <p>After the trial period, employer access requires a paid subscription:</p>
             <ul className={styles.list}>
               <li>
-                <strong>Monthly subscription:</strong> From &pound;29.99 per month (GBP, inclusive of VAT)
+                <strong>Monthly subscription:</strong> &pound;149.99 per month (GBP, inclusive of VAT)
               </li>
               <li>Subscriptions renew automatically each month</li>
               <li>

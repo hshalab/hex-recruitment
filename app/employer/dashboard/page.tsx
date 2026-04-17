@@ -881,11 +881,7 @@ export default function EmployerDashboardPage() {
             <div className={styles.welcomeText}>
               <h1>{getGreeting()}, {displayName.split(' ')[0]}</h1>
               <p className={styles.companyLabel}>{companyName}</p>
-              <p className={styles.welcomeSub}>
-                {subscriptionTier === 'free' && freeUntil
-                  ? `Free access until ${new Date(freeUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                  : 'Here\u0027s what\u0027s happening with your jobs today'}
-              </p>
+              <p className={styles.welcomeSub}>Here&apos;s what&apos;s happening with your jobs today</p>
             </div>
           </div>
           <div className={styles.welcomeDate}>

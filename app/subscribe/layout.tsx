@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Employer Plans - Post Jobs & Find Candidates from £29.99/month',
-  description: 'Choose an employer plan to post jobs and browse candidates. 14-day free trial, no card required. 1 week cancellation notice.',
+  title: 'Employer Plan - Post Jobs & Find Candidates for £149.99/month',
+  description: 'Post unlimited jobs and browse candidates. 6-month free trial, cancel anytime.',
   openGraph: {
-    title: 'Employer Plans - Post Jobs & Find Candidates from £29.99/month',
-    description: 'Post jobs and browse candidates. 14-day free trial, no card required.',
+    title: 'Employer Plan - Post Jobs & Find Candidates for £149.99/month',
+    description: 'Post unlimited jobs and browse candidates. 6-month free trial, cancel anytime.',
   },
   alternates: {
     canonical: '/subscribe',

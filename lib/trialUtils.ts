@@ -1,6 +1,6 @@
 // Trial pricing configuration
-export const TRIAL_DURATION_DAYS = 14
-export const EMPLOYER_SUBSCRIPTION_PRICE = 29.99
+export const TRIAL_DURATION_DAYS = 182 // 6-month free trial
+export const EMPLOYER_SUBSCRIPTION_PRICE = 149.99
 export const JOB_SEEKER_REACTIVATION_PRICE = 1.00
 export const WARNING_PERIOD_DAYS = 7
 

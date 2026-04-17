@@ -18,11 +18,15 @@ interface SubscriptionData {
   stripe_customer_id: string | null
 }
 
+const PLAN_PRICE = SUBSCRIPTION_TIERS.standard.price
+const PLAN_NAME = SUBSCRIPTION_TIERS.standard.name
+const PLAN_FEATURES = SUBSCRIPTION_TIERS.standard.features
+
 export default function SubscriptionPage() {
   const router = useRouter()
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -67,19 +71,19 @@ export default function SubscriptionPage() {
     loadSubscription()
   }, [])
 
-  const handleCheckout = async (tier: 'standard' | 'professional') => {
+  const handleCheckout = async () => {
     if (!userId || !userEmail) {
       router.push('/subscribe')
       return
     }
 
-    setCheckoutLoading(tier)
+    setCheckoutLoading(true)
 
     try {
       const res = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier, userId, email: userEmail }),
+        body: JSON.stringify({ userId, email: userEmail }),
       })
 
       const data = await res.json()
@@ -89,7 +93,6 @@ export default function SubscriptionPage() {
         return
       }
 
-      // Redirect to Stripe Checkout
       if (data.url) {
         window.location.href = data.url
       }
@@ -97,7 +100,7 @@ export default function SubscriptionPage() {
       console.error('Checkout error:', err)
       alert('Something went wrong. Please try again.')
     } finally {
-      setCheckoutLoading(null)
+      setCheckoutLoading(false)
     }
   }
 
@@ -210,55 +213,18 @@ export default function SubscriptionPage() {
           </div>
         )}
 
-        {/* Free Launch Plan */}
-        {isActive && subscription?.subscription_tier === 'free' ? (
+        {/* Active Plan Card */}
+        {isActive ? (
           <div className={styles.currentPlan}>
             <div className={styles.planHeader}>
               <div>
-                <h2 className={styles.planName}>Free Launch Plan 🎉</h2>
-                <span className={`${styles.statusBadge} ${styles.activeBadge}`}>Active</span>
-              </div>
-            </div>
-            <div className={styles.planDetails}>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Plan</span>
-                <span className={styles.detailValue}>6 months free — part of the first 600 employers</span>
-              </div>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Free access until</span>
-                <span className={styles.detailValue}>{formatDate(subscription.trial_ends_at)}</span>
-              </div>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Days remaining</span>
-                <span className={styles.detailValue}>{trialDaysRemaining} days</span>
-              </div>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Includes</span>
-                <span className={styles.detailValue}>Unlimited jobs, candidate search, pipeline, interviews, analytics</span>
-              </div>
-            </div>
-            <div className={styles.planActions}>
-              <Link href="/employer/dashboard" className={styles.manageBtn} style={{ textDecoration: 'none', textAlign: 'center' }}>
-                Back to Dashboard
-              </Link>
-            </div>
-          </div>
-        ) : isActive && subscription?.subscription_tier ? (
-          /* Paid Plan Card */
-          <div className={styles.currentPlan}>
-            <div className={styles.planHeader}>
-              <div>
-                <h2 className={styles.planName}>
-                  {SUBSCRIPTION_TIERS[subscription.subscription_tier as keyof typeof SUBSCRIPTION_TIERS]?.name || subscription.subscription_tier} Plan
-                </h2>
+                <h2 className={styles.planName}>{PLAN_NAME} Plan</h2>
                 <span className={`${styles.statusBadge} ${isTrial ? styles.trialBadge : styles.activeBadge}`}>
                   {isTrial ? `Trial — ${trialDaysRemaining} days left` : 'Active'}
                 </span>
               </div>
               <div className={styles.planPrice}>
-                <span className={styles.priceAmount}>
-                  £{SUBSCRIPTION_TIERS[subscription.subscription_tier as keyof typeof SUBSCRIPTION_TIERS]?.price.toFixed(2) || '0.00'}
-                </span>
+                <span className={styles.priceAmount}>£{PLAN_PRICE.toFixed(2)}</span>
                 <span className={styles.pricePeriod}>/month</span>
               </div>
             </div>
@@ -271,22 +237,18 @@ export default function SubscriptionPage() {
               {isTrial && (
                 <div className={styles.detailRow}>
                   <span className={styles.detailLabel}>Trial ends</span>
-                  <span className={styles.detailValue}>{formatDate(subscription.trial_ends_at)}</span>
+                  <span className={styles.detailValue}>{formatDate(subscription?.trial_ends_at || null)}</span>
                 </div>
               )}
               <div className={styles.detailRow}>
                 <span className={styles.detailLabel}>Next billing date</span>
                 <span className={styles.detailValue}>
-                  {willCancel ? 'N/A — canceling' : formatDate(subscription.cancel_at)}
+                  {willCancel ? 'N/A — canceling' : formatDate(subscription?.cancel_at || null)}
                 </span>
               </div>
               <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Plan features</span>
-                <span className={styles.detailValue}>
-                  {subscription.subscription_tier === 'professional'
-                    ? 'Unlimited jobs, analytics, priority access'
-                    : 'Up to 3 active jobs'}
-                </span>
+                <span className={styles.detailLabel}>Plan includes</span>
+                <span className={styles.detailValue}>Unlimited jobs, candidate search, pipeline, interviews, analytics</span>
               </div>
             </div>
 
@@ -298,81 +260,41 @@ export default function SubscriptionPage() {
               >
                 {portalLoading ? 'Loading...' : 'Manage Billing'}
               </button>
-              {subscription.subscription_tier === 'standard' && (
-                <button
-                  onClick={() => handleCheckout('professional')}
-                  disabled={!!checkoutLoading}
-                  className={styles.upgradeBtn}
-                >
-                  {checkoutLoading === 'professional' ? 'Loading...' : 'Upgrade to Professional'}
-                </button>
-              )}
             </div>
           </div>
         ) : (
-          /* No Active Subscription — Show Pricing Cards */
+          /* No Active Subscription — Show single pricing card */
           <div className={styles.pricingSection}>
             <h2 className={styles.pricingTitle}>
-              {isCanceled ? 'Resubscribe to a Plan' : 'Choose Your Plan'}
+              {isCanceled ? 'Resubscribe to continue' : 'Get started'}
             </h2>
             <p className={styles.pricingSubtitle}>
-              Both plans include a 14-day free trial. No card required upfront.
+              6-month free trial. Cancel anytime.
             </p>
 
             <div className={styles.pricingGrid}>
-              {/* Standard Card */}
               <div className={styles.pricingCard}>
-                <h3 className={styles.cardTitle}>Standard</h3>
+                <h3 className={styles.cardTitle}>{PLAN_NAME}</h3>
                 <p className={styles.cardSubtitle}>For Employers</p>
                 <div className={styles.cardPrice}>
-                  <span className={styles.cardPriceAmount}>£29.99</span>
+                  <span className={styles.cardPriceAmount}>£{PLAN_PRICE.toFixed(2)}</span>
                   <span className={styles.cardPricePeriod}>/month</span>
                 </div>
                 <ul className={styles.cardFeatures}>
-                  <li><span className={styles.checkMark}>&#10003;</span> 14-day free trial</li>
-                  <li><span className={styles.checkMark}>&#10003;</span> Up to 3 active job listings</li>
-                  <li><span className={styles.checkMark}>&#10003;</span> Browse and contact candidates</li>
-                  <li><span className={styles.checkMark}>&#10003;</span> Application management</li>
-                  <li><span className={styles.checkMark}>&#10003;</span> 1 week cancellation notice</li>
+                  <li><span className={styles.checkMark}>&#10003;</span> 6-month free trial</li>
+                  {PLAN_FEATURES.map((f) => (
+                    <li key={f}><span className={styles.checkMark}>&#10003;</span> {f}</li>
+                  ))}
                 </ul>
                 <button
-                  onClick={() => handleCheckout('standard')}
-                  disabled={!!checkoutLoading}
+                  onClick={handleCheckout}
+                  disabled={checkoutLoading}
                   className={styles.selectPlanBtn}
                 >
-                  {checkoutLoading === 'standard' ? (
+                  {checkoutLoading ? (
                     <><span className={styles.btnSpinner} /> Processing...</>
                   ) : (
-                    'Start Free 14-Day Trial'
-                  )}
-                </button>
-              </div>
-
-              {/* Professional Card */}
-              <div className={`${styles.pricingCard} ${styles.pricingCardPro}`}>
-                <div className={styles.popularBadge}>Most Popular</div>
-                <h3 className={styles.cardTitle}>Professional</h3>
-                <p className={styles.cardSubtitle}>For Growing Teams</p>
-                <div className={styles.cardPrice}>
-                  <span className={styles.cardPriceAmount}>£59.99</span>
-                  <span className={styles.cardPricePeriod}>/month</span>
-                </div>
-                <ul className={styles.cardFeatures}>
-                  <li><span className={styles.checkMark}>&#10003;</span> 14-day free trial</li>
-                  <li><span className={styles.checkMark}>&#10003;</span> Unlimited job listings</li>
-                  <li><span className={styles.checkMark}>&#10003;</span> Priority candidate access</li>
-                  <li><span className={styles.checkMark}>&#10003;</span> Advanced analytics dashboard</li>
-                  <li><span className={styles.checkMark}>&#10003;</span> Dedicated account support</li>
-                </ul>
-                <button
-                  onClick={() => handleCheckout('professional')}
-                  disabled={!!checkoutLoading}
-                  className={styles.selectPlanBtnPro}
-                >
-                  {checkoutLoading === 'professional' ? (
-                    <><span className={styles.btnSpinner} /> Processing...</>
-                  ) : (
-                    'Start Free 14-Day Trial'
+                    'Start Free 6-Month Trial'
                   )}
                 </button>
               </div>

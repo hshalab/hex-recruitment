@@ -67,8 +67,7 @@ interface ApplicationsData {
 }
 
 interface RevenueData {
-  mrrOverTime: { period: string; mrr: number; standard: number; professional: number }[]
-  revenueByTier: { period: string; mrr: number; standard: number; professional: number }[]
+  mrrOverTime: { period: string; mrr: number }[]
   trialConversion: { totalTrials: number; converted: number; rate: number }
   arpe: number
   churnOverTime: { period: string; churnRate: number; churned: number; total: number }[]
@@ -1218,24 +1217,7 @@ export default function AdminAnalyticsPage() {
             )}
           </ChartCard>
 
-          {/* Revenue by tier (stacked bar) */}
-          <ChartCard title="Revenue by Tier" subtitle="Standard vs Professional" csvData={d?.revenueByTier} csvFilename="revenue-by-tier" loading={l && !d}>
-            {d?.revenueByTier && d.revenueByTier.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={d.revenueByTier}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} />
-                  <XAxis dataKey="period" fontSize={11} tickFormatter={formatPeriod} />
-                  <YAxis fontSize={11} tickFormatter={(v) => `£${v}`} />
-                  <Tooltip contentStyle={tooltipStyle} labelFormatter={formatPeriod} formatter={(v: any) => formatCurrency(Number(v))} />
-                  <Legend />
-                  <Bar dataKey="standard" fill={COLORS.secondary} stackId="rev" name="Standard (£29.99)" />
-                  <Bar dataKey="professional" fill={COLORS.primary} stackId="rev" name="Professional (£59.99)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className={styles.noData}><div className={styles.noDataText}>No tier data yet</div></div>
-            )}
-          </ChartCard>
+          {/* MRR breakdown (single plan) — removed tier-specific chart */}
 
           {/* Churn over time */}
           <ChartCard title="Churn Over Time" subtitle="Monthly cancellation rate" csvData={d?.churnOverTime} csvFilename="churn-over-time" loading={l && !d}>
