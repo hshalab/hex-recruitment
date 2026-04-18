@@ -552,12 +552,6 @@
   padding: 0 1rem;
 }
 
-.bankHint {
-  font-size: 0.85rem;
-  color: var(--text-gray);
-  margin-bottom: 1.5rem;
-}
-
 /* Skills Grid */
 .skillsGrid {
   display: flex;

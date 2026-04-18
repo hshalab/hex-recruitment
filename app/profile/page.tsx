@@ -102,13 +102,8 @@ export default function ProfilePage() {
             cvFileName: profile.cvFileName || '',
             cvUrl: profile.cvUrl || '',
             hasNiNumber: profile.hasNiNumber || false,
-            hasBankAccount: profile.hasBankAccount || false,
             hasRightToWork: profile.hasRightToWork || false,
             hasP45: profile.hasP45 || false,
-            bankName: profile.bankName || '',
-            sortCode: profile.sortCode || '',
-            accountNumber: profile.accountNumber || '',
-            accountHolderName: profile.accountHolderName || '',
           })
         } else {
           router.push('/register/employee')
@@ -201,13 +196,8 @@ export default function ProfilePage() {
           cvFileName: profile.cv_file_name || (profile.cv_url ? 'CV uploaded' : ''),
           cvUrl: profile.cv_url || '',
           hasNiNumber: profile.has_ni_number || false,
-          hasBankAccount: profile.has_bank_account || false,
           hasRightToWork: profile.has_right_to_work || false,
           hasP45: profile.has_p45 || false,
-          bankName: '',
-          sortCode: '',
-          accountNumber: '',
-          accountHolderName: '',
         })
       }
     } catch (err) {
@@ -601,7 +591,7 @@ export default function ProfilePage() {
             )}
 
             {/* Verification Badges */}
-            {(profileData?.hasNiNumber || profileData?.hasBankAccount || profileData?.hasRightToWork || profileData?.hasP45) && (
+            {(profileData?.hasNiNumber || profileData?.hasRightToWork || profileData?.hasP45) && (
               <div className={styles.sideCard}>
                 <h3 className={styles.sideCardTitle}>Verified Documents</h3>
                 <div className={styles.verifyList}>
@@ -609,12 +599,6 @@ export default function ProfilePage() {
                     <div className={styles.verifyItem}>
                       <span className={styles.verifyCheck}>✓</span>
                       <span>NI Number</span>
-                    </div>
-                  )}
-                  {profileData.hasBankAccount && (
-                    <div className={styles.verifyItem}>
-                      <span className={styles.verifyCheck}>✓</span>
-                      <span>UK Bank Account</span>
                     </div>
                   )}
                   {profileData.hasRightToWork && (
@@ -627,43 +611,6 @@ export default function ProfilePage() {
                     <div className={styles.verifyItem}>
                       <span className={styles.verifyCheck}>✓</span>
                       <span>P45 Available</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Bank Details (private) */}
-            {!employerPreview && (profileData?.bankName || profileData?.sortCode || profileData?.accountNumber) && (
-              <div className={styles.sideCard}>
-                <h3 className={styles.sideCardTitle}>Bank Details</h3>
-                <div className={styles.bankPrivateNote}>
-                  <span>🔒</span>
-                  <span>Bank details are private and never shown to employers</span>
-                </div>
-                <div className={styles.detailsList}>
-                  {profileData.bankName && (
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Bank</span>
-                      <span className={styles.detailValue}>{profileData.bankName}</span>
-                    </div>
-                  )}
-                  {profileData.accountHolderName && (
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Account Holder</span>
-                      <span className={styles.detailValue}>{profileData.accountHolderName}</span>
-                    </div>
-                  )}
-                  {profileData.sortCode && (
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Sort Code</span>
-                      <span className={styles.detailValue}>••-••-{profileData.sortCode.slice(-2)}</span>
-                    </div>
-                  )}
-                  {profileData.accountNumber && (
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Account Number</span>
-                      <span className={styles.detailValue}>****{profileData.accountNumber.slice(-4)}</span>
                     </div>
                   )}
                 </div>

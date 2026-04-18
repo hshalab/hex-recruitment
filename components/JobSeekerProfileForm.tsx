@@ -264,19 +264,12 @@ interface ProfileFormData {
 
   // Documents checkboxes
   hasNiNumber: boolean
-  hasBankAccount: boolean
   hasRightToWork: boolean
   hasP45: boolean
 
   // Account
   password: string
   confirmPassword: string
-
-  // Bank Details
-  bankName: string
-  sortCode: string
-  accountNumber: string
-  accountHolderName: string
 }
 
 interface JobSeekerProfileFormProps {
@@ -384,15 +377,10 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     education: (existingData as any)?.education || [{ institution: '', qualification: '', fieldOfStudy: '', startDate: '', endDate: '', inProgress: false, grade: '' }],
     languages: (existingData as any)?.languages || [{ name: '', proficiency: 'Conversational' as const }],
     hasNiNumber: existingData?.hasNiNumber || false,
-    hasBankAccount: existingData?.hasBankAccount || false,
     hasRightToWork: existingData?.hasRightToWork || false,
     hasP45: existingData?.hasP45 || false,
     password: '',
     confirmPassword: '',
-    bankName: existingData?.bankName || '',
-    sortCode: existingData?.sortCode || '',
-    accountNumber: existingData?.accountNumber || '',
-    accountHolderName: existingData?.accountHolderName || '',
   })
 
   const [dobDay, setDobDay] = useState(() => {
@@ -693,13 +681,8 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             instagramUrl: normalizeUrl(formData.instagramUrl),
             cvFileName: formData.cvFileName,
             hasNiNumber: formData.hasNiNumber,
-            hasBankAccount: formData.hasBankAccount,
             hasRightToWork: formData.hasRightToWork,
             hasP45: formData.hasP45,
-            bankName: formData.bankName,
-            sortCode: formData.sortCode,
-            accountNumber: formData.accountNumber,
-            accountHolderName: formData.accountHolderName,
             photoPreview: formData.photoPreview,
             // Free trial - 14 days
             accountStatus: 'trial',
@@ -825,13 +808,8 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             instagram_url: normalizeUrl(formData.instagramUrl) || null,
             ...(formData.facebookUrl ? { facebook_url: normalizeUrl(formData.facebookUrl) } : {}),
             has_ni_number: formData.hasNiNumber,
-            has_bank_account: formData.hasBankAccount,
             has_right_to_work: formData.hasRightToWork,
             has_p45: formData.hasP45,
-            bank_name: formData.bankName || null,
-            sort_code: formData.sortCode || null,
-            account_number: formData.accountNumber || null,
-            account_holder_name: formData.accountHolderName || null,
             account_status: 'trial',
             trial_start_date: now.toISOString(),
             trial_expires_at: trialExpiresAt.toISOString(),
@@ -896,13 +874,8 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             instagramUrl: normalizeUrl(formData.instagramUrl),
             cvFileName: formData.cvFileName,
             hasNiNumber: formData.hasNiNumber,
-            hasBankAccount: formData.hasBankAccount,
             hasRightToWork: formData.hasRightToWork,
             hasP45: formData.hasP45,
-            bankName: formData.bankName,
-            sortCode: formData.sortCode,
-            accountNumber: formData.accountNumber,
-            accountHolderName: formData.accountHolderName,
             photoPreview: formData.photoPreview,
             updatedAt: new Date().toISOString(),
           }
@@ -989,13 +962,8 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           ...(formData.facebookUrl ? { facebook_url: normalizeUrl(formData.facebookUrl) } : {}),
           cv_file_name: formData.cvFileName || null,
           has_ni_number: formData.hasNiNumber,
-          has_bank_account: formData.hasBankAccount,
           has_right_to_work: formData.hasRightToWork,
           has_p45: formData.hasP45,
-          bank_name: formData.bankName || null,
-          sort_code: formData.sortCode || null,
-          account_number: formData.accountNumber || null,
-          account_holder_name: formData.accountHolderName || null,
           updated_at: new Date().toISOString(),
         }
 
@@ -2099,20 +2067,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         <label className={styles.checkboxItem}>
           <input
             type="checkbox"
-            name="hasBankAccount"
-            checked={formData.hasBankAccount}
-            onChange={handleInputChange}
-          />
-          <span className={styles.checkmark}></span>
-          <div className={styles.checkboxContent}>
-            <span className={styles.checkboxLabel}>UK Bank Account</span>
-            <span className={styles.checkboxHint}>For subscription payments</span>
-          </div>
-        </label>
-
-        <label className={styles.checkboxItem}>
-          <input
-            type="checkbox"
             name="hasRightToWork"
             checked={formData.hasRightToWork}
             onChange={handleInputChange}
@@ -2266,72 +2220,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         </div>
       )}
 
-      <div className={styles.divider}>
-        <span>Bank Details (Optional)</span>
-      </div>
-
-      <p className={styles.bankHint}>
-        You can add bank details later. These details will be used for subscription payments after your free trial ends.
-      </p>
-
-      <div className={styles.formGroup}>
-        <label className={styles.label} htmlFor="bankName">Bank Name</label>
-        <input
-          type="text"
-          id="bankName"
-          name="bankName"
-          value={formData.bankName}
-          onChange={handleInputChange}
-          className={styles.input}
-          placeholder="e.g. Barclays, HSBC, Lloyds"
-          autoComplete="off"
-        />
-      </div>
-
-      <div className={styles.formGroup}>
-        <label className={styles.label} htmlFor="accountHolderName">Account Holder Name</label>
-        <input
-          type="text"
-          id="accountHolderName"
-          name="accountHolderName"
-          value={formData.accountHolderName}
-          onChange={handleInputChange}
-          className={styles.input}
-          placeholder="Name as it appears on your bank account"
-          autoComplete="cc-name"
-        />
-      </div>
-
-      <div className={styles.formRow}>
-        <div className={styles.formGroup}>
-          <label className={styles.label} htmlFor="sortCode">Sort Code</label>
-          <input
-            type="text"
-            id="sortCode"
-            name="sortCode"
-            value={formData.sortCode}
-            onChange={handleInputChange}
-            className={styles.input}
-            placeholder="00-00-00"
-            maxLength={8}
-            autoComplete="off"
-          />
-        </div>
-        <div className={styles.formGroup}>
-          <label className={styles.label} htmlFor="accountNumber">Account Number</label>
-          <input
-            type="text"
-            id="accountNumber"
-            name="accountNumber"
-            value={formData.accountNumber}
-            onChange={handleInputChange}
-            className={styles.input}
-            placeholder="12345678"
-            maxLength={8}
-            autoComplete="off"
-          />
-        </div>
-      </div>
     </div>
   )
 
