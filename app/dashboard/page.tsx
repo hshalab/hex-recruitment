@@ -11,10 +11,10 @@ import { useJobs } from '@/lib/JobsContext'
 import { useMessages } from '@/lib/MessagesContext'
 import { useSavedJobs } from '@/lib/useSavedJobs'
 import { scoreAndRankJobs, RecommendedJob } from '@/lib/recommendations'
-import { Boost, PROFILE_BOOST_TIERS, getDaysRemaining } from '@/lib/boostTypes'
+import { Boost, getDaysRemaining } from '@/lib/boostTypes'
 import { Notification, formatNotificationTime } from '@/lib/mockNotifications'
 import Header from '@/components/Header'
-import BoostModal from '@/components/BoostModal'
+import ProfileBoostPaymentModal from '@/components/ProfileBoostPaymentModal'
 import styles from './page.module.css'
 
 // ── Helpers ─────────────────────────────────────────────
@@ -1139,8 +1139,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Boost Modal */}
-      <BoostModal
+      {/* Profile Boost Payment Modal */}
+      <ProfileBoostPaymentModal
         isOpen={boostModalOpen}
         onClose={() => setBoostModalOpen(false)}
         onSuccess={async () => {
@@ -1160,10 +1160,9 @@ export default function DashboardPage() {
             } catch { /* ignore */ }
           }
         }}
-        boostType="profile"
+        userId={user?.id || ''}
+        userEmail={user?.email || ''}
         targetId={user?.id || ''}
-        targetLabel="Your Profile"
-        tiers={PROFILE_BOOST_TIERS}
       />
     </main>
   )
