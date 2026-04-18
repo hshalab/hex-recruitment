@@ -836,53 +836,55 @@ function MyJobsContent() {
                           </div>
                         )}
 
-                        <button
-                          className={styles.cardAction}
-                          onClick={(e) => { e.stopPropagation(); router.push(`/my-jobs/${job.id}/applications`) }}
-                        >
-                          👥 {job.applicationCount} {job.applicationCount === 1 ? 'application' : 'applications'}
-                        </button>
-                        <button
-                          className={styles.cardAction}
-                          onClick={() => router.push(`/employer/analytics/${job.id}`)}
-                        >
-                          👁 {job.viewCount} {job.viewCount === 1 ? 'view' : 'views'}
-                        </button>
-                        <button
-                          className={styles.cardAction}
-                          onClick={() => router.push(`/employer/analytics/${job.id}`)}
-                        >
-                          ↗ View Analytics
-                        </button>
-                        <button
-                          className={styles.cardAction}
-                          onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
-                        >
-                          View Job
-                        </button>
-                        <button
-                          className={styles.cardAction}
-                          onClick={() => router.push(`/candidates?jobId=${job.id}`)}
-                        >
-                          Find Candidates
-                        </button>
+                        <div className={styles.cardActions}>
+                          <button
+                            className={styles.cardAction}
+                            onClick={(e) => { e.stopPropagation(); router.push(`/my-jobs/${job.id}/applications`) }}
+                          >
+                            👥 {job.applicationCount} {job.applicationCount === 1 ? 'application' : 'applications'}
+                          </button>
+                          <button
+                            className={styles.cardAction}
+                            onClick={() => router.push(`/employer/analytics/${job.id}`)}
+                          >
+                            👁 {job.viewCount} {job.viewCount === 1 ? 'view' : 'views'}
+                          </button>
+                          <button
+                            className={styles.cardAction}
+                            onClick={() => router.push(`/employer/analytics/${job.id}`)}
+                          >
+                            ↗ View Analytics
+                          </button>
+                          <button
+                            className={styles.cardAction}
+                            onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
+                          >
+                            View Job
+                          </button>
+                          <button
+                            className={styles.cardAction}
+                            onClick={() => router.push(`/candidates?jobId=${job.id}`)}
+                          >
+                            Find Candidates
+                          </button>
 
-                        {(job.status === 'archived' || job.status === 'filled') && (
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => handleReactivateJob(job.id)}
-                          >
-                            Reactivate
-                          </button>
-                        )}
-                        {job.status === 'archived' && (
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => handleRepostJob(job)}
-                          >
-                            Repost Job
-                          </button>
-                        )}
+                          {(job.status === 'archived' || job.status === 'filled') && (
+                            <button
+                              className={styles.cardAction}
+                              onClick={() => handleReactivateJob(job.id)}
+                            >
+                              Reactivate
+                            </button>
+                          )}
+                          {job.status === 'archived' && (
+                            <button
+                              className={styles.cardAction}
+                              onClick={() => handleRepostJob(job)}
+                            >
+                              Repost Job
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <div className={styles.cardBottom}>
