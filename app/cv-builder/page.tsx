@@ -81,6 +81,10 @@ export default function CVBuilderPage() {
   const [cvId, setCvId] = useState<string | null>(null)
   const [skillInput, setSkillInput] = useState('')
   const [showPreview, setShowPreview] = useState(false)
+  const [uploadMode, setUploadMode] = useState<'choose' | 'upload' | 'build' | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // AI Assist state
   const [aiModalOpen, setAiModalOpen] = useState(false)
@@ -99,6 +103,7 @@ export default function CVBuilderPage() {
     const load = async () => {
       try {
         let uid: string | null = null
+        let hasExistingCV = false
 
         if (DEV_MODE) {
           const saved = localStorage.getItem('currentTestProfile')
@@ -188,25 +193,22 @@ export default function CVBuilderPage() {
             if (existingCV) {
               setCvId(existingCV.id)
               setCvData(existingCV.cv_data as CVData)
+              hasExistingCV = true
             }
           }
         }
 
         setUserId(uid)
+        // If user already has a saved CV, go straight to the builder
+        setUploadMode(hasExistingCV ? 'build' : 'choose')
       } catch {
-        // Load failed — loading state handled in finally
+        setUploadMode('choose')
       } finally {
         setLoading(false)
       }
     }
     load()
   }, [])
-
-  // Reset saved indicator when user edits any field
-  useEffect(() => {
-    if (saved) setSaved(false)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cvData])
 
   // Save CV to Supabase
   const saveCV = useCallback(async () => {
@@ -241,6 +243,63 @@ export default function CVBuilderPage() {
       setSaving(false)
     }
   }, [userId, cvId, cvData])
+
+  // Upload an existing CV file (PDF or Word)
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !userId) return
+
+    const allowed = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    if (!allowed.includes(file.type)) {
+      setUploadError('Please upload a PDF or Word document.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File must be under 5 MB.')
+      return
+    }
+
+    setUploading(true)
+    setUploadError(null)
+
+    try {
+      const ext = file.name.split('.').pop() || 'pdf'
+      const path = `${userId}/cv-${Date.now()}.${ext}`
+
+      const { error: storageErr } = await supabase.storage
+        .from('profiles')
+        .upload(path, file, { upsert: true })
+      if (storageErr) throw storageErr
+
+      const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path)
+      const fileUrl = urlData?.publicUrl || ''
+
+      // Save a CV record pointing to the uploaded file
+      const { data: inserted } = await supabase
+        .from('candidate_cvs')
+        .insert({
+          user_id: userId,
+          title: file.name,
+          cv_data: { ...emptyCV(), uploadedFileUrl: fileUrl, uploadedFileName: file.name },
+          is_primary: true,
+        })
+        .select('id')
+        .single()
+      if (inserted) setCvId(inserted.id)
+
+      // Also store the URL on the candidate profile for easy access
+      await supabase
+        .from('candidate_profiles')
+        .update({ cv_url: fileUrl })
+        .eq('user_id', userId)
+
+      setUploadMode('build')
+    } catch (err: any) {
+      setUploadError(err.message || 'Upload failed. Please try again.')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   // Auto-save on step change
   useEffect(() => {
@@ -1106,7 +1165,41 @@ export default function CVBuilderPage() {
         </div>
       </section>
 
-      <div className={styles.layout}>
+      {uploadMode === 'choose' && (
+        <div style={{ maxWidth: 560, margin: '2rem auto', padding: '0 1rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>How would you like to get started?</h2>
+          <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.95rem' }}>Upload an existing CV or build one from scratch.</p>
+
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            style={{ border: '2px dashed #d1d5db', borderRadius: 10, padding: '2rem', textAlign: 'center', cursor: 'pointer', marginBottom: '1rem', background: '#f8fafc', transition: 'border-color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#16a34a')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = '#d1d5db')}
+          >
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📄</div>
+            <div style={{ fontWeight: 600, fontSize: '1rem' }}>Upload your CV</div>
+            <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '0.25rem' }}>PDF or Word — max 5 MB</div>
+            {uploading && <div style={{ marginTop: '0.75rem', color: '#16a34a', fontWeight: 500 }}>Uploading...</div>}
+            {uploadError && <div style={{ marginTop: '0.75rem', color: '#dc2626', fontSize: '0.85rem' }}>{uploadError}</div>}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              style={{ display: 'none' }}
+              onChange={handleFileUpload}
+            />
+          </div>
+
+          <button
+            onClick={() => setUploadMode('build')}
+            style={{ width: '100%', padding: '0.875rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem' }}
+          >
+            Build from scratch
+          </button>
+        </div>
+      )}
+
+      {uploadMode !== 'choose' && <div className={styles.layout}>
         {/* LEFT: Form */}
         <div className={`${styles.formPanel} ${showPreview ? styles.formPanelHidden : ''}`}>
           {/* Progress Bar */}
@@ -1158,7 +1251,7 @@ export default function CVBuilderPage() {
             {renderPreview()}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* AI Assist Modal */}
       {aiModalOpen && (

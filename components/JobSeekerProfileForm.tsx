@@ -327,14 +327,18 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Auto-dismiss toast after 4 seconds
+  // After successful edit save, redirect to dashboard after a short delay
+  // so the user sees the success toast before navigating away.
   useEffect(() => {
     if (success && mode === 'edit') {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
-      toastTimerRef.current = setTimeout(() => setSuccess(false), 4000)
+      toastTimerRef.current = setTimeout(() => {
+        setSuccess(false)
+        router.push('/dashboard')
+      }, 1500)
     }
     return () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current) }
-  }, [success, mode])
+  }, [success, mode, router])
 
   // Testing mode only enabled when DEV_MODE is true
   const isTestingMode = DEV_MODE

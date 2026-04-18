@@ -87,8 +87,15 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
     return `£${job.salaryMin.toLocaleString()} - £${job.salaryMax.toLocaleString()} per year`
   }
 
+  const [cvError, setCvError] = useState<string | null>(null)
+
   const handleSubmit = async () => {
+    setCvError(null)
     if (coverLetterRequired && !coverLetter.trim()) return
+    if (cvRequired && !cvUrl) {
+      setCvError('This job requires a CV. Please upload one in the CV Builder before applying.')
+      return
+    }
     setIsSubmitting(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -321,6 +328,11 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
               </div>
             </div>
 
+            {cvError && (
+              <div style={{ color: '#dc2626', background: '#fef2f2', padding: '0.75rem 1rem', borderRadius: 8, fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                {cvError} <Link href="/cv-builder" style={{ color: '#dc2626', fontWeight: 600 }}>Go to CV Builder</Link>
+              </div>
+            )}
             <div className={styles.footer}>
               <button className={styles.cancelBtn} onClick={onClose}>
                 Cancel
@@ -328,7 +340,7 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
               <button
                 className={styles.submitBtn}
                 onClick={handleSubmit}
-                disabled={isSubmitting || (coverLetterRequired && !coverLetter.trim())}
+                disabled={isSubmitting || (coverLetterRequired && !coverLetter.trim()) || (cvRequired && !cvUrl)}
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Application'}
               </button>
