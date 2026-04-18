@@ -69,36 +69,11 @@ export async function GET(request: NextRequest) {
 
   console.log('[employer-callback] session ok', { userId: user.id, existingRole })
 
-  // Returning employer — check if they've completed payment setup
-  if (existingRole === 'employer') {
-    const admin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { persistSession: false } }
-    )
-    const { data: sub } = await admin
-      .from('employer_subscriptions')
-      .select('stripe_subscription_id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    if (!sub?.stripe_subscription_id) {
-      // No Stripe subscription yet — send to payment page
-      const paymentRedirect = NextResponse.redirect(`${origin}/register/employer/payment`)
-      response.cookies.getAll().forEach(cookie => {
-        paymentRedirect.cookies.set(cookie)
-      })
-      return paymentRedirect
-    }
-    return response
-  }
-
   // Wrong role
   if (existingRole && existingRole !== 'employer') {
     return NextResponse.redirect(`${origin}/login/employer?error=wrong-role&have=${existingRole}`)
   }
 
-  // New user — stamp role + create profile + subscription
   const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
   const companyName = companyNameFromEmail(user.email)
 
@@ -108,14 +83,30 @@ export async function GET(request: NextRequest) {
     { auth: { persistSession: false } }
   )
 
-  await admin.auth.admin.updateUserById(user.id, {
-    user_metadata: { ...user.user_metadata, role: 'employer', full_name: displayName },
-  })
+  // Stamp role for new users (safe to skip if already set)
+  if (!existingRole) {
+    await admin.auth.admin.updateUserById(user.id, {
+      user_metadata: { ...user.user_metadata, role: 'employer', full_name: displayName },
+    })
+  }
 
+  // Always ensure profile + subscription rows exist (handles deleted-and-recreated accounts)
   await admin.from('employer_profiles').upsert(
     { user_id: user.id, company_name: companyName, contact_name: displayName, email: user.email || '' },
-    { onConflict: 'user_id', ignoreDuplicates: false }
+    { onConflict: 'user_id', ignoreDuplicates: true }
   )
+
+  // Check if they've completed payment setup
+  const { data: sub } = await admin
+    .from('employer_subscriptions')
+    .select('stripe_subscription_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (sub?.stripe_subscription_id) {
+    // Active subscription — go to dashboard
+    return response
+  }
 
   fetch(`${origin}/api/email/send`, {
     method: 'POST',

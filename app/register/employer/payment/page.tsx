@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { supabase } from '@/lib/supabase'
+import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 import Header from '@/components/Header'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -125,8 +126,12 @@ export default function EmployerPaymentPage() {
 
   useEffect(() => {
     const init = async () => {
-      // Get session
-      const { data: { session } } = await supabase.auth.getSession()
+      // Get session — try localStorage first, then hydrate from SSR cookies
+      // (after OAuth redirect, localStorage is empty but cookies are set)
+      let session = (await supabase.auth.getSession()).data.session
+      if (!session) {
+        session = await hydrateSessionFromCookies()
+      }
       if (!session?.user) {
         router.push('/login/employer')
         return
