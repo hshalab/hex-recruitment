@@ -801,14 +801,6 @@ function MyJobsContent() {
                       </div>
 
                       <div className={styles.cardContent}>
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.cardAction}
-                        >
-                          📍 {job.location}
-                        </a>
                         {job.expiresDate && (
                           <p className={styles.cardMeta}>Closes: {formatDate(job.expiresDate)}</p>
                         )}
@@ -837,6 +829,22 @@ function MyJobsContent() {
                         )}
 
                         <div className={styles.cardActions}>
+                          {/* Row 1 */}
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.cardAction}
+                          >
+                            📍 {job.location}
+                          </a>
+                          <button
+                            className={styles.cardAction}
+                            onClick={() => router.push(`/employer/analytics/${job.id}`)}
+                          >
+                            👁 {job.viewCount} {job.viewCount === 1 ? 'view' : 'views'}
+                          </button>
+                          {/* Row 2 */}
                           <button
                             className={styles.cardAction}
                             onClick={(e) => { e.stopPropagation(); router.push(`/my-jobs/${job.id}/applications`) }}
@@ -845,21 +853,16 @@ function MyJobsContent() {
                           </button>
                           <button
                             className={styles.cardAction}
-                            onClick={() => router.push(`/employer/analytics/${job.id}`)}
+                            onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
                           >
-                            👁 {job.viewCount} {job.viewCount === 1 ? 'view' : 'views'}
+                            View Job
                           </button>
+                          {/* Row 3 */}
                           <button
                             className={styles.cardAction}
                             onClick={() => router.push(`/employer/analytics/${job.id}`)}
                           >
                             ↗ View Analytics
-                          </button>
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
-                          >
-                            View Job
                           </button>
                           <button
                             className={styles.cardAction}
