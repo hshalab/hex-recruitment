@@ -97,7 +97,7 @@ ${data.companyDescription ? `About the company: ${data.companyDescription}` : ''
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 800,
+          max_tokens: 2048,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }],
         }),
@@ -110,7 +110,11 @@ ${data.companyDescription ? `About the company: ${data.companyDescription}` : ''
       }
 
       const aiResult = await aiResponse.json()
-      const rawText = aiResult.content?.[0]?.text || ''
+      let rawText = aiResult.content?.[0]?.text || ''
+
+      // Strip markdown fences (```json ... ```) that the model adds
+      // despite being told not to
+      rawText = rawText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
 
       // Robust JSON extraction — try direct parse first, then regex fallback
       let jobAd: Record<string, string> | null = null
@@ -128,7 +132,7 @@ ${data.companyDescription ? `About the company: ${data.companyDescription}` : ''
       }
 
       if (!jobAd) {
-        console.error('Failed to parse job-ad JSON:', rawText)
+        console.error('Failed to parse job-ad JSON:', rawText.slice(0, 500))
         return NextResponse.json({ error: 'AI returned invalid format' }, { status: 502 })
       }
 
