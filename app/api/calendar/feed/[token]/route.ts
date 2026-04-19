@@ -82,11 +82,10 @@ export async function GET(
     if (candidateIds.length) {
       const { data: candidates } = await supabaseAdmin
         .from('candidate_profiles')
-        .select('user_id, full_name, first_name, last_name')
+        .select('user_id, full_name')
         .in('user_id', candidateIds)
       for (const c of candidates || []) {
-        const fallback = [c.first_name, c.last_name].filter(Boolean).join(' ')
-        nameByCandidate.set(c.user_id, c.full_name || fallback || 'Candidate')
+        nameByCandidate.set(c.user_id, c.full_name || 'Candidate')
       }
     }
 
