@@ -246,6 +246,64 @@ export default function CalendarPage() {
   }, [])
   const [selected, setSelected] = useState<Event | null>(null)
   const [rescheduleOpen, setRescheduleOpen] = useState(false)
+
+  // Inline editing state for event detail modal
+  const [editField, setEditField] = useState<'date' | 'time' | 'type' | null>(null)
+  const [editDate, setEditDate] = useState('')
+  const [editTime, setEditTime] = useState('')
+  const [editType, setEditType] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  // Reset edit state when selection changes
+  useEffect(() => {
+    if (selected) {
+      setEditDate(selected.date)
+      setEditTime(selected.time)
+      setEditType(selected.interviewType)
+      setEditField(null)
+    }
+  }, [selected])
+
+  const handleInlineUpdate = async () => {
+    if (!selected || !userId) return
+    setSaving(true)
+    try {
+      const updates: Record<string, any> = {}
+      if (editDate !== selected.date) updates.interview_date = editDate
+      if (editTime !== selected.time) updates.interview_time = editTime
+      if (editType !== selected.interviewType) updates.interview_type = editType
+
+      if (Object.keys(updates).length === 0) { setEditField(null); setSaving(false); return }
+
+      // Update interviews table
+      if (selected.interviewId) {
+        await supabase.from('interviews').update(updates).eq('id', selected.interviewId)
+      }
+
+      // Update interview_bookings if the row exists
+      const bookingUpdates: Record<string, any> = {}
+      if (updates.interview_date) bookingUpdates.booked_date = updates.interview_date
+      if (updates.interview_time) bookingUpdates.booked_time = updates.interview_time
+      if (Object.keys(bookingUpdates).length > 0 && selected.interviewId) {
+        await supabase.from('interview_bookings').update(bookingUpdates).eq('interview_id', selected.interviewId)
+      }
+
+      // Update local state
+      setSelected(prev => prev ? {
+        ...prev,
+        date: editDate,
+        time: editTime,
+        interviewType: editType,
+      } : null)
+
+      setEditField(null)
+      if (userId) loadEvents(userId)
+    } catch (err) {
+      console.error('[calendar] inline update failed:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
   const [now, setNow] = useState<Date>(new Date())
 
   // Tick the "now" line every minute
@@ -781,17 +839,49 @@ export default function CalendarPage() {
 
               <div className={styles.modalRow}>
                 <span className={styles.modalRowLabel}>Date</span>
-                <span className={styles.modalRowValue}>
-                  {new Date(`${selected.date}T${selected.time}:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
+                {editField === 'date' ? (
+                  <span className={styles.modalRowValue} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} style={{ fontSize: '0.9rem', padding: '0.25rem 0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }} />
+                    <button onClick={handleInlineUpdate} disabled={saving} style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a', background: 'none', border: 'none', cursor: 'pointer' }}>{saving ? '...' : 'Save'}</button>
+                    <button onClick={() => { setEditDate(selected.date); setEditField(null) }} style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                  </span>
+                ) : (
+                  <span className={styles.modalRowValue} onClick={() => selected.status !== 'cancelled' && setEditField('date')} style={{ cursor: selected.status !== 'cancelled' ? 'pointer' : 'default', textDecoration: selected.status !== 'cancelled' ? 'underline dotted #d1d5db' : 'none' }}>
+                    {new Date(`${editDate}T${editTime}:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
+                )}
               </div>
               <div className={styles.modalRow}>
                 <span className={styles.modalRowLabel}>Time</span>
-                <span className={styles.modalRowValue}>{fmt12(selected.time)} · {selected.duration} min</span>
+                {editField === 'time' ? (
+                  <span className={styles.modalRowValue} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <input type="time" value={editTime} onChange={e => setEditTime(e.target.value)} style={{ fontSize: '0.9rem', padding: '0.25rem 0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }} />
+                    <button onClick={handleInlineUpdate} disabled={saving} style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a', background: 'none', border: 'none', cursor: 'pointer' }}>{saving ? '...' : 'Save'}</button>
+                    <button onClick={() => { setEditTime(selected.time); setEditField(null) }} style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                  </span>
+                ) : (
+                  <span className={styles.modalRowValue} onClick={() => selected.status !== 'cancelled' && setEditField('time')} style={{ cursor: selected.status !== 'cancelled' ? 'pointer' : 'default', textDecoration: selected.status !== 'cancelled' ? 'underline dotted #d1d5db' : 'none' }}>
+                    {fmt12(editTime)} · {selected.duration} min
+                  </span>
+                )}
               </div>
               <div className={styles.modalRow}>
                 <span className={styles.modalRowLabel}>Type</span>
-                <span className={styles.modalRowValue}>{selected.interviewType}</span>
+                {editField === 'type' ? (
+                  <span className={styles.modalRowValue} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <select value={editType} onChange={e => setEditType(e.target.value)} style={{ fontSize: '0.9rem', padding: '0.25rem 0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}>
+                      <option value="in-person">In-Person</option>
+                      <option value="video">Video Call</option>
+                      <option value="phone">Phone Call</option>
+                    </select>
+                    <button onClick={handleInlineUpdate} disabled={saving} style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a', background: 'none', border: 'none', cursor: 'pointer' }}>{saving ? '...' : 'Save'}</button>
+                    <button onClick={() => { setEditType(selected.interviewType); setEditField(null) }} style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                  </span>
+                ) : (
+                  <span className={styles.modalRowValue} onClick={() => selected.status !== 'cancelled' && setEditField('type')} style={{ cursor: selected.status !== 'cancelled' ? 'pointer' : 'default', textDecoration: selected.status !== 'cancelled' ? 'underline dotted #d1d5db' : 'none' }}>
+                    {editType === 'in-person' ? 'In-Person' : editType === 'video' ? 'Video Call' : 'Phone Call'}
+                  </span>
+                )}
               </div>
               {selected.interviewType === 'video' && selected.meetingLink && (
                 <div className={styles.modalRow}>
