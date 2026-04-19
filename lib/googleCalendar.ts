@@ -186,6 +186,41 @@ export async function deleteCalendarEvent(
 }
 
 /**
+ * Query Google Calendar's freeBusy API to get busy periods for a calendar.
+ * Returns an array of { start, end } ISO strings representing busy times.
+ */
+export async function fetchFreeBusy(
+  accessToken: string,
+  calendarId: string,
+  timeMin: string,
+  timeMax: string
+): Promise<Array<{ start: string; end: string }>> {
+  const res = await fetch(`${GOOGLE_CAL_BASE}/freeBusy`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      timeMin,
+      timeMax,
+      items: [{ id: calendarId }],
+      timeZone: 'Europe/London',
+    }),
+  })
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    console.error('[googleCalendar] freeBusy failed', res.status, text)
+    return []
+  }
+
+  const data = await res.json()
+  const busy = data?.calendars?.[calendarId]?.busy || []
+  return busy as Array<{ start: string; end: string }>
+}
+
+/**
  * Combine a YYYY-MM-DD date and HH:mm time into an ISO string with the
  * correct offset for Europe/London on that date (handles BST/GMT).
  */

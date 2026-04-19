@@ -84,6 +84,7 @@ export default function ScheduleInterviewModal({
   const [mode, setMode] = useState<'calendar' | 'manual'>('calendar')
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([])
   const [slotsLoading, setSlotsLoading] = useState(false)
+  const [hasGcal, setHasGcal] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string>('')
   const [selectedTime, setSelectedTime] = useState<string>('')
 
@@ -109,6 +110,7 @@ export default function ScheduleInterviewModal({
         if (cancelled) return
         const fetched: Slot[] = data.slots || []
         setAvailableSlots(fetched)
+        setHasGcal(!!data.hasGcal)
         if (fetched.length > 0) setMode('calendar')
         // If no slots, don't auto-switch to manual — show the "set up availability" CTA
       } catch {
@@ -615,17 +617,19 @@ export default function ScheduleInterviewModal({
               <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📅</div>
               <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.05rem', fontWeight: 700 }}>No interview slots available</h3>
               <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '0 0 1.25rem', lineHeight: 1.5 }}>
-                Set up your weekly availability so candidates can book interview slots directly from your calendar.
+                {hasGcal
+                  ? 'Your Google Calendar is connected but all slots are booked. Check your calendar or adjust your availability settings.'
+                  : 'Set up your weekly availability so candidates can book interview slots directly from your calendar.'}
               </p>
               <a
-                href="/settings/availability"
+                href={hasGcal ? '/calendar' : '/settings/availability'}
                 style={{
                   display: 'inline-block', padding: '0.625rem 1.25rem', background: '#0f172a',
                   color: '#FFE500', borderRadius: 8, fontWeight: 600, fontSize: '0.9rem',
                   textDecoration: 'none',
                 }}
               >
-                Set up availability
+                {hasGcal ? 'View calendar' : 'Set up availability'}
               </a>
               <div style={{ marginTop: '1rem' }}>
                 <button
@@ -724,7 +728,9 @@ export default function ScheduleInterviewModal({
               {!hasCalendarSlots && (
                 <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '0.625rem 0.75rem', marginBottom: '0.75rem', fontSize: '0.8rem', color: '#92400e' }}>
                   Manual entry — dates won&apos;t sync with your availability calendar.{' '}
-                  <a href="/settings/availability" style={{ color: '#92400e', fontWeight: 600 }}>Set up availability</a>
+                  <a href={hasGcal ? '/calendar' : '/settings/availability'} style={{ color: '#92400e', fontWeight: 600 }}>
+                    {hasGcal ? 'View calendar' : 'Set up availability'}
+                  </a>
                 </div>
               )}
               <p className={styles.slotsLabel}>Propose up to 3 date and time options</p>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getValidAccessToken, fetchFreeBusy } from '@/lib/googleCalendar'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -71,10 +72,37 @@ export async function GET(req: NextRequest) {
         .lte('interview_date', toDateStrVal),
     ])
 
-    const weekly = weeklyRes.data || []
+    let weekly = weeklyRes.data || []
     const overrides = overridesRes.data || []
     const bookings = bookingsRes.data || []
     const interviews = interviewsRes.data || []
+
+    // Check if employer has Google Calendar connected
+    const { data: empProfile } = await supabaseAdmin
+      .from('employer_profiles')
+      .select('gcal_access_token, gcal_refresh_token, gcal_calendar_id')
+      .eq('user_id', employerId)
+      .maybeSingle()
+
+    const hasGcal = !!(empProfile?.gcal_refresh_token && empProfile?.gcal_calendar_id)
+
+    // If no Thrive availability configured but Google Calendar IS connected,
+    // use default working hours (Mon–Fri, 9:00–17:00, 45 min slots).
+    if (weekly.length === 0 && hasGcal) {
+      for (let dow = 0; dow <= 4; dow++) { // Mon=0 .. Fri=4
+        weekly.push({
+          employer_id: employerId,
+          day_of_week: dow,
+          slot_start: '09:00:00',
+          slot_end: '17:00:00',
+          duration_minutes: 45,
+          buffer_minutes: 15,
+          min_notice_hours: 24,
+          max_advance_days: 28,
+          is_active: true,
+        })
+      }
+    }
 
     // Scheduling rules — pull from first active weekly row (same across days)
     const firstRule = weekly[0]
@@ -129,6 +157,32 @@ export async function GET(req: NextRequest) {
     for (const i of interviews) {
       if (!i.interview_date || !i.interview_time) continue
       markBlocked(i.interview_date, parseHm(String(i.interview_time)), i.duration_minutes || 45)
+    }
+
+    // Block times from Google Calendar busy periods
+    if (hasGcal) {
+      try {
+        const accessToken = await getValidAccessToken(employerId)
+        if (accessToken) {
+          const busyPeriods = await fetchFreeBusy(
+            accessToken,
+            empProfile!.gcal_calendar_id,
+            from.toISOString(),
+            to.toISOString()
+          )
+          for (const period of busyPeriods) {
+            const start = new Date(period.start)
+            const end = new Date(period.end)
+            const dateStr = toDateStr(start)
+            const startMin = start.getHours() * 60 + start.getMinutes()
+            const durationMin = Math.ceil((end.getTime() - start.getTime()) / 60000)
+            markBlocked(dateStr, startMin, durationMin)
+          }
+        }
+      } catch (err) {
+        console.error('[calendar/slots] Google Calendar freeBusy error:', err)
+        // Continue without gcal data — don't fail the request
+      }
     }
 
     const blockedDates = new Set(
@@ -194,7 +248,7 @@ export async function GET(req: NextRequest) {
       cursor.setDate(cursor.getDate() + 1)
     }
 
-    return NextResponse.json({ slots })
+    return NextResponse.json({ slots, hasGcal })
   } catch (err: any) {
     console.error('[calendar/slots] error', err)
     return NextResponse.json({ error: err.message || 'Failed' }, { status: 500 })
