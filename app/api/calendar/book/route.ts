@@ -116,6 +116,19 @@ export async function POST(req: NextRequest) {
         .eq('id', applicationId)
     }
 
+    // Get meeting link from the interview (if video call)
+    let bookingMeetingLink: string | null = null
+    if (interviewId) {
+      const { data: ivRow } = await supabaseAdmin
+        .from('interviews')
+        .select('location_or_link')
+        .eq('id', interviewId)
+        .maybeSingle()
+      if (ivRow?.location_or_link?.startsWith('http')) {
+        bookingMeetingLink = ivRow.location_or_link
+      }
+    }
+
     // Format a friendly date for notifications/emails
     const [y, m, d] = String(bookedDate).split('-').map(Number)
     const friendlyDate = new Date(y, (m || 1) - 1, d || 1).toLocaleDateString('en-GB', {
@@ -167,11 +180,12 @@ export async function POST(req: NextRequest) {
           const { data: interviewRow } = interviewId
             ? await supabaseAdmin
                 .from('interviews')
-                .select('interview_type')
+                .select('interview_type, location_or_link')
                 .eq('id', interviewId)
                 .maybeSingle()
             : { data: null as any }
           const interviewType = interviewRow?.interview_type || 'Interview'
+          const interviewLink = interviewRow?.location_or_link?.startsWith('http') ? interviewRow.location_or_link : null
 
           const eventPayload = {
             summary: `Interview: ${candidateName || 'Candidate'} — ${jobTitle || 'Role'}`,
@@ -180,6 +194,7 @@ export async function POST(req: NextRequest) {
               `Candidate: ${candidateName || 'Candidate'}`,
               `Job: ${jobTitle || 'Role'}`,
               `Type: ${interviewType}`,
+              ...(interviewLink ? [`Join: ${interviewLink}`] : []),
             ].join('\n'),
             startIso,
             endIso,
@@ -239,7 +254,7 @@ export async function POST(req: NextRequest) {
       candidateName: candidateName || 'Candidate',
       jobId: null, // resolved from interview if needed
       jobTitle: jobTitle || 'the role',
-      content: `Hi ${candidateName || 'there'}, I've scheduled an interview for ${jobTitle || 'the role'} on ${friendlyDate} at ${bookedTime}. Check your email for the calendar invite.`,
+      content: `Hi ${candidateName || 'there'}, I've scheduled an interview for ${jobTitle || 'the role'} on ${friendlyDate} at ${bookedTime}.${bookingMeetingLink ? ` Meeting link: ${bookingMeetingLink}` : ''} Check your email for the calendar invite.`,
     }).catch(() => {})
 
     return NextResponse.json({ booking, success: true })
