@@ -20,7 +20,6 @@ type BookingRow = {
   status: string
   interviews?: {
     interview_type?: string | null
-    meeting_link?: string | null
     location_or_link?: string | null
     job_id?: string | null
     application_id?: string | null
@@ -300,7 +299,7 @@ export default function CalendarPage() {
         .from('interview_bookings')
         .select(`
           id, interview_id, candidate_id, booked_date, booked_time, duration_minutes, status,
-          interviews ( interview_type, meeting_link, location_or_link, job_id, application_id, jobs ( title ) )
+          interviews ( interview_type, location_or_link, job_id, application_id, jobs ( title ) )
         `)
         .eq('employer_id', uid)
         .gte('booked_date', fromStr)
@@ -345,7 +344,7 @@ export default function CalendarPage() {
         duration: b.duration_minutes || 45,
         status: b.status || 'confirmed',
         interviewType: iv?.interview_type || 'in-person',
-        meetingLink: iv?.meeting_link || '',
+        meetingLink: iv?.location_or_link || '',
         locationOrLink: iv?.location_or_link || '',
       }
     })

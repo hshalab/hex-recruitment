@@ -68,7 +68,7 @@ export async function GET(
       .from('interview_bookings')
       .select(`
         id, ics_uid, booked_date, booked_time, duration_minutes, status, candidate_id,
-        interviews ( interview_type, location_or_link, meeting_link, notes, job_id, candidate_id, jobs ( title ) )
+        interviews ( interview_type, location_or_link, notes, job_id, candidate_id, jobs ( title ) )
       `)
       .eq('employer_id', profile.user_id)
       .order('booked_date', { ascending: true })
@@ -109,19 +109,18 @@ export async function GET(
       const candidateName = nameByCandidate.get(b.candidate_id) || 'Candidate'
       const jobTitle = job?.title || 'Interview'
       const interviewType: string = iv?.interview_type || 'in-person'
-      const meetingLink: string = iv?.meeting_link || ''
       const locationOrLink: string = iv?.location_or_link || ''
       const notes: string = iv?.notes || ''
 
       const summary = `Interview: ${candidateName} — ${jobTitle}`
       const descParts: string[] = [`Type: ${interviewType}`]
-      if (interviewType === 'video' && meetingLink) descParts.push(`Join: ${meetingLink}`)
+      if (interviewType === 'video' && locationOrLink) descParts.push(`Join: ${locationOrLink}`)
       if (notes) descParts.push(`Notes: ${notes}`)
       descParts.push('Managed via Thrive — thrivecareer.co.uk')
       const description = descParts.join('\\n')
 
       const location =
-        interviewType === 'video' ? meetingLink : locationOrLink || ''
+        interviewType === 'video' ? locationOrLink : locationOrLink || ''
 
       const dtstart = formatLocal(String(b.booked_date), String(b.booked_time))
       const dtend = addMinutes(String(b.booked_date), String(b.booked_time), b.duration_minutes || 45)

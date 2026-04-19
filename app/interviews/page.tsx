@@ -188,7 +188,7 @@ export default function InterviewsPage() {
         interviewType: i.interview_type,
         durationMinutes: i.duration_minutes,
         locationOrLink: i.location_or_link || null,
-        meetingLink: i.meeting_link || null,
+        meetingLink: i.location_or_link || null,
         calendarLink: i.calendar_link || null,
         notes: i.notes || null,
         status: i.status,
