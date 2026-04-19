@@ -87,6 +87,10 @@ export default function ScheduleInterviewModal({
   const [hasGcal, setHasGcal] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string>('')
   const [selectedTime, setSelectedTime] = useState<string>('')
+  const [calMonth, setCalMonth] = useState(() => {
+    const now = new Date()
+    return { year: now.getFullYear(), month: now.getMonth() }
+  })
 
   const interviewTypeLabel = INTERVIEW_TYPES.find(t => t.value === interviewType)?.label ?? 'In-Person'
 
@@ -135,10 +139,59 @@ export default function ScheduleInterviewModal({
 
   const availableDates = useMemo(() => Array.from(slotsByDate.keys()).sort(), [slotsByDate])
 
+  // Build the monthly calendar grid
+  const datesWithSlots = useMemo(() => new Set(availableDates), [availableDates])
+  const calendarGrid = useMemo(() => {
+    const { year, month } = calMonth
+    const firstDay = new Date(year, month, 1)
+    // Monday = 0 … Sunday = 6 (ISO week)
+    const startDow = (firstDay.getDay() + 6) % 7
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const cells: Array<{ date: string; day: number; hasSlots: boolean; isPast: boolean; isToday: boolean } | null> = []
+    // Leading blanks
+    for (let i = 0; i < startDow; i++) cells.push(null)
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dt = new Date(year, month, d)
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      cells.push({
+        date: dateStr,
+        day: d,
+        hasSlots: datesWithSlots.has(dateStr),
+        isPast: dt < today,
+        isToday: dt.getTime() === today.getTime(),
+      })
+    }
+    return cells
+  }, [calMonth, datesWithSlots])
+
+  const calMonthLabel = new Date(calMonth.year, calMonth.month).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+
+  const prevMonth = () => {
+    const now = new Date()
+    const current = new Date(calMonth.year, calMonth.month)
+    if (current <= new Date(now.getFullYear(), now.getMonth())) return // can't go before current month
+    setCalMonth(prev => {
+      const d = new Date(prev.year, prev.month - 1)
+      return { year: d.getFullYear(), month: d.getMonth() }
+    })
+  }
+  const nextMonth = () => {
+    setCalMonth(prev => {
+      const d = new Date(prev.year, prev.month + 1)
+      return { year: d.getFullYear(), month: d.getMonth() }
+    })
+  }
+
   // Auto-select first available date when slots load
   useEffect(() => {
     if (mode === 'calendar' && availableDates.length > 0 && !selectedDate) {
       setSelectedDate(availableDates[0])
+      // Jump calendar to the month of the first available date
+      const [y, m] = availableDates[0].split('-').map(Number)
+      setCalMonth({ year: y, month: m - 1 })
     }
   }, [mode, availableDates, selectedDate])
 
@@ -669,31 +722,59 @@ export default function ScheduleInterviewModal({
 
           {mode === 'calendar' && hasCalendarSlots && (
             <>
-              <p className={styles.calendarLabel}>Pick a date</p>
-              <div className={styles.dateStrip}>
-                {availableDates.map(dateStr => {
-                  const parts = formatDateParts(dateStr)
-                  const active = dateStr === selectedDate
-                  return (
-                    <button
-                      key={dateStr}
-                      type="button"
-                      className={`${styles.datePill} ${active ? styles.datePillActive : ''}`}
-                      onClick={() => { setSelectedDate(dateStr); setSelectedTime('') }}
-                    >
-                      <span>{parts.weekday}</span>
-                      <span className={styles.datePillDay}>{parts.day}</span>
-                      <span>{parts.month}</span>
-                    </button>
-                  )
-                })}
+              {/* Monthly calendar grid */}
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <button type="button" onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer', padding: '0.25rem 0.5rem', color: '#64748b' }}>&#8249;</button>
+                  <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{calMonthLabel}</span>
+                  <button type="button" onClick={nextMonth} style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer', padding: '0.25rem 0.5rem', color: '#64748b' }}>&#8250;</button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center' }}>
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
+                    <div key={d} style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', padding: '0.25rem 0' }}>{d}</div>
+                  ))}
+                  {calendarGrid.map((cell, i) => {
+                    if (!cell) return <div key={`blank-${i}`} />
+                    const isSelected = cell.date === selectedDate
+                    const disabled = !cell.hasSlots || cell.isPast
+                    return (
+                      <button
+                        key={cell.date}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => { if (!disabled) { setSelectedDate(cell.date); setSelectedTime('') } }}
+                        style={{
+                          padding: '0.4rem 0',
+                          fontSize: '0.85rem',
+                          fontWeight: isSelected ? 700 : cell.isToday ? 600 : 400,
+                          background: isSelected ? '#0f172a' : 'transparent',
+                          color: isSelected ? '#FFE500' : disabled ? '#d1d5db' : cell.hasSlots ? '#0f172a' : '#94a3b8',
+                          border: cell.isToday && !isSelected ? '1px solid #0f172a' : '1px solid transparent',
+                          borderRadius: 6,
+                          cursor: disabled ? 'default' : 'pointer',
+                          transition: 'background 0.15s, color 0.15s',
+                          position: 'relative',
+                        }}
+                      >
+                        {cell.day}
+                        {cell.hasSlots && !isSelected && (
+                          <span style={{ display: 'block', width: 4, height: 4, borderRadius: '50%', background: '#16a34a', margin: '2px auto 0' }} />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
+              {/* Time slots for selected date */}
               {selectedDate && (
                 <>
                   <h3 className={styles.selectedDateHeading}>
                     {formatDateParts(selectedDate).full}
                   </h3>
+                  {selectedDateSlots.length === 0 ? (
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', padding: '1rem 0' }}>No available slots on this date</p>
+                  ) : (
                   <div className={styles.timeGrid}>
                     {selectedDateSlots.map(s => {
                       const active = s.time === selectedTime
@@ -712,6 +793,7 @@ export default function ScheduleInterviewModal({
                       )
                     })}
                   </div>
+                  )}
                 </>
               )}
 
