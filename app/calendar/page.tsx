@@ -53,7 +53,7 @@ type WeeklyRule = {
 
 const DAY_GRID_START = 8 // 08:00
 const DAY_GRID_END = 19 // 19:00 (so 08 → 18 are labelled)
-const HOUR_HEIGHT = 56 // px
+const HOUR_HEIGHT = 80 // px
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const toDateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
