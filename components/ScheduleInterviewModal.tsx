@@ -109,9 +109,10 @@ export default function ScheduleInterviewModal({
         if (cancelled) return
         const fetched: Slot[] = data.slots || []
         setAvailableSlots(fetched)
-        setMode(fetched.length > 0 ? 'calendar' : 'manual')
+        if (fetched.length > 0) setMode('calendar')
+        // If no slots, don't auto-switch to manual — show the "set up availability" CTA
       } catch {
-        if (!cancelled) { setAvailableSlots([]); setMode('manual') }
+        if (!cancelled) { setAvailableSlots([]) }
       } finally {
         if (!cancelled) setSlotsLoading(false)
       }
@@ -608,7 +609,37 @@ export default function ScheduleInterviewModal({
 
           {!slotsLoading && (
           <>
-          {/* Mode toggle — only when calendar slots are available */}
+          {/* No availability — prominent CTA to set up */}
+          {!slotsLoading && !hasCalendarSlots && mode !== 'manual' && (
+            <div style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📅</div>
+              <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.05rem', fontWeight: 700 }}>No interview slots available</h3>
+              <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '0 0 1.25rem', lineHeight: 1.5 }}>
+                Set up your weekly availability so candidates can book interview slots directly from your calendar.
+              </p>
+              <a
+                href="/settings/availability"
+                style={{
+                  display: 'inline-block', padding: '0.625rem 1.25rem', background: '#0f172a',
+                  color: '#FFE500', borderRadius: 8, fontWeight: 600, fontSize: '0.9rem',
+                  textDecoration: 'none',
+                }}
+              >
+                Set up availability
+              </a>
+              <div style={{ marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setMode('manual')}
+                  style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Or enter dates manually
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mode toggle — when calendar slots are available */}
           {hasCalendarSlots && (
             <div className={styles.modeToggle} role="tablist">
               <button
@@ -629,14 +660,6 @@ export default function ScheduleInterviewModal({
               >
                 ✏️ Enter manually
               </button>
-            </div>
-          )}
-
-          {/* No-slots warning (only in manual fallback) */}
-          {!slotsLoading && !hasCalendarSlots && (
-            <div className={styles.noSlots}>
-              No availability configured yet.{' '}
-              <a href="/settings/availability" className={styles.setupLink}>Set up your availability →</a>
             </div>
           )}
 
@@ -698,6 +721,12 @@ export default function ScheduleInterviewModal({
 
           {mode === 'manual' && (
             <div className={styles.slotsSection}>
+              {!hasCalendarSlots && (
+                <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '0.625rem 0.75rem', marginBottom: '0.75rem', fontSize: '0.8rem', color: '#92400e' }}>
+                  Manual entry — dates won&apos;t sync with your availability calendar.{' '}
+                  <a href="/settings/availability" style={{ color: '#92400e', fontWeight: 600 }}>Set up availability</a>
+                </div>
+              )}
               <p className={styles.slotsLabel}>Propose up to 3 date and time options</p>
               {slots.map((slot, i) => (
                 <div key={i} className={styles.slotRow}>
