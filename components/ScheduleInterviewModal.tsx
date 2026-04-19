@@ -79,6 +79,7 @@ export default function ScheduleInterviewModal({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [conflictWarning, setConflictWarning] = useState('')
+  const [letCandidatePick, setLetCandidatePick] = useState(false)
 
   // Calendar-mode state
   const [mode, setMode] = useState<'calendar' | 'manual'>('calendar')
@@ -406,6 +407,83 @@ export default function ScheduleInterviewModal({
   }
 
   // ═══ Manual-mode submit (UNCHANGED legacy logic)
+  // ═══ Self-schedule: create interview with pending_self_schedule status
+  // and send the candidate a link to pick their own time
+  const handleSendSelfSchedule = async () => {
+    setSubmitting(true)
+    setError('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Not authenticated')
+
+      // Create interview row with self-schedule status
+      const { data: newInterview, error: intErr } = await supabase
+        .from('interviews')
+        .insert({
+          application_id: applicationId,
+          job_id: jobId,
+          employer_id: session.user.id,
+          candidate_id: candidateId,
+          interview_date: new Date().toISOString().slice(0, 10), // placeholder
+          interview_time: '00:00',
+          duration_minutes: availableSlots[0]?.duration || 45,
+          interview_type: interviewType,
+          location_or_link: interviewType === 'video' ? (meetingLink.trim() || 'Video Call') : interviewType === 'in-person' ? 'In-Person' : 'Phone Call',
+          notes: notes.trim() || null,
+          status: 'pending_self_schedule',
+        })
+        .select('id, scheduling_token')
+        .single()
+
+      if (intErr || !newInterview) throw intErr || new Error('Failed to create interview')
+
+      const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+      const scheduleLink = `${siteUrl}/interview/schedule/${newInterview.scheduling_token}`
+
+      // Notify candidate with scheduling link
+      await supabase.from('notifications').insert({
+        user_id: candidateId,
+        title: 'Interview Invitation',
+        message: `${company || 'An employer'} has invited you to schedule an interview for ${jobTitle || 'a role'}. Pick a time that works for you.`,
+        type: 'interview_interest',
+        read: false,
+        related_id: applicationId,
+        related_type: 'application',
+        link: `/interview/schedule/${newInterview.scheduling_token}`,
+      })
+
+      // Update application status
+      await supabase.from('job_applications').update({ status: 'interview' }).eq('id', applicationId)
+
+      // Send email with scheduling link
+      fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'interview_self_schedule_invite',
+          data: {
+            candidateName,
+            companyName: company,
+            jobTitle,
+            scheduleLink,
+          },
+        }),
+      }).catch(() => {})
+
+      // Send in-app message
+      await sendCandidateMessage(
+        session.user.id,
+        `Hi ${candidateName}, I'd like to invite you to interview for ${jobTitle || 'this role'}. Please pick a time that works for you: ${scheduleLink}`
+      )
+
+      onSuccess()
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const handleManualSubmit = async () => {
     setError('')
 
@@ -913,14 +991,29 @@ export default function ScheduleInterviewModal({
             </div>
           )}
 
+          {/* Let candidate choose toggle — only in calendar mode for new interviews */}
+          {mode === 'calendar' && hasCalendarSlots && !existingInterviewId && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', cursor: 'pointer', fontSize: '0.85rem', color: '#334155' }}>
+              <input
+                type="checkbox"
+                checked={letCandidatePick}
+                onChange={e => setLetCandidatePick(e.target.checked)}
+                style={{ accentColor: '#16a34a' }}
+              />
+              Let candidate choose their own time
+            </label>
+          )}
+
           <button
             type="button"
-            onClick={mode === 'calendar' ? handleCalendarSubmit : handleManualSubmit}
+            onClick={letCandidatePick ? handleSendSelfSchedule : (mode === 'calendar' ? handleCalendarSubmit : handleManualSubmit)}
             className={styles.sendBtn}
-            disabled={submitting || (mode === 'calendar' && !selectedSlotObj)}
+            disabled={submitting}
           >
             {submitting
-              ? (mode === 'calendar' ? 'Booking...' : 'Sending...')
+              ? 'Sending...'
+              : letCandidatePick
+              ? 'Send Scheduling Link'
               : (mode === 'calendar' ? 'Confirm Booking' : 'Send Interview Invite')}
           </button>
 

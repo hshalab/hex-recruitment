@@ -19,8 +19,9 @@ export interface Interview {
   interviewType: 'in-person' | 'video' | 'phone'
   locationOrLink: string
   notes: string
-  status: 'pending_selection' | 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled'
+  status: 'pending_selection' | 'pending_self_schedule' | 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled'
   proposedSlots?: { date: string; time: string }[]
+  schedulingToken?: string
   createdAt: string
   updatedAt: string
 }
