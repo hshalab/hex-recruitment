@@ -865,9 +865,6 @@ export default function CalendarPage() {
               )}
               <div className={styles.sideLinks}>
                 <Link href="/settings/availability" className={styles.sideLink}>Availability settings →</Link>
-                <button type="button" className={styles.sideLink} style={{ border: 'none', background: 'none', textAlign: 'left', padding: 0, cursor: 'pointer' }} onClick={handleCopyFeed}>
-                  Copy ICS feed →
-                </button>
               </div>
             </div>
           </aside>
