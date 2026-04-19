@@ -294,7 +294,7 @@ export default function CalendarPage() {
     const fromStr = toDateStr(range.start)
     const toStr = toDateStr(range.end)
 
-    const [{ data: bookings }, { data: weekly }] = await Promise.all([
+    const [{ data: bookings }, { data: interviews }, { data: weekly }] = await Promise.all([
       supabase
         .from('interview_bookings')
         .select(`
@@ -305,6 +305,16 @@ export default function CalendarPage() {
         .gte('booked_date', fromStr)
         .lte('booked_date', toStr)
         .order('booked_date'),
+      // Also fetch interviews directly — some may not have booking rows
+      // (e.g. manual mode, or booking API failed)
+      supabase
+        .from('interviews')
+        .select('id, candidate_id, interview_date, interview_time, duration_minutes, status, interview_type, location_or_link, job_id, application_id, booking_id, jobs ( title )')
+        .eq('employer_id', uid)
+        .gte('interview_date', fromStr)
+        .lte('interview_date', toStr)
+        .in('status', ['scheduled', 'confirmed', 'pending_selection'])
+        .order('interview_date'),
       supabase
         .from('employer_availability')
         .select('day_of_week, slot_start, slot_end, is_active')
@@ -312,8 +322,11 @@ export default function CalendarPage() {
         .eq('is_active', true),
     ])
 
+    // Collect candidate IDs from both sources
+    const bookingCandidateIds = (bookings || []).map((b: BookingRow) => b.candidate_id)
+    const interviewCandidateIds = (interviews || []).map((i: any) => i.candidate_id)
     const candidateIds = Array.from(
-      new Set((bookings || []).map((b: BookingRow) => b.candidate_id).filter(Boolean))
+      new Set([...bookingCandidateIds, ...interviewCandidateIds].filter(Boolean))
     ) as string[]
 
     const names = new Map<string, string>()
@@ -328,9 +341,12 @@ export default function CalendarPage() {
       }
     }
 
+    // Map events from interview_bookings
+    const bookedInterviewIds = new Set<string>()
     const mapped: Event[] = (bookings || []).map((b: BookingRow) => {
       const iv: any = Array.isArray(b.interviews) ? b.interviews[0] : b.interviews
       const job = iv?.jobs ? (Array.isArray(iv.jobs) ? iv.jobs[0] : iv.jobs) : null
+      if (b.interview_id) bookedInterviewIds.add(b.interview_id)
       return {
         id: b.id,
         interviewId: b.interview_id,
@@ -342,12 +358,35 @@ export default function CalendarPage() {
         date: b.booked_date,
         time: String(b.booked_time).slice(0, 5),
         duration: b.duration_minutes || 45,
-        status: b.status || 'confirmed',
+        status: b.status || 'scheduled',
         interviewType: iv?.interview_type || 'in-person',
         meetingLink: iv?.location_or_link || '',
         locationOrLink: iv?.location_or_link || '',
       }
     })
+
+    // Merge interviews that DON'T have a booking row yet
+    for (const iv of interviews || []) {
+      if (bookedInterviewIds.has(iv.id)) continue
+      const job = iv.jobs ? (Array.isArray(iv.jobs) ? iv.jobs[0] : iv.jobs) : null
+      mapped.push({
+        id: iv.id,
+        interviewId: iv.id,
+        applicationId: iv.application_id || null,
+        jobId: iv.job_id || null,
+        candidateId: iv.candidate_id,
+        candidateName: names.get(iv.candidate_id) || 'Candidate',
+        jobTitle: job?.title || 'Interview',
+        date: iv.interview_date,
+        time: String(iv.interview_time).slice(0, 5),
+        duration: iv.duration_minutes || 45,
+        status: iv.status || 'scheduled',
+        interviewType: iv.interview_type || 'in-person',
+        meetingLink: iv.location_or_link || '',
+        locationOrLink: iv.location_or_link || '',
+      })
+    }
+
     setEvents(mapped)
     setWeeklyRules(((weekly as WeeklyRule[]) || []))
     setLoading(false)
