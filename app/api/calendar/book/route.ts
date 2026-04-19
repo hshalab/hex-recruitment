@@ -7,6 +7,7 @@ import {
   buildLondonIso,
   addMinutesToLondonIso,
 } from '@/lib/googleCalendar'
+import { sendInterviewMessage } from '@/lib/sendInterviewMessage'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -229,6 +230,17 @@ export async function POST(req: NextRequest) {
         }),
       }).catch(() => {})
     }
+
+    // Send in-app message to candidate
+    sendInterviewMessage({
+      employerId,
+      candidateId,
+      companyName: companyName || 'The employer',
+      candidateName: candidateName || 'Candidate',
+      jobId: null, // resolved from interview if needed
+      jobTitle: jobTitle || 'the role',
+      content: `Hi ${candidateName || 'there'}, I've scheduled an interview for ${jobTitle || 'the role'} on ${friendlyDate} at ${bookedTime}. Check your email for the calendar invite.`,
+    }).catch(() => {})
 
     return NextResponse.json({ booking, success: true })
   } catch (err: any) {

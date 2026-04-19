@@ -499,6 +499,8 @@ export default function CalendarPage() {
   const handleCancelBooking = async () => {
     if (!selected) return
     if (!confirm('Cancel this interview? The candidate will be notified.')) return
+
+    // Update local DB
     await supabase
       .from('interview_bookings')
       .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
@@ -506,6 +508,16 @@ export default function CalendarPage() {
     if (selected.interviewId) {
       await supabase.from('interviews').update({ status: 'cancelled' }).eq('id', selected.interviewId)
     }
+
+    // Call cancel API for Google Calendar sync + candidate notification + message
+    if (selected.interviewId) {
+      fetch('/api/calendar/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interviewId: selected.interviewId, employerId: userId }),
+      }).catch(() => {})
+    }
+
     setSelected(null)
     if (userId) loadEvents(userId)
   }

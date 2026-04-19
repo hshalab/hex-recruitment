@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getValidAccessToken, updateCalendarEvent, buildLondonIso, addMinutesToLondonIso } from '@/lib/googleCalendar'
+import { sendInterviewMessage } from '@/lib/sendInterviewMessage'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -92,7 +93,20 @@ export async function POST(req: NextRequest) {
       }).catch(() => {})
     }
 
-    // 3. Sync to Google Calendar
+    // 3. Send in-app message to candidate
+    if (candidateId) {
+      sendInterviewMessage({
+        employerId,
+        candidateId,
+        companyName,
+        candidateName: candidateName || 'Candidate',
+        jobId: interview?.job_id || null,
+        jobTitle: jobTitle || 'the role',
+        content: `Hi ${candidateName || 'there'}, your interview for ${jobTitle || 'the role'} has been updated to ${friendlyDate} at ${time}. Type: ${typeLabel}. Check your email for the updated calendar invite.`,
+      }).catch(() => {})
+    }
+
+    // 4. Sync to Google Calendar
     const { data: booking } = await supabaseAdmin
       .from('interview_bookings')
       .select('gcal_event_id_employer')
