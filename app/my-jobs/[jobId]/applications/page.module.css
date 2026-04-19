@@ -215,6 +215,7 @@
 }
 
 .applicationCard {
+  position: relative;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;

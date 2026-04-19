@@ -24,15 +24,18 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
   const [cvUrl, setCvUrl] = useState<string | null>(null)
   const [cvFileName, setCvFileName] = useState<string | null>(null)
   const [loadingCv, setLoadingCv] = useState(true)
+  const [screeningAnswers, setScreeningAnswers] = useState<Record<string, string>>({})
 
   const coverLetterRequired = (job.tags || []).includes('Cover letter required')
   const cvRequired = (job.tags || []).includes('CV required')
+  const questions = job.screeningQuestions || []
 
   // Reset state when modal opens for a different job
   useEffect(() => {
     if (isOpen) {
       setCoverLetter('')
       setSubmitted(false)
+      setScreeningAnswers({})
     }
   }, [isOpen, job.id])
 
@@ -89,6 +92,9 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
 
   const [cvError, setCvError] = useState<string | null>(null)
 
+  // Check if all required screening questions are answered
+  const unansweredRequired = questions.filter(q => q.required && !screeningAnswers[q.id]?.trim())
+
   const handleSubmit = async () => {
     setCvError(null)
     if (coverLetterRequired && !coverLetter.trim()) return
@@ -96,6 +102,7 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
       setCvError('This job requires a CV. Please upload one in the CV Builder before applying.')
       return
     }
+    if (unansweredRequired.length > 0) return
     setIsSubmitting(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -117,17 +124,25 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
         return
       }
 
-      // 1. Insert application
+      // 1. Insert application (with screening answers if any)
+      const appData: Record<string, any> = {
+        job_id: job.id,
+        candidate_id: session.user.id,
+        status: 'pending',
+        cover_letter: coverLetter || null,
+        job_title: job.title,
+        company: job.company,
+      }
+      if (questions.length > 0) {
+        appData.screening_answers = questions.map(q => ({
+          question: q.question,
+          answer: screeningAnswers[q.id] || '',
+          required: q.required,
+        }))
+      }
       const { error: insertError } = await supabase
         .from('job_applications')
-        .insert({
-          job_id: job.id,
-          candidate_id: session.user.id,
-          status: 'pending',
-          cover_letter: coverLetter || null,
-          job_title: job.title,
-          company: job.company,
-        })
+        .insert(appData)
       if (insertError) {
         if (insertError.code === '23505') {
           setSubmitted(true)
@@ -326,6 +341,28 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
                   <p className={styles.fieldHint}>A cover letter is required for this role</p>
                 )}
               </div>
+              {/* Screening questions */}
+              {questions.length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin: '0 0 0.75rem', color: '#0f172a' }}>
+                    Screening Questions
+                  </h4>
+                  {questions.map(q => (
+                    <div key={q.id} className={styles.field} style={{ marginBottom: '0.75rem' }}>
+                      <label className={styles.fieldLabel}>
+                        {q.question} {q.required && <span style={{ color: '#dc2626' }}>*</span>}
+                      </label>
+                      <textarea
+                        className={`${styles.textarea} ${q.required && !screeningAnswers[q.id]?.trim() ? styles.textareaRequired : ''}`}
+                        value={screeningAnswers[q.id] || ''}
+                        onChange={e => setScreeningAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                        placeholder="Your answer..."
+                        rows={3}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {cvError && (
@@ -340,7 +377,7 @@ export default function ApplyNowModal({ job, isOpen, onClose, onSuccess }: Apply
               <button
                 className={styles.submitBtn}
                 onClick={handleSubmit}
-                disabled={isSubmitting || (coverLetterRequired && !coverLetter.trim()) || (cvRequired && !cvUrl)}
+                disabled={isSubmitting || (coverLetterRequired && !coverLetter.trim()) || (cvRequired && !cvUrl) || unansweredRequired.length > 0}
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Application'}
               </button>
