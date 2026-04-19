@@ -179,22 +179,53 @@ export default function NotificationBell({ className }: NotificationBellProps) {
     setNotifications(prev => prev.filter(n => n.id !== notification.id))
     setUnreadCount(prev => Math.max(0, prev - (notification.read ? 0 : 1)))
 
-    // Notify the employer
     const employerId = (appRow as any)?.jobs?.employer_id
     const jobTitle = (appRow as any)?.jobs?.title || (appRow as any)?.job_title || 'the role'
+    const jobId = (appRow as any)?.job_id
     const candidateName = session.user.user_metadata?.full_name || 'A candidate'
+
+    // When the candidate confirms interest, also set the interview to 'confirmed'
+    // so the employer dashboard reflects the updated status immediately.
+    if (response === 'interested' && notification.related_id) {
+      const { data: interview } = await supabase
+        .from('interviews')
+        .select('id')
+        .eq('application_id', notification.related_id)
+        .in('status', ['scheduled', 'pending_selection'])
+        .maybeSingle()
+
+      if (interview) {
+        await supabase
+          .from('interviews')
+          .update({ status: 'confirmed' })
+          .eq('id', interview.id)
+      }
+
+      // Send confirmation email to employer
+      fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: null, // email resolved server-side from employer profile
+          type: 'interview_confirmed',
+          data: { candidateName, jobTitle, employerId },
+        }),
+      }).catch(() => {})
+    }
+
+    // Notify the employer
     if (employerId) {
       await supabase.from('notifications').insert({
         user_id: employerId,
-        title: response === 'interested' ? 'Candidate Interested' : 'Interview Invitation Declined',
+        title: response === 'interested' ? 'Interview Confirmed' : 'Interview Invitation Declined',
         message: response === 'interested'
-          ? `${candidateName} is interested in interviewing for ${jobTitle}`
+          ? `${candidateName} has confirmed the interview for ${jobTitle}`
           : `${candidateName} has declined the interview invitation for ${jobTitle}`,
         type: 'application_status_change',
         read: false,
         related_id: notification.related_id,
         related_type: 'application',
-        link: `/my-jobs/${(appRow as any)?.job_id}/applications`,
+        link: `/my-jobs/${jobId}/applications`,
       })
     }
   }

@@ -296,6 +296,13 @@ export default function MyJobsPage() {
         const { data: { session } } = await supabase.auth.getSession()
         const candidateName = session?.user?.user_metadata?.full_name || 'Candidate'
 
+        // Find the application for this interview to get the job link
+        const { data: interviewRow } = await supabase
+          .from('interviews')
+          .select('application_id, job_id')
+          .eq('id', interviewId)
+          .maybeSingle()
+
         // Send notification to employer
         await supabase
           .from('notifications')
@@ -305,6 +312,9 @@ export default function MyJobsPage() {
             message: `${candidateName} has confirmed their interview`,
             type: 'application_status_change',
             read: false,
+            related_id: interviewRow?.application_id || null,
+            related_type: 'application',
+            link: interviewRow?.job_id ? `/my-jobs/${interviewRow.job_id}/applications` : '/my-jobs',
           })
 
         // Send email to employer

@@ -181,6 +181,7 @@ export default function DashboardPage() {
 
   // Notifications
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [upcomingInterviews, setUpcomingInterviews] = useState<any[]>([])
 
   // Activity feed data
   const [profileViewEvents, setProfileViewEvents] = useState<any[]>([])
@@ -351,6 +352,20 @@ export default function DashboardPage() {
           .order('created_at', { ascending: false })
           .limit(5)
         if (notifData) setNotifications(notifData)
+      } catch { /* table may not exist */ }
+
+      // Fetch upcoming interviews for this candidate
+      try {
+        const todayStr = new Date().toISOString().slice(0, 10)
+        const { data: interviewData } = await supabase
+          .from('interviews')
+          .select('id, interview_date, interview_time, interview_type, duration_minutes, status, location_or_link, jobs(title, company)')
+          .eq('candidate_id', userId)
+          .gte('interview_date', todayStr)
+          .in('status', ['scheduled', 'confirmed', 'pending_selection'])
+          .order('interview_date', { ascending: true })
+          .limit(5)
+        if (interviewData) setUpcomingInterviews(interviewData)
       } catch { /* table may not exist */ }
 
       // Fetch recent profile views with employer company names
@@ -1108,7 +1123,43 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* ── 9. NOTIFICATIONS ────────────────────────── */}
+            {/* ── 9. UPCOMING INTERVIEWS ──────────────────── */}
+            {upcomingInterviews.length > 0 && (
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Upcoming Interviews</h2>
+                  <Link href="/applications" className={styles.cardLink}>View all &rarr;</Link>
+                </div>
+                <div className={styles.cardBody}>
+                  {upcomingInterviews.map((iv: any) => {
+                    const job = Array.isArray(iv.jobs) ? iv.jobs[0] : iv.jobs
+                    const dateStr = new Date(iv.interview_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+                    const [h, m] = (iv.interview_time || '').split(':').map(Number)
+                    const timeStr = !isNaN(h) ? `${h % 12 || 12}:${String(m || 0).padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}` : iv.interview_time
+                    const needsAction = iv.status === 'scheduled'
+                    return (
+                      <div key={iv.id} style={{ padding: '0.625rem 0', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>📅</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>{job?.title || 'Interview'}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{dateStr} at {timeStr} · {job?.company || ''}</div>
+                        </div>
+                        {needsAction && (
+                          <Link href="/applications" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#d97706', textDecoration: 'none', background: '#fffbeb', padding: '0.25rem 0.5rem', borderRadius: 4 }}>
+                            Confirm
+                          </Link>
+                        )}
+                        {iv.status === 'confirmed' && (
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a' }}>Confirmed</span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── 10. NOTIFICATIONS ───────────────────────── */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Notifications</h2>
