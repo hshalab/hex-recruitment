@@ -288,6 +288,22 @@ export default function CalendarPage() {
         await supabase.from('interview_bookings').update(bookingUpdates).eq('interview_id', selected.interviewId)
       }
 
+      // Sync to Google Calendar (non-blocking)
+      fetch('/api/calendar/update-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          interviewId: selected.interviewId,
+          employerId: userId,
+          date: editDate,
+          time: editTime,
+          duration: selected.duration,
+          interviewType: editType,
+          candidateName: selected.candidateName,
+          jobTitle: selected.jobTitle,
+        }),
+      }).catch(() => {})
+
       // Update local state
       setSelected(prev => prev ? {
         ...prev,
