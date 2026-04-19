@@ -339,27 +339,49 @@ function JobsPageContent() {
     return () => clearTimeout(timer)
   }, [locationQuery])
 
-  // Geocode search term when it looks like a UK postcode (debounced 500ms)
+  // Geocode search term — postcode or city/town name (debounced 500ms)
   useEffect(() => {
     const trimmed = locationQuery.trim()
-    if (!trimmed || !UK_POSTCODE_RE.test(trimmed)) {
+    if (!trimmed) {
       setLocationCoords(null)
       return
     }
     const timer = setTimeout(() => {
-      const postcode = trimmed.replace(/\s+/g, '').toUpperCase()
       setGeocodingLocation(true)
-      fetch(`https://api.postcodes.io/postcodes/${postcode}`)
-        .then(r => r.json())
-        .then(d => {
-          if (d.status === 200 && d.result) {
-            setLocationCoords({ lat: d.result.latitude, lon: d.result.longitude })
-          } else {
-            setLocationCoords(null)
-          }
-        })
-        .catch(() => setLocationCoords(null))
-        .finally(() => setGeocodingLocation(false))
+
+      if (UK_POSTCODE_RE.test(trimmed)) {
+        // Postcode → use postcodes.io postcode lookup
+        const postcode = trimmed.replace(/\s+/g, '').toUpperCase()
+        fetch(`https://api.postcodes.io/postcodes/${postcode}`)
+          .then(r => r.json())
+          .then(d => {
+            if (d.status === 200 && d.result) {
+              setLocationCoords({ lat: d.result.latitude, lon: d.result.longitude })
+            } else {
+              setLocationCoords(null)
+            }
+          })
+          .catch(() => setLocationCoords(null))
+          .finally(() => setGeocodingLocation(false))
+      } else if (trimmed.length >= 3) {
+        // City/town name → use postcodes.io places API
+        fetch(`https://api.postcodes.io/places?q=${encodeURIComponent(trimmed)}&limit=1`)
+          .then(r => r.json())
+          .then(d => {
+            if (d.status === 200 && d.result && d.result.length > 0) {
+              setLocationCoords({ lat: d.result[0].latitude, lon: d.result[0].longitude })
+              // Auto-select 25 mile radius for city/town searches
+              setLocationRadius(prev => prev === null ? 25 : prev)
+            } else {
+              setLocationCoords(null)
+            }
+          })
+          .catch(() => setLocationCoords(null))
+          .finally(() => setGeocodingLocation(false))
+      } else {
+        setLocationCoords(null)
+        setGeocodingLocation(false)
+      }
     }, 500)
     return () => clearTimeout(timer)
   }, [locationQuery])
