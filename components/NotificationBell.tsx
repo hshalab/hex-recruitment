@@ -171,12 +171,12 @@ export default function NotificationBell({ className }: NotificationBellProps) {
       return
     }
 
-    // Mark the notification as read
+    // Mark the notification as read and remove it from the list
     await supabase
       .from('notifications')
       .update({ read: true })
       .eq('id', notification.id)
-    setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n))
+    setNotifications(prev => prev.filter(n => n.id !== notification.id))
     setUnreadCount(prev => Math.max(0, prev - (notification.read ? 0 : 1)))
 
     // Notify the employer
@@ -269,10 +269,10 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                   <div
                     key={notification.id}
                     className={`${styles.notificationItem} ${!notification.read ? styles.unread : ''}`}
-                    role={isInterest ? undefined : 'button'}
-                    tabIndex={isInterest ? -1 : 0}
-                    onClick={() => { if (!isInterest) handleNotificationClick(notification) }}
-                    style={{ cursor: isInterest ? 'default' : 'pointer' }}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleNotificationClick(notification)}
+                    style={{ cursor: 'pointer' }}
                   >
                     <span className={styles.notificationIcon}>
                       {getNotificationIcon(notification.type)}

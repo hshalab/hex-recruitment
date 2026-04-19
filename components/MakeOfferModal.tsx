@@ -103,8 +103,8 @@ export default function MakeOfferModal({
           return
         }
 
-        const { data } = supabase.storage.from('profiles').getPublicUrl(filePath)
-        offerLetterUrl = data.publicUrl
+        // Store the path — signed URLs generated at render time
+        offerLetterUrl = filePath
       }
 
       // Create job_offers record

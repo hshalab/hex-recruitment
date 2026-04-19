@@ -1137,12 +1137,16 @@ export default function JobApplicationsPage() {
                   ) : (
                     <div className={styles.actionBar}>
                       {application.candidateEmail && (
-                        <a
-                          href={`mailto:${application.candidateEmail}`}
+                        <button
                           className={styles.barBtn}
+                          title={application.candidateEmail}
+                          onClick={() => {
+                            navigator.clipboard.writeText(application.candidateEmail).catch(() => {})
+                            window.location.href = `mailto:${application.candidateEmail}`
+                          }}
                         >
                           Email
-                        </a>
+                        </button>
                       )}
                       {application.interview ? (
                         <button

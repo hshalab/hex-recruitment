@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
+import SignedImage from '@/components/SignedImage'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
@@ -150,6 +151,14 @@ export default function CandidateDetailPage() {
           else setLastActive(null)
         }
 
+        // Record profile view (only when an employer views someone else's profile)
+        if (session.user.id !== candidateId) {
+          supabase.from('profile_views').insert({
+            profile_id: candidateId,
+            viewer_id: session.user.id,
+          }).then()
+        }
+
         // Profile completeness (visible only to the candidate themselves)
         if (session.user.id === candidateId) {
           setIsOwnProfile(true)
@@ -256,7 +265,7 @@ export default function CandidateDetailPage() {
           <div className={styles.headerContent}>
             <div className={styles.avatar}>
               {candidate.profilePictureUrl ? (
-                <img src={candidate.profilePictureUrl} alt={candidate.fullName} />
+                <SignedImage src={candidate.profilePictureUrl} alt={candidate.fullName} />
               ) : (
                 <span className={styles.avatarPlaceholder}>
                   {candidate.fullName.split(' ').map(n => n[0]).join('')}

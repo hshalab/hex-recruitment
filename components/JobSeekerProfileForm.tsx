@@ -614,8 +614,9 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       return null
     }
 
-    const { data } = supabase.storage.from('profiles').getPublicUrl(filePath)
-    return data.publicUrl
+    // Return the storage path — signed URLs are generated at render time
+    // via getSignedStorageUrl() since the bucket is private.
+    return filePath
   }
 
   const handleSubmit = async () => {

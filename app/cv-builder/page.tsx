@@ -271,8 +271,8 @@ export default function CVBuilderPage() {
         .upload(path, file, { upsert: true })
       if (storageErr) throw storageErr
 
-      const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path)
-      const fileUrl = urlData?.publicUrl || ''
+      // Store the path — signed URLs generated at render time
+      const fileUrl = path
 
       // Save a CV record pointing to the uploaded file
       const { data: inserted } = await supabase
