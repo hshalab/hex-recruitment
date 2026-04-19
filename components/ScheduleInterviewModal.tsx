@@ -330,7 +330,7 @@ export default function ScheduleInterviewModal({
             interview_type: interviewType,
             location_or_link: interviewType === 'video' ? (meetingLink.trim() || interviewTypeLabel) : interviewTypeLabel,
             notes: notes.trim() || null,
-            status: 'confirmed',
+            status: 'scheduled',
           })
           .select()
           .single()
@@ -347,7 +347,7 @@ export default function ScheduleInterviewModal({
             interview_type: interviewType,
             location_or_link: interviewType === 'video' ? (meetingLink.trim() || interviewTypeLabel) : interviewTypeLabel,
             notes: notes.trim() || null,
-            status: 'confirmed',
+            status: 'scheduled',
           })
           .eq('id', interviewId)
       }

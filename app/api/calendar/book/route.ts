@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
         booked_date: bookedDate,
         booked_time: bookedTime,
         duration_minutes: dur,
-        status: 'confirmed',
+        status: 'scheduled',
         gcal_event_id_employer: priorGcalEventId,
       })
       .select()
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: bookErr?.message || 'Booking failed' }, { status: 500 })
     }
 
-    // Update the interview row → confirmed
+    // Update the interview row → scheduled (awaiting candidate confirmation)
     let applicationId: string | null = null
     if (interviewId) {
       const { data: interview } = await supabaseAdmin
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
       await supabaseAdmin
         .from('interviews')
         .update({
-          status: 'confirmed',
+          status: 'scheduled',
           interview_date: bookedDate,
           interview_time: bookedTime,
           duration_minutes: dur,

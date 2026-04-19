@@ -906,7 +906,9 @@ export default function JobApplicationsPage() {
                           ? '✅ Interview Completed'
                           : application.interview.status === 'pending_selection'
                           ? '⏳ Awaiting Time Selection'
-                          : '📅 Scheduled Interview'}
+                          : application.interview.status === 'confirmed'
+                          ? '📅 Confirmed Interview'
+                          : '📅 Scheduled — Awaiting Confirmation'}
                       </h4>
                       {application.interview.status === 'pending_selection' && (
                         <p className={styles.pendingSlot}>Waiting for candidate to select a time</p>
@@ -930,7 +932,13 @@ export default function JobApplicationsPage() {
                               month: 'long',
                               year: 'numeric',
                             })}{' '}
-                            at {application.interview.interviewTime}
+                            at {(() => {
+                              const [h, m] = (application.interview.interviewTime || '').split(':').map(Number)
+                              if (isNaN(h)) return application.interview.interviewTime
+                              const ampm = h >= 12 ? 'pm' : 'am'
+                              const h12 = h % 12 || 12
+                              return `${h12}:${String(m || 0).padStart(2, '0')}${ampm}`
+                            })()}
                           </p>
                         )}
                         <p className={styles.interviewType}>
@@ -941,24 +949,28 @@ export default function JobApplicationsPage() {
                             ? 'Video Call'
                             : 'Phone Call'}
                         </p>
-                        {application.interview.locationOrLink && (
-                          <p className={styles.interviewLocation}>
-                            <strong>
-                              {application.interview.locationOrLink.startsWith('http')
-                                ? 'Calendar Link:'
-                                : 'Location:'}
-                            </strong>{' '}
-                            {application.interview.locationOrLink.startsWith('http') ? (
-                              <a href={application.interview.locationOrLink} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline' }}>
-                                View Calendar Event
-                              </a>
-                            ) : (
-                              application.interview.locationOrLink
-                            )}
-                          </p>
-                        )}
+                        {(() => {
+                          const loc = application.interview.locationOrLink
+                          // Hide location if it's just a type label (In-Person, Video Call, Phone Call)
+                          const isTypeLabel = !loc || ['In-Person', 'Video Call', 'Phone Call'].includes(loc)
+                          if (isTypeLabel) return null
+                          const isUrl = loc.startsWith('http')
+                          return (
+                            <p className={styles.interviewLocation}>
+                              <strong>{isUrl ? 'Meeting Link:' : 'Location:'}</strong>{' '}
+                              {isUrl ? (
+                                <a href={loc} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline' }}>
+                                  Join Meeting
+                                </a>
+                              ) : loc}
+                            </p>
+                          )
+                        })()}
                         {application.interview.status === 'confirmed' && (
                           <p className={styles.interviewConfirmed}>Confirmed by candidate</p>
+                        )}
+                        {application.interview.status === 'scheduled' && (
+                          <p style={{ fontSize: '0.8rem', color: '#d97706', fontStyle: 'italic', margin: '0.375rem 0 0' }}>Awaiting candidate confirmation</p>
                         )}
                       </div>
                       {application.interview.status !== 'completed' && !(application.offer?.status === 'accepted' || application.status === 'hired') && (
