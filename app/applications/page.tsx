@@ -296,12 +296,24 @@ export default function MyJobsPage() {
         const { data: { session } } = await supabase.auth.getSession()
         const candidateName = session?.user?.user_metadata?.full_name || 'Candidate'
 
-        // Find the application for this interview to get the job link
+        // Fetch full interview details for email + calendar sync
         const { data: interviewRow } = await supabase
           .from('interviews')
-          .select('application_id, job_id')
+          .select('application_id, job_id, interview_date, interview_time, duration_minutes, interview_type, location_or_link, jobs ( title, company )')
           .eq('id', interviewId)
           .maybeSingle()
+
+        const job: any = interviewRow?.jobs ? (Array.isArray(interviewRow.jobs) ? interviewRow.jobs[0] : interviewRow.jobs) : null
+        const jobTitle = job?.title || ''
+        const companyName = job?.company || ''
+        const interviewDate = interviewRow?.interview_date || ''
+        const interviewTime = interviewRow?.interview_time || ''
+        const interviewType = interviewRow?.interview_type || 'in-person'
+
+        // Format date for display
+        const friendlyDate = interviewDate
+          ? new Date(interviewDate + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+          : ''
 
         // Send notification to employer
         await supabase
@@ -309,7 +321,7 @@ export default function MyJobsPage() {
           .insert({
             user_id: employerId,
             title: 'Interview Confirmed',
-            message: `${candidateName} has confirmed their interview`,
+            message: `${candidateName} has confirmed their interview for ${jobTitle || 'the role'} on ${friendlyDate} at ${interviewTime}`,
             type: 'application_status_change',
             read: false,
             related_id: interviewRow?.application_id || null,
@@ -317,7 +329,7 @@ export default function MyJobsPage() {
             link: interviewRow?.job_id ? `/my-jobs/${interviewRow.job_id}/applications` : '/my-jobs',
           })
 
-        // Send email to employer
+        // Send email to employer with full details
         fetch('/api/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -326,7 +338,28 @@ export default function MyJobsPage() {
             data: {
               recipientUserId: employerId,
               candidateName,
+              jobTitle,
+              companyName,
+              date: friendlyDate,
+              time: interviewTime,
+              interviewType,
             },
+          }),
+        }).catch(() => {})
+
+        // Sync confirmed status to Google Calendar
+        fetch('/api/calendar/update-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            interviewId,
+            employerId,
+            date: interviewDate,
+            time: interviewTime,
+            duration: interviewRow?.duration_minutes || 45,
+            interviewType,
+            candidateName,
+            jobTitle,
           }),
         }).catch(() => {})
 

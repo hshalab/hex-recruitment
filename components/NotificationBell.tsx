@@ -189,7 +189,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
     if (response === 'interested' && notification.related_id) {
       const { data: interview } = await supabase
         .from('interviews')
-        .select('id')
+        .select('id, interview_date, interview_time, duration_minutes, interview_type')
         .eq('application_id', notification.related_id)
         .in('status', ['scheduled', 'pending_selection'])
         .maybeSingle()
@@ -199,6 +199,24 @@ export default function NotificationBell({ className }: NotificationBellProps) {
           .from('interviews')
           .update({ status: 'confirmed' })
           .eq('id', interview.id)
+
+        // Sync confirmed status to Google Calendar + send candidate message
+        if (employerId) {
+          fetch('/api/calendar/update-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              interviewId: interview.id,
+              employerId,
+              date: interview.interview_date,
+              time: interview.interview_time,
+              duration: interview.duration_minutes || 45,
+              interviewType: interview.interview_type || 'in-person',
+              candidateName,
+              jobTitle,
+            }),
+          }).catch(() => {})
+        }
       }
 
       // Send confirmation email to employer
@@ -206,7 +224,6 @@ export default function NotificationBell({ className }: NotificationBellProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: null, // email resolved server-side from employer profile
           type: 'interview_confirmed',
           data: { candidateName, jobTitle, employerId },
         }),
