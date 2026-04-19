@@ -331,13 +331,28 @@ export default function CalendarPage() {
 
     const names = new Map<string, string>()
     if (candidateIds.length) {
+      // Try candidate_profiles first
       const { data: candidates } = await supabase
         .from('candidate_profiles')
         .select('user_id, full_name, first_name, last_name')
         .in('user_id', candidateIds)
       for (const c of candidates || []) {
         const fallback = [c.first_name, c.last_name].filter(Boolean).join(' ')
-        names.set(c.user_id, c.full_name || fallback || 'Candidate')
+        if (c.full_name || fallback) names.set(c.user_id, c.full_name || fallback)
+      }
+
+      // Fill gaps from job_applications (stores candidate name when the application was made)
+      const missing = candidateIds.filter(id => !names.has(id))
+      if (missing.length) {
+        const { data: apps } = await supabase
+          .from('job_applications')
+          .select('candidate_id, candidate_name')
+          .in('candidate_id', missing)
+        for (const a of apps || []) {
+          if (a.candidate_name && !names.has(a.candidate_id)) {
+            names.set(a.candidate_id, a.candidate_name)
+          }
+        }
       }
     }
 
