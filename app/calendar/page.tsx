@@ -929,7 +929,7 @@ export default function CalendarPage() {
                         type="url"
                         value={editMeetingLink}
                         onChange={e => setEditMeetingLink(e.target.value)}
-                        placeholder="Paste meeting link (Zoom, Teams, Google Meet...)"
+                        placeholder="Paste meeting link"
                         style={{ fontSize: '0.85rem', padding: '0.375rem 0.5rem', border: '1px solid #d1d5db', borderRadius: 4, width: '100%' }}
                       />
                     )}
