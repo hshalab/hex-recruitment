@@ -252,6 +252,7 @@ export default function CalendarPage() {
   const [editDate, setEditDate] = useState('')
   const [editTime, setEditTime] = useState('')
   const [editType, setEditType] = useState('')
+  const [editMeetingLink, setEditMeetingLink] = useState('')
   const [saving, setSaving] = useState(false)
 
   // Reset edit state when selection changes
@@ -260,6 +261,7 @@ export default function CalendarPage() {
       setEditDate(selected.date)
       setEditTime(selected.time)
       setEditType(selected.interviewType)
+      setEditMeetingLink(selected.meetingLink?.startsWith('http') ? selected.meetingLink : '')
       setEditField(null)
     }
   }, [selected])
@@ -273,12 +275,19 @@ export default function CalendarPage() {
       if (editTime !== selected.time) updates.interview_time = editTime
       if (editType !== selected.interviewType) {
         updates.interview_type = editType
-        // When switching type, clear the location_or_link if it's a stale
-        // type label (e.g. "In-Person" left over from before the type change)
-        const staleLabels = ['In-Person', 'Video Call', 'Phone Call']
-        if (staleLabels.includes(selected.locationOrLink || '')) {
-          updates.location_or_link = editType === 'video' ? '' : editType === 'in-person' ? 'In-Person' : 'Phone Call'
+      }
+      // Update location_or_link: use meeting link for video, type label otherwise
+      if (editType === 'video') {
+        const newLink = editMeetingLink.trim()
+        if (newLink && newLink !== selected.meetingLink) {
+          updates.location_or_link = newLink
+        } else if (!newLink && selected.locationOrLink && !selected.locationOrLink.startsWith('http')) {
+          updates.location_or_link = ''
         }
+      } else if (editType !== selected.interviewType) {
+        // Switched away from video — clear the link, set type label
+        const typeLabel = editType === 'in-person' ? 'In-Person' : 'Phone Call'
+        updates.location_or_link = typeLabel
       }
 
       if (Object.keys(updates).length === 0) { setEditField(null); setSaving(false); return }
@@ -908,15 +917,26 @@ export default function CalendarPage() {
               <div className={styles.modalRow}>
                 <span className={styles.modalRowLabel}>Type</span>
                 {editField === 'type' ? (
-                  <span className={styles.modalRowValue} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <select value={editType} onChange={e => setEditType(e.target.value)} style={{ fontSize: '0.9rem', padding: '0.25rem 0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}>
-                      <option value="in-person">In-Person</option>
-                      <option value="video">Video Call</option>
-                      <option value="phone">Phone Call</option>
-                    </select>
-                    <button onClick={handleInlineUpdate} disabled={saving} style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a', background: 'none', border: 'none', cursor: 'pointer' }}>{saving ? '...' : 'Save'}</button>
-                    <button onClick={() => { setEditType(selected.interviewType); setEditField(null) }} style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
-                  </span>
+                  <div className={styles.modalRowValue} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <select value={editType} onChange={e => setEditType(e.target.value)} style={{ fontSize: '0.9rem', padding: '0.25rem 0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}>
+                        <option value="in-person">In-Person</option>
+                        <option value="video">Video Call</option>
+                        <option value="phone">Phone Call</option>
+                      </select>
+                      <button onClick={handleInlineUpdate} disabled={saving} style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a', background: 'none', border: 'none', cursor: 'pointer' }}>{saving ? '...' : 'Save'}</button>
+                      <button onClick={() => { setEditType(selected.interviewType); setEditMeetingLink(selected.meetingLink?.startsWith('http') ? selected.meetingLink : ''); setEditField(null) }} style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                    </div>
+                    {editType === 'video' && (
+                      <input
+                        type="url"
+                        value={editMeetingLink}
+                        onChange={e => setEditMeetingLink(e.target.value)}
+                        placeholder="Paste meeting link (Zoom, Teams, Google Meet...)"
+                        style={{ fontSize: '0.85rem', padding: '0.375rem 0.5rem', border: '1px solid #d1d5db', borderRadius: 4, width: '100%' }}
+                      />
+                    )}
+                  </div>
                 ) : (
                   <span className={styles.modalRowValue} onClick={() => selected.status !== 'cancelled' && setEditField('type')} style={{ cursor: selected.status !== 'cancelled' ? 'pointer' : 'default', textDecoration: selected.status !== 'cancelled' ? 'underline dotted #d1d5db' : 'none' }}>
                     {editType === 'in-person' ? 'In-Person' : editType === 'video' ? 'Video Call' : 'Phone Call'}

@@ -23,12 +23,14 @@ export async function POST(req: NextRequest) {
     const dur = duration || 45
     const typeLabel = interviewType === 'video' ? 'Video Call' : interviewType === 'phone' ? 'Phone Call' : 'In-Person'
 
-    // Get the interview's candidate and application info
+    // Get the interview's candidate, application, and current link info
     const { data: interview } = await supabaseAdmin
       .from('interviews')
-      .select('candidate_id, application_id, job_id')
+      .select('candidate_id, application_id, job_id, location_or_link')
       .eq('id', interviewId)
       .maybeSingle()
+
+    const meetingLink = interview?.location_or_link?.startsWith('http') ? interview.location_or_link : null
 
     const candidateId = interview?.candidate_id
     const applicationId = interview?.application_id
@@ -102,7 +104,7 @@ export async function POST(req: NextRequest) {
         candidateName: candidateName || 'Candidate',
         jobId: interview?.job_id || null,
         jobTitle: jobTitle || 'the role',
-        content: `Hi ${candidateName || 'there'}, your interview for ${jobTitle || 'the role'} has been updated to ${friendlyDate} at ${time}. Type: ${typeLabel}. Check your email for the updated calendar invite.`,
+        content: `Hi ${candidateName || 'there'}, your interview for ${jobTitle || 'the role'} has been updated to ${friendlyDate} at ${time}. Type: ${typeLabel}.${meetingLink ? ` Meeting link: ${meetingLink}` : ''} Check your email for the updated calendar invite.`,
       }).catch(() => {})
     }
 
@@ -125,7 +127,12 @@ export async function POST(req: NextRequest) {
           booking.gcal_event_id_employer,
           {
             summary: `Interview: ${candidateName || 'Candidate'} — ${jobTitle || 'Interview'}`,
-            description: `Type: ${typeLabel}\nCandidate: ${candidateName || 'Candidate'}\nManaged via Thrive — thrivecareer.co.uk`,
+            description: [
+              `Type: ${typeLabel}`,
+              `Candidate: ${candidateName || 'Candidate'}`,
+              ...(meetingLink ? [`Join: ${meetingLink}`] : []),
+              'Managed via Thrive — thrivecareer.co.uk',
+            ].join('\n'),
             startIso,
             endIso,
             attendees: candidateEmail ? [candidateEmail] : [],
