@@ -271,7 +271,15 @@ export default function CalendarPage() {
       const updates: Record<string, any> = {}
       if (editDate !== selected.date) updates.interview_date = editDate
       if (editTime !== selected.time) updates.interview_time = editTime
-      if (editType !== selected.interviewType) updates.interview_type = editType
+      if (editType !== selected.interviewType) {
+        updates.interview_type = editType
+        // When switching type, clear the location_or_link if it's a stale
+        // type label (e.g. "In-Person" left over from before the type change)
+        const staleLabels = ['In-Person', 'Video Call', 'Phone Call']
+        if (staleLabels.includes(selected.locationOrLink || '')) {
+          updates.location_or_link = editType === 'video' ? '' : editType === 'in-person' ? 'In-Person' : 'Phone Call'
+        }
+      }
 
       if (Object.keys(updates).length === 0) { setEditField(null); setSaving(false); return }
 
@@ -305,12 +313,16 @@ export default function CalendarPage() {
       }).catch(() => {})
 
       // Update local state
-      setSelected(prev => prev ? {
-        ...prev,
-        date: editDate,
-        time: editTime,
-        interviewType: editType,
-      } : null)
+      setSelected(prev => {
+        if (!prev) return null
+        const updated = { ...prev, date: editDate, time: editTime, interviewType: editType }
+        // Clear stale meeting link if type changed away from video
+        if (updates.location_or_link !== undefined) {
+          updated.meetingLink = updates.location_or_link
+          updated.locationOrLink = updates.location_or_link
+        }
+        return updated
+      })
 
       setEditField(null)
       if (userId) loadEvents(userId)
@@ -911,7 +923,7 @@ export default function CalendarPage() {
                   </span>
                 )}
               </div>
-              {selected.interviewType === 'video' && selected.meetingLink && (
+              {selected.interviewType === 'video' && selected.meetingLink && selected.meetingLink.startsWith('http') && (
                 <div className={styles.modalRow}>
                   <span className={styles.modalRowLabel}>Meeting link</span>
                   <a href={selected.meetingLink} target="_blank" rel="noopener noreferrer" className={styles.modalRowValue}>
