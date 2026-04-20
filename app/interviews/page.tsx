@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
+import SignedImage from '@/components/SignedImage'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
@@ -472,7 +473,7 @@ export default function InterviewsPage() {
                         <div className={styles.cardHeader}>
                           <div className={styles.cardPhoto}>
                             {interview.candidatePhoto ? (
-                              <img src={interview.candidatePhoto} alt={interview.candidateName} className={styles.cardPhotoImg} />
+                              <SignedImage src={interview.candidatePhoto} alt={interview.candidateName} className={styles.cardPhotoImg} />
                             ) : (
                               <div className={styles.cardPhotoPlaceholder}>{getInitials(interview.candidateName)}</div>
                             )}
@@ -552,7 +553,7 @@ export default function InterviewsPage() {
                   <div key={interview.interviewId} className={styles.pastCard}>
                     <div className={styles.pastPhoto}>
                       {interview.candidatePhoto ? (
-                        <img src={interview.candidatePhoto} alt={interview.candidateName} className={styles.cardPhotoImg} />
+                        <SignedImage src={interview.candidatePhoto} alt={interview.candidateName} className={styles.cardPhotoImg} />
                       ) : (
                         <div className={styles.cardPhotoPlaceholder}>{getInitials(interview.candidateName)}</div>
                       )}

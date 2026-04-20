@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       jobTitle,
       companyName,
       candidateName,
+      selfScheduled,
     } = body || {}
 
     if (!employerId || !candidateId || !bookedDate || !bookedTime) {
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
       await supabaseAdmin
         .from('interviews')
         .update({
-          status: 'scheduled',
+          status: selfScheduled ? 'confirmed' : 'scheduled',
           interview_date: bookedDate,
           interview_time: bookedTime,
           duration_minutes: dur,

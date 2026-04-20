@@ -108,6 +108,7 @@ export default function CandidateSelfSchedulePage() {
           candidateName,
           jobTitle: context.jobTitle,
           companyName: context.company,
+          selfScheduled: true,
         }),
       })
 

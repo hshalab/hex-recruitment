@@ -108,13 +108,16 @@ export async function GET(request: NextRequest) {
     return response
   }
 
-  fetch(`${origin}/api/email/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to: user.email, type: 'welcome', data: { contactName: displayName, companyName } }),
-  }).catch(() => {})
+  // Only send welcome email for genuinely new employers (not returning unpaid ones)
+  if (!existingRole) {
+    fetch(`${origin}/api/email/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: user.email, type: 'welcome', data: { contactName: displayName, companyName } }),
+    }).catch(() => {})
+  }
 
-  // New employer → payment page (trial subscription created there)
+  // Employer without subscription → payment page
   // Copy session cookies from the exchange response so the payment page
   // can read the authenticated session.
   const paymentRedirect = NextResponse.redirect(`${origin}/register/employer/payment`)

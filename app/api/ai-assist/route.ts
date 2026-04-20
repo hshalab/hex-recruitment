@@ -141,7 +141,18 @@ ${data.companyDescription ? `About the company: ${data.companyDescription}` : ''
       const sectorLabel = data.sector && data.sector !== 'general' ? ` in the ${data.sector} sector` : ''
       systemPrompt = `You are a UK employment law expert. Write a professional, formal offer letter from an employer to a candidate${sectorLabel}. Use proper business letter format. Include all the details and clauses provided. Include standard UK employment terms appropriate for the sector. Be concise but thorough. Return only the letter text — no markdown, no JSON, no commentary.`
 
-      const allClauses: string[] = data.clausesList || []
+      // Support both new (clausesList array) and legacy (clauses object) formats
+      let allClauses: string[] = data.clausesList || []
+      if (allClauses.length === 0 && data.clauses && typeof data.clauses === 'object') {
+        const cl = data.clauses
+        if (cl.probation) allClauses.push(`Probationary period: ${cl.probation}`)
+        if (cl.noticePeriod) allClauses.push(`Notice period: ${cl.noticePeriod}`)
+        if (cl.workingHours) allClauses.push(`Working hours: ${cl.workingHours}`)
+        if (cl.holiday) allClauses.push(`Holiday entitlement: ${cl.holiday}`)
+        if (cl.pension) allClauses.push('Employer pension scheme included')
+        if (cl.dbsCheck) allClauses.push('Subject to satisfactory DBS check')
+        if (cl.uniformProvided) allClauses.push('Uniform will be provided')
+      }
 
       userPrompt = `Write a formal offer letter with these details:
 Company: ${data.company || 'The Company'}

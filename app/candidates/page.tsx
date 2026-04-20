@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
+import SignedImage from '@/components/SignedImage'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
@@ -652,7 +653,7 @@ function CandidatesContent() {
                   </div>
                   <div className={styles.listCardLogo}>
                     {candidate.profilePictureUrl ? (
-                      <img src={candidate.profilePictureUrl} alt={candidate.fullName} className={styles.listCardLogoImg} />
+                      <SignedImage src={candidate.profilePictureUrl} alt={candidate.fullName} className={styles.listCardLogoImg} />
                     ) : (
                       <span className={styles.listCardLogoPlaceholder}>
                         {candidate.fullName.split(' ').map(n => n[0]).join('')}
@@ -676,7 +677,7 @@ function CandidatesContent() {
                     <div className={styles.detailHeaderContent}>
                       <div className={styles.detailAvatar}>
                         {selectedCandidate.profilePictureUrl ? (
-                          <img src={selectedCandidate.profilePictureUrl} alt={selectedCandidate.fullName} />
+                          <SignedImage src={selectedCandidate.profilePictureUrl} alt={selectedCandidate.fullName} />
                         ) : (
                           <span className={styles.detailAvatarPlaceholder}>
                             {selectedCandidate.fullName.split(' ').map(n => n[0]).join('')}

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 
 // Shared OAuth callback logic. Used by:
 // - /auth/callback (email flow — reads role from ?role= query param)
@@ -56,13 +55,21 @@ export async function handleAuthCallback(
     return NextResponse.redirect(`${origin}/login?auth_error=missing_code`)
   }
 
-  let supabase: ReturnType<typeof createRouteHandlerClient>
-  try {
-    supabase = createRouteHandlerClient({ cookies })
-  } catch (err: any) {
-    console.error('[auth/callback] createRouteHandlerClient CRASHED', err?.message, err?.stack)
-    return NextResponse.redirect(`${origin}/login?auth_error=client_init_failed`)
-  }
+  // Build a placeholder redirect — cookies from exchangeCodeForSession are
+  // written onto this response object so they survive the redirect.
+  const response = NextResponse.redirect(`${origin}/dashboard`)
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return req.cookies.get(name)?.value },
+        set(name: string, value: string, options: CookieOptions) { response.cookies.set({ name, value, ...options }) },
+        remove(name: string, options: CookieOptions) { response.cookies.set({ name, value: '', ...options }) },
+      },
+    }
+  )
   console.log('[auth/callback] step:exchange')
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
   if (exchangeError) {
@@ -200,7 +207,11 @@ export async function handleAuthCallback(
     }
   }
   console.log('[auth/callback] success', { userId: user.id, role, destination, isNewUser: !existingRole })
-  return NextResponse.redirect(`${origin}${destination}`)
+
+  // Build the final redirect, copying session cookies from the exchange response
+  const finalRedirect = NextResponse.redirect(`${origin}${destination}`)
+  response.cookies.getAll().forEach(cookie => { finalRedirect.cookies.set(cookie) })
+  return finalRedirect
 
   } catch (err: any) {
     console.error('[auth/callback] UNHANDLED ERROR', err?.message, err?.stack?.slice(0, 500))

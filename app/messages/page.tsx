@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
+import SignedImage from '@/components/SignedImage'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
 import {
@@ -539,7 +540,7 @@ export default function MessagesPage() {
                 >
                   <div className={styles.avatar}>
                     {conversation.participantProfilePicture ? (
-                      <img
+                      <SignedImage
                         src={conversation.participantProfilePicture}
                         alt={conversation.participantName}
                         className={styles.avatarImg}
@@ -589,7 +590,7 @@ export default function MessagesPage() {
                 </button>
                 <div className={styles.chatHeaderAvatar}>
                   {selectedConversation.participantProfilePicture ? (
-                    <img
+                    <SignedImage
                       src={selectedConversation.participantProfilePicture}
                       alt={selectedConversation.participantName}
                       className={styles.avatarImg}

@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedLink from '@/components/SignedLink'
+import SignedImage from '@/components/SignedImage'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import MakeOfferModal from '@/components/MakeOfferModal'
 import { supabase } from '@/lib/supabase'
@@ -919,7 +920,7 @@ export default function JobApplicationsPage() {
                     {/* Candidate Photo */}
                     <div className={styles.candidatePhoto}>
                       {application.candidatePhoto ? (
-                        <img
+                        <SignedImage
                           src={application.candidatePhoto}
                           alt={application.candidateName}
                           className={styles.photoImage}

@@ -33,8 +33,18 @@ export async function POST(req: NextRequest) {
     const companyName = job?.company || 'The employer'
     const candidateId = interview?.candidate_id
 
-    // Send notification + message to candidate
+    // Update the interview status to cancelled
+    await supabaseAdmin.from('interviews').update({ status: 'cancelled' }).eq('id', interviewId)
+
+    // Send notification + message + email to candidate
     if (candidateId) {
+      // Get candidate details
+      const { data: candidateProfile } = await supabaseAdmin
+        .from('candidate_profiles')
+        .select('full_name, email')
+        .eq('user_id', candidateId)
+        .maybeSingle()
+
       await supabaseAdmin.from('notifications').insert({
         user_id: candidateId,
         title: 'Interview Cancelled',
@@ -43,13 +53,6 @@ export async function POST(req: NextRequest) {
         read: false,
         link: '/applications',
       })
-
-      // Get candidate name for message
-      const { data: candidateProfile } = await supabaseAdmin
-        .from('candidate_profiles')
-        .select('full_name')
-        .eq('user_id', candidateId)
-        .maybeSingle()
 
       sendInterviewMessage({
         employerId: employerId || '',
@@ -60,6 +63,20 @@ export async function POST(req: NextRequest) {
         jobTitle,
         content: `Hi ${candidateProfile?.full_name || 'there'}, your interview for ${jobTitle} has been cancelled. If you have any questions, please reply to this message.`,
       }).catch(() => {})
+
+      // Send cancellation email
+      if (candidateProfile?.email) {
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || ''
+        fetch(`${siteUrl}/api/email/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: candidateProfile.email,
+            type: 'interview_cancelled',
+            data: { companyName, jobTitle, candidateName: candidateProfile.full_name || 'Candidate' },
+          }),
+        }).catch(() => {})
+      }
     }
 
     // Find the booking for this interview (if any)
