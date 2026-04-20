@@ -137,6 +137,52 @@ ${data.companyDescription ? `About the company: ${data.companyDescription}` : ''
       }
 
       return NextResponse.json({ jobAd })
+    } else if (type === 'offer-letter') {
+      systemPrompt = 'You are a UK employment law expert. Write a professional, formal offer letter from an employer to a candidate. Use proper business letter format. Include all the details provided. Be concise but thorough. Return only the letter text — no markdown, no JSON, no commentary.'
+
+      const clausesList: string[] = []
+      const cl = data.clauses || {}
+      if (cl.probation) clausesList.push(`Probationary period: ${cl.probation}`)
+      if (cl.noticePeriod) clausesList.push(`Notice period: ${cl.noticePeriod}`)
+      if (cl.workingHours) clausesList.push(`Working hours: ${cl.workingHours}`)
+      if (cl.holiday) clausesList.push(`Holiday entitlement: ${cl.holiday}`)
+      if (cl.pension) clausesList.push('Employer pension scheme included')
+      if (cl.dbsCheck) clausesList.push('Subject to satisfactory DBS check')
+      if (cl.uniformProvided) clausesList.push('Uniform will be provided')
+
+      userPrompt = `Write a formal offer letter with these details:
+Company: ${data.company || 'The Company'}
+Candidate: ${data.candidateName || 'The Candidate'}
+Job Title: ${data.jobTitle || 'The Role'}
+Salary: ${data.salary || 'Competitive'}
+Start Date: ${data.startDate || 'TBC'}
+Contract Type: ${data.contractType || 'Full-time'}
+${clausesList.length > 0 ? `\nAdditional clauses:\n${clausesList.map(c => `- ${c}`).join('\n')}` : ''}
+${data.additionalTerms ? `\nAdditional terms: ${data.additionalTerms}` : ''}`
+
+      const offerRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2048,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }],
+        }),
+      })
+
+      if (!offerRes.ok) {
+        const errText = await offerRes.text()
+        return NextResponse.json({ error: `AI service error (${offerRes.status}): ${errText}` }, { status: 502 })
+      }
+
+      const offerResult = await offerRes.json()
+      const text = offerResult.content?.[0]?.text || ''
+      return NextResponse.json({ text })
     } else {
       return NextResponse.json(
         { error: 'Invalid type.' },
