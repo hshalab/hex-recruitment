@@ -39,15 +39,8 @@ export default function MakeOfferModal({
   const [generating, setGenerating] = useState(false)
   const [generatedPdf, setGeneratedPdf] = useState<Blob | null>(null)
   const [offerMode, setOfferMode] = useState<'none' | 'upload' | 'generate'>('none')
-  const [clauses, setClauses] = useState<Record<string, string | boolean>>({
-    probation: '',
-    noticePeriod: '',
-    workingHours: '',
-    holiday: '',
-    dbsCheck: false,
-    uniformProvided: false,
-    pension: false,
-  })
+  const [sector, setSector] = useState('general')
+  const [extras, setExtras] = useState<Set<string>>(new Set())
 
   // Reset form when modal opens
   useEffect(() => {
@@ -63,7 +56,8 @@ export default function MakeOfferModal({
       setOfferMode('none')
       setGeneratedPdf(null)
       setGenerating(false)
-      setClauses({ probation: '', noticePeriod: '', workingHours: '', holiday: '', dbsCheck: false, uniformProvided: false, pension: false })
+      setSector('general')
+      setExtras(new Set())
     }
   }, [isOpen])
 
@@ -76,11 +70,46 @@ export default function MakeOfferModal({
     { value: 'casual', label: 'Casual' },
   ]
 
+  // Sector-specific clauses that AI will auto-include
+  const SECTOR_CLAUSES: Record<string, string[]> = {
+    hospitality: ['DBS check required', 'Uniform provided', 'Staff meals included', 'Shift pattern may include evenings, weekends and bank holidays', 'Tips/gratuities policy applies'],
+    finance: ['Non-compete clause (6 months)', 'Confidentiality and NDA required', 'Bonus structure subject to separate agreement', 'PILON (pay in lieu of notice) at employer discretion'],
+    tech: ['IP assignment — all work product belongs to the company', 'Equipment provided (laptop, peripherals)', 'Remote/hybrid working arrangements as agreed', 'Garden leave may apply during notice period', 'Confidentiality and NDA required'],
+    education: ['Enhanced DBS check with children\'s barred list required', 'Safeguarding training mandatory before start', 'Subject to Ofsted compliance requirements', 'Term-time working (if applicable)'],
+    healthcare: ['Enhanced DBS check required', 'Occupational health clearance required', 'Shift pattern may include nights and weekends', 'Uniform provided', 'Professional registration must be maintained'],
+    retail: ['Uniform provided', 'Staff discount applicable', 'Shift pattern may include weekends and bank holidays', 'DBS check may be required'],
+    general: [],
+  }
+
+  // Extra toggles the employer can add on top of sector defaults
+  const EXTRA_OPTIONS = [
+    'Probation period (3 months)', 'Probation period (6 months)',
+    'Notice period (1 week)', 'Notice period (1 month)', 'Notice period (3 months)',
+    'Pension scheme', 'Health insurance', 'Paid training included',
+    'Right to work check required', 'References required',
+    'Company car', 'Childcare vouchers', 'Training bond',
+  ]
+
+  const toggleExtra = (item: string) => {
+    setExtras(prev => {
+      const next = new Set(prev)
+      if (next.has(item)) next.delete(item)
+      else next.add(item)
+      return next
+    })
+  }
+
   const handleGenerateOfferLetter = async () => {
     if (!salary || !startDate) { setError('Enter salary and start date first'); return }
     setGenerating(true)
     setError('')
     try {
+      const allClauses = [
+        ...(SECTOR_CLAUSES[sector] || []),
+        ...Array.from(extras),
+        ...(additionalTerms.trim() ? [additionalTerms.trim()] : []),
+      ]
+
       const res = await fetch('/api/ai-assist', {
         method: 'POST',
         headers: {
@@ -91,7 +120,8 @@ export default function MakeOfferModal({
           type: 'offer-letter',
           data: {
             candidateName, company, jobTitle, salary, startDate, contractType, additionalTerms,
-            clauses,
+            sector,
+            clausesList: allClauses,
           },
         }),
       })
@@ -414,46 +444,40 @@ export default function MakeOfferModal({
 
             {offerMode === 'generate' && (
               <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.875rem' }}>
-                <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 0.75rem' }}>Select clauses to include — AI will write a formal offer letter.</p>
-
-                {/* Quick toggle chips */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '0.75rem' }}>
-                  {[
-                    { key: 'probation', label: 'Probation', options: ['3 months', '6 months'] },
-                    { key: 'noticePeriod', label: 'Notice', options: ['1 week', '1 month', '3 months'] },
-                    { key: 'workingHours', label: 'Hours', options: ['40hrs/week', '37.5hrs/week', '20hrs/week'] },
-                    { key: 'holiday', label: 'Holiday', options: ['28 days', '25 days + bank hols', '20 days + bank hols'] },
-                  ].map(({ key, label, options }) => (
-                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500, minWidth: 55 }}>{label}:</span>
-                      {options.map(opt => {
-                        const active = clauses[key] === opt
-                        return (
-                          <button key={opt} type="button" onClick={() => setClauses(prev => ({ ...prev, [key]: active ? '' : opt }))}
-                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', borderRadius: 99, border: active ? '1px solid #0f172a' : '1px solid #d1d5db', background: active ? '#0f172a' : '#fff', color: active ? '#FFE500' : '#334155', cursor: 'pointer', fontWeight: active ? 600 : 400 }}>
-                            {opt}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  ))}
+                {/* Sector dropdown */}
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>Sector</label>
+                  <select value={sector} onChange={e => setSector(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.9rem', background: '#fff' }}>
+                    <option value="general">General</option>
+                    <option value="hospitality">Hospitality</option>
+                    <option value="finance">Finance</option>
+                    <option value="tech">Tech</option>
+                    <option value="education">Education</option>
+                    <option value="healthcare">Healthcare</option>
+                    <option value="retail">Retail</option>
+                  </select>
+                  {sector !== 'general' && SECTOR_CLAUSES[sector] && (
+                    <p style={{ fontSize: '0.7rem', color: '#64748b', margin: '0.35rem 0 0', lineHeight: 1.4 }}>
+                      Auto-includes: {SECTOR_CLAUSES[sector].slice(0, 3).join(' · ')}{SECTOR_CLAUSES[sector].length > 3 ? ` + ${SECTOR_CLAUSES[sector].length - 3} more` : ''}
+                    </p>
+                  )}
                 </div>
 
-                {/* Boolean toggles */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '0.75rem' }}>
-                  {[
-                    { key: 'pension', label: 'Pension' },
-                    { key: 'dbsCheck', label: 'DBS check required' },
-                    { key: 'uniformProvided', label: 'Uniform provided' },
-                  ].map(({ key, label }) => {
-                    const active = !!clauses[key]
-                    return (
-                      <button key={key} type="button" onClick={() => setClauses(prev => ({ ...prev, [key]: !prev[key] }))}
-                        style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', borderRadius: 99, border: active ? '1px solid #16a34a' : '1px solid #d1d5db', background: active ? '#f0fdf4' : '#fff', color: active ? '#15803d' : '#64748b', cursor: 'pointer', fontWeight: active ? 600 : 400 }}>
-                        {active ? '✓ ' : ''}{label}
-                      </button>
-                    )
-                  })}
+                {/* Optional extras — small pill toggles */}
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>Add extras <span style={{ fontWeight: 400, color: '#94a3b8' }}>(optional)</span></label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                    {EXTRA_OPTIONS.map(opt => {
+                      const active = extras.has(opt)
+                      return (
+                        <button key={opt} type="button" onClick={() => toggleExtra(opt)}
+                          style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', borderRadius: 99, border: active ? '1px solid #0f172a' : '1px solid #e2e8f0', background: active ? '#0f172a' : '#fff', color: active ? '#FFE500' : '#64748b', cursor: 'pointer', fontWeight: active ? 600 : 400, transition: 'all 0.15s' }}>
+                          {active ? '✓ ' : ''}{opt}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 <button type="button" onClick={handleGenerateOfferLetter} disabled={generating || !salary}

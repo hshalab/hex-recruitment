@@ -138,17 +138,10 @@ ${data.companyDescription ? `About the company: ${data.companyDescription}` : ''
 
       return NextResponse.json({ jobAd })
     } else if (type === 'offer-letter') {
-      systemPrompt = 'You are a UK employment law expert. Write a professional, formal offer letter from an employer to a candidate. Use proper business letter format. Include all the details provided. Be concise but thorough. Return only the letter text — no markdown, no JSON, no commentary.'
+      const sectorLabel = data.sector && data.sector !== 'general' ? ` in the ${data.sector} sector` : ''
+      systemPrompt = `You are a UK employment law expert. Write a professional, formal offer letter from an employer to a candidate${sectorLabel}. Use proper business letter format. Include all the details and clauses provided. Include standard UK employment terms appropriate for the sector. Be concise but thorough. Return only the letter text — no markdown, no JSON, no commentary.`
 
-      const clausesList: string[] = []
-      const cl = data.clauses || {}
-      if (cl.probation) clausesList.push(`Probationary period: ${cl.probation}`)
-      if (cl.noticePeriod) clausesList.push(`Notice period: ${cl.noticePeriod}`)
-      if (cl.workingHours) clausesList.push(`Working hours: ${cl.workingHours}`)
-      if (cl.holiday) clausesList.push(`Holiday entitlement: ${cl.holiday}`)
-      if (cl.pension) clausesList.push('Employer pension scheme included')
-      if (cl.dbsCheck) clausesList.push('Subject to satisfactory DBS check')
-      if (cl.uniformProvided) clausesList.push('Uniform will be provided')
+      const allClauses: string[] = data.clausesList || []
 
       userPrompt = `Write a formal offer letter with these details:
 Company: ${data.company || 'The Company'}
@@ -157,7 +150,8 @@ Job Title: ${data.jobTitle || 'The Role'}
 Salary: ${data.salary || 'Competitive'}
 Start Date: ${data.startDate || 'TBC'}
 Contract Type: ${data.contractType || 'Full-time'}
-${clausesList.length > 0 ? `\nAdditional clauses:\n${clausesList.map(c => `- ${c}`).join('\n')}` : ''}
+Sector: ${data.sector || 'General'}
+${allClauses.length > 0 ? `\nClauses to include:\n${allClauses.map((c: string) => `- ${c}`).join('\n')}` : ''}
 ${data.additionalTerms ? `\nAdditional terms: ${data.additionalTerms}` : ''}`
 
       const offerRes = await fetch('https://api.anthropic.com/v1/messages', {
