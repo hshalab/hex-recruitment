@@ -839,7 +839,33 @@ export default function JobApplicationsPage() {
                     setBulkUpdating(true)
                     try {
                       const ids = Array.from(selectedIds)
-                      await supabase.from('job_applications').update({ status: newStatus }).in('id', ids)
+                      await supabase.from('job_applications').update({ status: newStatus, status_updated_at: new Date().toISOString() }).in('id', ids)
+
+                      // Send notifications + emails for each affected candidate
+                      const affected = applications.filter(a => ids.includes(a.id))
+                      for (const app of affected) {
+                        // Reuse the same notification logic as single-status updates
+                        const notifMap: Record<string, { title: string; message: string }> = {
+                          reviewing: { title: 'Application Under Review', message: `Your application for ${app.jobTitle} at ${app.company} is being reviewed.` },
+                          shortlisted: { title: 'Application Shortlisted', message: `Great news! Your application for ${app.jobTitle} at ${app.company} has been shortlisted.` },
+                          rejected: { title: 'Application Update', message: `Your application for ${app.jobTitle} at ${app.company} was not selected to move forward.` },
+                        }
+                        const notif = notifMap[newStatus]
+                        if (notif) {
+                          supabase.from('notifications').insert({
+                            user_id: app.candidateId, type: 'application_update',
+                            title: notif.title, message: notif.message, read: false,
+                            related_id: app.id, related_type: 'application', link: '/applications',
+                          }).then()
+                          if (app.candidateEmail) {
+                            fetch('/api/email/send', {
+                              method: 'POST', headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ to: app.candidateEmail, type: 'application_status', data: { status: newStatus, companyName: app.company, jobTitle: app.jobTitle, candidateName: app.candidateName } }),
+                            }).catch(() => {})
+                          }
+                        }
+                      }
+
                       setApplications(prev => prev.map(a => ids.includes(a.id) ? { ...a, status: newStatus } : a))
                       setSelectedIds(new Set())
                     } catch { /* ignore */ }
