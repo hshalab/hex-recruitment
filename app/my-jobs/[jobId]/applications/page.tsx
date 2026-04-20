@@ -373,6 +373,7 @@ export default function JobApplicationsPage() {
                 companyName: application.company,
                 jobTitle: application.jobTitle,
                 candidateName: application.candidateName,
+                employerId: (await supabase.auth.getSession()).data.session?.user.id,
               },
             }),
           }).catch(() => {})

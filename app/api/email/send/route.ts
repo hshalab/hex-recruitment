@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { rateLimit } from '@/lib/rateLimit'
+import { getCustomTemplate, applyVariables } from '@/lib/customEmailTemplate'
 
 // Template imports
 import { welcomeEmail } from '@/emails/welcome'
@@ -105,9 +106,23 @@ export async function POST(req: Request) {
       case 'new_application':
         email = newApplicationEmail(data.candidateName, data.jobTitle, data.company)
         break
-      case 'application_status':
-        email = applicationStatusEmail(data.status, data.companyName, data.jobTitle, data.candidateName, data.reason)
+      case 'application_status': {
+        // Check for custom employer template
+        let customTpl = null
+        if (data.employerId) {
+          customTpl = await getCustomTemplate(data.employerId, data.status)
+        }
+        if (customTpl) {
+          const vars = { candidateName: data.candidateName || '', jobTitle: data.jobTitle || '', companyName: data.companyName || '' }
+          email = {
+            subject: applyVariables(customTpl.subject, vars),
+            html: `<p>${applyVariables(customTpl.body, vars).replace(/\n/g, '</p><p>')}</p>`,
+          }
+        } else {
+          email = applicationStatusEmail(data.status, data.companyName, data.jobTitle, data.candidateName, data.reason)
+        }
         break
+      }
       case 'interview_scheduled':
         email = interviewScheduledEmail(data.companyName, data.jobTitle, data.date, data.time, data.notes, data.meetingLink)
         break
