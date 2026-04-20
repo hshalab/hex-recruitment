@@ -60,6 +60,11 @@ function MyJobsContent() {
   const [appliedJobs, setAppliedJobs] = useState<AppliedJob[]>([])
   const [companyName, setCompanyName] = useState('')
   const [rawInterviews, setRawInterviews] = useState<{ jobId: string; status: string; interviewDate: string; interviewTime: string; candidateName: string }[]>([])
+  const [detailedOffers, setDetailedOffers] = useState<{
+    id: string; jobId: string; jobTitle: string; candidateId: string; candidateName: string;
+    salary: string; startDate: string; contractType: string; status: string;
+    signatureName?: string; signatureTimestamp?: string; declineReason?: string; createdAt: string;
+  }[]>([])
   const [rawOffers, setRawOffers] = useState<{ jobId: string; status: string }[]>([])
   const [appCountsByJob, setAppCountsByJob] = useState<Record<string, Record<string, number>>>({})
   const [boostModalOpen, setBoostModalOpen] = useState(false)
@@ -204,17 +209,50 @@ function MyJobsContent() {
             })))
           }
 
-          // Fetch offers with job_id for per-view filtering
+          // Fetch offers with candidate + job details for the offers/hired tabs
           const { data: offerData } = await supabase
             .from('job_offers')
-            .select('job_id, status')
+            .select('id, job_id, candidate_id, salary, start_date, contract_type, status, signature_name, signature_timestamp, decline_reason, created_at, jobs ( title )')
             .eq('employer_id', employerId)
+            .order('created_at', { ascending: false })
 
           if (offerData) {
             setRawOffers(offerData.map((r: any) => ({
               jobId: r.job_id,
               status: r.status,
             })))
+
+            // Enrich offers with candidate names
+            const offerCandidateIds = Array.from(new Set(offerData.map((r: any) => r.candidate_id).filter(Boolean)))
+            let offerNames: Record<string, string> = {}
+            if (offerCandidateIds.length > 0) {
+              const { data: profiles } = await supabase
+                .from('candidate_profiles')
+                .select('user_id, full_name')
+                .in('user_id', offerCandidateIds)
+              for (const p of profiles || []) {
+                if (p.full_name) offerNames[p.user_id] = p.full_name
+              }
+            }
+
+            setDetailedOffers(offerData.map((r: any) => {
+              const job: any = r.jobs ? (Array.isArray(r.jobs) ? r.jobs[0] : r.jobs) : null
+              return {
+                id: r.id,
+                jobId: r.job_id,
+                jobTitle: job?.title || 'Role',
+                candidateId: r.candidate_id,
+                candidateName: offerNames[r.candidate_id] || 'Candidate',
+                salary: r.salary,
+                startDate: r.start_date,
+                contractType: r.contract_type,
+                status: r.status,
+                signatureName: r.signature_name,
+                signatureTimestamp: r.signature_timestamp,
+                declineReason: r.decline_reason,
+                createdAt: r.created_at,
+              }
+            }))
           }
         }
 
@@ -779,6 +817,88 @@ function MyJobsContent() {
                 </div>
               )}
 
+              {/* Offers tab — show offer records instead of job cards */}
+              {activeTab === 'offers' && detailedOffers.filter(o => o.status === 'pending' || o.status === 'declined').length > 0 && (
+                <div className={styles.jobsList}>
+                  {detailedOffers
+                    .filter(o => o.status === 'pending' || o.status === 'declined')
+                    .map(offer => (
+                    <div key={offer.id} className={styles.jobCard} style={{ cursor: 'pointer' }} onClick={() => router.push(`/my-jobs/${offer.jobId}/applications`)}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.25rem' }}>{offer.candidateName}</h3>
+                          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>{offer.jobTitle}</p>
+                        </div>
+                        <span style={{
+                          fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: 99,
+                          background: offer.status === 'pending' ? '#fffbeb' : '#fef2f2',
+                          color: offer.status === 'pending' ? '#d97706' : '#dc2626',
+                          border: `1px solid ${offer.status === 'pending' ? '#fde68a' : '#fecaca'}`,
+                        }}>
+                          {offer.status === 'pending' ? 'Awaiting Response' : 'Declined'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.75rem', fontSize: '0.85rem', color: '#334155' }}>
+                        <span><strong>Salary:</strong> {offer.salary}</span>
+                        <span><strong>Start:</strong> {new Date(offer.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        <span><strong>Type:</strong> {offer.contractType}</span>
+                      </div>
+                      {offer.declineReason && (
+                        <p style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '0.5rem', fontStyle: 'italic' }}>Reason: {offer.declineReason}</p>
+                      )}
+                      <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.5rem' }}>
+                        Sent {new Date(offer.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {activeTab === 'offers' && detailedOffers.filter(o => o.status === 'pending' || o.status === 'declined').length === 0 && (
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📋</div>
+                  <p>No pending offers. Make an offer from the applicant view.</p>
+                </div>
+              )}
+
+              {/* Hired tab — show hired records instead of job cards */}
+              {activeTab === 'hired' && detailedOffers.filter(o => o.status === 'accepted').length > 0 && (
+                <div className={styles.jobsList}>
+                  {detailedOffers
+                    .filter(o => o.status === 'accepted')
+                    .map(offer => (
+                    <div key={offer.id} className={styles.jobCard} style={{ cursor: 'pointer' }} onClick={() => router.push(`/my-jobs/${offer.jobId}/applications`)}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.25rem' }}>{offer.candidateName}</h3>
+                          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>{offer.jobTitle}</p>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: 99, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+                          Hired
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.75rem', fontSize: '0.85rem', color: '#334155' }}>
+                        <span><strong>Salary:</strong> {offer.salary}</span>
+                        <span><strong>Start:</strong> {new Date(offer.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        <span><strong>Type:</strong> {offer.contractType}</span>
+                      </div>
+                      {offer.signatureName && (
+                        <p style={{ fontSize: '0.8rem', color: '#16a34a', marginTop: '0.5rem' }}>
+                          ✓ Signed by {offer.signatureName} on {offer.signatureTimestamp ? new Date(offer.signatureTimestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {activeTab === 'hired' && detailedOffers.filter(o => o.status === 'accepted').length === 0 && (
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎉</div>
+                  <p>No hires yet. Candidates will appear here once they accept an offer.</p>
+                </div>
+              )}
+
+              {/* Job cards — show for all other tabs */}
+              {activeTab !== 'offers' && activeTab !== 'hired' && (
               <div className={styles.jobsList}>
                 {displayJobs.map(job => {
                   const status = getStatusLabel(job.status)
@@ -908,6 +1028,7 @@ function MyJobsContent() {
                   )
                 })}
               </div>
+              )}
             </>
           )}
         </div>
