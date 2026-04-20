@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
+import SignedLink from '@/components/SignedLink'
 import SignatureModal from '@/components/SignatureModal'
 import DeclineOfferModal from '@/components/DeclineOfferModal'
 import { supabase } from '@/lib/supabase'
@@ -900,14 +901,9 @@ export default function MyJobsPage() {
                             )}
                             {application.offer.offerLetterUrl && (
                               <p>
-                                <a
-                                  href={application.offer.offerLetterUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={styles.viewOfferLetterLink}
-                                >
+                                <SignedLink src={application.offer.offerLetterUrl} className={styles.viewOfferLetterLink}>
                                   View Offer Letter
-                                </a>
+                                </SignedLink>
                               </p>
                             )}
                           </div>

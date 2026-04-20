@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
+import SignedLink from '@/components/SignedLink'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import MakeOfferModal from '@/components/MakeOfferModal'
 import { supabase } from '@/lib/supabase'
@@ -954,14 +955,9 @@ export default function JobApplicationsPage() {
                         View Profile
                       </Link>
                       {application.candidateCv ? (
-                        <a
-                          href={application.candidateCv}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.viewProfileLink}
-                        >
+                        <SignedLink src={application.candidateCv} className={styles.viewProfileLink}>
                           View CV
-                        </a>
+                        </SignedLink>
                       ) : (
                         <span
                           className={`${styles.viewProfileLink} ${styles.viewCvDisabled}`}
@@ -1120,14 +1116,9 @@ export default function JobApplicationsPage() {
                         )}
                         {application.offer.offerLetterUrl && (
                           <p>
-                            <a
-                              href={application.offer.offerLetterUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={styles.offerLetterLink}
-                            >
+                            <SignedLink src={application.offer.offerLetterUrl} className={styles.offerLetterLink}>
                               View Offer Letter
-                            </a>
+                            </SignedLink>
                           </p>
                         )}
                       </div>
