@@ -136,7 +136,7 @@ function PostJobContent() {
       // Fetch employer profile for auto-fill
       const { data: empProfile } = await supabase
         .from('employer_profiles')
-        .select('company_name, logo_url, description, email, phone, website, address_line_1, city, county, postcode')
+        .select('company_name, logo_url, description, website, business_address, location')
         .eq('user_id', session.user.id)
         .maybeSingle()
 
@@ -149,9 +149,7 @@ function PostJobContent() {
             company: empProfile.company_name || prev.company,
             companyLogo: empProfile.logo_url || prev.companyLogo,
             companyWebsite: empProfile.website || prev.companyWebsite,
-            location: empProfile.address_line_1 || prev.location,
-            city: empProfile.city || prev.city,
-            postcode: empProfile.postcode || prev.postcode,
+            location: empProfile.business_address || empProfile.location || prev.location,
           }))
         }
       }
@@ -707,9 +705,7 @@ function PostJobContent() {
                           company: employerProfile.company_name || '',
                           companyLogo: employerProfile.logo_url || '',
                           companyWebsite: employerProfile.website || '',
-                          location: employerProfile.address_line_1 || '',
-                          city: employerProfile.city || '',
-                          postcode: employerProfile.postcode || '',
+                          location: employerProfile.business_address || employerProfile.location || '',
                         }))
                       } else {
                         // Clear for third-party posting
