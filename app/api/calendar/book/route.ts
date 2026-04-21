@@ -164,8 +164,10 @@ export async function POST(req: NextRequest) {
     ]
     await supabaseAdmin.from('notifications').insert(notifications)
 
-    // Create Google Calendar event on the employer's connected calendar (soft-fail).
-    try {
+    // Create Google Calendar event only when the interview is already confirmed
+    // (self-scheduled by candidate). For employer-initiated bookings, the gcal
+    // event is created later when the candidate confirms via the update-event API.
+    if (selfScheduled) try {
       const { data: profile } = await supabaseAdmin
         .from('employer_profiles')
         .select('gcal_calendar_id')
@@ -173,10 +175,8 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
 
       const calendarId = profile?.gcal_calendar_id
-      console.log('[calendar/book] gcal check:', { calendarId: !!calendarId, employerId })
       if (calendarId) {
         const accessToken = await getValidAccessToken(employerId)
-        console.log('[calendar/book] gcal token:', { hasToken: !!accessToken })
         if (accessToken) {
           const startIso = buildLondonIso(bookedDate, bookedTime)
           const endIso = addMinutesToLondonIso(startIso, dur)
@@ -214,9 +214,7 @@ export async function POST(req: NextRequest) {
             gEvent = await updateCalendarEvent(accessToken, calendarId, priorGcalEventId, eventPayload)
           }
           if (!gEvent) {
-            console.log('[calendar/book] creating new gcal event')
             gEvent = await createCalendarEvent(accessToken, calendarId, eventPayload)
-            console.log('[calendar/book] gcal event result:', { id: gEvent?.id, hasEvent: !!gEvent })
           }
 
           if (gEvent?.id) {

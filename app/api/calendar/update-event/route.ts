@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getValidAccessToken, updateCalendarEvent, buildLondonIso, addMinutesToLondonIso } from '@/lib/googleCalendar'
+import { getValidAccessToken, createCalendarEvent, updateCalendarEvent, buildLondonIso, addMinutesToLondonIso } from '@/lib/googleCalendar'
 import { sendInterviewMessage } from '@/lib/sendInterviewMessage'
 
 const supabaseAdmin = createClient(
@@ -108,24 +108,20 @@ export async function POST(req: NextRequest) {
       }).catch(() => {})
     }
 
-    // 4. Sync to Google Calendar
+    // 4. Sync to Google Calendar — update existing event or create new one
     const { data: booking } = await supabaseAdmin
       .from('interview_bookings')
-      .select('gcal_event_id_employer')
+      .select('id, gcal_event_id_employer')
       .eq('interview_id', interviewId)
       .maybeSingle()
 
-    if (booking?.gcal_event_id_employer && empProfile?.gcal_calendar_id) {
+    if (empProfile?.gcal_calendar_id) {
       const accessToken = await getValidAccessToken(employerId)
       if (accessToken) {
         const startIso = buildLondonIso(date, time)
         const endIso = addMinutesToLondonIso(startIso, dur)
 
-        await updateCalendarEvent(
-          accessToken,
-          empProfile.gcal_calendar_id,
-          booking.gcal_event_id_employer,
-          {
+        const eventPayload = {
             summary: `Interview: ${candidateName || 'Candidate'} — ${jobTitle || 'Interview'}`,
             description: [
               `Type: ${typeLabel}`,
@@ -137,7 +133,23 @@ export async function POST(req: NextRequest) {
             endIso,
             attendees: candidateEmail ? [candidateEmail] : [],
           }
-        )
+
+        // Update existing gcal event or create a new one
+        let gEvent = null as any
+        if (booking?.gcal_event_id_employer) {
+          gEvent = await updateCalendarEvent(accessToken, empProfile.gcal_calendar_id, booking.gcal_event_id_employer, eventPayload)
+        }
+        if (!gEvent) {
+          gEvent = await createCalendarEvent(accessToken, empProfile.gcal_calendar_id, eventPayload)
+        }
+
+        // Store the gcal event ID if we created a new one
+        if (gEvent?.id && booking?.id && (!booking.gcal_event_id_employer || booking.gcal_event_id_employer !== gEvent.id)) {
+          await supabaseAdmin
+            .from('interview_bookings')
+            .update({ gcal_event_id_employer: gEvent.id })
+            .eq('id', booking.id)
+        }
       }
     }
 
