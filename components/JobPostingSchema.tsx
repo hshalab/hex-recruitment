@@ -26,7 +26,7 @@ export default function JobPostingSchema({ job }: { job: Job }) {
     description: job.fullDescription || job.description,
     datePosted: job.postedDate,
     ...(job.expiresDate && { validThrough: job.expiresDate }),
-    employmentType: mapEmploymentType(job.employmentType),
+    employmentType: mapEmploymentType(Array.isArray(job.employmentType) ? job.employmentType : [job.employmentType]),
     hiringOrganization: {
       '@type': 'Organization',
       name: job.company,
@@ -55,7 +55,7 @@ export default function JobPostingSchema({ job }: { job: Job }) {
       },
     },
     jobLocationType: job.workLocationType === 'Remote' ? 'TELECOMMUTE' : undefined,
-    url: `${siteUrl}/jobs?id=${job.id}`,
+    url: `${siteUrl}/job/${job.id}`,
     identifier: {
       '@type': 'PropertyValue',
       name: 'Thrive',

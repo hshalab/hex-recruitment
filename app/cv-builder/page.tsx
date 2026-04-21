@@ -290,7 +290,7 @@ export default function CVBuilderPage() {
       // Also store the URL on the candidate profile for easy access
       await supabase
         .from('candidate_profiles')
-        .update({ cv_url: fileUrl })
+        .update({ cv_url: fileUrl, cv_file_name: file.name })
         .eq('user_id', userId)
 
       setUploadMode('build')

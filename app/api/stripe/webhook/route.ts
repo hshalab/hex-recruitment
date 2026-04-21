@@ -74,11 +74,23 @@ export async function POST(req: NextRequest) {
           const userId = session.metadata?.user_id
 
           if (boostType && duration && itemId && userId) {
+            // Idempotency: check if we already processed this checkout session
+            const paymentIntent = session.payment_intent as string | null
+            if (paymentIntent) {
+              const { data: existing } = await supabaseAdmin
+                .from('boosts')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('target_id', itemId)
+                .gte('created_at', new Date(Date.now() - 60000).toISOString())
+                .limit(1)
+              if (existing && existing.length > 0) break // Already processed
+            }
+
             const days = parseInt(duration, 10)
             const now = new Date()
             const expiresAt = new Date(now.getTime() + days * 86400000)
 
-            // Map duration to tier ID
             const tierMap: Record<number, string> = {
               7: '7_days',
               14: '14_days',
