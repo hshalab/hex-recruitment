@@ -225,11 +225,11 @@ export default function Header() {
   const isEmployer = user?.user_metadata?.role === 'employer'
 
   const logoTagline = (() => {
-    if (!mounted) return 'FIND JOBS · HIRE TALENT'
-    if (user) return isEmployer ? 'HIRE TALENT' : 'FIND JOBS'
-    if (pathname === '/login/employer' || pathname === '/register/employer') return 'HIRE TALENT'
+    if (!mounted) return 'FIND JOBS · HIRE PEOPLE'
+    if (user) return isEmployer ? 'HIRE PEOPLE' : 'FIND JOBS'
+    if (pathname === '/login/employer' || pathname === '/register/employer') return 'HIRE PEOPLE'
     if (pathname === '/login/employee' || pathname === '/register/employee') return 'FIND JOBS'
-    return 'FIND JOBS · HIRE TALENT'
+    return 'FIND JOBS · HIRE PEOPLE'
   })()
 
   // Get user initials for avatar fallback
