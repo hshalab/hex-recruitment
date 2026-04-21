@@ -142,14 +142,13 @@ function PostJobContent() {
 
       if (empProfile) {
         setEmployerProfile(empProfile)
-        // Auto-fill company fields if not in edit mode
+        // Auto-fill company fields if not in edit mode (location left blank — varies per job)
         if (!searchParams.get('edit')) {
           setFormData(prev => ({
             ...prev,
             company: empProfile.company_name || prev.company,
             companyLogo: empProfile.logo_url || prev.companyLogo,
             companyWebsite: empProfile.website || prev.companyWebsite,
-            location: empProfile.business_address || empProfile.location || prev.location,
           }))
         }
       }
@@ -699,13 +698,12 @@ function PostJobContent() {
                       const checked = e.target.checked
                       setIsOwnCompany(checked)
                       if (checked && employerProfile) {
-                        // Auto-fill from profile
+                        // Auto-fill from profile (location left blank — varies per job)
                         setFormData(prev => ({
                           ...prev,
                           company: employerProfile.company_name || '',
                           companyLogo: employerProfile.logo_url || '',
                           companyWebsite: employerProfile.website || '',
-                          location: employerProfile.business_address || employerProfile.location || '',
                         }))
                       } else {
                         // Clear for third-party posting
