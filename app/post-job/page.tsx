@@ -90,6 +90,8 @@ function PostJobContent() {
   const [hasSubscription, setHasSubscription] = useState(false)
   const [isOwnCompany, setIsOwnCompany] = useState(true)
   const [employerProfile, setEmployerProfile] = useState<any>(null)
+  const [hideSalary, setHideSalary] = useState(false)
+  const [salaryNegotiable, setSalaryNegotiable] = useState(false)
   const [currentUser, setCurrentUser] = useState<{ id: string; companyName: string } | null>(null)
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false)
@@ -474,16 +476,17 @@ function PostJobContent() {
       return
     }
 
-    if (!formData.salaryMin || !formData.salaryMax) {
-      setError('Please enter a salary range')
-      setLoading(false)
-      return
-    }
-
-    if (parseInt(formData.salaryMin) > parseInt(formData.salaryMax)) {
-      setError('Minimum salary cannot be higher than maximum salary')
-      setLoading(false)
-      return
+    if (!hideSalary) {
+      if (!formData.salaryMin || !formData.salaryMax) {
+        setError('Please enter a salary range')
+        setLoading(false)
+        return
+      }
+      if (parseInt(formData.salaryMin) > parseInt(formData.salaryMax)) {
+        setError('Minimum salary cannot be higher than maximum salary')
+        setLoading(false)
+        return
+      }
     }
 
     if (descView === 'guided' && !guidedHasContent) {
@@ -530,8 +533,8 @@ function PostJobContent() {
         companyBanner,
         title: formData.title,
         jobReference,
-        salaryMin: parseInt(formData.salaryMin),
-        salaryMax: parseInt(formData.salaryMax),
+        salaryMin: hideSalary ? 0 : parseInt(formData.salaryMin || '0'),
+        salaryMax: hideSalary ? 0 : parseInt(formData.salaryMax || '0'),
         salaryPeriod: formData.salaryPeriod,
         employmentType: employmentType as ('Full-time' | 'Part-time' | 'Permanent' | 'Contract' | 'Temporary' | 'Flexible')[],
         location: formData.location,
@@ -543,7 +546,7 @@ function PostJobContent() {
         },
         description: shortDescription || descriptionFallback,
         fullDescription: formData.description || descriptionFallback,
-        tags,
+        tags: [...tags, ...(salaryNegotiable ? ['Salary negotiable'] : []), ...(hideSalary ? ['Competitive salary'] : [])],
         urgent: formData.tags.has('Urgent hire') || formData.tags.has('Immediate start') || formData.tags.has('Interviews this week'),
         noExperience: formData.tags.has('No experience required'),
         category: formData.category,
@@ -1044,8 +1047,21 @@ function PostJobContent() {
 
             <div className={styles.formGroup}>
               <label className={styles.label} htmlFor="salaryMin">
-                Salary Range <span className={styles.required}>*</span>
+                Salary Range {!hideSalary && <span className={styles.required}>*</span>}
               </label>
+
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.85rem', cursor: 'pointer', color: '#334155' }}>
+                  <input type="checkbox" checked={hideSalary} onChange={e => { setHideSalary(e.target.checked); if (e.target.checked) setSalaryNegotiable(false) }} style={{ accentColor: '#0f172a' }} />
+                  Competitive salary (don&apos;t show)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.85rem', cursor: 'pointer', color: '#334155' }}>
+                  <input type="checkbox" checked={salaryNegotiable} onChange={e => setSalaryNegotiable(e.target.checked)} disabled={hideSalary} style={{ accentColor: '#0f172a' }} />
+                  Salary negotiable
+                </label>
+              </div>
+
+              {!hideSalary && (
               <div className={styles.salaryGroup}>
                 <div className={styles.salaryInputs}>
                   <input
@@ -1057,7 +1073,6 @@ function PostJobContent() {
                     placeholder="e.g. 12"
                     className={styles.salaryInput}
                     autoComplete="off"
-                    required
                   />
                   <span className={styles.salaryDivider}>to</span>
                   <input
@@ -1069,7 +1084,6 @@ function PostJobContent() {
                     placeholder="e.g. 18"
                     className={styles.salaryInput}
                     autoComplete="off"
-                    required
                   />
                 </div>
                 <select
@@ -1083,6 +1097,13 @@ function PostJobContent() {
                   <option value="year">Per year (£)</option>
                 </select>
               </div>
+              )}
+
+              {hideSalary && (
+                <p style={{ fontSize: '0.8rem', color: '#64748b', fontStyle: 'italic', margin: '0.25rem 0 0' }}>
+                  Salary will show as &quot;Competitive&quot; on the job listing.
+                </p>
+              )}
             </div>
           </div>
 
@@ -1416,7 +1437,7 @@ function PostJobContent() {
 
                 <div className={styles.previewDetails}>
                   <span className={styles.previewDetail}>📍 {formData.location || 'Location'}{formData.area ? `, ${formData.area}` : ''}</span>
-                  <span className={styles.previewDetail}>💰 £{formData.salaryMin || '0'} - £{formData.salaryMax || '0'} / {formData.salaryPeriod}</span>
+                  <span className={styles.previewDetail}>💰 {hideSalary ? 'Competitive salary' : `£${formData.salaryMin || '0'} - £${formData.salaryMax || '0'} / ${formData.salaryPeriod}`}{salaryNegotiable ? ' (negotiable)' : ''}</span>
                   <span className={styles.previewDetail}>📋 {formData.employmentType} · {formData.contractType}</span>
                   <span className={styles.previewDetail}>🏢 {formData.workLocationType}</span>
                 </div>

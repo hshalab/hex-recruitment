@@ -620,8 +620,10 @@ function JobsPageContent() {
   }
 
   const formatSalaryFull = (job: Job) => {
-    if (job.salaryPeriod === 'hour') return `£${job.salaryMin} - £${job.salaryMax} per hour`
-    return `£${job.salaryMin.toLocaleString()} - £${job.salaryMax.toLocaleString()} per year`
+    if (!job.salaryMin && !job.salaryMax) return 'Competitive salary'
+    const negotiable = (job.tags || []).includes('Salary negotiable') ? ' (negotiable)' : ''
+    if (job.salaryPeriod === 'hour') return `£${job.salaryMin} - £${job.salaryMax} per hour${negotiable}`
+    return `£${job.salaryMin.toLocaleString()} - £${job.salaryMax.toLocaleString()} per year${negotiable}`
   }
 
   const renderDescription = (text: string) => {
@@ -848,10 +850,12 @@ function JobsPageContent() {
   }
 
   const formatSalary = (job: Job) => {
+    if (!job.salaryMin && !job.salaryMax) return 'Competitive salary'
+    const negotiable = (job.tags || []).includes('Salary negotiable') ? ' (negotiable)' : ''
     if (job.salaryPeriod === 'hour') {
-      return `£${job.salaryMin}-${job.salaryMax}/hr`
+      return `£${job.salaryMin}-${job.salaryMax}/hr${negotiable}`
     }
-    return `£${(job.salaryMin / 1000).toFixed(0)}k-${(job.salaryMax / 1000).toFixed(0)}k/year`
+    return `£${(job.salaryMin / 1000).toFixed(0)}k-${(job.salaryMax / 1000).toFixed(0)}k/year${negotiable}`
   }
 
   const getTagStyle = (index: number) => {
