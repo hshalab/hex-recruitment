@@ -838,7 +838,7 @@ function MyJobsContent() {
                           {offer.status === 'pending' ? 'Awaiting Response' : 'Declined'}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.75rem', fontSize: '0.85rem', color: '#334155' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1.5rem', marginTop: '0.75rem', fontSize: '0.85rem', color: '#334155' }}>
                         <span><strong>Salary:</strong> {offer.salary}</span>
                         <span><strong>Start:</strong> {new Date(offer.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                         <span><strong>Type:</strong> {offer.contractType}</span>
@@ -876,7 +876,7 @@ function MyJobsContent() {
                           Hired
                         </span>
                       </div>
-                      <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.75rem', fontSize: '0.85rem', color: '#334155' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1.5rem', marginTop: '0.75rem', fontSize: '0.85rem', color: '#334155' }}>
                         <span><strong>Salary:</strong> {offer.salary}</span>
                         <span><strong>Start:</strong> {new Date(offer.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                         <span><strong>Type:</strong> {offer.contractType}</span>

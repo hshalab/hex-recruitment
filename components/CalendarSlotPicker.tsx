@@ -135,7 +135,7 @@ export default function CalendarSlotPicker({
               disabled={disabled}
               onClick={() => { if (!disabled) { onSelectDate(cell.date); onSelectTime('') } }}
               style={{
-                padding: '0.4rem 0', fontSize: '0.85rem',
+                padding: '0.5rem 0', fontSize: '0.82rem', minHeight: 44,
                 fontWeight: isSelected ? 700 : cell.isToday ? 600 : 400,
                 background: isSelected ? '#0f172a' : 'transparent',
                 color: isSelected ? '#FFE500' : disabled ? '#d1d5db' : '#0f172a',
@@ -162,7 +162,7 @@ export default function CalendarSlotPicker({
           {selectedDateSlots.length === 0 ? (
             <p style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', padding: '0.75rem 0' }}>No slots on this date</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.375rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: '0.375rem' }}>
               {selectedDateSlots.map(s => {
                 const active = s.time === selectedTime
                 return (

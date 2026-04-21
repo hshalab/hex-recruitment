@@ -113,11 +113,11 @@ export default function EmailTemplatesPage() {
                 onClick={() => setEditing(isEditing ? null : type.id)}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1rem', cursor: 'pointer', background: isEditing ? '#f8fafc' : '#fff' }}
               >
-                <div>
-                  <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{type.label}</span>
-                  <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginLeft: '0.75rem' }}>{type.description}</span>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{type.label}</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{type.description}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
                   {saved === type.id && <span style={{ color: '#16a34a', fontSize: '0.8rem', fontWeight: 500 }}>Saved!</span>}
                   {tpl && <span style={{ fontSize: '0.7rem', color: '#16a34a', background: '#f0fdf4', padding: '0.15rem 0.4rem', borderRadius: 4 }}>Customised</span>}
                   <span style={{ color: '#94a3b8' }}>{isEditing ? '▲' : '▼'}</span>

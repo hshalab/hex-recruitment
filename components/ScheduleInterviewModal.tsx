@@ -819,8 +819,9 @@ export default function ScheduleInterviewModal({
                         disabled={disabled}
                         onClick={() => { if (!disabled) { setSelectedDate(cell.date); setSelectedTime('') } }}
                         style={{
-                          padding: '0.4rem 0',
-                          fontSize: '0.85rem',
+                          padding: '0.5rem 0',
+                          fontSize: '0.82rem',
+                          minHeight: 44,
                           fontWeight: isSelected ? 700 : cell.isToday ? 600 : 400,
                           background: isSelected ? '#0f172a' : 'transparent',
                           color: isSelected ? '#FFE500' : disabled ? '#d1d5db' : cell.hasSlots ? '#0f172a' : '#94a3b8',
