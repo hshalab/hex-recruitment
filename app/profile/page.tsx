@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
+import SignedImage from '@/components/SignedImage'
 import JobSeekerProfileForm from '@/components/JobSeekerProfileForm'
 import { supabase } from '@/lib/supabase'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
@@ -285,7 +286,7 @@ export default function ProfilePage() {
           <div className={styles.profileHeader}>
             <div className={styles.avatar}>
               {profileData?.photoPreview ? (
-                <img src={profileData.photoPreview} alt={fullName} className={styles.avatarImg} />
+                <SignedImage src={profileData.photoPreview} alt={fullName} className={styles.avatarImg} />
               ) : (
                 <span className={styles.avatarInitials}>{initials || '?'}</span>
               )}

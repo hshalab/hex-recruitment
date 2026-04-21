@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
+import SignedImage from '@/components/SignedImage'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import {
@@ -461,7 +462,7 @@ function JobAnalyticsContent() {
                       <div className={styles.viewerProfile}>
                         <div className={styles.viewerAvatar}>
                           {viewerProfiles[view.viewer_id].profile_picture_url ? (
-                            <img src={viewerProfiles[view.viewer_id].profile_picture_url} alt="" className={styles.viewerAvatarImg} />
+                            <SignedImage src={viewerProfiles[view.viewer_id].profile_picture_url} alt="" className={styles.viewerAvatarImg} />
                           ) : (
                             <span className={styles.viewerAvatarInitial}>
                               {viewerProfiles[view.viewer_id].full_name?.charAt(0) || '?'}

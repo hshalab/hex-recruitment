@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAdminToken } from '@/lib/admin-context'
 import AdminTable, { Column, exportToCSV } from '@/components/admin/AdminTable'
 import DetailPanel, { DetailRow, DetailSection, DetailBadge } from '@/components/admin/DetailPanel'
+import SignedLink from '@/components/SignedLink'
 import styles from './page.module.css'
 
 interface User {
@@ -289,7 +290,7 @@ export default function AdminUsersPage() {
                   <DetailRow label="Job Title" value={detailUser.job_title} />
                   <DetailRow label="Skills" value={detailUser.skills?.join(', ')} />
                   {detailUser.cv_url && (
-                    <DetailRow label="CV" value={<a href={detailUser.cv_url} target="_blank" rel="noopener noreferrer">View CV</a>} />
+                    <DetailRow label="CV" value={<SignedLink src={detailUser.cv_url}>View CV</SignedLink>} />
                   )}
                 </>
               )}

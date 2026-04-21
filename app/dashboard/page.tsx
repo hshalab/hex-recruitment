@@ -15,6 +15,7 @@ import { Boost, getDaysRemaining } from '@/lib/boostTypes'
 import { Notification, formatNotificationTime } from '@/lib/mockNotifications'
 import Header from '@/components/Header'
 import ProfileBoostPaymentModal from '@/components/ProfileBoostPaymentModal'
+import SignedImage from '@/components/SignedImage'
 import styles from './page.module.css'
 
 // ── Helpers ─────────────────────────────────────────────
@@ -658,7 +659,7 @@ export default function DashboardPage() {
         {/* ── 1. WELCOME HEADER ──────────────────────────────── */}
         <div className={styles.welcomeHeader}>
           {candidate?.profilePictureUrl ? (
-            <img src={candidate.profilePictureUrl} alt={displayName} className={styles.avatar} />
+            <SignedImage src={candidate.profilePictureUrl} alt={displayName} className={styles.avatar} />
           ) : (
             <div className={styles.avatarPlaceholder}>{getInitials(displayName)}</div>
           )}
