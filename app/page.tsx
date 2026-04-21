@@ -109,7 +109,7 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroInner}>
           <h1 className={styles.heroTitle}>
-            Hire great people.<br />No agency fees.<br />Post unlimited jobs free.
+            Post a job. Get a job.<br />One platform for hiring.
           </h1>
           <p className={styles.heroSubtitle}>
             Post jobs, search candidates, manage your pipeline, schedule interviews —
@@ -245,8 +245,8 @@ export default function Home() {
           <div className={`${styles.stepsGrid}`}>
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
-              <h3 className={styles.stepTitle}>No agency fees</h3>
-              <p className={styles.stepText}>Agencies charge 15-25% of salary per hire. Thrive gives you the same tools for free — no subscription needed for the first 600 employers.</p>
+              <h3 className={styles.stepTitle}>No more spreadsheets</h3>
+              <p className={styles.stepText}>Stop juggling emails, calendars and job boards. Thrive handles your entire hiring pipeline in one place — post, interview, offer, hire.</p>
             </div>
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
