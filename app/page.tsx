@@ -109,7 +109,7 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroInner}>
           <h1 className={styles.heroTitle}>
-            Find a job. Post a job.
+            FIND A JOB.<br />POST A JOB.
           </h1>
           <p className={styles.heroSubtitle}>
             Post jobs, search candidates, manage your pipeline, schedule interviews —
