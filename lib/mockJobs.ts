@@ -45,6 +45,7 @@ export interface Job {
   applicationCount: number
   status: 'active' | 'expired' | 'filled'
   screeningQuestions?: { id: string; question: string; required: boolean }[]
+  isRecruiterPosting?: boolean
 }
 
 // Mock data removed — all jobs now come from Supabase

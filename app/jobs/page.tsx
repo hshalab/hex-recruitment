@@ -1103,7 +1103,12 @@ function JobsPageContent() {
                   </div>
                   <div className={styles.jobCardInfo}>
                     <h3 className={styles.jobCardTitle}>{job.title}</h3>
-                    <p className={styles.jobCardCompany}>{job.company} · {job.location}{job.area ? `, ${job.area}` : ''}</p>
+                    <p className={styles.jobCardCompany}>
+                      {job.company} · {job.location}{job.area ? `, ${job.area}` : ''}
+                      {job.isRecruiterPosting && (
+                        <span style={{ marginLeft: '0.4rem', fontSize: '0.65rem', fontWeight: 600, color: '#6366f1', background: '#eef2ff', padding: '0.1rem 0.35rem', borderRadius: 3, verticalAlign: 'middle' }}>Via recruiter</span>
+                      )}
+                    </p>
                     <p className={styles.jobCardSalary}>{formatSalary(job)}</p>
                   </div>
                 </div>

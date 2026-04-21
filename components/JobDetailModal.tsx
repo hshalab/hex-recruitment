@@ -239,7 +239,12 @@ export default function JobDetailModal({
               </div>
               <div className={styles.headerInfo}>
                 <h1 className={styles.jobTitle}>{job.title}</h1>
-                <p className={styles.companyName}>{job.company}</p>
+                <p className={styles.companyName}>
+                  {job.company}
+                  {job.isRecruiterPosting && (
+                    <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', fontWeight: 600, color: '#6366f1', background: '#eef2ff', padding: '0.15rem 0.4rem', borderRadius: 4 }}>Posted by recruiter</span>
+                  )}
+                </p>
                 {job.companyWebsite && (
                   <a
                     href={job.companyWebsite.startsWith('http') ? job.companyWebsite : `https://${job.companyWebsite}`}

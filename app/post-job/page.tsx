@@ -88,6 +88,8 @@ function PostJobContent() {
 
   const [isEmployer, setIsEmployer] = useState(false)
   const [hasSubscription, setHasSubscription] = useState(false)
+  const [isOwnCompany, setIsOwnCompany] = useState(true)
+  const [employerProfile, setEmployerProfile] = useState<any>(null)
   const [currentUser, setCurrentUser] = useState<{ id: string; companyName: string } | null>(null)
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false)
@@ -130,6 +132,29 @@ function PostJobContent() {
         id: session.user.id,
         companyName
       })
+
+      // Fetch employer profile for auto-fill
+      const { data: empProfile } = await supabase
+        .from('employer_profiles')
+        .select('company_name, logo_url, description, email, phone, website, address_line_1, city, county, postcode')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+
+      if (empProfile) {
+        setEmployerProfile(empProfile)
+        // Auto-fill company fields if not in edit mode
+        if (!searchParams.get('edit')) {
+          setFormData(prev => ({
+            ...prev,
+            company: empProfile.company_name || prev.company,
+            companyLogo: empProfile.logo_url || prev.companyLogo,
+            companyWebsite: empProfile.website || prev.companyWebsite,
+            location: empProfile.address_line_1 || prev.location,
+            city: empProfile.city || prev.city,
+            postcode: empProfile.postcode || prev.postcode,
+          }))
+        }
+      }
 
       setCheckingAuth(false)
     }
@@ -539,6 +564,7 @@ function PostJobContent() {
         applicationCount: 0,
         status: 'active' as const,
         screeningQuestions: screeningQuestions.filter(q => q.question.trim()),
+        isRecruiterPosting: !isOwnCompany,
       }
 
       let newJob: any = null
@@ -546,6 +572,14 @@ function PostJobContent() {
         await updateJob(editJobId, jobPayload)
       } else {
         newJob = await addJob(jobPayload, employerId)
+
+        // Mark employer as recruiter if posting for another company
+        if (!isOwnCompany) {
+          supabase.from('employer_profiles')
+            .update({ is_recruiter: true })
+            .eq('user_id', employerId)
+            .then()
+        }
       }
 
       // Trigger job alert matching for new jobs (non-blocking)
@@ -657,9 +691,50 @@ function PostJobContent() {
               </h2>
             </div>
 
+            {!isEditMode && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, marginBottom: '1rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500, flex: 1 }}>
+                  <input
+                    type="checkbox"
+                    checked={isOwnCompany}
+                    onChange={(e) => {
+                      const checked = e.target.checked
+                      setIsOwnCompany(checked)
+                      if (checked && employerProfile) {
+                        // Auto-fill from profile
+                        setFormData(prev => ({
+                          ...prev,
+                          company: employerProfile.company_name || '',
+                          companyLogo: employerProfile.logo_url || '',
+                          companyWebsite: employerProfile.website || '',
+                          location: employerProfile.address_line_1 || '',
+                          city: employerProfile.city || '',
+                          postcode: employerProfile.postcode || '',
+                        }))
+                      } else {
+                        // Clear for third-party posting
+                        setFormData(prev => ({
+                          ...prev,
+                          company: '', companyLogo: '', companyWebsite: '',
+                          location: '', city: '', postcode: '',
+                        }))
+                      }
+                    }}
+                    style={{ accentColor: '#16a34a', width: 18, height: 18 }}
+                  />
+                  Posting for my own company
+                </label>
+                {!isOwnCompany && (
+                  <span style={{ fontSize: '0.7rem', color: '#d97706', background: '#fffbeb', padding: '0.15rem 0.5rem', borderRadius: 99, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    Recruiter posting
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className={styles.formGroup}>
               <label className={styles.label} htmlFor="company">
-                Company Name <span className={styles.required}>*</span>
+                {isOwnCompany ? 'Company Name' : 'Client Company Name'} <span className={styles.required}>*</span>
               </label>
               <input
                 type="text"
