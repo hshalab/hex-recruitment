@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 // Clears the Supabase session by redirecting with Set-Cookie headers
 // that expire all sb-* cookies including chunked session cookies.
 export async function GET() {
-  const response = NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_SITE_URL || 'https://hex-recruitment.vercel.app'))
+  const response = NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://thrivecareer.co.uk'))
 
   const projectRef = 'aaljufxcniacfggqiuls'
   const base = `sb-${projectRef}-auth-token`
