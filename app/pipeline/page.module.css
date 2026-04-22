@@ -222,11 +222,37 @@
   text-overflow: ellipsis;
 }
 
+.cardPrimaryCta {
+  display: block;
+  margin-top: 0.625rem;
+  padding: 0.4rem 0.6rem;
+  background: #0f172a;
+  color: #FFE500;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.cardPrimaryCta:hover {
+  background: #1e293b;
+}
+
+.cardDetails {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
 .cardMeta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
-  margin-top: 0.5rem;
 }
 
 .metaBadge {
@@ -238,30 +264,30 @@
   white-space: nowrap;
 }
 
-.cardActions {
+.cardSecondaryActions {
   display: flex;
   gap: 0.35rem;
-  margin-top: 0.5rem;
 }
 
-.cardActionBtn {
+.cardSecondaryBtn {
   flex: 1;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 500;
   text-align: center;
-  padding: 0.35rem 0.5rem;
-  background: #0f172a;
-  color: #FFE500;
-  border: none;
-  border-radius: 6px;
+  padding: 0.3rem 0.45rem;
+  background: #fff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
 }
 
-.cardActionBtn:hover {
-  background: #1e293b;
+.cardSecondaryBtn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .cardFooter {
@@ -273,20 +299,23 @@
   border-top: 1px solid #f8fafc;
 }
 
-.cardTime {
+.cardDetailsToggle {
   font-size: 0.68rem;
-  color: #94a3b8;
-}
-
-.cardLink {
-  font-size: 0.68rem;
-  color: #3b82f6;
-  text-decoration: none;
+  color: #64748b;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   font-weight: 500;
 }
 
-.cardLink:hover {
-  text-decoration: underline;
+.cardDetailsToggle:hover {
+  color: #0f172a;
+}
+
+.cardTime {
+  font-size: 0.68rem;
+  color: #94a3b8;
 }
 
 /* ── Scrollbar ── */

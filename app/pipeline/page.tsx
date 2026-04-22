@@ -41,12 +41,24 @@ function formatDaysAgo(dateStr: string): string {
   return `${days} days`
 }
 
+// Per-stage primary CTA label and destination. The link goes to the
+// employer's per-job applications view which already hosts stage-appropriate
+// modals (Schedule Interview, Make Offer, etc.). Drag still advances stages.
+const STAGE_CTA: Record<string, { label: string; toApplications: boolean } | null> = {
+  reviewing: { label: 'Review →', toApplications: true },
+  shortlisted: { label: 'Schedule Interview →', toApplications: true },
+  interview: { label: 'Make Offer →', toApplications: true },
+  offered: { label: 'View Offer →', toApplications: true },
+  hired: null,
+}
+
 export default function PipelinePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [cards, setCards] = useState<PipelineCard[]>([])
   const [filterJob, setFilterJob] = useState<string>('all')
   const [jobs, setJobs] = useState<{ id: string; title: string }[]>([])
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -243,41 +255,64 @@ export default function PipelinePage() {
                                   <span className={styles.cardJob}>{card.jobTitle}</span>
                                 </div>
                               </div>
-                              {(card.location || card.experience > 0 || card.cvUrl || card.hasCoverLetter) && (
-                                <div className={styles.cardMeta}>
-                                  {card.location && <span className={styles.metaBadge}>📍 {card.location}</span>}
-                                  {card.experience > 0 && <span className={styles.metaBadge}>💼 {card.experience}yr{card.experience !== 1 ? 's' : ''}</span>}
-                                  {card.cvUrl && <span className={styles.metaBadge} title="CV attached">📄 CV</span>}
-                                  {card.hasCoverLetter && <span className={styles.metaBadge} title="Cover letter">✉️ Letter</span>}
-                                </div>
-                              )}
-                              <div className={styles.cardActions}>
-                                <Link
-                                  href={`/candidates/${card.candidateId}`}
-                                  className={styles.cardActionBtn}
-                                  onClick={e => e.stopPropagation()}
-                                >
-                                  View Profile
-                                </Link>
-                                {card.cvUrl && (
-                                  <SignedLink
-                                    src={card.cvUrl}
-                                    className={styles.cardActionBtn}
+                              {(() => {
+                                const cta = STAGE_CTA[card.status]
+                                if (!cta) return null
+                                const href = cta.toApplications
+                                  ? `/my-jobs/${card.jobId}/applications`
+                                  : `/candidates/${card.candidateId}`
+                                return (
+                                  <Link
+                                    href={href}
+                                    className={styles.cardPrimaryCta}
                                     onClick={e => e.stopPropagation()}
                                   >
-                                    View CV
-                                  </SignedLink>
-                                )}
-                              </div>
+                                    {cta.label}
+                                  </Link>
+                                )
+                              })()}
+                              {expandedCardId === card.id && (
+                                <div className={styles.cardDetails}>
+                                  {(card.location || card.experience > 0) && (
+                                    <div className={styles.cardMeta}>
+                                      {card.location && <span className={styles.metaBadge}>📍 {card.location}</span>}
+                                      {card.experience > 0 && <span className={styles.metaBadge}>💼 {card.experience}yr{card.experience !== 1 ? 's' : ''}</span>}
+                                    </div>
+                                  )}
+                                  <div className={styles.cardSecondaryActions}>
+                                    <Link
+                                      href={`/candidates/${card.candidateId}`}
+                                      className={styles.cardSecondaryBtn}
+                                      onClick={e => e.stopPropagation()}
+                                    >
+                                      View Profile
+                                    </Link>
+                                    {card.cvUrl && (
+                                      <SignedLink
+                                        src={card.cvUrl}
+                                        className={styles.cardSecondaryBtn}
+                                        onClick={e => e.stopPropagation()}
+                                        onMouseDown={e => e.stopPropagation()}
+                                      >
+                                        View CV
+                                      </SignedLink>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                               <div className={styles.cardFooter}>
                                 <span className={styles.cardTime}>{formatDaysAgo(card.appliedAt)} in stage</span>
-                                <Link
-                                  href={`/my-jobs/${card.jobId}/applications`}
-                                  className={styles.cardLink}
-                                  onClick={e => e.stopPropagation()}
+                                <button
+                                  type="button"
+                                  className={styles.cardDetailsToggle}
+                                  onClick={e => {
+                                    e.stopPropagation()
+                                    setExpandedCardId(prev => prev === card.id ? null : card.id)
+                                  }}
+                                  onMouseDown={e => e.stopPropagation()}
                                 >
-                                  Details →
-                                </Link>
+                                  Details {expandedCardId === card.id ? '▴' : '▾'}
+                                </button>
                               </div>
                             </div>
                           )}
