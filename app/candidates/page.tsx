@@ -41,52 +41,12 @@ const candidateFilterSections = [
   { key: 'skills' as const, title: 'Key Skills', options: ['Right to Work', 'NI Number', 'Food Hygiene', 'First Aid', 'DBS Checked', 'Driving Licence', 'Language Skills', 'Management Experience'] },
 ]
 
-const categories = [
-  { id: 'all', label: 'All Candidates' },
-  { id: 'accountancy', label: 'Accountancy Banking & Finance' },
-  { id: 'business', label: 'Business Consulting & Management' },
-  { id: 'charity', label: 'Charity & Voluntary Work' },
-  { id: 'creative', label: 'Creative Arts & Design' },
-  { id: 'digital', label: 'Digital & Information Technology' },
-  { id: 'energy', label: 'Energy & Utilities' },
-  { id: 'engineering', label: 'Engineering & Manufacturing' },
-  { id: 'environment', label: 'Environment & Agriculture' },
-  { id: 'healthcare', label: 'Healthcare & Social Care' },
-  { id: 'hospitality', label: 'Hospitality Tourism & Sport' },
-  { id: 'law', label: 'Law & Legal Services' },
-  { id: 'marketing', label: 'Marketing Advertising & PR' },
-  { id: 'media', label: 'Media & Internet' },
-  { id: 'property', label: 'Property & Construction' },
-  { id: 'public', label: 'Public Services & Administration' },
-  { id: 'recruitment', label: 'Recruitment & HR' },
-  { id: 'retail', label: 'Retail & Sales' },
-  { id: 'science', label: 'Science & Pharmaceuticals' },
-  { id: 'teaching', label: 'Teaching & Education' },
-  { id: 'transport', label: 'Transport & Logistics' },
-]
+import { categories as sharedCategories, getCategoryLabel } from '@/lib/categories'
+const categories = [{ id: 'all', label: 'All Candidates' }, ...sharedCategories]
 
-const JOB_SECTOR_LABELS: Record<string, string> = {
-  hospitality: 'Hospitality Tourism & Sport',
-  accountancy: 'Accountancy Banking & Finance',
-  business: 'Business Consulting & Management',
-  charity: 'Charity & Voluntary Work',
-  creative: 'Creative Arts & Design',
-  digital: 'Digital & Information Technology',
-  energy: 'Energy & Utilities',
-  engineering: 'Engineering & Manufacturing',
-  environment: 'Environment & Agriculture',
-  healthcare: 'Healthcare & Social Care',
-  law: 'Law & Legal Services',
-  marketing: 'Marketing Advertising & PR',
-  media: 'Media & Internet',
-  property: 'Property & Construction',
-  public: 'Public Services & Administration',
-  recruitment: 'Recruitment & HR',
-  retail: 'Retail & Sales',
-  science: 'Science & Pharmaceuticals',
-  teaching: 'Teaching & Education',
-  transport: 'Transport & Logistics',
-}
+const JOB_SECTOR_LABELS: Record<string, string> = new Proxy({} as Record<string, string>, {
+  get: (_target, key: string) => getCategoryLabel(key),
+})
 
 // Map candidate job title to sector categories
 const getCandidateSector = (candidate: { jobTitle: string }): string => {

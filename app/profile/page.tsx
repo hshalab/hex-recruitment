@@ -22,28 +22,10 @@ function normalizeUrl(url: string): string {
 }
 
 // Job sector labels lookup
-const JOB_SECTOR_LABELS: Record<string, string> = {
-  hospitality: 'Hospitality Tourism & Sport',
-  accountancy: 'Accountancy Banking & Finance',
-  business: 'Business Consulting & Management',
-  charity: 'Charity & Voluntary Work',
-  creative: 'Creative Arts & Design',
-  digital: 'Digital & Information Technology',
-  energy: 'Energy & Utilities',
-  engineering: 'Engineering & Manufacturing',
-  environment: 'Environment & Agriculture',
-  healthcare: 'Healthcare & Social Care',
-  law: 'Law & Legal Services',
-  marketing: 'Marketing Advertising & PR',
-  media: 'Media & Internet',
-  property: 'Property & Construction',
-  public: 'Public Services & Administration',
-  recruitment: 'Recruitment & HR',
-  retail: 'Retail & Sales',
-  science: 'Science & Pharmaceuticals',
-  teaching: 'Teaching & Education',
-  transport: 'Transport & Logistics',
-}
+import { getCategoryLabel } from '@/lib/categories'
+const JOB_SECTOR_LABELS: Record<string, string> = new Proxy({} as Record<string, string>, {
+  get: (_target, key: string) => getCategoryLabel(key),
+})
 
 export default function ProfilePage() {
   const router = useRouter()
