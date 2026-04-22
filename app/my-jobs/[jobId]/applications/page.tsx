@@ -50,7 +50,6 @@ export default function JobApplicationsPage() {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
   const [offerModalOpen, setOfferModalOpen] = useState(false)
   const [offerApplication, setOfferApplication] = useState<Application | null>(null)
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'shortlisted' | 'interviewing' | 'offers' | 'hired'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedLetters, setExpandedLetters] = useState(new Set<string>())
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -834,27 +833,6 @@ export default function JobApplicationsPage() {
         {/* Filter Tabs */}
         {applications.length > 0 && (
           <>
-            <div className={styles.tabBar}>
-              {([
-                { key: 'all', label: 'All', count: applications.length },
-                { key: 'pending', label: 'Pending Review', count: applications.filter(a => ['pending', 'reviewing'].includes(a.status)).length },
-                { key: 'shortlisted', label: 'Shortlisted', count: applications.filter(a => a.status === 'shortlisted').length },
-                { key: 'interviewing', label: 'Interviewing', count: applications.filter(a => a.status === 'interviewing').length },
-                { key: 'offers', label: 'Offers', count: applications.filter(a => a.status === 'offered').length },
-                { key: 'hired', label: 'Hired', count: applications.filter(a => a.status === 'hired').length },
-              ] as const).map(tab => (
-                <button
-                  key={tab.key}
-                  className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
-                  onClick={() => setActiveTab(tab.key)}
-                >
-                  {tab.label}
-                  <span className={`${styles.tabCount} ${activeTab === tab.key ? styles.tabCountActive : ''}`}>
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </div>
             <div className={styles.searchRow}>
               <input
                 type="text"
@@ -954,12 +932,6 @@ export default function JobApplicationsPage() {
             {applications
               .filter(a => {
                 if (searchQuery && !a.candidateName.toLowerCase().includes(searchQuery.toLowerCase())) return false
-                if (activeTab === 'all') return true
-                if (activeTab === 'pending') return ['pending', 'reviewing'].includes(a.status)
-                if (activeTab === 'shortlisted') return a.status === 'shortlisted'
-                if (activeTab === 'interviewing') return a.status === 'interviewing'
-                if (activeTab === 'offers') return a.status === 'offered'
-                if (activeTab === 'hired') return a.status === 'hired'
                 return true
               })
               .map(application => {
