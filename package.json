@@ -11,6 +11,7 @@
     "clean": "rm -rf .next node_modules/.cache || rmdir /s /q .next node_modules\\.cache 2>nul || echo Cache cleared"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.2.0",
     "@supabase/auth-helpers-nextjs": "^0.9.0",
