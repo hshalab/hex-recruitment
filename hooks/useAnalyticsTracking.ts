@@ -57,6 +57,9 @@ export function useAnalyticsTracking() {
         device_type: device,
       })
 
+      // Also increment the counter on the jobs table (used by dashboard)
+      supabase.rpc('increment_job_views', { p_job_id: jobId }).then()
+
       if (error) {
         console.error('[Analytics] trackJobView insert failed:', error.message, { jobId, userId, source, device })
         // Fallback: try with only base columns
