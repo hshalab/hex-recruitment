@@ -1181,127 +1181,101 @@ export default function JobApplicationsPage() {
                   )}
 
                   {/* Action Bar */}
-                  {application.status === 'interviewing' ? (
-                    <>
-                      <div className={styles.actionBar}>
-                        {application.candidateEmail && (
-                          <a
-                            href={`mailto:${application.candidateEmail}`}
-                            className={styles.barBtn}
-                          >
-                            Email Candidate
-                          </a>
-                        )}
-                        <button
-                          className={styles.barBtn}
-                          onClick={() => router.push(`/messages?candidate=${application.candidateId}`)}
-                        >
-                          Message Candidate
+                  {/* Stage-specific action bars */}
+                  <div className={styles.actionBar}>
+                    {/* ── APPLIED: Review or Reject ── */}
+                    {application.status === 'pending' && (
+                      <>
+                        <button className={styles.barBtnPrimary} onClick={() => updateApplicationStatus(application.id, 'reviewing')}>
+                          Review →
                         </button>
-                      </div>
-                      {!application.offer && (
-                        <div className={styles.makeOfferRow}>
-                          <button
-                            className={styles.makeOfferCta}
-                            onClick={() => {
-                              setOfferApplication(application)
-                              setOfferModalOpen(true)
-                            }}
-                          >
-                            Make Offer
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className={styles.actionBar}>
-                      {application.candidateEmail && (
-                        <button
-                          className={styles.barBtn}
-                          title={application.candidateEmail}
-                          onClick={() => {
-                            navigator.clipboard.writeText(application.candidateEmail).catch(() => {})
-                            window.location.href = `mailto:${application.candidateEmail}`
-                          }}
-                        >
-                          Email
-                        </button>
-                      )}
-                      {application.interview ? (
-                        <button
-                          className={styles.barBtnCalendar}
-                          onClick={() => handleScheduleInterview(application)}
-                        >
-                          Reschedule
-                        </button>
-                      ) : application.interviewInterestStatus === 'interested' ? (
-                        <button
-                          className={styles.barBtnCalendar}
-                          onClick={() => handleScheduleInterview(application)}
-                        >
-                          Schedule Interview
-                        </button>
-                      ) : application.interviewInterestStatus === 'pending' ? (
-                        <button
-                          className={styles.barBtnCalendar}
-                          disabled
-                          style={{ opacity: 0.6, cursor: 'not-allowed' }}
-                          title="Waiting for the candidate to respond"
-                        >
-                          Awaiting Response…
-                        </button>
-                      ) : application.interviewInterestStatus === 'not_interested' ? (
-                        <span
-                          style={{ color: '#94a3b8', fontSize: '0.85rem', fontStyle: 'italic', padding: '0.5rem 0.75rem' }}
-                          title="Candidate declined the interview invitation"
-                        >
-                          Candidate Declined
-                        </span>
-                      ) : (
-                        <button
-                          className={styles.barBtnCalendar}
-                          onClick={() => handleInviteToInterview(application)}
-                        >
-                          Invite to Interview
-                        </button>
-                      )}
-                      {['interviewing', 'offered'].includes(application.status) && !application.offer && (
-                        <button
-                          className={styles.barBtnOffer}
-                          onClick={() => {
-                            setOfferApplication(application)
-                            setOfferModalOpen(true)
-                          }}
-                        >
-                          Make Offer
-                        </button>
-                      )}
-                      {['pending', 'reviewing'].includes(application.status) && (
-                        <button
-                          className={styles.barBtnShortlist}
-                          onClick={() => handleShortlist(application)}
-                        >
-                          Shortlist
-                        </button>
-                      )}
-                      {!['hired', 'rejected'].includes(application.status) && (
-                        <button
-                          className={styles.barBtnReject}
-                          onClick={() => updateApplicationStatus(application.id, 'rejected')}
-                        >
+                        <button className={styles.barBtnReject} onClick={() => updateApplicationStatus(application.id, 'rejected')}>
                           Reject
                         </button>
-                      )}
-                      {(application.status === 'hired' || application.status === 'rejected') && (
-                        <button
-                          className={styles.barBtnReset}
-                          onClick={() => updateApplicationStatus(application.id, 'pending')}
-                        >
-                          Reset Status
+                      </>
+                    )}
+
+                    {/* ── REVIEWING: Shortlist or Reject ── */}
+                    {application.status === 'reviewing' && (
+                      <>
+                        <button className={styles.barBtnPrimary} onClick={() => handleShortlist(application)}>
+                          Shortlist →
                         </button>
-                      )}
-                    </div>
-                  )}
+                        <button className={styles.barBtnReject} onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                          Reject
+                        </button>
+                      </>
+                    )}
+
+                    {/* ── SHORTLISTED: Schedule Interview or Reject ── */}
+                    {application.status === 'shortlisted' && (
+                      <>
+                        <button className={styles.barBtnPrimary} onClick={() => handleScheduleInterview(application)}>
+                          Schedule Interview →
+                        </button>
+                        <button className={styles.barBtnReject} onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                          Reject
+                        </button>
+                      </>
+                    )}
+
+                    {/* ── INTERVIEWING: Make Offer, Reschedule, Message, Reject ── */}
+                    {application.status === 'interviewing' && (
+                      <>
+                        {!application.offer && (
+                          <button className={styles.barBtnPrimary} onClick={() => { setOfferApplication(application); setOfferModalOpen(true) }}>
+                            Make Offer →
+                          </button>
+                        )}
+                        {application.interview && (
+                          <button className={styles.barBtnCalendar} onClick={() => handleScheduleInterview(application)}>
+                            Reschedule
+                          </button>
+                        )}
+                        <button className={styles.barBtn} onClick={() => router.push(`/messages?candidate=${application.candidateId}`)}>
+                          Message
+                        </button>
+                        <button className={styles.barBtnReject} onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                          Reject
+                        </button>
+                      </>
+                    )}
+
+                    {/* ── OFFERED: Waiting for candidate, Withdraw, Reject ── */}
+                    {application.status === 'offered' && (
+                      <>
+                        {application.offer?.status === 'pending' && (
+                          <span style={{ fontSize: '0.8rem', color: '#d97706', fontStyle: 'italic', padding: '0.5rem 0.75rem' }}>
+                            Awaiting candidate response...
+                          </span>
+                        )}
+                        <button className={styles.barBtnReject} onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                          Withdraw
+                        </button>
+                      </>
+                    )}
+
+                    {/* ── HIRED / REJECTED: Reset ── */}
+                    {(application.status === 'hired' || application.status === 'rejected') && (
+                      <button className={styles.barBtnReset} onClick={() => updateApplicationStatus(application.id, 'pending')}>
+                        Reset Status
+                      </button>
+                    )}
+
+                    {/* Email — always available except hired/rejected */}
+                    {!['hired', 'rejected'].includes(application.status) && application.candidateEmail && (
+                      <button
+                        className={styles.barBtn}
+                        title={application.candidateEmail}
+                        onClick={() => {
+                          navigator.clipboard.writeText(application.candidateEmail).catch(() => {})
+                          window.location.href = `mailto:${application.candidateEmail}`
+                        }}
+                      >
+                        Email
+                      </button>
+                    )}
+                  </div>
                 </div>
               )
             })}

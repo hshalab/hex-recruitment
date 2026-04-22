@@ -390,6 +390,7 @@
 .barBtn,
 .barBtnCalendar,
 .barBtnOffer,
+.barBtnPrimary,
 .barBtnShortlist,
 .barBtnReject,
 .barBtnReset {
@@ -423,6 +424,15 @@
 }
 .barBtnCalendar:hover {
   background: var(--hover-yellow);
+}
+
+/* Primary action — green */
+.barBtnPrimary {
+  background: #16a34a;
+  color: #fff;
+}
+.barBtnPrimary:hover {
+  background: #15803d;
 }
 
 /* Shortlist — blue */
