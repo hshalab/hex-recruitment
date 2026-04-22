@@ -17,6 +17,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}))
     const interviewId: string | undefined = body?.interviewId
     const employerId: string | undefined = body?.employerId
+    // 'back_to_review' tailors the cancellation message so the candidate knows
+    // their application is still under consideration.
+    const context: 'default' | 'back_to_review' = body?.context === 'back_to_review' ? 'back_to_review' : 'default'
     if (!interviewId) {
       return NextResponse.json({ error: 'interviewId required' }, { status: 400 })
     }
@@ -45,10 +48,20 @@ export async function POST(req: NextRequest) {
         .eq('user_id', candidateId)
         .maybeSingle()
 
+      const notifTitle = context === 'back_to_review'
+        ? 'Interview Cancelled — Application Under Further Review'
+        : 'Interview Cancelled'
+      const notifMessage = context === 'back_to_review'
+        ? `${companyName} has cancelled your interview for ${jobTitle} while they take another look at your application. We'll be in touch shortly.`
+        : `${companyName} has cancelled your interview for ${jobTitle}.`
+      const messageBody = context === 'back_to_review'
+        ? `Hi ${candidateProfile?.full_name || 'there'}, we've cancelled your scheduled interview for ${jobTitle} as we'd like to take another look at your application before we proceed. We'll be in touch shortly — thanks for your patience.`
+        : `Hi ${candidateProfile?.full_name || 'there'}, your interview for ${jobTitle} has been cancelled. If you have any questions, please reply to this message.`
+
       await supabaseAdmin.from('notifications').insert({
         user_id: candidateId,
-        title: 'Interview Cancelled',
-        message: `${companyName} has cancelled your interview for ${jobTitle}.`,
+        title: notifTitle,
+        message: notifMessage,
         type: 'application_update',
         read: false,
         link: '/applications',
@@ -61,7 +74,7 @@ export async function POST(req: NextRequest) {
         candidateName: candidateProfile?.full_name || 'Candidate',
         jobId: interview?.job_id || null,
         jobTitle,
-        content: `Hi ${candidateProfile?.full_name || 'there'}, your interview for ${jobTitle} has been cancelled. If you have any questions, please reply to this message.`,
+        content: messageBody,
       }).catch(() => {})
 
       // Send cancellation email
