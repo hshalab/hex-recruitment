@@ -89,7 +89,13 @@ export default function NotificationBell({ className }: NotificationBellProps) {
   }, [isOpen])
 
   // Handle notification click — mark as read, close dropdown, navigate to link
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
   const handleNotificationClick = async (notification: Notification) => {
+    // Toggle expand/collapse
+    setExpandedId(prev => prev === notification.id ? null : notification.id)
+
+    // Mark as read
     if (!notification.read) {
       try {
         await supabase
@@ -104,11 +110,6 @@ export default function NotificationBell({ className }: NotificationBellProps) {
       } catch {
         // Fail silently on network errors
       }
-    }
-
-    setIsOpen(false)
-    if (notification.link) {
-      router.push(notification.link)
     }
   }
 
@@ -330,9 +331,28 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                         {notification.title}
                       </span>
                       {notification.message && (
-                        <span className={styles.notificationMessage}>
+                        <span
+                          className={styles.notificationMessage}
+                          style={expandedId === notification.id ? {
+                            display: 'block',
+                            whiteSpace: 'normal',
+                            overflow: 'visible',
+                            textOverflow: 'unset',
+                            WebkitLineClamp: 'unset',
+                            maxHeight: 'none',
+                          } : undefined}
+                        >
                           {notification.message}
                         </span>
+                      )}
+                      {expandedId === notification.id && notification.link && (
+                        <a
+                          href={notification.link}
+                          onClick={e => e.stopPropagation()}
+                          style={{ fontSize: '0.75rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 500, marginTop: '0.25rem', display: 'inline-block' }}
+                        >
+                          View details →
+                        </a>
                       )}
                       <span className={styles.notificationTime}>
                         {formatNotificationTime(notification.created_at)}
