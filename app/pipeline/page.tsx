@@ -149,31 +149,19 @@ export default function PipelinePage() {
     const card = cards.find(c => c.id === draggableId)
     if (!card) return
 
-    // Dragging a candidate back out of the Interview column into an earlier
-    // stage means any scheduled interview needs to be cancelled + the
-    // candidate needs to be told why. Confirm before proceeding.
-    const movingBackFromInterview =
+    // Block drag-back out of the Interview column. If an interview is booked
+    // the employer must cancel or reschedule it explicitly — silently
+    // undoing a stage change would leave the interview orphaned.
+    if (
       source.droppableId === 'interview' &&
       (newStatus === 'reviewing' || newStatus === 'shortlisted')
-
-    let interviewToCancel: string | null = null
-
-    if (movingBackFromInterview) {
-      const { data: interview } = await supabase
-        .from('interviews')
-        .select('id, status')
-        .eq('application_id', draggableId)
-        .in('status', ['scheduled', 'confirmed', 'pending_selection'])
-        .maybeSingle()
-
-      if (interview) {
-        const ok = confirm(
-          `Moving ${card.candidateName} back will cancel their scheduled interview for ${card.jobTitle}.\n\n` +
-          `The candidate will be notified that you're taking another look at their application. Continue?`
-        )
-        if (!ok) return
-        interviewToCancel = interview.id
-      }
+    ) {
+      alert(
+        `This candidate has a scheduled interview. To change course, open their ` +
+        `application and use Reschedule or Cancel Interview — those actions will ` +
+        `notify the candidate properly.`
+      )
+      return
     }
 
     // Optimistic update
@@ -191,26 +179,8 @@ export default function PipelinePage() {
       return
     }
 
-    // Cancel the interview + notify candidate with a "back to review" context.
-    // Fire-and-forget — status has already been changed; a stale interview
-    // record is recoverable.
-    if (interviewToCancel) {
-      const { data: { session } } = await supabase.auth.getSession()
-      fetch('/api/calendar/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          interviewId: interviewToCancel,
-          employerId: session?.user.id,
-          context: 'back_to_review',
-        }),
-      }).catch(() => {})
-    }
-
-    // Send notification to candidate at every stage transition. Skipped when
-    // we just cancelled an interview — the cancel API already sent a
-    // context-aware notification explaining what's happening.
-    if (card.candidateId && !interviewToCancel) {
+    // Send notification to candidate at every stage transition.
+    if (card.candidateId) {
       const notifMap: Record<string, { title: string; message: string }> = {
         reviewing: { title: 'Application Under Review', message: `Your application for ${card.jobTitle} is being reviewed.` },
         shortlisted: { title: 'Application Shortlisted', message: `Great news! Your application for ${card.jobTitle} has been shortlisted.` },
