@@ -221,7 +221,7 @@ export default function AppliedPage() {
                     onClick={() => handleReview(a)}
                     disabled={processing.has(a.id)}
                   >
-                    Review →
+                    Move to Review
                   </button>
                   <button
                     className={styles.rejectBtn}

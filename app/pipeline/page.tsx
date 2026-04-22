@@ -6,11 +6,11 @@ import Link from 'next/link'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
+import SignedLink from '@/components/SignedLink'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
 
 const STAGES = [
-  { id: 'pending', label: 'Applied', color: '#f59e0b' },
   { id: 'reviewing', label: 'Reviewing', color: '#3b82f6' },
   { id: 'shortlisted', label: 'Shortlisted', color: '#8b5cf6' },
   { id: 'interview', label: 'Interview', color: '#06b6d4' },
@@ -28,6 +28,10 @@ interface PipelineCard {
   status: string
   appliedAt: string
   daysInStage: number
+  location: string
+  experience: number
+  cvUrl: string | null
+  hasCoverLetter: boolean
 }
 
 function formatDaysAgo(dateStr: string): string {
@@ -53,30 +57,38 @@ export default function PipelinePage() {
 
     const employerId = session.user.id
 
-    // Fetch all non-rejected applications for this employer's jobs
+    // Fetch active (non-rejected, non-pending) applications for this employer's jobs.
+    // 'pending' lives on the Applicants page; Pipeline only tracks candidates actively
+    // moving through stages.
     const { data: appData } = await supabase
       .from('job_applications')
-      .select('id, candidate_id, job_id, job_title, status, created_at, status_updated_at')
+      .select('id, candidate_id, job_id, job_title, status, cover_letter, created_at, status_updated_at')
       .in('job_id', (
         await supabase.from('jobs').select('id').eq('employer_id', employerId)
       ).data?.map((j: any) => j.id) || [])
-      .not('status', 'eq', 'rejected')
+      .not('status', 'in', '(rejected,pending)')
       .order('created_at', { ascending: false })
 
     if (!appData) { setLoading(false); return }
 
     // Fetch candidate details
     const candidateIds = Array.from(new Set(appData.map(a => a.candidate_id).filter(Boolean)))
-    let profileMap: Record<string, { name: string; photo: string | null }> = {}
+    let profileMap: Record<string, { name: string; photo: string | null; location: string; experience: number; cvUrl: string | null }> = {}
 
     if (candidateIds.length > 0) {
       const { data: profiles } = await supabase
         .from('candidate_profiles')
-        .select('user_id, full_name, profile_picture_url')
+        .select('user_id, full_name, profile_picture_url, city, location, years_experience, cv_url')
         .in('user_id', candidateIds)
 
       for (const p of profiles || []) {
-        profileMap[p.user_id] = { name: p.full_name || 'Candidate', photo: p.profile_picture_url || null }
+        profileMap[p.user_id] = {
+          name: p.full_name || 'Candidate',
+          photo: p.profile_picture_url || null,
+          location: p.city || p.location || '',
+          experience: p.years_experience || 0,
+          cvUrl: p.cv_url || null,
+        }
       }
     }
 
@@ -91,7 +103,7 @@ export default function PipelinePage() {
 
     // Map to pipeline cards
     const mapped: PipelineCard[] = appData.map(a => {
-      const profile = profileMap[a.candidate_id] || { name: 'Candidate', photo: null }
+      const profile = profileMap[a.candidate_id] || { name: 'Candidate', photo: null, location: '', experience: 0, cvUrl: null }
       const stageDate = a.status_updated_at || a.created_at
       return {
         id: a.id,
@@ -103,6 +115,10 @@ export default function PipelinePage() {
         status: a.status === 'interviewing' ? 'interview' : a.status,
         appliedAt: a.created_at,
         daysInStage: Math.floor((Date.now() - new Date(stageDate).getTime()) / 86400000),
+        location: profile.location,
+        experience: profile.experience,
+        cvUrl: profile.cvUrl,
+        hasCoverLetter: !!a.cover_letter,
       }
     })
 
@@ -136,11 +152,12 @@ export default function PipelinePage() {
       return
     }
 
-    // Send notification to candidate
+    // Send notification to candidate at every stage transition
     if (card.candidateId) {
       const notifMap: Record<string, { title: string; message: string }> = {
         reviewing: { title: 'Application Under Review', message: `Your application for ${card.jobTitle} is being reviewed.` },
         shortlisted: { title: 'Application Shortlisted', message: `Great news! Your application for ${card.jobTitle} has been shortlisted.` },
+        interview: { title: 'Moved to Interview Stage', message: `You've been moved to the interview stage for ${card.jobTitle}. The employer will be in touch to schedule.` },
         offered: { title: 'Job Offer Received', message: `You have received a job offer for ${card.jobTitle}!` },
         hired: { title: 'Congratulations!', message: `You've been hired for ${card.jobTitle}!` },
       }
@@ -226,14 +243,40 @@ export default function PipelinePage() {
                                   <span className={styles.cardJob}>{card.jobTitle}</span>
                                 </div>
                               </div>
+                              {(card.location || card.experience > 0 || card.cvUrl || card.hasCoverLetter) && (
+                                <div className={styles.cardMeta}>
+                                  {card.location && <span className={styles.metaBadge}>📍 {card.location}</span>}
+                                  {card.experience > 0 && <span className={styles.metaBadge}>💼 {card.experience}yr{card.experience !== 1 ? 's' : ''}</span>}
+                                  {card.cvUrl && <span className={styles.metaBadge} title="CV attached">📄 CV</span>}
+                                  {card.hasCoverLetter && <span className={styles.metaBadge} title="Cover letter">✉️ Letter</span>}
+                                </div>
+                              )}
+                              <div className={styles.cardActions}>
+                                <Link
+                                  href={`/candidates/${card.candidateId}`}
+                                  className={styles.cardActionBtn}
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  View Profile
+                                </Link>
+                                {card.cvUrl && (
+                                  <SignedLink
+                                    src={card.cvUrl}
+                                    className={styles.cardActionBtn}
+                                    onClick={e => e.stopPropagation()}
+                                  >
+                                    View CV
+                                  </SignedLink>
+                                )}
+                              </div>
                               <div className={styles.cardFooter}>
-                                <span className={styles.cardTime}>{formatDaysAgo(card.appliedAt)}</span>
+                                <span className={styles.cardTime}>{formatDaysAgo(card.appliedAt)} in stage</span>
                                 <Link
                                   href={`/my-jobs/${card.jobId}/applications`}
                                   className={styles.cardLink}
                                   onClick={e => e.stopPropagation()}
                                 >
-                                  View →
+                                  Details →
                                 </Link>
                               </div>
                             </div>

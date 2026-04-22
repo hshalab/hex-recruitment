@@ -8,13 +8,15 @@ interface SignedLinkProps {
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
+  onMouseDown?: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 /**
  * Link component that resolves Supabase storage paths to
  * short-lived signed URLs. External URLs pass through unchanged.
  */
-export default function SignedLink({ src, children, className, style }: SignedLinkProps) {
+export default function SignedLink({ src, children, className, style, onClick, onMouseDown }: SignedLinkProps) {
   const [resolvedUrl, setResolvedUrl] = useState<string>('')
 
   useEffect(() => {
@@ -34,7 +36,15 @@ export default function SignedLink({ src, children, className, style }: SignedLi
   if (!resolvedUrl) return null
 
   return (
-    <a href={resolvedUrl} target="_blank" rel="noopener noreferrer" className={className} style={style}>
+    <a
+      href={resolvedUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+      style={style}
+      onClick={onClick}
+      onMouseDown={onMouseDown}
+    >
       {children}
     </a>
   )
