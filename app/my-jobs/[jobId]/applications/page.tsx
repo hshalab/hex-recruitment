@@ -55,6 +55,9 @@ export default function JobApplicationsPage() {
   const [expandedLetters, setExpandedLetters] = useState(new Set<string>())
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkUpdating, setBulkUpdating] = useState(false)
+  const [rejectModalApp, setRejectModalApp] = useState<Application | null>(null)
+  const [rejectMessage, setRejectMessage] = useState('')
+  const [rejectSending, setRejectSending] = useState(false)
 
   useEffect(() => {
     const checkAuthAndLoadData = async () => {
@@ -399,6 +402,69 @@ export default function JobApplicationsPage() {
     setApplications(prev =>
       prev.map(app => app.id === applicationId ? { ...app, status: newStatus } : app)
     )
+  }
+
+  const openRejectModal = (application: Application) => {
+    setRejectModalApp(application)
+    setRejectMessage(`Thank you for your interest in ${application.jobTitle}. After careful consideration, we've decided not to proceed with your application at this stage. We wish you the best in your job search.`)
+  }
+
+  const handleRejectWithMessage = async () => {
+    if (!rejectModalApp) return
+    setRejectSending(true)
+    try {
+      await updateApplicationStatus(rejectModalApp.id, 'rejected')
+
+      // Send message if not empty
+      if (rejectMessage.trim()) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          // Find or create conversation
+          const employerId = session.user.id
+          const { data: existingConv } = await supabase
+            .from('conversations')
+            .select('id')
+            .or(`and(participant_1.eq.${employerId},participant_2.eq.${rejectModalApp.candidateId}),and(participant_1.eq.${rejectModalApp.candidateId},participant_2.eq.${employerId})`)
+            .maybeSingle()
+
+          let conversationId = existingConv?.id
+          if (!conversationId) {
+            const { data: newConv } = await supabase.from('conversations').insert({
+              participant_1: employerId,
+              participant_2: rejectModalApp.candidateId,
+              participant_1_name: rejectModalApp.company,
+              participant_1_role: 'employer',
+              participant_1_company: rejectModalApp.company,
+              participant_2_name: rejectModalApp.candidateName,
+              participant_2_role: 'candidate',
+              related_job_title: rejectModalApp.jobTitle,
+              last_message: rejectMessage.trim(),
+              last_message_at: new Date().toISOString(),
+            }).select('id').single()
+            conversationId = newConv?.id
+          }
+
+          if (conversationId) {
+            await supabase.from('messages').insert({
+              conversation_id: conversationId,
+              sender_id: employerId,
+              sender_name: rejectModalApp.company,
+              sender_role: 'employer',
+              content: rejectMessage.trim(),
+              is_read: false,
+            })
+            if (existingConv) {
+              await supabase.from('conversations').update({
+                last_message: rejectMessage.trim(),
+                last_message_at: new Date().toISOString(),
+              }).eq('id', conversationId)
+            }
+          }
+        }
+      }
+    } catch { /* handled by updateApplicationStatus */ }
+    setRejectSending(false)
+    setRejectModalApp(null)
   }
 
   const handleShortlist = async (application: Application) => {
@@ -1061,7 +1127,7 @@ export default function JobApplicationsPage() {
                           </button>
                           <button
                             className={styles.rejectInterviewBtn}
-                            onClick={() => updateApplicationStatus(application.id, 'rejected')}
+                            onClick={() => openRejectModal(application)}
                           >
                             Reject
                           </button>
@@ -1189,7 +1255,7 @@ export default function JobApplicationsPage() {
                         <button className={styles.barBtnPrimary} onClick={() => updateApplicationStatus(application.id, 'reviewing')}>
                           Review →
                         </button>
-                        <button className={styles.barBtnReject} onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                        <button className={styles.barBtnReject} onClick={() => openRejectModal(application)}>
                           Reject
                         </button>
                       </>
@@ -1201,7 +1267,7 @@ export default function JobApplicationsPage() {
                         <button className={styles.barBtnPrimary} onClick={() => handleShortlist(application)}>
                           Shortlist →
                         </button>
-                        <button className={styles.barBtnReject} onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                        <button className={styles.barBtnReject} onClick={() => openRejectModal(application)}>
                           Reject
                         </button>
                       </>
@@ -1213,7 +1279,7 @@ export default function JobApplicationsPage() {
                         <button className={styles.barBtnPrimary} onClick={() => handleScheduleInterview(application)}>
                           Schedule Interview →
                         </button>
-                        <button className={styles.barBtnReject} onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                        <button className={styles.barBtnReject} onClick={() => openRejectModal(application)}>
                           Reject
                         </button>
                       </>
@@ -1235,7 +1301,7 @@ export default function JobApplicationsPage() {
                         <button className={styles.barBtn} onClick={() => router.push(`/messages?candidate=${application.candidateId}`)}>
                           Message
                         </button>
-                        <button className={styles.barBtnReject} onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                        <button className={styles.barBtnReject} onClick={() => openRejectModal(application)}>
                           Reject
                         </button>
                       </>
@@ -1249,7 +1315,7 @@ export default function JobApplicationsPage() {
                             Awaiting candidate response...
                           </span>
                         )}
-                        <button className={styles.barBtnReject} onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                        <button className={styles.barBtnReject} onClick={() => openRejectModal(application)}>
                           Withdraw
                         </button>
                       </>
@@ -1325,6 +1391,53 @@ export default function JobApplicationsPage() {
             loadApplications()
           }}
         />
+      )}
+      {/* Reject with message modal */}
+      {rejectModalApp && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          onClick={() => !rejectSending && setRejectModalApp(null)}>
+          <div style={{ background: '#fff', borderRadius: 12, maxWidth: 480, width: '100%', padding: '1.5rem' }}
+            onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700 }}>Reject Application</h3>
+            <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 1rem' }}>
+              {rejectModalApp.candidateName} — {rejectModalApp.jobTitle}
+            </p>
+
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>
+              Message to candidate <span style={{ fontWeight: 400, color: '#94a3b8' }}>(optional but recommended)</span>
+            </label>
+            <textarea
+              value={rejectMessage}
+              onChange={e => setRejectMessage(e.target.value)}
+              rows={5}
+              style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem', resize: 'vertical', lineHeight: 1.5 }}
+            />
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+              <button
+                onClick={() => setRejectModalApp(null)}
+                disabled={rejectSending}
+                style={{ flex: 1, padding: '0.625rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setRejectMessage(''); handleRejectWithMessage() }}
+                disabled={rejectSending}
+                style={{ padding: '0.625rem 1rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: '0.85rem', color: '#64748b' }}
+              >
+                Reject without message
+              </button>
+              <button
+                onClick={handleRejectWithMessage}
+                disabled={rejectSending || !rejectMessage.trim()}
+                style={{ flex: 1, padding: '0.625rem', border: 'none', borderRadius: 8, background: rejectSending ? '#94a3b8' : '#dc2626', color: '#fff', cursor: rejectSending ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.9rem' }}
+              >
+                {rejectSending ? 'Sending...' : 'Reject & Send Message'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   )
