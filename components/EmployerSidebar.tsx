@@ -70,7 +70,7 @@ export default function EmployerSidebar() {
     pathname?.startsWith('/candidates/') ||
     pathname?.startsWith('/company/') ||
     pathname?.startsWith('/employer/analytics/') ||
-    pathname?.startsWith('/my-jobs/') ||
+    (pathname?.startsWith('/my-jobs/') && !pathname?.endsWith('/applications')) ||
     pathname?.startsWith('/reviews/') ||
     pathname === '/post-job' ||
     (pathname === '/jobs' && searchParams.has('id'))
@@ -125,7 +125,7 @@ export default function EmployerSidebar() {
       ),
     },
     {
-      label: 'Applied',
+      label: 'Applicants',
       href: '/applied',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
