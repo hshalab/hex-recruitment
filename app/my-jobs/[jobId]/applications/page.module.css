@@ -426,41 +426,42 @@
   background: var(--hover-yellow);
 }
 
-/* Primary action — green */
+/* Primary action — yellow (matches profile page primary CTA) */
 .barBtnPrimary {
-  background: #16a34a;
-  color: #fff;
+  background: #FFD700;
+  color: #0f172a;
 }
 .barBtnPrimary:hover {
-  background: #15803d;
+  background: #f5c800;
 }
 
-/* Shortlist — blue */
+/* Shortlist — yellow primary */
 .barBtnShortlist {
-  background: #3b82f6;
-  color: #fff;
+  background: #FFD700;
+  color: #0f172a;
 }
 .barBtnShortlist:hover {
-  background: #2563eb;
+  background: #f5c800;
 }
 
-/* Make Offer — green */
+/* Make Offer — yellow primary */
 .barBtnOffer {
-  background: #16a34a;
-  color: #fff;
+  background: #FFD700;
+  color: #0f172a;
 }
 .barBtnOffer:hover {
-  background: #15803d;
+  background: #f5c800;
 }
 
-/* Reject — outlined red */
+/* Reject — outlined neutral with red text */
 .barBtnReject {
   background: transparent;
   color: #dc2626;
-  border: 1.5px solid #fca5a5;
+  border: 1px solid #e2e8f0;
 }
 .barBtnReject:hover {
   background: #fef2f2;
+  border-color: #fca5a5;
 }
 
 /* Reset Status — outlined gray */
@@ -529,17 +530,17 @@
 
 /* Interview Section */
 .interviewSection {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   padding: 1rem;
   margin-top: 1rem;
 }
 
 .interviewTitle {
   font-size: 1rem;
-  font-weight: 600;
-  color: #0c4a6e;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0 0 0.75rem 0;
 }
 
@@ -607,32 +608,35 @@
 
 .rescheduleBtn {
   background: white;
-  color: #0c4a6e;
-  border: 1px solid #0c4a6e;
+  color: #334155;
+  border: 1px solid #e2e8f0;
 }
 
 .rescheduleBtn:hover {
-  background: #f0f9ff;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .cancelInterviewBtn {
   background: white;
   color: #dc2626;
-  border: 1px solid #dc2626;
+  border: 1px solid #e2e8f0;
 }
 
 .cancelInterviewBtn:hover {
-  background: #fee2e2;
+  background: #fef2f2;
+  border-color: #fca5a5;
 }
 
 .rejectInterviewBtn {
   background: white;
   color: #dc2626;
-  border: 1px solid #dc2626;
+  border: 1px solid #e2e8f0;
 }
 
 .rejectInterviewBtn:hover {
-  background: #fee2e2;
+  background: #fef2f2;
+  border-color: #fca5a5;
 }
 
 /* Make Offer CTA Row */
@@ -659,7 +663,7 @@
   background: #16a34a;
 }
 
-/* Confirm Hire Button */
+/* Confirm Hire Button — yellow primary */
 .barBtnHire {
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -672,12 +676,12 @@
   justify-content: center;
   white-space: nowrap;
   border: none;
-  background: #16a34a;
-  color: white;
+  background: #FFD700;
+  color: #0f172a;
 }
 
 .barBtnHire:hover {
-  background: #15803d;
+  background: #f5c800;
 }
 
 /* Signature Display */
@@ -716,17 +720,17 @@
 
 /* Offer Section */
 .offerSection {
-  background: #fefce8;
-  border: 1px solid #fde68a;
-  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   padding: 1rem;
   margin-top: 1rem;
 }
 
 .offerTitle {
   font-size: 1rem;
-  font-weight: 600;
-  color: #92400e;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0 0 0.75rem 0;
 }
 
