@@ -1213,12 +1213,12 @@ export default function JobApplicationsPage() {
 
                   {/* Screening Answers */}
                   {application.screeningAnswers && application.screeningAnswers.length > 0 && (
-                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', marginTop: '0.75rem' }}>
-                      <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', margin: '0 0 0.75rem' }}>Screening Answers</h4>
+                    <div className={styles.screeningBlock}>
+                      <h4 className={styles.screeningTitle}>Screening Answers</h4>
                       {application.screeningAnswers.map((a, i) => (
-                        <div key={a.questionId || i} style={{ marginBottom: i < application.screeningAnswers!.length - 1 ? '0.75rem' : 0 }}>
-                          <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', margin: '0 0 0.25rem' }}>{a.question}</p>
-                          <p style={{ fontSize: '0.875rem', color: '#1e293b', margin: 0, lineHeight: 1.5 }}>{a.answer}</p>
+                        <div key={a.questionId || i} className={styles.screeningItem}>
+                          <p className={styles.screeningQuestion}>{a.question}</p>
+                          <p className={styles.screeningAnswer}>{a.answer}</p>
                         </div>
                       ))}
                     </div>

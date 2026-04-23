@@ -350,6 +350,54 @@
   border-color: rgba(255, 215, 0, 0.5);
 }
 
+/* Screening answers — dark panel so the Q&A pops out of the body */
+.screeningBlock {
+  background: var(--ds-hero);
+  border-radius: var(--ds-radius-card);
+  padding: 1.25rem 1.25rem 1rem;
+  margin-top: 1rem;
+  color: #fff;
+}
+
+.screeningTitle {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-yellow);
+  margin: 0 0 0.875rem;
+}
+
+.screeningItem {
+  padding: 0.625rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.screeningItem:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.screeningItem:last-of-type {
+  padding-bottom: 0.125rem;
+}
+
+.screeningQuestion {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 0.25rem;
+  line-height: 1.4;
+}
+
+.screeningAnswer {
+  font-size: 0.95rem;
+  color: #fff;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.5;
+}
+
 /* Cover Letter */
 .coverLetterSection {
   margin-top: 1rem;
