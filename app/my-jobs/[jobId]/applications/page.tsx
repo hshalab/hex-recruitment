@@ -21,7 +21,7 @@ interface Application {
   company: string
   coverLetter: string
   appliedAt: string
-  status: 'pending' | 'reviewing' | 'interviewing' | 'hired' | 'rejected' | 'offered' | 'shortlisted'
+  status: 'pending' | 'reviewing' | 'interviewing' | 'interview' | 'hired' | 'rejected' | 'offered' | 'shortlisted'
   candidateId: string
   candidateName: string
   candidateEmail: string
@@ -825,7 +825,7 @@ export default function JobApplicationsPage() {
             </div>
             <div className={styles.stat}>
               <span className={styles.statNumber}>
-                {applications.filter(a => a.status === 'interviewing').length}
+                {applications.filter(a => a.status === 'interviewing' || a.status === 'interview').length}
               </span>
               <span className={styles.statLabel}>Interviewing</span>
             </div>
@@ -1259,12 +1259,12 @@ export default function JobApplicationsPage() {
                       </>
                     )}
 
-                    {/* ── INTERVIEWING: Make Offer, Reschedule, Message, Reject ── */}
-                    {application.status === 'interviewing' && (
+                    {/* ── INTERVIEWING: Send Offer Letter, Reschedule, Message, Reject ── */}
+                    {(application.status === 'interviewing' || application.status === 'interview') && (
                       <>
                         {!application.offer && (
                           <button className={styles.barBtnPrimary} onClick={() => { setOfferApplication(application); setOfferModalOpen(true) }}>
-                            Make Offer →
+                            Send Offer Letter →
                           </button>
                         )}
                         {application.interview && (
