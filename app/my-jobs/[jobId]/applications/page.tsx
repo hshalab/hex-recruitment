@@ -1259,7 +1259,7 @@ export default function JobApplicationsPage() {
                       </>
                     )}
 
-                    {/* ── INTERVIEWING: Send Offer Letter, Reschedule, Message, Reject ── */}
+                    {/* ── INTERVIEWING: Send Offer Letter + Message (Reschedule/Reject live in the interview panel) ── */}
                     {(application.status === 'interviewing' || application.status === 'interview') && (
                       <>
                         {!application.offer && (
@@ -1267,16 +1267,8 @@ export default function JobApplicationsPage() {
                             Send Offer Letter →
                           </button>
                         )}
-                        {application.interview && (
-                          <button className={styles.barBtnCalendar} onClick={() => handleScheduleInterview(application)}>
-                            Reschedule
-                          </button>
-                        )}
                         <button className={styles.barBtn} onClick={() => router.push(`/messages?candidate=${application.candidateId}`)}>
                           Message
-                        </button>
-                        <button className={styles.barBtnReject} onClick={() => openRejectModal(application)}>
-                          Reject
                         </button>
                       </>
                     )}
