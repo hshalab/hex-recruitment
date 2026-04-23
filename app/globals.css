@@ -14,6 +14,35 @@
   --card-shadow: 0 2px 8px rgba(45, 55, 72, 0.08);
   --card-shadow-hover: 0 4px 16px rgba(45, 55, 72, 0.12);
 
+  /* ─────────────────────────────────────────────
+     Design system tokens (anchor: candidate profile)
+     Use these in new/refactored page CSS.
+     ───────────────────────────────────────────── */
+  --ds-yellow: #FFD700;
+  --ds-yellow-hover: #f5c800;
+  --ds-text-primary: #0f172a;
+  --ds-text-muted: #64748b;
+  --ds-bg-page: #f8fafc;
+  --ds-bg-card: #ffffff;
+  --ds-bg-subtle: #f8fafc;
+  --ds-border: #e2e8f0;
+  --ds-border-strong: #cbd5e1;
+  --ds-hero: linear-gradient(135deg, #3a4a5c 0%, #4a5568 100%);
+  --ds-radius-card: 12px;
+  --ds-radius-card-lg: 16px;
+  --ds-radius-btn: 8px;
+  /* Status palette (shared vocab across pages) */
+  --ds-status-green-bg: #dcfce7;
+  --ds-status-green-fg: #166534;
+  --ds-status-blue-bg: #dbeafe;
+  --ds-status-blue-fg: #1e40af;
+  --ds-status-amber-bg: #fef3c7;
+  --ds-status-amber-fg: #92400e;
+  --ds-status-red-bg: #fee2e2;
+  --ds-status-red-fg: #b91c1c;
+  --ds-status-neutral-bg: #f1f5f9;
+  --ds-status-neutral-fg: #334155;
+
   /* Nav height — used for body padding + sticky sub-header top */
   --nav-height: 66px;
 

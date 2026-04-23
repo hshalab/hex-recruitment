@@ -210,9 +210,9 @@
   margin-top: 2px;
 }
 
-.typeInPerson { background: #dbeafe; color: #1d4ed8; }
-.typeVideo { background: #dbeafe; color: #1d4ed8; }
-.typePhone { background: #dbeafe; color: #1d4ed8; }
+.typeInPerson { background: var(--ds-status-blue-bg); color: var(--ds-status-blue-fg); }
+.typeVideo { background: var(--ds-status-blue-bg); color: var(--ds-status-blue-fg); }
+.typePhone { background: var(--ds-status-blue-bg); color: var(--ds-status-blue-fg); }
 
 .statusBadge {
   font-size: 0.68rem;
@@ -379,8 +379,8 @@
   border-radius: 999px;
 }
 
-.pastCompleted { background: #dcfce7; color: #16a34a; }
-.pastCancelled { background: #fee2e2; color: #dc2626; }
+.pastCompleted { background: var(--ds-status-green-bg); color: var(--ds-status-green-fg); }
+.pastCancelled { background: var(--ds-status-red-bg); color: var(--ds-status-red-fg); }
 
 /* ─── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 768px) {

@@ -241,23 +241,23 @@
 }
 
 .statusApplied {
-  background: #f5f5f5;
-  color: #6b7280;
+  background: var(--ds-status-neutral-bg);
+  color: var(--ds-status-neutral-fg);
 }
 
 .statusViewed {
-  background: rgba(59, 130, 246, 0.1);
-  color: #2563eb;
+  background: var(--ds-status-blue-bg);
+  color: var(--ds-status-blue-fg);
 }
 
 .statusShortlisted {
-  background: rgba(16, 185, 129, 0.1);
-  color: #059669;
+  background: var(--ds-status-green-bg);
+  color: var(--ds-status-green-fg);
 }
 
 .statusInterview {
-  background: rgba(139, 92, 246, 0.1);
-  color: #7c3aed;
+  background: var(--ds-status-amber-bg);
+  color: var(--ds-status-amber-fg);
 }
 
 /* Interview Calendar Card */
@@ -271,7 +271,7 @@
 }
 
 .interviewCardHeader {
-  background: #dc2626;
+  background: var(--ds-hero);
   color: white;
   font-size: 0.8rem;
   font-weight: 700;
@@ -298,28 +298,28 @@
 .interviewCardTime {
   font-size: 0.95rem;
   font-weight: 800;
-  color: #dc2626;
+  color: var(--ds-text-primary);
 }
 
 .statusOffer {
-  background: #FFD700;
-  color: #1f1f1f;
+  background: var(--ds-yellow);
+  color: var(--ds-text-primary);
   font-weight: 700;
 }
 
 .statusHired {
-  background: rgba(22, 163, 74, 0.12);
-  color: #15803d;
+  background: var(--ds-status-green-bg);
+  color: var(--ds-status-green-fg);
 }
 
 .statusRejected {
-  background: rgba(239, 68, 68, 0.08);
-  color: #dc2626;
+  background: var(--ds-status-red-bg);
+  color: var(--ds-status-red-fg);
 }
 
 .statusWithdrawn {
-  background: rgba(107, 114, 128, 0.08);
-  color: #6b7280;
+  background: var(--ds-status-neutral-bg);
+  color: var(--ds-status-neutral-fg);
 }
 
 /* Shortlisted Callout */
@@ -357,12 +357,12 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: rgba(59, 130, 246, 0.06);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: var(--ds-status-blue-bg);
+  border: 1px solid #bfdbfe;
   border-radius: 6px;
   margin: 0.5rem 0;
   font-size: 0.8rem;
-  color: #1e40af;
+  color: var(--ds-status-blue-fg);
 }
 
 .viewedCalloutIcon {
@@ -631,17 +631,17 @@
 
 /* Interview Section */
 .interviewSection {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
+  background: var(--ds-bg-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   padding: 1rem;
   margin-top: 0.75rem;
 }
 
 .interviewTitle {
   font-size: 0.95rem;
-  font-weight: 600;
-  color: #0c4a6e;
+  font-weight: 700;
+  color: var(--ds-text-primary);
   margin: 0 0 0.75rem 0;
 }
 
@@ -687,44 +687,45 @@
 }
 
 .acceptBtn {
-  background: #16a34a;
-  color: white;
+  background: var(--ds-yellow);
+  color: var(--ds-text-primary);
 }
 
 .acceptBtn:hover {
-  background: #15803d;
+  background: var(--ds-yellow-hover);
 }
 
 .rescheduleBtn {
   background: white;
-  color: #0c4a6e;
-  border: 1px solid #0c4a6e;
+  color: var(--ds-text-primary);
+  border: 1px solid var(--ds-border);
 }
 
 .rescheduleBtn:hover {
-  background: #f0f9ff;
+  background: var(--ds-bg-subtle);
+  border-color: var(--ds-border-strong);
 }
 
 .confirmedText {
   font-size: 0.85rem;
-  color: #16a34a;
+  color: var(--ds-status-green-fg);
   font-weight: 600;
   margin: 0;
 }
 
 /* Offer Section */
 .offerSection {
-  background: #fefce8;
-  border: 1px solid #fde68a;
-  border-radius: 8px;
+  background: var(--ds-bg-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   padding: 1rem;
   margin-top: 0.75rem;
 }
 
 .offerTitle {
   font-size: 0.95rem;
-  font-weight: 600;
-  color: #92400e;
+  font-weight: 700;
+  color: var(--ds-text-primary);
   margin: 0 0 0.75rem 0;
 }
 
@@ -747,7 +748,7 @@
 }
 
 .viewOfferLetterLink {
-  color: #2563eb;
+  color: var(--ds-status-blue-fg);
   text-decoration: underline;
   font-size: 0.85rem;
   font-weight: 600;
@@ -761,10 +762,10 @@
 
 .acceptOfferBtn {
   padding: 0.5rem 1rem;
-  background: #16a34a;
-  color: white;
+  background: var(--ds-yellow);
+  color: var(--ds-text-primary);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--ds-radius-btn);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
@@ -772,15 +773,15 @@
 }
 
 .acceptOfferBtn:hover {
-  background: #15803d;
+  background: var(--ds-yellow-hover);
 }
 
 .declineOfferBtn {
   padding: 0.5rem 1rem;
   background: white;
-  color: #dc2626;
-  border: 1px solid #dc2626;
-  border-radius: 6px;
+  color: var(--ds-status-red-fg);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-btn);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
@@ -788,19 +789,20 @@
 }
 
 .declineOfferBtn:hover {
-  background: #fee2e2;
+  background: #fef2f2;
+  border-color: #fca5a5;
 }
 
 .offerAcceptedText {
   font-size: 0.85rem;
-  color: #16a34a;
+  color: var(--ds-status-green-fg);
   font-weight: 600;
   margin: 0;
 }
 
 .offerDeclinedText {
   font-size: 0.85rem;
-  color: #dc2626;
+  color: var(--ds-status-red-fg);
   font-weight: 600;
   margin: 0;
 }
