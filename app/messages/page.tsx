@@ -166,6 +166,11 @@ export default function MessagesPage() {
         .eq('conversation_id', conversationId)
         .neq('sender_id', session.user.id)
         .eq('is_read', false)
+      // Notify the Header so its unread badge refreshes immediately instead
+      // of waiting for the Postgres realtime channel to deliver the UPDATE.
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('messages:read'))
+      }
     } catch {
       // Ignore
     }

@@ -56,7 +56,14 @@ export default function Header() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => fetchUnreadCount())
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => fetchUnreadCount())
       .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    // Manual refresh trigger — the messages page fires this after marking a
+    // conversation as read so the badge clears without waiting on realtime.
+    const onMessagesRead = () => fetchUnreadCount()
+    window.addEventListener('messages:read', onMessagesRead)
+    return () => {
+      supabase.removeChannel(channel)
+      window.removeEventListener('messages:read', onMessagesRead)
+    }
   }, [user])
 
   // Fetch upcoming interview count for employers (next 7 days)
