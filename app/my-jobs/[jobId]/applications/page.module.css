@@ -217,20 +217,26 @@
 .applicationCard {
   position: relative;
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1.5rem;
+  border: 1px solid var(--ds-border);
+  border-radius: 14px;
+  padding: 0 1.5rem 1.5rem;
   transition: box-shadow 0.2s;
+  overflow: hidden;
 }
 
 .applicationCard:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
 }
 
+/* Candidate identity strip — mini hero matching the candidate profile page */
 .cardMain {
   display: flex;
-  gap: 1rem;
-  align-items: flex-start;
+  gap: 1.25rem;
+  align-items: center;
+  background: var(--ds-hero);
+  margin: 0 -1.5rem 1.5rem;
+  padding: 1.5rem;
+  color: #fff;
 }
 
 /* Candidate Photo */
@@ -240,7 +246,9 @@
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  background: #f0f0f0;
+  background: #fff;
+  border: 3px solid rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .photoImage {
@@ -255,10 +263,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--ds-yellow);
+  color: var(--ds-text-primary);
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Candidate Info */
@@ -272,26 +280,29 @@
 }
 
 .candidateName {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 0.25rem 0;
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #fff;
+  margin: 0 0 0.15rem 0;
+  line-height: 1.2;
 }
 
 .candidatePosition {
-  font-size: 0.95rem;
-  color: #4b5563;
-  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+  color: var(--ds-yellow);
+  font-weight: 600;
+  margin: 0 0 0.35rem 0;
 }
 
 .candidateLocation {
-  font-size: 0.85rem;
-  color: #6b7280;
-  margin: 0 0 0.25rem 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 0.15rem 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 
 .locationIcon {
@@ -299,8 +310,8 @@
 }
 
 .appliedDate {
-  font-size: 0.8rem;
-  color: #9ca3af;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
   margin: 0;
 }
 
@@ -308,27 +319,24 @@
 .profileLinkSection {
   flex-shrink: 0;
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   align-items: flex-start;
 }
 
 .viewProfileLink {
-  flex: 1 1 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
-  padding: 0.5rem 1rem;
-  min-width: 0;
-  background: #1a1a1a;
-  color: white;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  padding: 0.45rem 0.9rem;
+  background: transparent;
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
-  text-align: center;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .viewCvDisabled {
@@ -338,7 +346,8 @@
 }
 
 .viewProfileLink:hover {
-  background: #333;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 215, 0, 0.5);
 }
 
 /* Cover Letter */
@@ -566,10 +575,24 @@
 }
 
 .interviewConfirmed {
-  font-size: 0.9rem;
-  color: #16a34a;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--ds-status-green-fg);
   font-weight: 600;
   margin: 0.5rem 0 0 0;
+  padding: 0.25rem 0.7rem 0.25rem 0.55rem;
+  background: var(--ds-status-green-bg);
+  border-radius: 999px;
+}
+
+.interviewConfirmed::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ds-status-green-fg);
 }
 
 .pendingSlot {
