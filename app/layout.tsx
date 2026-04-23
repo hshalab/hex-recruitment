@@ -4,7 +4,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import SessionGuard from '@/components/SessionGuard'
 import { MessagesProvider } from '@/lib/MessagesContext'
 import type { Metadata } from 'next'
-import { Inter, Dancing_Script } from 'next/font/google'
+import { Inter, Dancing_Script, Fraunces } from 'next/font/google'
 import { Providers } from './providers'
 import './globals.css'
 
@@ -16,6 +16,14 @@ const dancingScript = Dancing_Script({
   subsets: ['latin'],
   variable: '--font-cursive',
   weight: ['400', '700'],
+  display: 'swap',
+})
+// Editorial display face used for hero titles and hero stat values only.
+// Body copy stays on Inter.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['400', '500', '600'],
   display: 'swap',
 })
 
@@ -84,7 +92,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-GB">
-      <body className={`${inter.className} ${dancingScript.variable}`}>
+      <body className={`${inter.className} ${dancingScript.variable} ${fraunces.variable}`}>
         <Providers>
           <MessagesProvider>
             <ScrollToTop />

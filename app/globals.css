@@ -1,7 +1,7 @@
 :root {
-  /* Brand colour palette */
-  --primary-yellow: #FFE500;
-  --hover-yellow: #e6cf00;
+  /* Brand colour palette — single yellow across the app */
+  --primary-yellow: #FFD700;
+  --hover-yellow: #f5c800;
   --accent-yellow: #FFF8CC;
   --black: #1a1a1a;
   --dark-gray: #0f172a;
@@ -75,6 +75,137 @@ body {
   color: var(--text-gray);
   line-height: 1.6;
   overflow-x: clip;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Display utility — Fraunces for editorial headings.
+   Opt in by adding the `ds-display` class.
+   ────────────────────────────────────────────────────────── */
+.ds-display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Unified form primitives — opt in by adding these classes.
+   Use on any <input>, <select>, <textarea>. Wraps focus ring,
+   hover, disabled, error states into a single shared surface.
+   ────────────────────────────────────────────────────────── */
+.ds-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ds-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-text-muted);
+}
+
+.ds-label-required::after {
+  content: ' *';
+  color: var(--ds-status-red-fg);
+  margin-left: 2px;
+}
+
+.ds-input,
+.ds-select,
+.ds-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ds-text-primary);
+  background: #fff;
+  border: 1.5px solid var(--ds-border);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.ds-input,
+.ds-select {
+  min-height: 44px;
+}
+
+.ds-textarea {
+  min-height: 96px;
+  resize: vertical;
+  padding: 12px 14px;
+}
+
+.ds-input::placeholder,
+.ds-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.ds-input:hover:not(:disabled):not(:focus),
+.ds-select:hover:not(:disabled):not(:focus),
+.ds-textarea:hover:not(:disabled):not(:focus) {
+  border-color: var(--ds-border-strong);
+}
+
+.ds-input:focus,
+.ds-select:focus,
+.ds-textarea:focus {
+  border-color: var(--ds-text-primary);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.25);
+}
+
+.ds-input:disabled,
+.ds-select:disabled,
+.ds-textarea:disabled {
+  background: var(--ds-bg-subtle);
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Custom chevron for <select> — overrides browser native. */
+.ds-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
+}
+
+/* Error state — add .ds-field-error to the field wrapper. */
+.ds-field-error .ds-input,
+.ds-field-error .ds-select,
+.ds-field-error .ds-textarea {
+  border-color: var(--ds-status-red-fg);
+}
+
+.ds-field-error .ds-input:focus,
+.ds-field-error .ds-select:focus,
+.ds-field-error .ds-textarea:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+}
+
+.ds-help {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.ds-error-text {
+  font-size: 0.78rem;
+  color: var(--ds-status-red-fg);
+  font-weight: 500;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Shared focus-visible ring — applies to any interactive
+   element that opts in via .ds-focus-ring. Keyboard only.
+   ────────────────────────────────────────────────────────── */
+.ds-focus-ring:focus-visible {
+  outline: 3px solid rgba(255, 215, 0, 0.35);
+  outline-offset: 2px;
 }
 
 /* Global scrollbar styling */
