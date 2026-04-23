@@ -162,13 +162,13 @@
   margin: 0 0 0.25rem 0;
   font-weight: 600;
   font-size: 0.9rem;
-  color: #92400e;
+  color: var(--ds-status-amber-fg);
 }
 
 .cvWarningText {
   margin: 0;
   font-size: 0.85rem;
-  color: #92400e;
+  color: var(--ds-status-amber-fg);
 }
 
 /* CV soft nudge (no CV, not required) */

@@ -185,14 +185,14 @@
 
 .fileName {
   font-size: 0.85rem;
-  color: #16a34a;
+  color: var(--ds-status-green-fg);
   margin-top: 0.5rem;
   font-weight: 600;
 }
 
 .error {
-  background: #fee;
-  color: #c00;
+  background: var(--ds-status-red-bg);
+  color: var(--ds-status-red-fg);
   padding: 0.75rem;
   border-radius: 6px;
   margin-bottom: 1rem;

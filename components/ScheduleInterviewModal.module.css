@@ -274,16 +274,16 @@
 }
 .modeBtnActive {
   background: #0f172a;
-  color: #FFE500;
+  color: var(--ds-yellow);
 }
 
 .noSlots {
   padding: 0.9rem 1rem;
-  background: #fef3c7;
-  border: 1px solid #fde68a;
+  background: var(--ds-status-amber-bg);
+  border: 1px solid #fcd9a0;
   border-radius: 8px;
   font-size: 0.85rem;
-  color: #92400e;
+  color: var(--ds-status-amber-fg);
   margin-bottom: 1rem;
 }
 .setupLink {
@@ -339,9 +339,9 @@
 .datePillActive {
   background: #0f172a;
   border-color: #0f172a;
-  color: #FFE500;
+  color: var(--ds-yellow);
 }
-.datePillActive .datePillDay { color: #FFE500; }
+.datePillActive .datePillDay { color: var(--ds-yellow); }
 
 .selectedDateHeading {
   font-size: 0.95rem;
@@ -371,16 +371,16 @@
 .timeBtnActive {
   background: #0f172a;
   border-color: #0f172a;
-  color: #FFE500;
+  color: var(--ds-yellow);
 }
 
 .confirmBanner {
   padding: 0.75rem 1rem;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
+  background: var(--ds-status-green-bg);
+  border: 1px solid #86efac;
   border-radius: 8px;
   font-size: 0.9rem;
-  color: #065f46;
+  color: var(--ds-status-green-fg);
   font-weight: 500;
   margin-bottom: 1rem;
 }
