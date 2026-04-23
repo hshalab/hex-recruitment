@@ -22,7 +22,7 @@
 
 /* Company Header Banner */
 .banner {
-  background: #1e293b;
+  background: var(--ds-hero);
   padding: 2.5rem 0 2rem;
 }
 
@@ -40,12 +40,13 @@
   height: 80px;
   border-radius: 12px;
   overflow: hidden;
-  background: #334155;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 3px solid rgba(255, 229, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .bannerLogoImg {
@@ -57,7 +58,7 @@
 .bannerLogoFallback {
   font-size: 2rem;
   font-weight: 700;
-  color: #FFD700;
+  color: var(--ds-text-primary);
 }
 
 .bannerInfo {
@@ -305,8 +306,8 @@
 }
 
 .reviewStatusCurrent {
-  background: #dcfce7;
-  color: #16a34a;
+  background: var(--ds-status-green-bg);
+  color: var(--ds-status-green-fg);
 }
 
 .reviewProsCons {
@@ -326,11 +327,11 @@
 }
 
 .prosIcon {
-  color: #16a34a;
+  color: var(--ds-status-green-fg);
 }
 
 .consIcon {
-  color: #dc2626;
+  color: var(--ds-status-red-fg);
 }
 
 .reviewSectionContent {
@@ -347,11 +348,11 @@
 }
 
 .prosLabel {
-  color: #16a34a;
+  color: var(--ds-status-green-fg);
 }
 
 .consLabel {
-  color: #dc2626;
+  color: var(--ds-status-red-fg);
 }
 
 .reviewSectionText {
