@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedLink from '@/components/SignedLink'
@@ -39,6 +39,8 @@ interface Application {
 export default function JobApplicationsPage() {
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
+  const fromPipeline = searchParams.get('from') === 'pipeline'
   const jobId = params.jobId as string
   const { jobs, refreshJobs } = useJobs()
 
@@ -796,9 +798,9 @@ export default function JobApplicationsPage() {
       <div className={styles.container}>
         {/* Back Link & Header */}
         <div className={styles.header}>
-          <button className={styles.backLink} style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer' }} onClick={() => router.push('/my-jobs')}>
+          <button className={styles.backLink} style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer' }} onClick={() => router.push(fromPipeline ? '/pipeline' : '/my-jobs')}>
             <span className={styles.backArrow}>←</span>
-            Back to Manage Job Ads
+            {fromPipeline ? 'Back to Pipeline' : 'Back to Manage Job Ads'}
           </button>
 
           <div className={styles.jobInfo}>
@@ -867,8 +869,8 @@ export default function JobApplicationsPage() {
               >
                 📋 Copy Job Link
               </button>
-              <button className={styles.backBtn} onClick={() => router.push('/my-jobs')}>
-                Back to Manage Job Ads
+              <button className={styles.backBtn} onClick={() => router.push(fromPipeline ? '/pipeline' : '/my-jobs')}>
+                {fromPipeline ? 'Back to Pipeline' : 'Back to Manage Job Ads'}
               </button>
             </div>
           </div>

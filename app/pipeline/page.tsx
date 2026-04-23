@@ -274,8 +274,8 @@ export default function PipelinePage() {
                                 const cta = STAGE_CTA[card.status]
                                 if (!cta) return null
                                 const href = cta.toApplications
-                                  ? `/my-jobs/${card.jobId}/applications`
-                                  : `/candidates/${card.candidateId}`
+                                  ? `/my-jobs/${card.jobId}/applications?from=pipeline`
+                                  : `/candidates/${card.candidateId}?from=pipeline`
                                 return (
                                   <Link
                                     href={href}
@@ -296,7 +296,7 @@ export default function PipelinePage() {
                                   )}
                                   <div className={styles.cardSecondaryActions}>
                                     <Link
-                                      href={`/candidates/${card.candidateId}`}
+                                      href={`/candidates/${card.candidateId}?from=pipeline`}
                                       className={styles.cardSecondaryBtn}
                                       onClick={e => e.stopPropagation()}
                                     >

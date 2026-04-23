@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
@@ -69,6 +69,8 @@ function getAvailabilityStyle(availability: string | undefined) {
 export default function CandidateDetailPage() {
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
+  const fromPipeline = searchParams.get('from') === 'pipeline'
   const candidateId = params.id as string
 
   const [candidate, setCandidate] = useState<Candidate | null>(null)
@@ -200,8 +202,8 @@ export default function CandidateDetailPage() {
         <div className={styles.notFound}>
           <h2>Candidate Not Found</h2>
           <p>The candidate you&apos;re looking for doesn&apos;t exist or has been removed.</p>
-          <Link href="/candidates" className={styles.backBtnPrimary}>
-            Back to Candidates
+          <Link href={fromPipeline ? '/pipeline' : '/candidates'} className={styles.backBtnPrimary}>
+            {fromPipeline ? 'Back to Pipeline' : 'Back to Candidates'}
           </Link>
         </div>
       </main>
@@ -226,9 +228,9 @@ export default function CandidateDetailPage() {
       <div className={styles.container}>
         {/* Breadcrumb */}
         <div className={styles.breadcrumb}>
-          <button onClick={() => router.push('/candidates')} className={styles.breadcrumbLink} type="button">
+          <button onClick={() => router.push(fromPipeline ? '/pipeline' : '/candidates')} className={styles.breadcrumbLink} type="button">
             <ChevronLeft size={16} />
-            Back to Candidates
+            {fromPipeline ? 'Back to Pipeline' : 'Back to Candidates'}
           </button>
         </div>
 
