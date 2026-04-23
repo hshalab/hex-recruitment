@@ -152,11 +152,10 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
         {stages.map(s => {
           const count = statusCounts[s] || 0
           const candidates = candidatesByStage[s] || []
-          const color = stageColors[s] || '#6b7280'
           return (
-            <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={styles.pipelineCard} style={{ borderTopColor: color }}>
+            <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={styles.pipelineCard}>
               <div className={styles.pipelineCardTop}>
-                <span className={styles.pipelineCardCount} style={{ color }}>{count}</span>
+                <span className={styles.pipelineCardCount}>{count}</span>
                 <span className={styles.pipelineCardStage}>{STATUS_LABELS[s]}</span>
               </div>
               <div className={styles.pipelineCardCandidates}>
@@ -1020,15 +1019,10 @@ export default function EmployerDashboardPage() {
                   {PIPELINE_STAGES.filter(s => s !== 'rejected').map(s => {
                     const count = statusCounts[s] || 0
                     const candidates = candidatesByStage[s] || []
-                    const stageColors: Record<string, string> = {
-                      pending: '#f59e0b', reviewing: '#3b82f6', shortlisted: '#8b5cf6',
-                      interview: '#06b6d4', offered: '#10b981', hired: '#16a34a',
-                    }
-                    const color = stageColors[s] || '#6b7280'
                     return (
-                      <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={styles.pipelineCard} style={{ borderTopColor: color }}>
+                      <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={styles.pipelineCard}>
                         <div className={styles.pipelineCardTop}>
-                          <span className={styles.pipelineCardCount} style={{ color }}>{count}</span>
+                          <span className={styles.pipelineCardCount}>{count}</span>
                           <span className={styles.pipelineCardStage}>{STATUS_LABELS[s]}</span>
                         </div>
                         <div className={styles.pipelineCardCandidates}>

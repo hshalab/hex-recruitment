@@ -24,10 +24,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.75rem 2rem;
-  background: var(--dark-gray);
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
+  padding: 1.5rem 1.75rem;
+  background: var(--ds-hero);
+  border-radius: 14px;
+  margin-bottom: 1.25rem;
   color: var(--white);
   overflow: hidden;
 }
@@ -78,18 +78,20 @@
 }
 
 .avatarPlaceholder {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  color: var(--dark-gray);
+  color: var(--ds-text-primary);
   flex-shrink: 0;
   overflow: hidden;
+  border: 3px solid rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .avatarImage {
@@ -99,23 +101,27 @@
 }
 
 .welcomeText h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 0.2rem;
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.15rem;
+  line-height: 1.15;
 }
 
 .welcomeSub {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: rgba(255, 255, 255, 0.55);
   font-weight: 400;
 }
 
 .companyLabel {
-  margin: 0.15rem 0 0;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.75);
-  font-weight: 400;
+  margin: 0 0 0.25rem;
+  font-size: 0.82rem;
+  color: var(--ds-yellow);
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .welcomeDate {
@@ -165,18 +171,20 @@
 }
 
 .statPillNum {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-dark);
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ds-text-primary);
   line-height: 1;
 }
 
 .statPillLabel {
   font-size: 0.7rem;
-  color: var(--text-gray);
-  font-weight: 500;
+  color: var(--ds-text-muted);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -193,24 +201,24 @@
 
 /* ── Stale applications nudge ────────────────────────── */
 /* ── Getting started checklist ────────────────────── */
-.checklistCard { position: relative; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+.checklistCard { position: relative; background: #fff; border: 1px solid var(--ds-border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
 .checklistDismiss { position: absolute; top: 0.75rem; right: 0.75rem; background: none; border: none; color: #d4a017; font-size: 1.25rem; cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
 .checklistDismiss:hover { background: rgba(0,0,0,0.05); }
 .checklistHeading { font-size: 1rem; font-weight: 600; color: #1a1a1a; margin: 0 0 0.2rem; }
-.checklistSub { font-size: 0.82rem; color: #92400e; margin: 0 0 1rem; }
+.checklistSub { font-size: 0.82rem; color: var(--ds-text-muted); margin: 0 0 1rem; }
 .checklistItems { display: flex; flex-direction: column; gap: 0.625rem; }
 .checklistItem { display: flex; align-items: center; gap: 0.625rem; }
 .checklistDot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d1d5db; flex-shrink: 0; }
 .checklistDotDone { background: #FFD700; border-color: #FFD700; }
 .checklistLabel { flex: 1; font-size: 0.875rem; color: #1e293b; }
-.checklistAction { font-size: 0.82rem; font-weight: 600; color: #b45309; text-decoration: none; white-space: nowrap; }
+.checklistAction { font-size: 0.82rem; font-weight: 600; color: var(--ds-text-primary); text-decoration: none; white-space: nowrap; }
 .checklistAction:hover { text-decoration: underline; }
-.checklistProgress { font-size: 0.78rem; color: #92400e; margin: 0.875rem 0 0; }
+.checklistProgress { font-size: 0.78rem; color: var(--ds-text-muted); margin: 0.875rem 0 0; }
 
-.staleNudge { display: flex; align-items: center; gap: 0.75rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 0.875rem 1.25rem; margin-bottom: 1.25rem; }
+.staleNudge { display: flex; align-items: center; gap: 0.75rem; background: var(--ds-status-amber-bg); border: 1px solid #fcd9a0; border-radius: 12px; padding: 0.875rem 1.25rem; margin-bottom: 1.25rem; }
 .staleNudgeIcon { font-size: 1.25rem; flex-shrink: 0; }
-.staleNudgeText { flex: 1; font-size: 0.875rem; color: #92400e; }
-.staleNudgeLink { font-size: 0.82rem; font-weight: 700; color: #b45309; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
+.staleNudgeText { flex: 1; font-size: 0.875rem; color: var(--ds-status-amber-fg); }
+.staleNudgeLink { font-size: 0.82rem; font-weight: 700; color: var(--ds-status-amber-fg); text-decoration: none; white-space: nowrap; flex-shrink: 0; }
 .staleNudgeLink:hover { text-decoration: underline; }
 
 
@@ -303,23 +311,30 @@
   max-width: none;
   height: 160px;
   background: var(--white);
-  border: 1px solid var(--border-gray);
-  border-top: 3px solid;
-  border-radius: 10px;
-  padding: 0.875rem;
+  border: 1px solid var(--ds-border);
+  border-radius: 12px;
+  padding: 1rem;
   text-decoration: none;
   color: inherit;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
   overflow: hidden;
-  transition: box-shadow 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.pipelineCard:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.pipelineCard:hover { border-color: var(--ds-border-strong); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); }
 
-.pipelineCardTop { display: flex; align-items: baseline; gap: 0.4rem; min-width: 0; flex-wrap: nowrap; }
-.pipelineCardCount { font-size: 1.75rem; font-weight: 700; line-height: 1; flex-shrink: 0; }
-.pipelineCardStage { font-size: 0.62rem; font-weight: 600; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.pipelineCardTop { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; flex-wrap: nowrap; }
+.pipelineCardCount {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--ds-text-primary);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pipelineCardStage { font-size: 0.66rem; font-weight: 600; color: var(--ds-text-muted); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 .pipelineCardCandidates { display: flex; flex-direction: column; gap: 0.2rem; }
 .pipelineCardCandidate { display: flex; flex-direction: column; }
@@ -391,10 +406,10 @@
   white-space: nowrap;
 }
 
-.statusPending { background: #fffbeb; color: #b45309; }
-.statusReviewing, .statusShortlisted { background: #eff6ff; color: #2563eb; }
-.statusInterview, .statusOffered, .statusHired { background: #f0fdf4; color: #16a34a; }
-.statusRejected { background: #fef2f2; color: #dc2626; }
+.statusPending { background: var(--ds-status-amber-bg); color: var(--ds-status-amber-fg); }
+.statusReviewing, .statusShortlisted { background: var(--ds-status-blue-bg); color: var(--ds-status-blue-fg); }
+.statusInterview, .statusOffered, .statusHired { background: var(--ds-status-green-bg); color: var(--ds-status-green-fg); }
+.statusRejected { background: var(--ds-status-red-bg); color: var(--ds-status-red-fg); }
 
 .appChevron {
   color: #cbd5e1;
@@ -558,7 +573,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #16a34a;
+  background: var(--ds-status-green-fg);
   border: 2px solid var(--white);
 }
 
