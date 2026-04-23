@@ -122,7 +122,7 @@
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--ds-hero);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -179,8 +179,8 @@
 .availBadge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  background: #ecfdf5;
-  color: #059669;
+  background: var(--ds-status-green-bg);
+  color: var(--ds-status-green-fg);
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: 12px;
@@ -292,11 +292,11 @@
 .skillBadge {
   display: inline-block;
   padding: 0.375rem 0.875rem;
-  background: #f0f4ff;
-  color: #3b5998;
-  border-radius: 16px;
+  background: var(--ds-yellow);
+  color: var(--ds-text-primary);
+  border-radius: 999px;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* Work History */
@@ -454,7 +454,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #3b82f6;
+  color: var(--ds-status-blue-fg);
   text-decoration: none;
   font-size: 0.9rem;
   padding: 0.5rem;
@@ -541,7 +541,7 @@
 
 .cvDownload {
   font-size: 1rem;
-  color: #3b82f6;
+  color: var(--ds-status-blue-fg);
   font-weight: 600;
 }
 
@@ -584,10 +584,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #fef3c7;
+  background: var(--ds-status-amber-bg);
   border-radius: 8px;
   font-size: 0.8rem;
-  color: #92400e;
+  color: var(--ds-status-amber-fg);
   margin-bottom: 0.75rem;
 }
 
