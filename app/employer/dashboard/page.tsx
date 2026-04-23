@@ -152,8 +152,9 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
         {stages.map(s => {
           const count = statusCounts[s] || 0
           const candidates = candidatesByStage[s] || []
+          const hasCandidates = candidates.length > 0
           return (
-            <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={styles.pipelineCard}>
+            <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={`${styles.pipelineCard} ${hasCandidates ? styles.pipelineCardActive : ''}`}>
               <div className={styles.pipelineCardTop}>
                 <span className={styles.pipelineCardCount}>{count}</span>
                 <span className={styles.pipelineCardStage}>{STATUS_LABELS[s]}</span>
@@ -1019,8 +1020,9 @@ export default function EmployerDashboardPage() {
                   {PIPELINE_STAGES.filter(s => s !== 'rejected').map(s => {
                     const count = statusCounts[s] || 0
                     const candidates = candidatesByStage[s] || []
+                    const hasCandidates = candidates.length > 0
                     return (
-                      <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={styles.pipelineCard}>
+                      <Link key={s} href={`/my-jobs?filter=${s === 'interview' ? 'interviewing' : s === 'offered' ? 'offers' : s}`} className={`${styles.pipelineCard} ${hasCandidates ? styles.pipelineCardActive : ''}`}>
                         <div className={styles.pipelineCardTop}>
                           <span className={styles.pipelineCardCount}>{count}</span>
                           <span className={styles.pipelineCardStage}>{STATUS_LABELS[s]}</span>

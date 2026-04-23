@@ -324,6 +324,21 @@
 }
 .pipelineCard:hover { border-color: var(--ds-border-strong); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); }
 
+/* Active card — stage has at least one candidate. Uses the dark hero
+   gradient to draw the eye to actionable stages while empty stages
+   recede into the neutral background. */
+.pipelineCardActive {
+  background: var(--ds-hero);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.14);
+}
+.pipelineCardActive:hover {
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2);
+  transform: translateY(-1px);
+}
+
 .pipelineCardTop { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; flex-wrap: nowrap; }
 .pipelineCardCount {
   font-family: var(--font-display), ui-serif, Georgia, serif;
@@ -334,14 +349,19 @@
   line-height: 1;
   flex-shrink: 0;
 }
+.pipelineCardActive .pipelineCardCount { color: var(--ds-yellow); }
 .pipelineCardStage { font-size: 0.66rem; font-weight: 600; color: var(--ds-text-muted); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.pipelineCardActive .pipelineCardStage { color: rgba(255, 255, 255, 0.7); }
 
 .pipelineCardCandidates { display: flex; flex-direction: column; gap: 0.2rem; }
 .pipelineCardCandidate { display: flex; flex-direction: column; }
 .pipelineCardName { font-size: 0.78rem; font-weight: 600; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pipelineCardActive .pipelineCardName { color: #fff; }
 .pipelineCardJob { font-size: 0.68rem; color: var(--text-gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pipelineCardActive .pipelineCardJob { color: rgba(255, 255, 255, 0.6); }
 .pipelineCardEmpty { font-size: 0.75rem; color: #cbd5e1; font-style: italic; }
 .pipelineCardMore { font-size: 0.7rem; color: var(--text-gray); margin-top: 0.1rem; }
+.pipelineCardActive .pipelineCardMore { color: rgba(255, 255, 255, 0.55); }
 
 .previewLabel {
   font-size: 0.75rem;
