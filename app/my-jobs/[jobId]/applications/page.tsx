@@ -1259,18 +1259,11 @@ export default function JobApplicationsPage() {
                       </>
                     )}
 
-                    {/* ── INTERVIEWING: Send Offer Letter + Message (Reschedule/Reject live in the interview panel) ── */}
-                    {(application.status === 'interviewing' || application.status === 'interview') && (
-                      <>
-                        {!application.offer && (
-                          <button className={styles.barBtnPrimary} onClick={() => { setOfferApplication(application); setOfferModalOpen(true) }}>
-                            Send Offer Letter →
-                          </button>
-                        )}
-                        <button className={styles.barBtn} onClick={() => router.push(`/messages?candidate=${application.candidateId}`)}>
-                          Message
-                        </button>
-                      </>
+                    {/* ── INTERVIEWING: Send Offer Letter (Reschedule/Reject live in the interview panel; Message/Email live on the candidate profile) ── */}
+                    {(application.status === 'interviewing' || application.status === 'interview') && !application.offer && (
+                      <button className={styles.barBtnPrimary} onClick={() => { setOfferApplication(application); setOfferModalOpen(true) }}>
+                        Send Offer Letter →
+                      </button>
                     )}
 
                     {/* ── OFFERED: Waiting for candidate, Withdraw, Reject ── */}
@@ -1294,19 +1287,6 @@ export default function JobApplicationsPage() {
                       </button>
                     )}
 
-                    {/* Email — always available except hired/rejected */}
-                    {!['hired', 'rejected'].includes(application.status) && application.candidateEmail && (
-                      <button
-                        className={styles.barBtn}
-                        title={application.candidateEmail}
-                        onClick={() => {
-                          navigator.clipboard.writeText(application.candidateEmail).catch(() => {})
-                          window.location.href = `mailto:${application.candidateEmail}`
-                        }}
-                      >
-                        Email
-                      </button>
-                    )}
                   </div>
                 </div>
               )

@@ -824,14 +824,19 @@
 }
 
 .contactValue {
-  color: #1e293b;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.9rem;
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-decoration-color: #93c5fd;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: inline-block;
+  word-break: break-all;
 }
 
 .contactValue:hover {
-  color: #b8960a;
+  color: #1e3a8a;
+  text-decoration-color: #1d4ed8;
 }
 
 .contactNote {

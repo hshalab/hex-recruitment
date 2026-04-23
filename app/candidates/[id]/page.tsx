@@ -73,6 +73,17 @@ export default function CandidateDetailPage() {
   const fromPipeline = searchParams.get('from') === 'pipeline'
   const candidateId = params.id as string
 
+  const handleBack = () => {
+    // Prefer browser history so the user returns to wherever they came from
+    // (pipeline, candidates list, search results, etc.). Fall back to a sensible
+    // default if there's no history — e.g. opened from an external link.
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(fromPipeline ? '/pipeline' : '/candidates')
+    }
+  }
+
   const [candidate, setCandidate] = useState<Candidate | null>(null)
   const [visibility, setVisibility] = useState<VisibilitySettings>(DEFAULT_VISIBILITY)
   const [checkingAuth, setCheckingAuth] = useState(true)
@@ -228,9 +239,9 @@ export default function CandidateDetailPage() {
       <div className={styles.container}>
         {/* Breadcrumb */}
         <div className={styles.breadcrumb}>
-          <button onClick={() => router.push(fromPipeline ? '/pipeline' : '/candidates')} className={styles.breadcrumbLink} type="button">
+          <button onClick={handleBack} className={styles.breadcrumbLink} type="button">
             <ChevronLeft size={16} />
-            {fromPipeline ? 'Back to Pipeline' : 'Back to Candidates'}
+            Back
           </button>
         </div>
 
