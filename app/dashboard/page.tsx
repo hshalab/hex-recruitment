@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import { supabaseProfileToCandidate } from '@/lib/types'
 import { Candidate } from '@/lib/mockCandidates'
@@ -236,7 +237,14 @@ export default function DashboardPage() {
       }
 
       // PRODUCTION MODE
-      const { data: { session } } = await supabase.auth.getSession()
+      // Fresh OAuth redirects arrive with the session living only in the
+      // chunked SSR cookies the server wrote. If localStorage is empty, fall
+      // back to hydrating from those cookies before we decide to bounce out.
+      let { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        const hydrated = await hydrateSessionFromCookies()
+        if (hydrated) session = hydrated
+      }
       if (!session) { router.push('/login'); return }
       if (session.user.user_metadata?.role === 'employer') { router.replace('/employer/dashboard'); return }
 
