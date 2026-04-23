@@ -274,7 +274,7 @@ export default function PipelinePage() {
                                 const cta = STAGE_CTA[card.status]
                                 if (!cta) return null
                                 const href = cta.toApplications
-                                  ? `/my-jobs/${card.jobId}/applications?from=pipeline`
+                                  ? `/my-jobs/${card.jobId}/applications?from=pipeline&applicationId=${card.id}`
                                   : `/candidates/${card.candidateId}?from=pipeline`
                                 return (
                                   <Link

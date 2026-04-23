@@ -41,6 +41,9 @@ export default function JobApplicationsPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const fromPipeline = searchParams.get('from') === 'pipeline'
+  // When Pipeline deep-links a specific candidate, narrow the page to that one.
+  // Aggregate stats and the search bar are noise in that mode.
+  const focusedApplicationId = searchParams.get('applicationId')
   const jobId = params.jobId as string
   const { jobs, refreshJobs } = useJobs()
 
@@ -812,42 +815,42 @@ export default function JobApplicationsPage() {
             </p>
           </div>
 
-          <div className={styles.statsRow}>
-            <div className={styles.stat}>
-              <span className={styles.statNumber}>{applications.length}</span>
-              <span className={styles.statLabel}>Total Applications</span>
+          {!focusedApplicationId && (
+            <div className={styles.statsRow}>
+              <div className={styles.stat}>
+                <span className={styles.statNumber}>{applications.length}</span>
+                <span className={styles.statLabel}>Total Applications</span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statNumber}>
+                  {applications.filter(a => a.status === 'pending').length}
+                </span>
+                <span className={styles.statLabel}>Pending Review</span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statNumber}>
+                  {applications.filter(a => a.status === 'interviewing' || a.status === 'interview').length}
+                </span>
+                <span className={styles.statLabel}>Interviewing</span>
+              </div>
             </div>
-            <div className={styles.stat}>
-              <span className={styles.statNumber}>
-                {applications.filter(a => a.status === 'pending').length}
-              </span>
-              <span className={styles.statLabel}>Pending Review</span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statNumber}>
-                {applications.filter(a => a.status === 'interviewing' || a.status === 'interview').length}
-              </span>
-              <span className={styles.statLabel}>Interviewing</span>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Filter Tabs */}
-        {applications.length > 0 && (
-          <>
-            <div className={styles.searchRow}>
-              <input
-                type="text"
-                placeholder="Search by candidate name..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className={styles.candidateSearch}
-              />
-              {searchQuery && (
-                <button className={styles.searchClear} onClick={() => setSearchQuery('')}>&times;</button>
-              )}
-            </div>
-          </>
+        {/* Search bar — hidden when focused on a single candidate from Pipeline */}
+        {applications.length > 0 && !focusedApplicationId && (
+          <div className={styles.searchRow}>
+            <input
+              type="text"
+              placeholder="Search by candidate name..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className={styles.candidateSearch}
+            />
+            {searchQuery && (
+              <button className={styles.searchClear} onClick={() => setSearchQuery('')}>&times;</button>
+            )}
+          </div>
         )}
 
         {/* Applications List */}
@@ -933,6 +936,7 @@ export default function JobApplicationsPage() {
             )}
             {applications
               .filter(a => {
+                if (focusedApplicationId) return a.id === focusedApplicationId
                 if (searchQuery && !a.candidateName.toLowerCase().includes(searchQuery.toLowerCase())) return false
                 return true
               })
