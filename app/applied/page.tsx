@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
+import EmptyState from '@/components/EmptyState'
+import { Inbox } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
 
@@ -178,10 +180,14 @@ export default function AppliedPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className={styles.empty}>
-            <span style={{ fontSize: '2rem' }}>📭</span>
-            <p>No new applications{filterJob !== 'all' ? ' for this job' : ''}.</p>
-          </div>
+          <EmptyState
+            icon={Inbox}
+            title="Nothing new to review"
+            description={filterJob !== 'all'
+              ? 'No pending applications for this job right now. Check back later or browse all jobs.'
+              : 'When candidates apply to your jobs, they\'ll land here for you to review.'}
+            action={jobs.length === 0 ? { label: 'Post a job', href: '/post-job' } : undefined}
+          />
         ) : (
           <div className={styles.list}>
             {/* Table header */}

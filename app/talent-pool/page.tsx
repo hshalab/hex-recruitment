@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
+import EmptyState from '@/components/EmptyState'
+import { Users } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getCategoryLabel } from '@/lib/categories'
 import styles from './page.module.css'
@@ -190,10 +192,14 @@ export default function TalentPoolPage() {
 
         {/* Candidate list */}
         {filtered.length === 0 ? (
-          <div className={styles.emptyState}>
-            <span style={{ fontSize: '2rem' }}>📋</span>
-            <p>{view === 'past' ? 'No past candidates yet. Rejected applicants will appear here for future reference.' : 'No applicants found.'}</p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title={view === 'past' ? 'No past candidates yet' : 'No applicants found'}
+            description={view === 'past'
+              ? 'Rejected applicants will appear here for future reference — helpful when a similar role opens up.'
+              : 'Try clearing the filters, or browse all candidates to find talent outside your current applicant pool.'}
+            action={{ label: 'Browse all candidates', href: '/candidates' }}
+          />
         ) : (
           <div className={styles.list}>
             {filtered.map(c => (
