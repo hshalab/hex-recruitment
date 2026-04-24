@@ -2,7 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import SignaturePad from './SignaturePad'
 import styles from './SignatureModal.module.css'
+
+// Convert a PNG data URL into a Blob for Supabase Storage upload.
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [meta, b64] = dataUrl.split(',')
+  const mime = meta.match(/:(.*?);/)?.[1] || 'image/png'
+  const bin = atob(b64)
+  const arr = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+  return new Blob([arr], { type: mime })
+}
 
 interface SignatureModalProps {
   isOpen: boolean
@@ -30,6 +41,7 @@ export default function SignatureModal({
   onSuccess,
 }: SignatureModalProps) {
   const [signatureName, setSignatureName] = useState('')
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null)
   const [confirmed, setConfirmed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -38,6 +50,7 @@ export default function SignatureModal({
   useEffect(() => {
     if (isOpen) {
       setSignatureName('')
+      setSignatureDataUrl(null)
       setConfirmed(false)
       setError('')
     }
@@ -49,6 +62,10 @@ export default function SignatureModal({
 
     if (!signatureName.trim()) {
       setError('Please type your full name')
+      return
+    }
+    if (!signatureDataUrl) {
+      setError('Please draw your signature above')
       return
     }
     if (!confirmed) {
@@ -67,13 +84,51 @@ export default function SignatureModal({
 
       const now = new Date().toISOString()
 
-      // Update job_offers: status -> 'accepted', store signature
+      // Upload the drawn signature PNG to storage. Path mirrors offer letters
+      // so storage policies that gate the "profiles" bucket apply uniformly.
+      let signatureImageUrl: string | null = null
+      try {
+        const blob = dataUrlToBlob(signatureDataUrl)
+        const path = `signatures/${session.user.id}/${offerId}-${Date.now()}.png`
+        const { error: upErr } = await supabase.storage
+          .from('profiles')
+          .upload(path, blob, { contentType: 'image/png', upsert: true })
+        if (upErr) {
+          console.error('Signature upload failed:', upErr)
+          setError('Could not upload your signature. Please try again.')
+          setSubmitting(false)
+          return
+        }
+        signatureImageUrl = path
+      } catch (err) {
+        console.error('Signature blob conversion failed:', err)
+        setError('Could not process your signature. Please try again.')
+        setSubmitting(false)
+        return
+      }
+
+      // Audit trail data. IP is best-effort from a public echo endpoint;
+      // we fall back to null if the fetch fails (still have UA + timestamp).
+      let ip: string | null = null
+      try {
+        const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (typeof data?.ip === 'string') ip = data.ip
+        }
+      } catch { /* audit IP is best-effort */ }
+      const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null
+
+      // Update job_offers: status -> 'accepted', store signature + audit
       const { error: updateError } = await supabase
         .from('job_offers')
         .update({
           status: 'accepted',
           signature_name: signatureName.trim(),
           signature_timestamp: now,
+          signature_image_url: signatureImageUrl,
+          signature_ip: ip,
+          signature_user_agent: userAgent,
         })
         .eq('id', offerId)
 
@@ -204,28 +259,24 @@ export default function SignatureModal({
           {/* Typed Name Input */}
           <div className={styles.formGroup}>
             <label htmlFor="signatureName" className={styles.label}>
-              Type your full name as your digital signature *
+              Your full legal name *
             </label>
             <input
               type="text"
               id="signatureName"
               value={signatureName}
               onChange={(e) => setSignatureName(e.target.value)}
-              placeholder="Your full legal name"
+              placeholder="e.g. Gianna Lorandi"
               className={styles.input}
               autoComplete="off"
             />
           </div>
 
-          {/* Cursive Signature Preview */}
-          {signatureName.trim() && (
-            <div className={styles.signaturePreview}>
-              <p className={styles.signatureLabel}>Signature Preview</p>
-              <div className={styles.signatureBox}>
-                <span className={styles.signatureText}>{signatureName}</span>
-              </div>
-            </div>
-          )}
+          {/* Drawn Signature */}
+          <div className={styles.formGroup}>
+            <label className={styles.label}>Draw your signature *</label>
+            <SignaturePad onChange={setSignatureDataUrl} />
+          </div>
 
           {/* Confirmation Checkbox */}
           <div className={styles.confirmationGroup}>
@@ -236,7 +287,7 @@ export default function SignatureModal({
                 onChange={(e) => setConfirmed(e.target.checked)}
                 className={styles.checkbox}
               />
-              <span>I confirm that I accept this job offer and that the typed name above serves as my digital signature.</span>
+              <span>I confirm that I accept this job offer and that the signature above is my own, intended to bind me to the terms of this letter.</span>
             </label>
           </div>
 
@@ -254,7 +305,7 @@ export default function SignatureModal({
             <button
               type="submit"
               className={styles.submitBtn}
-              disabled={submitting || !confirmed || !signatureName.trim()}
+              disabled={submitting || !confirmed || !signatureName.trim() || !signatureDataUrl}
             >
               {submitting ? 'Signing...' : 'Sign & Accept Offer'}
             </button>

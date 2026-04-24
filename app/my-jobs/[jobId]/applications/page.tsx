@@ -198,6 +198,7 @@ export default function JobApplicationsPage() {
               status: offer.status,
               signatureName: offer.signature_name,
               signatureTimestamp: offer.signature_timestamp,
+              signatureImageUrl: offer.signature_image_url,
               declineReason: offer.decline_reason,
               createdAt: offer.created_at,
               updatedAt: offer.updated_at,
@@ -312,6 +313,7 @@ export default function JobApplicationsPage() {
             status: offer.status,
             signatureName: offer.signature_name,
             signatureTimestamp: offer.signature_timestamp,
+            signatureImageUrl: offer.signature_image_url,
             declineReason: offer.decline_reason,
             createdAt: offer.created_at,
             updatedAt: offer.updated_at,
@@ -1071,10 +1073,19 @@ export default function JobApplicationsPage() {
                           <div className={styles.signatureDisplay}>
                             <p className={styles.signatureLabel}>Candidate Signature:</p>
                             <div className={styles.signatureBox}>
-                              <span className={styles.signatureText}>{application.offer.signatureName}</span>
+                              {application.offer.signatureImageUrl ? (
+                                <SignedImage
+                                  src={application.offer.signatureImageUrl}
+                                  alt={`Signature of ${application.offer.signatureName}`}
+                                  style={{ maxHeight: 70, maxWidth: '100%', display: 'block' }}
+                                  fallback={<span className={styles.signatureText}>{application.offer.signatureName}</span>}
+                                />
+                              ) : (
+                                <span className={styles.signatureText}>{application.offer.signatureName}</span>
+                              )}
                             </div>
                             <p className={styles.signatureDate}>
-                              Signed on {new Date(application.offer.signatureTimestamp!).toLocaleDateString('en-GB', {
+                              Signed by {application.offer.signatureName} on {new Date(application.offer.signatureTimestamp!).toLocaleDateString('en-GB', {
                                 day: 'numeric',
                                 month: 'long',
                                 year: 'numeric',

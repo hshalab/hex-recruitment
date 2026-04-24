@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import SignedLink from '@/components/SignedLink'
+import SignedImage from '@/components/SignedImage'
 import SignatureModal from '@/components/SignatureModal'
 import DeclineOfferModal from '@/components/DeclineOfferModal'
 import { supabase } from '@/lib/supabase'
@@ -160,6 +161,7 @@ export default function MyJobsPage() {
               status: offer.status,
               signatureName: offer.signature_name,
               signatureTimestamp: offer.signature_timestamp,
+              signatureImageUrl: offer.signature_image_url,
               declineReason: offer.decline_reason,
               createdAt: offer.created_at,
               updatedAt: offer.updated_at,
@@ -948,10 +950,22 @@ export default function MyJobsPage() {
                             </div>
                           )}
                           {application.offer.status === 'accepted' && (
-                            <p className={styles.offerAcceptedText}>
-                              You accepted this offer on{' '}
-                              {new Date(application.offer.signatureTimestamp!).toLocaleDateString('en-GB')}
-                            </p>
+                            <div>
+                              <p className={styles.offerAcceptedText}>
+                                You accepted this offer on{' '}
+                                {new Date(application.offer.signatureTimestamp!).toLocaleDateString('en-GB')}
+                              </p>
+                              {application.offer.signatureImageUrl && (
+                                <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+                                  <p style={{ margin: '0 0 0.375rem', fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.02em', textTransform: 'uppercase' }}>Your Signature</p>
+                                  <SignedImage
+                                    src={application.offer.signatureImageUrl}
+                                    alt={`Signature of ${application.offer.signatureName || 'candidate'}`}
+                                    style={{ maxHeight: 64, maxWidth: '100%', display: 'block' }}
+                                  />
+                                </div>
+                              )}
+                            </div>
                           )}
                           {application.offer.status === 'declined' && (
                             <p className={styles.offerDeclinedText}>You declined this offer</p>

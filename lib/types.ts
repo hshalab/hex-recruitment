@@ -42,6 +42,7 @@ export interface Offer {
   status: 'pending' | 'accepted' | 'declined' | 'withdrawn'
   signatureName: string | null
   signatureTimestamp: string | null
+  signatureImageUrl: string | null
   declineReason: string | null
   createdAt: string
   updatedAt: string
