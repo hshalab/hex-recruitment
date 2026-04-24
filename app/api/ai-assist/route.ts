@@ -194,6 +194,67 @@ ${data.additionalTerms ? `\nAdditional terms: ${data.additionalTerms}` : ''}`
       const offerResult = await offerRes.json()
       const text = offerResult.content?.[0]?.text || ''
       return NextResponse.json({ text })
+    } else if (type === 'offer-summary') {
+      // Cheap secondary call — given an offer letter body, return a one-line
+      // summary + a handful of structured tags we can filter the /offers
+      // archive by. Called once at send-time; result is persisted.
+      const letter = String(data?.text || '').slice(0, 12000)
+      if (!letter.trim()) return NextResponse.json({ summary: '', tags: [] })
+
+      systemPrompt = `You are summarising UK employment offer letters for a recruiter's internal dashboard. Read the letter and respond with strict JSON only (no prose, no markdown fences):
+
+{ "summary": "<one sentence, under 140 chars, covering: contract type, salary, notice period, probation, and any notable conditions>", "tags": ["<tag>", ...] }
+
+Tag vocabulary (emit only those that truly apply):
+- "full-time", "part-time", "temporary", "fixed-term", "zero-hours", "casual"
+- "probation-3mo", "probation-6mo"
+- "notice-1wk", "notice-1mo", "notice-3mo"
+- "has-nda", "has-noncompete", "has-dbs", "has-uniform", "has-pension", "has-health-insurance"
+- "right-to-work", "references-required"
+- "remote-ok", "hybrid", "onsite"
+- "garden-leave", "ip-assignment"
+- "safeguarding", "occupational-health"
+
+Pick only genuinely-present tags. If uncertain, omit. Return at most 8 tags.`
+
+      userPrompt = letter
+
+      const sumRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 400,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }],
+        }),
+      })
+
+      if (!sumRes.ok) {
+        const errText = await sumRes.text()
+        return NextResponse.json({ error: `AI service error (${sumRes.status}): ${errText}` }, { status: 502 })
+      }
+
+      const sumResult = await sumRes.json()
+      const raw = sumResult.content?.[0]?.text || ''
+      // Tolerate occasional stray markdown even though we asked for JSON only.
+      const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+      try {
+        const parsed = JSON.parse(cleaned)
+        const summary = typeof parsed.summary === 'string' ? parsed.summary.slice(0, 200) : ''
+        const tags = Array.isArray(parsed.tags)
+          ? parsed.tags.filter((t: unknown): t is string => typeof t === 'string').slice(0, 8)
+          : []
+        return NextResponse.json({ summary, tags })
+      } catch {
+        // If the model returned non-JSON, hand back empty values rather than
+        // failing the send — summary/tags are a nice-to-have, not critical.
+        return NextResponse.json({ summary: '', tags: [] })
+      }
     } else {
       return NextResponse.json(
         { error: 'Invalid type.' },

@@ -286,8 +286,9 @@ export default function MakeOfferModal({
         offerLetterUrl = filePath
       }
 
-      // Create job_offers record
-      const { error: insertError } = await supabase
+      // Create job_offers record. Store the letter text so we can run AI
+      // summarisation / tag detection without having to re-extract from PDF.
+      const { data: inserted, error: insertError } = await supabase
         .from('job_offers')
         .insert({
           application_id: applicationId,
@@ -300,18 +301,45 @@ export default function MakeOfferModal({
           additional_terms: additionalTerms.trim() || null,
           offer_letter_url: offerLetterUrl,
           status: 'pending',
+          offer_letter_text: offerMode === 'generate' ? (offerLetterText.trim() || null) : null,
           employer_signature_image_url: employerSignatureImagePath,
           employer_signature_name: employerSignatureImagePath ? employerSignerName.trim() : null,
           employer_signature_timestamp: employerSignedAt,
           employer_signature_ip: employerSignatureIp,
           employer_signature_user_agent: employerSignatureImagePath && typeof navigator !== 'undefined' ? navigator.userAgent : null,
         })
+        .select('id')
+        .single()
 
       if (insertError) {
         console.error('Error creating offer:', insertError)
         setError('Failed to create offer. Please try again.')
         setSubmitting(false)
         return
+      }
+
+      // Fire-and-forget: AI summary + tag detection. Non-blocking — the send
+      // flow completes regardless. If the call fails the columns just stay
+      // null and the /offers row renders without the pills.
+      const newOfferId = inserted?.id
+      if (newOfferId && offerMode === 'generate' && offerLetterText.trim()) {
+        fetch('/api/ai-assist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ type: 'offer-summary', data: { text: offerLetterText } }),
+        })
+          .then(r => r.ok ? r.json() : null)
+          .then(res => {
+            if (!res || (!res.summary && !res.tags)) return
+            supabase.from('job_offers').update({
+              ai_summary: res.summary || null,
+              ai_tags: Array.isArray(res.tags) && res.tags.length ? res.tags : null,
+            }).eq('id', newOfferId).then()
+          })
+          .catch(() => { /* summary is best-effort */ })
       }
 
       // Update application status to 'offered'

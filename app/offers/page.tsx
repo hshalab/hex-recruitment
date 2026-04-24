@@ -24,7 +24,44 @@ interface OfferRow {
   signedAt: string | null
   employerSignedAt: string | null
   offerLetterUrl: string | null
+  aiSummary: string | null
+  aiTags: string[]
 }
+
+// Human-readable label + colour for each tag vocabulary entry. Anything
+// outside this list falls through to a neutral default.
+const TAG_STYLES: Record<string, { label: string; bg: string; fg: string }> = {
+  'full-time': { label: 'Full-time', bg: '#e0f2fe', fg: '#075985' },
+  'part-time': { label: 'Part-time', bg: '#e0f2fe', fg: '#075985' },
+  'temporary': { label: 'Temporary', bg: '#fef3c7', fg: '#92400e' },
+  'fixed-term': { label: 'Fixed-term', bg: '#fef3c7', fg: '#92400e' },
+  'zero-hours': { label: 'Zero-hours', bg: '#fef3c7', fg: '#92400e' },
+  'casual': { label: 'Casual', bg: '#fef3c7', fg: '#92400e' },
+  'probation-3mo': { label: '3mo probation', bg: '#f1f5f9', fg: '#475569' },
+  'probation-6mo': { label: '6mo probation', bg: '#f1f5f9', fg: '#475569' },
+  'notice-1wk': { label: '1wk notice', bg: '#f1f5f9', fg: '#475569' },
+  'notice-1mo': { label: '1mo notice', bg: '#f1f5f9', fg: '#475569' },
+  'notice-3mo': { label: '3mo notice', bg: '#f1f5f9', fg: '#475569' },
+  'has-nda': { label: 'NDA', bg: '#fae8ff', fg: '#86198f' },
+  'has-noncompete': { label: 'Non-compete', bg: '#fae8ff', fg: '#86198f' },
+  'has-dbs': { label: 'DBS', bg: '#fef2f2', fg: '#991b1b' },
+  'has-uniform': { label: 'Uniform', bg: '#ecfeff', fg: '#155e75' },
+  'has-pension': { label: 'Pension', bg: '#f0fdf4', fg: '#166534' },
+  'has-health-insurance': { label: 'Health ins.', bg: '#f0fdf4', fg: '#166534' },
+  'right-to-work': { label: 'RTW check', bg: '#fef2f2', fg: '#991b1b' },
+  'references-required': { label: 'References', bg: '#fef2f2', fg: '#991b1b' },
+  'remote-ok': { label: 'Remote', bg: '#eef2ff', fg: '#4338ca' },
+  'hybrid': { label: 'Hybrid', bg: '#eef2ff', fg: '#4338ca' },
+  'onsite': { label: 'On-site', bg: '#eef2ff', fg: '#4338ca' },
+  'garden-leave': { label: 'Garden leave', bg: '#fae8ff', fg: '#86198f' },
+  'ip-assignment': { label: 'IP assignment', bg: '#fae8ff', fg: '#86198f' },
+  'safeguarding': { label: 'Safeguarding', bg: '#fef2f2', fg: '#991b1b' },
+  'occupational-health': { label: 'Occ. health', bg: '#fef2f2', fg: '#991b1b' },
+}
+const tagStyle = (t: string) => TAG_STYLES[t] || { label: t, bg: '#f1f5f9', fg: '#475569' }
+
+// How many days a pending offer is allowed to sit before we flag it.
+const STALE_PENDING_DAYS = 7
 
 const STATUS_LABEL: Record<OfferStatus, { label: string; bg: string; fg: string }> = {
   pending: { label: 'Pending', bg: '#fef3c7', fg: '#92400e' },
@@ -46,6 +83,7 @@ export default function OffersPage() {
   const [offers, setOffers] = useState<OfferRow[]>([])
   const [statusFilter, setStatusFilter] = useState<OfferStatus | 'all'>('all')
   const [jobFilter, setJobFilter] = useState<string>('all')
+  const [tagFilter, setTagFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
@@ -60,7 +98,7 @@ export default function OffersPage() {
 
       const { data, error } = await supabase
         .from('job_offers')
-        .select('id, application_id, job_id, candidate_id, salary, start_date, contract_type, status, offer_letter_url, created_at, signature_timestamp, employer_signature_timestamp, jobs ( title )')
+        .select('id, application_id, job_id, candidate_id, salary, start_date, contract_type, status, offer_letter_url, created_at, signature_timestamp, employer_signature_timestamp, ai_summary, ai_tags, jobs ( title )')
         .eq('employer_id', session.user.id)
         .order('created_at', { ascending: false })
 
@@ -100,6 +138,8 @@ export default function OffersPage() {
           signedAt: r.signature_timestamp,
           employerSignedAt: r.employer_signature_timestamp,
           offerLetterUrl: r.offer_letter_url,
+          aiSummary: r.ai_summary || null,
+          aiTags: Array.isArray(r.ai_tags) ? r.ai_tags : [],
         }
       })
 
@@ -118,6 +158,17 @@ export default function OffersPage() {
     return Array.from(seen.entries()).map(([id, title]) => ({ id, title }))
   }, [offers])
 
+  // Tag options come from the set of tags actually applied to any offer.
+  const tagOptions = useMemo(() => {
+    const seen = new Set<string>()
+    for (const o of offers) for (const t of o.aiTags) seen.add(t)
+    return Array.from(seen).sort()
+  }, [offers])
+
+  const staleThreshold = Date.now() - STALE_PENDING_DAYS * 24 * 60 * 60 * 1000
+  const isStale = (o: OfferRow) =>
+    o.status === 'pending' && new Date(o.sentAt).getTime() < staleThreshold
+
   const filtered = useMemo(() => {
     const from = dateFrom ? new Date(dateFrom).getTime() : null
     const to = dateTo ? new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1 : null
@@ -126,21 +177,31 @@ export default function OffersPage() {
     return offers.filter((o) => {
       if (statusFilter !== 'all' && o.status !== statusFilter) return false
       if (jobFilter !== 'all' && o.jobId !== jobFilter) return false
-      if (q && !o.candidateName.toLowerCase().includes(q) && !o.jobTitle.toLowerCase().includes(q)) return false
+      if (tagFilter === 'stale' && !isStale(o)) return false
+      if (tagFilter !== 'all' && tagFilter !== 'stale' && !o.aiTags.includes(tagFilter)) return false
+      if (q) {
+        const haystack = `${o.candidateName} ${o.jobTitle} ${o.aiSummary || ''}`.toLowerCase()
+        if (!haystack.includes(q)) return false
+      }
       const sent = new Date(o.sentAt).getTime()
       if (from !== null && sent < from) return false
       if (to !== null && sent > to) return false
       return true
     })
-  }, [offers, statusFilter, jobFilter, search, dateFrom, dateTo])
+    // isStale depends on staleThreshold which is recomputed every render;
+    // intentionally leaving it out of deps so filter uses the current value.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offers, statusFilter, jobFilter, tagFilter, search, dateFrom, dateTo])
 
   const exportCsv = () => {
-    const header = ['Candidate', 'Job', 'Salary', 'Start Date', 'Contract', 'Status', 'Sent', 'Employer Signed', 'Candidate Signed']
+    const header = ['Candidate', 'Job', 'Summary', 'Tags', 'Salary', 'Start Date', 'Contract', 'Status', 'Sent', 'Employer Signed', 'Candidate Signed']
     const lines = [header.map(csvEscape).join(',')]
     for (const o of filtered) {
       lines.push([
         o.candidateName,
         o.jobTitle,
+        o.aiSummary || '',
+        o.aiTags.join(';'),
         o.salary,
         o.startDate,
         o.contractType,
@@ -164,12 +225,13 @@ export default function OffersPage() {
   const clearFilters = () => {
     setStatusFilter('all')
     setJobFilter('all')
+    setTagFilter('all')
     setSearch('')
     setDateFrom('')
     setDateTo('')
   }
 
-  const hasActiveFilters = statusFilter !== 'all' || jobFilter !== 'all' || search || dateFrom || dateTo
+  const hasActiveFilters = statusFilter !== 'all' || jobFilter !== 'all' || tagFilter !== 'all' || search || dateFrom || dateTo
 
   const fmtDate = (iso: string | null) => {
     if (!iso) return '—'
@@ -236,6 +298,18 @@ export default function OffersPage() {
               <option key={j.id} value={j.id}>{j.title}</option>
             ))}
           </select>
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            style={{ flex: '1 1 160px', padding: '0.5rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: '0.85rem', background: '#fff' }}
+          >
+            <option value="all">All tags</option>
+            <option value="stale">🕐 Stale (pending &gt;{STALE_PENDING_DAYS}d)</option>
+            {tagOptions.length > 0 && <option disabled>──────</option>}
+            {tagOptions.map(t => (
+              <option key={t} value={t}>{tagStyle(t).label}</option>
+            ))}
+          </select>
           <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', flex: '1 1 240px' }}>
             <label style={{ fontSize: '0.75rem', color: '#64748b' }}>Sent:</label>
             <input
@@ -278,6 +352,7 @@ export default function OffersPage() {
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Candidate</th>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155' }}>Job</th>
+                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', minWidth: 220 }}>Summary</th>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Salary</th>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Start</th>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155' }}>Status</th>
@@ -289,6 +364,7 @@ export default function OffersPage() {
               <tbody>
                 {filtered.map(o => {
                   const badge = STATUS_LABEL[o.status] || STATUS_LABEL.pending
+                  const stale = isStale(o)
                   return (
                     <tr
                       key={o.id}
@@ -297,12 +373,39 @@ export default function OffersPage() {
                     >
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>{o.candidateName}</td>
                       <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>{o.jobTitle}</td>
+                      <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
+                        {o.aiSummary ? (
+                          <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.4, color: '#334155' }}>{o.aiSummary}</p>
+                        ) : (
+                          <span style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>—</span>
+                        )}
+                        {o.aiTags.length > 0 && (
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                            {o.aiTags.slice(0, 6).map(t => {
+                              const s = tagStyle(t)
+                              return (
+                                <span key={t} style={{ display: 'inline-block', padding: '0.05rem 0.4rem', borderRadius: 99, background: s.bg, color: s.fg, fontSize: '0.66rem', fontWeight: 600 }}>
+                                  {s.label}
+                                </span>
+                              )
+                            })}
+                            {o.aiTags.length > 6 && (
+                              <span style={{ fontSize: '0.66rem', color: '#94a3b8' }}>+{o.aiTags.length - 6}</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td style={{ padding: '0.75rem 1rem', color: '#475569', whiteSpace: 'nowrap' }}>{o.salary}</td>
                       <td style={{ padding: '0.75rem 1rem', color: '#475569', whiteSpace: 'nowrap' }}>{fmtDate(o.startDate)}</td>
-                      <td style={{ padding: '0.75rem 1rem' }}>
+                      <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>
                         <span style={{ display: 'inline-block', padding: '0.15rem 0.55rem', borderRadius: 99, background: badge.bg, color: badge.fg, fontSize: '0.72rem', fontWeight: 600 }}>
                           {badge.label}
                         </span>
+                        {stale && (
+                          <span title={`Pending > ${STALE_PENDING_DAYS} days`} style={{ marginLeft: 6, display: 'inline-block', padding: '0.15rem 0.5rem', borderRadius: 99, background: '#fff7ed', color: '#c2410c', fontSize: '0.7rem', fontWeight: 600 }}>
+                            🕐 Stale
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '0.75rem 1rem', color: '#64748b', whiteSpace: 'nowrap' }}>{fmtDate(o.sentAt)}</td>
                       <td style={{ padding: '0.75rem 1rem', color: '#64748b', whiteSpace: 'nowrap' }}>{fmtDate(o.signedAt)}</td>
