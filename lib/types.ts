@@ -43,6 +43,9 @@ export interface Offer {
   signatureName: string | null
   signatureTimestamp: string | null
   signatureImageUrl: string | null
+  employerSignatureImageUrl: string | null
+  employerSignatureName: string | null
+  employerSignatureTimestamp: string | null
   declineReason: string | null
   createdAt: string
   updatedAt: string

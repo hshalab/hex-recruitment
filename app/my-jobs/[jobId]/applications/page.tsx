@@ -199,6 +199,9 @@ export default function JobApplicationsPage() {
               signatureName: offer.signature_name,
               signatureTimestamp: offer.signature_timestamp,
               signatureImageUrl: offer.signature_image_url,
+              employerSignatureImageUrl: offer.employer_signature_image_url,
+              employerSignatureName: offer.employer_signature_name,
+              employerSignatureTimestamp: offer.employer_signature_timestamp,
               declineReason: offer.decline_reason,
               createdAt: offer.created_at,
               updatedAt: offer.updated_at,
@@ -314,6 +317,9 @@ export default function JobApplicationsPage() {
             signatureName: offer.signature_name,
             signatureTimestamp: offer.signature_timestamp,
             signatureImageUrl: offer.signature_image_url,
+            employerSignatureImageUrl: offer.employer_signature_image_url,
+            employerSignatureName: offer.employer_signature_name,
+            employerSignatureTimestamp: offer.employer_signature_timestamp,
             declineReason: offer.decline_reason,
             createdAt: offer.created_at,
             updatedAt: offer.updated_at,
@@ -1069,6 +1075,23 @@ export default function JobApplicationsPage() {
                           {application.offer.contractType.charAt(0).toUpperCase() +
                             application.offer.contractType.slice(1)}
                         </p>
+                        {application.offer.employerSignatureImageUrl && (
+                          <div className={styles.signatureDisplay}>
+                            <p className={styles.signatureLabel}>Your Signature:</p>
+                            <div className={styles.signatureBox}>
+                              <SignedImage
+                                src={application.offer.employerSignatureImageUrl}
+                                alt={`Signature of ${application.offer.employerSignatureName || 'employer'}`}
+                                style={{ maxHeight: 70, maxWidth: '100%', display: 'block' }}
+                              />
+                            </div>
+                            {application.offer.employerSignatureTimestamp && (
+                              <p className={styles.signatureDate}>
+                                Signed {application.offer.employerSignatureName ? `by ${application.offer.employerSignatureName} ` : ''}on {new Date(application.offer.employerSignatureTimestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                              </p>
+                            )}
+                          </div>
+                        )}
                         {application.offer.signatureName && (
                           <div className={styles.signatureDisplay}>
                             <p className={styles.signatureLabel}>Candidate Signature:</p>

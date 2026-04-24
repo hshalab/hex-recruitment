@@ -162,6 +162,9 @@ export default function MyJobsPage() {
               signatureName: offer.signature_name,
               signatureTimestamp: offer.signature_timestamp,
               signatureImageUrl: offer.signature_image_url,
+              employerSignatureImageUrl: offer.employer_signature_image_url,
+              employerSignatureName: offer.employer_signature_name,
+              employerSignatureTimestamp: offer.employer_signature_timestamp,
               declineReason: offer.decline_reason,
               createdAt: offer.created_at,
               updatedAt: offer.updated_at,
@@ -918,6 +921,18 @@ export default function MyJobsPage() {
                             </p>
                             {application.offer.additionalTerms && (
                               <p><strong>Additional Terms:</strong> {application.offer.additionalTerms}</p>
+                            )}
+                            {application.offer.employerSignatureImageUrl && (
+                              <div style={{ marginTop: '0.5rem', padding: '0.625rem 0.75rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8 }}>
+                                <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', color: '#15803d', fontWeight: 600, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                                  ✓ Signed by {application.offer.employerSignatureName || 'Employer'}
+                                </p>
+                                <SignedImage
+                                  src={application.offer.employerSignatureImageUrl}
+                                  alt={`Signature of ${application.offer.employerSignatureName || 'Employer'}`}
+                                  style={{ maxHeight: 56, maxWidth: '100%', display: 'block' }}
+                                />
+                              </div>
                             )}
                             {application.offer.offerLetterUrl && (
                               <p>

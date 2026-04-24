@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getSignedStorageUrl } from '@/lib/storageUrl'
 import SignaturePad from './SignaturePad'
 import styles from './SignatureModal.module.css'
 
@@ -119,17 +120,60 @@ export default function SignatureModal({
       } catch { /* audit IP is best-effort */ }
       const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null
 
-      // Update job_offers: status -> 'accepted', store signature + audit
+      // Flatten the signature into the offer letter PDF, if one exists,
+      // by appending a signature certificate page. The signed version
+      // replaces offer_letter_url so both parties download the signed doc.
+      let updatedOfferLetterUrl: string | null = null
+      try {
+        const { data: offerRow } = await supabase
+          .from('job_offers')
+          .select('offer_letter_url')
+          .eq('id', offerId)
+          .maybeSingle()
+
+        const existingPath = offerRow?.offer_letter_url as string | undefined
+        if (existingPath) {
+          const signedUrl = await getSignedStorageUrl(existingPath)
+          if (signedUrl) {
+            const { appendSignaturesToPdf, fetchBytes, dataUrlToBytes } = await import('@/lib/signPdf')
+            const originalPdf = await fetchBytes(signedUrl)
+            const signedPdf = await appendSignaturesToPdf(originalPdf, [{
+              role: 'Candidate',
+              name: signatureName.trim(),
+              imageBytes: dataUrlToBytes(signatureDataUrl),
+              signedAt: now,
+              ip, userAgent,
+            }])
+
+            const signedPath = `offer-letters/${session.user.id}/signed-${offerId}-${Date.now()}.pdf`
+            const { error: sUpErr } = await supabase.storage
+              .from('profiles')
+              .upload(signedPath, new Blob([signedPdf as any], { type: 'application/pdf' }), {
+                contentType: 'application/pdf', upsert: true,
+              })
+            if (!sUpErr) updatedOfferLetterUrl = signedPath
+          }
+        }
+      } catch (err) {
+        // Non-fatal: we still record the accept + sig metadata even if the
+        // PDF stitch fails. The signature image is persisted separately.
+        console.error('PDF signing step failed (continuing):', err)
+      }
+
+      // Update job_offers: status -> 'accepted', store signature + audit.
+      // Swap offer_letter_url to the signed version if we produced one.
+      const update: Record<string, unknown> = {
+        status: 'accepted',
+        signature_name: signatureName.trim(),
+        signature_timestamp: now,
+        signature_image_url: signatureImageUrl,
+        signature_ip: ip,
+        signature_user_agent: userAgent,
+      }
+      if (updatedOfferLetterUrl) update.offer_letter_url = updatedOfferLetterUrl
       const { error: updateError } = await supabase
         .from('job_offers')
-        .update({
-          status: 'accepted',
-          signature_name: signatureName.trim(),
-          signature_timestamp: now,
-          signature_image_url: signatureImageUrl,
-          signature_ip: ip,
-          signature_user_agent: userAgent,
-        })
+        .update(update)
         .eq('id', offerId)
 
       if (updateError) {

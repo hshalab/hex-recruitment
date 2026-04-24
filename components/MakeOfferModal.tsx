@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import SignaturePad from './SignaturePad'
 import styles from './MakeOfferModal.module.css'
 
 interface MakeOfferModalProps {
@@ -42,6 +43,8 @@ export default function MakeOfferModal({
   const [extras, setExtras] = useState<Set<string>>(new Set())
   const [offerLetterText, setOfferLetterText] = useState('')
   const [generateStep, setGenerateStep] = useState<'idle' | 'edit' | 'review'>('idle')
+  const [employerSignatureDataUrl, setEmployerSignatureDataUrl] = useState<string | null>(null)
+  const [employerSignerName, setEmployerSignerName] = useState('')
 
   // Reset form when modal opens
   useEffect(() => {
@@ -60,6 +63,8 @@ export default function MakeOfferModal({
       setExtras(new Set())
       setOfferLetterText('')
       setGenerateStep('idle')
+      setEmployerSignatureDataUrl(null)
+      setEmployerSignerName('')
     }
   }, [isOpen])
 
@@ -207,7 +212,57 @@ export default function MakeOfferModal({
           return
         }
       }
-      const fileToUpload = offerLetter || generatedFile
+      let fileToUpload: File | null = offerLetter || generatedFile
+
+      // If we're in generate mode and the employer drew a signature, flatten
+      // that signature onto the PDF as a certificate page before upload so
+      // the candidate receives a pre-signed document.
+      let employerSignatureImagePath: string | null = null
+      let employerSignatureIp: string | null = null
+      let employerSignedAt: string | null = null
+      const nowIso = new Date().toISOString()
+      if (offerMode === 'generate' && generatedFile && employerSignatureDataUrl && employerSignerName.trim()) {
+        try {
+          // Best-effort IP for audit trail
+          try {
+            const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
+            if (res.ok) {
+              const data = await res.json()
+              if (typeof data?.ip === 'string') employerSignatureIp = data.ip
+            }
+          } catch { /* audit IP is best-effort */ }
+
+          const { appendSignaturesToPdf, dataUrlToBytes } = await import('@/lib/signPdf')
+          const originalBytes = new Uint8Array(await generatedFile.arrayBuffer())
+          const signedBytes = await appendSignaturesToPdf(originalBytes, [{
+            role: 'Employer',
+            name: employerSignerName.trim(),
+            imageBytes: dataUrlToBytes(employerSignatureDataUrl),
+            signedAt: nowIso,
+            ip: employerSignatureIp,
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+          }])
+          fileToUpload = new File([signedBytes as any], generatedFile.name, { type: 'application/pdf' })
+          employerSignedAt = nowIso
+
+          // Upload employer signature PNG separately (for in-app rendering and audit)
+          const sigBlob = await (async () => {
+            const b64 = employerSignatureDataUrl.split(',')[1] || ''
+            const bin = atob(b64)
+            const arr = new Uint8Array(bin.length)
+            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+            return new Blob([arr], { type: 'image/png' })
+          })()
+          const sigPath = `signatures/${session.user.id}/employer-${Date.now()}.png`
+          const { error: sigUpErr } = await supabase.storage
+            .from('profiles')
+            .upload(sigPath, sigBlob, { contentType: 'image/png', upsert: true })
+          if (!sigUpErr) employerSignatureImagePath = sigPath
+        } catch (err) {
+          // Non-fatal: send the offer unsigned rather than blocking.
+          console.error('Employer signature embed failed (continuing unsigned):', err)
+        }
+      }
 
       // Upload offer letter if provided
       let offerLetterUrl: string | null = null
@@ -245,6 +300,11 @@ export default function MakeOfferModal({
           additional_terms: additionalTerms.trim() || null,
           offer_letter_url: offerLetterUrl,
           status: 'pending',
+          employer_signature_image_url: employerSignatureImagePath,
+          employer_signature_name: employerSignatureImagePath ? employerSignerName.trim() : null,
+          employer_signature_timestamp: employerSignedAt,
+          employer_signature_ip: employerSignatureIp,
+          employer_signature_user_agent: employerSignatureImagePath && typeof navigator !== 'undefined' ? navigator.userAgent : null,
         })
 
       if (insertError) {
@@ -564,9 +624,27 @@ export default function MakeOfferModal({
                 <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.875rem', maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif', fontSize: '0.85rem', lineHeight: 1.6, color: '#1e293b' }}>
                   {offerLetterText}
                 </div>
-                <p style={{ fontSize: '0.75rem', color: '#15803d', margin: '0.625rem 0 0', fontWeight: 500 }}>
-                  Looks good? Click <strong>Send Offer</strong> below to deliver it to {candidateName}.
+                <p style={{ fontSize: '0.75rem', color: '#15803d', margin: '0.625rem 0 0.75rem', fontWeight: 500 }}>
+                  Looks good? Sign below and click <strong>Send Offer</strong> to deliver it to {candidateName}.
                 </p>
+
+                {/* Employer signature capture — baked onto the PDF before send */}
+                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.75rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>
+                    Your name *
+                  </label>
+                  <input
+                    type="text"
+                    value={employerSignerName}
+                    onChange={(e) => setEmployerSignerName(e.target.value)}
+                    placeholder="e.g. Paul Davies, HR Manager"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', boxSizing: 'border-box', marginBottom: '0.625rem' }}
+                  />
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>
+                    Draw your signature *
+                  </label>
+                  <SignaturePad onChange={setEmployerSignatureDataUrl} height={140} />
+                </div>
               </div>
             )}
           </div>
@@ -600,8 +678,18 @@ export default function MakeOfferModal({
             <button
               type="submit"
               className={styles.submitBtn}
-              disabled={submitting || (offerMode === 'generate' && generateStep !== 'review')}
-              title={offerMode === 'generate' && generateStep !== 'review' ? 'Click "Review Offer Letter" above first' : undefined}
+              disabled={
+                submitting
+                || (offerMode === 'generate' && generateStep !== 'review')
+                || (offerMode === 'generate' && generateStep === 'review' && (!employerSignatureDataUrl || !employerSignerName.trim()))
+              }
+              title={
+                offerMode === 'generate' && generateStep !== 'review'
+                  ? 'Click "Review Offer Letter" above first'
+                  : offerMode === 'generate' && generateStep === 'review' && (!employerSignatureDataUrl || !employerSignerName.trim())
+                    ? 'Sign the offer at the bottom of the review card first'
+                    : undefined
+              }
             >
               {submitting ? 'Sending Offer...' : 'Send Offer'}
             </button>
