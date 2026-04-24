@@ -78,13 +78,25 @@ body {
 }
 
 /* ──────────────────────────────────────────────────────────
-   Display utility — Fraunces for editorial headings.
-   Opt in by adding the `ds-display` class.
+   Display utility — heavier-weight Inter for stat numbers and
+   hero headings. Opt in by adding the `ds-display` class.
    ────────────────────────────────────────────────────────── */
 .ds-display {
-  font-family: var(--font-display), ui-serif, Georgia, serif;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display), Inter, system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  /* Tabular numerals so stats line up cleanly in columns. */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Apply tabular numerals platform-wide to anything using the display
+   variable directly — stat pills, pipeline counts, hero numbers. */
+[style*="--font-display"],
+.statPillNum,
+.pipelineCardCount {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
 }
 
 /* ──────────────────────────────────────────────────────────

@@ -4,26 +4,31 @@ import ScrollToTop from '@/components/ScrollToTop'
 import SessionGuard from '@/components/SessionGuard'
 import { MessagesProvider } from '@/lib/MessagesContext'
 import type { Metadata } from 'next'
-import { Inter, Dancing_Script, Fraunces } from 'next/font/google'
+import { Inter, Dancing_Script } from 'next/font/google'
 import { Providers } from './providers'
 import './globals.css'
 
+// Body font. Also does double duty as the display face (see
+// --font-display below) so that numbers and headings share the same
+// family across the whole platform — one clean sans-serif look.
 const inter = Inter({
   subsets: ['latin'],
+  display: 'swap',
+})
+// Keep the --font-display CSS variable in place (many components already
+// reference it) but point it at a heavier-weight Inter instance so stat
+// pills and hero numbers stand out without switching family. Tabular
+// numerals are enabled globally below so counts line up in columns.
+const interDisplay = Inter({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['500', '600', '700'],
   display: 'swap',
 })
 const dancingScript = Dancing_Script({
   subsets: ['latin'],
   variable: '--font-cursive',
   weight: ['400', '700'],
-  display: 'swap',
-})
-// Editorial display face used for hero titles and hero stat values only.
-// Body copy stays on Inter.
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-display',
-  weight: ['400', '500', '600'],
   display: 'swap',
 })
 
@@ -92,7 +97,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-GB">
-      <body className={`${inter.className} ${dancingScript.variable} ${fraunces.variable}`}>
+      <body className={`${inter.className} ${dancingScript.variable} ${interDisplay.variable}`}>
         <Providers>
           <MessagesProvider>
             <ScrollToTop />
