@@ -139,7 +139,12 @@ ${data.companyDescription ? `About the company: ${data.companyDescription}` : ''
       return NextResponse.json({ jobAd })
     } else if (type === 'offer-letter') {
       const sectorLabel = data.sector && data.sector !== 'general' ? ` in the ${data.sector} sector` : ''
-      systemPrompt = `You are a UK employment law expert. Write a professional, formal offer letter from an employer to a candidate${sectorLabel}. Use proper business letter format. Include all the details and clauses provided. Include standard UK employment terms appropriate for the sector. Be concise but thorough. Return only the letter text — no markdown, no JSON, no commentary.`
+      // AI can't see the system clock — pass today's date in UK long-form so
+      // the letter header uses it instead of a hallucinated date.
+      const todayUK = new Date().toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      })
+      systemPrompt = `You are a UK employment law expert. Write a professional, formal offer letter from an employer to a candidate${sectorLabel}. Use proper business letter format. Include all the details and clauses provided. Include standard UK employment terms appropriate for the sector. Be concise but thorough. Return only the letter text — no markdown, no JSON, no commentary. Use the supplied "Letter Date" as the date at the top of the letter — never invent or guess a date.`
 
       // Support both new (clausesList array) and legacy (clauses object) formats
       let allClauses: string[] = data.clausesList || []
@@ -155,6 +160,7 @@ ${data.companyDescription ? `About the company: ${data.companyDescription}` : ''
       }
 
       userPrompt = `Write a formal offer letter with these details:
+Letter Date: ${todayUK}
 Company: ${data.company || 'The Company'}
 Candidate: ${data.candidateName || 'The Candidate'}
 Job Title: ${data.jobTitle || 'The Role'}
