@@ -330,12 +330,30 @@ export default function MyJobsPage() {
             link: interviewRow?.job_id ? `/my-jobs/${interviewRow.job_id}/applications` : '/my-jobs',
           })
 
-        // Send email to employer with full details
+        // Send candidate-facing confirmation ("Hi Gianna, your interview is confirmed")
         fetch('/api/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'interview_confirmed',
+            data: {
+              recipientUserId: session?.user?.id,
+              candidateName,
+              jobTitle,
+              companyName,
+              date: friendlyDate,
+              time: interviewTime,
+              interviewType,
+            },
+          }),
+        }).catch(() => {})
+
+        // Send employer-facing notification ("Gianna has confirmed their interview")
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'interview_confirmed_employer',
             data: {
               recipientUserId: employerId,
               candidateName,
@@ -901,8 +919,8 @@ export default function MyJobsPage() {
                             )}
                             {application.offer.offerLetterUrl && (
                               <p>
-                                <SignedLink src={application.offer.offerLetterUrl} className={styles.viewOfferLetterLink}>
-                                  View Offer Letter
+                                <SignedLink src={application.offer.offerLetterUrl} className={styles.viewOfferLetterLink} download>
+                                  ⬇ Download Offer Letter
                                 </SignedLink>
                               </p>
                             )}

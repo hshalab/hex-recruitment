@@ -10,13 +10,14 @@ interface SignedLinkProps {
   style?: React.CSSProperties
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
   onMouseDown?: (e: React.MouseEvent<HTMLAnchorElement>) => void
+  download?: boolean | string
 }
 
 /**
  * Link component that resolves Supabase storage paths to
  * short-lived signed URLs. External URLs pass through unchanged.
  */
-export default function SignedLink({ src, children, className, style, onClick, onMouseDown }: SignedLinkProps) {
+export default function SignedLink({ src, children, className, style, onClick, onMouseDown, download }: SignedLinkProps) {
   const [resolvedUrl, setResolvedUrl] = useState<string>('')
 
   useEffect(() => {
@@ -27,11 +28,11 @@ export default function SignedLink({ src, children, className, style, onClick, o
       return
     }
     let cancelled = false
-    getSignedStorageUrl(src).then(url => {
+    getSignedStorageUrl(src, 3600, download).then(url => {
       if (!cancelled) setResolvedUrl(url)
     })
     return () => { cancelled = true }
-  }, [src])
+  }, [src, download])
 
   if (!resolvedUrl) return null
 
@@ -44,6 +45,7 @@ export default function SignedLink({ src, children, className, style, onClick, o
       style={style}
       onClick={onClick}
       onMouseDown={onMouseDown}
+      {...(download ? { download: typeof download === 'string' ? download : '' } : {})}
     >
       {children}
     </a>

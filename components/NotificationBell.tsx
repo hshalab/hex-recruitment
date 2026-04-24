@@ -195,6 +195,14 @@ export default function NotificationBell({ className }: NotificationBellProps) {
         .in('status', ['scheduled', 'pending_selection'])
         .maybeSingle()
 
+      const companyName = (appRow as any)?.jobs?.company || ''
+      const interviewDate = interview?.interview_date || ''
+      const interviewTime = interview?.interview_time || ''
+      const interviewType = interview?.interview_type || 'in-person'
+      const friendlyDate = interviewDate
+        ? new Date(interviewDate + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+        : ''
+
       if (interview) {
         await supabase
           .from('interviews')
@@ -209,10 +217,10 @@ export default function NotificationBell({ className }: NotificationBellProps) {
             body: JSON.stringify({
               interviewId: interview.id,
               employerId,
-              date: interview.interview_date,
-              time: interview.interview_time,
+              date: interviewDate,
+              time: interviewTime,
               duration: interview.duration_minutes || 45,
-              interviewType: interview.interview_type || 'in-person',
+              interviewType,
               candidateName,
               jobTitle,
             }),
@@ -220,15 +228,43 @@ export default function NotificationBell({ className }: NotificationBellProps) {
         }
       }
 
-      // Send confirmation email to employer
+      // Candidate confirmation email ("Hi Gianna, your interview is confirmed")
       fetch('/api/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'interview_confirmed',
-          data: { candidateName, jobTitle, employerId },
+          data: {
+            recipientUserId: session.user.id,
+            candidateName,
+            jobTitle,
+            companyName,
+            date: friendlyDate,
+            time: interviewTime,
+            interviewType,
+          },
         }),
       }).catch(() => {})
+
+      // Employer notification email ("Gianna has confirmed their interview")
+      if (employerId) {
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'interview_confirmed_employer',
+            data: {
+              recipientUserId: employerId,
+              candidateName,
+              jobTitle,
+              companyName,
+              date: friendlyDate,
+              time: interviewTime,
+              interviewType,
+            },
+          }),
+        }).catch(() => {})
+      }
     }
 
     // Notify the employer

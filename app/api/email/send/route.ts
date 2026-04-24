@@ -11,6 +11,7 @@ import { applicationStatusEmail } from '@/emails/application-status'
 import { interviewScheduledEmail } from '@/emails/interview-scheduled'
 import { interviewRescheduledEmail } from '@/emails/interview-rescheduled'
 import { interviewConfirmedEmail } from '@/emails/interview-confirmed'
+import { interviewConfirmedEmployerEmail } from '@/emails/interview-confirmed-employer'
 import { interviewCancelledEmail } from '@/emails/interview-cancelled'
 import { trialEndingEmail } from '@/emails/trial-ending'
 import { newMessageEmail } from '@/emails/new-message'
@@ -131,6 +132,9 @@ export async function POST(req: Request) {
         break
       case 'interview_confirmed':
         email = interviewConfirmedEmail(data.companyName, data.jobTitle, data.candidateName, data.date, data.time, data.interviewType)
+        break
+      case 'interview_confirmed_employer':
+        email = interviewConfirmedEmployerEmail(data.companyName, data.jobTitle, data.candidateName, data.date, data.time, data.interviewType)
         break
       case 'interview_cancelled':
         email = interviewCancelledEmail(data.companyName, data.jobTitle, data.candidateName, data.date)

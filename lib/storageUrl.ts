@@ -32,10 +32,14 @@ function extractPath(urlOrPath: string): string {
  *
  * @param urlOrPath - full public URL, signed URL, or relative path
  * @param expiresIn - seconds until the signed URL expires (default 1 hour)
+ * @param download - if true, Supabase adds Content-Disposition: attachment so
+ *   browsers save the file instead of viewing it inline. Pass a filename to
+ *   override what the browser saves it as.
  */
 export async function getSignedStorageUrl(
   urlOrPath: string | null | undefined,
-  expiresIn = 3600
+  expiresIn = 3600,
+  download?: boolean | string
 ): Promise<string> {
   if (!urlOrPath) return ''
   // External URLs (Google avatar, etc.) — pass through
@@ -44,9 +48,11 @@ export async function getSignedStorageUrl(
   }
   const path = extractPath(urlOrPath)
   if (!path) return ''
+  const options: { download?: string | boolean } = {}
+  if (download !== undefined) options.download = download
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .createSignedUrl(path, expiresIn)
+    .createSignedUrl(path, expiresIn, options)
   if (error || !data?.signedUrl) return ''
   return data.signedUrl
 }

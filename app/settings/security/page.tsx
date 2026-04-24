@@ -14,6 +14,9 @@ export default function SecuritySettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  // OAuth-only users (signed in via Google etc. with no email/password identity)
+  // haven't set a password yet — show "Set Password" without the current-password field.
+  const [hasPassword, setHasPassword] = useState(true)
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -44,6 +47,13 @@ export default function SecuritySettingsPage() {
         router.push('/login')
         return
       }
+
+      // Detect whether this user already has an email/password credential.
+      // Supabase exposes linked identities on the user object — if none of them
+      // is the 'email' provider, the user only signed in via OAuth and has no
+      // password to "change" — they need to *set* one.
+      const identities = session.user?.identities || []
+      setHasPassword(identities.some(i => i.provider === 'email'))
 
       setLoading(false)
     }
@@ -112,9 +122,15 @@ export default function SecuritySettingsPage() {
         })
 
         if (error) throw error
-        setMessage({ type: 'success', text: 'Password changed successfully!' })
+        setMessage({
+          type: 'success',
+          text: hasPassword
+            ? 'Password changed successfully!'
+            : 'Password set — you can now log in with your email and password.',
+        })
         setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
         setPasswordStrength({ score: 0, label: '', color: '' })
+        setHasPassword(true)
       }
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Failed to change password' })
@@ -159,23 +175,27 @@ export default function SecuritySettingsPage() {
 
         <form onSubmit={handlePasswordSubmit} className={styles.form}>
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Change Password</h2>
+            <h2 className={styles.sectionTitle}>{hasPassword ? 'Change Password' : 'Set Password'}</h2>
             <p className={styles.sectionDescription}>
-              Choose a strong password with at least 8 characters, including uppercase letters, numbers, and symbols.
+              {hasPassword
+                ? 'Choose a strong password with at least 8 characters, including uppercase letters, numbers, and symbols.'
+                : 'You signed in with Google. Set a password here if you\'d also like to log in with your email and password.'}
             </p>
 
-            <div className={styles.field}>
-              <label htmlFor="currentPassword" className={styles.label}>Current Password</label>
-              <PasswordInput
-                id="currentPassword"
-                name="currentPassword"
-                value={passwordForm.currentPassword}
-                onChange={handlePasswordChange}
-                className={styles.input}
-                required
-                autoComplete="current-password"
-              />
-            </div>
+            {hasPassword && (
+              <div className={styles.field}>
+                <label htmlFor="currentPassword" className={styles.label}>Current Password</label>
+                <PasswordInput
+                  id="currentPassword"
+                  name="currentPassword"
+                  value={passwordForm.currentPassword}
+                  onChange={handlePasswordChange}
+                  className={styles.input}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+            )}
 
             <div className={styles.field}>
               <label htmlFor="newPassword" className={styles.label}>New Password</label>
@@ -252,7 +272,9 @@ export default function SecuritySettingsPage() {
               className={styles.saveBtn}
               disabled={saving || passwordForm.newPassword !== passwordForm.confirmPassword}
             >
-              {saving ? 'Changing Password...' : 'Change Password'}
+              {saving
+                ? (hasPassword ? 'Changing Password...' : 'Setting Password...')
+                : (hasPassword ? 'Change Password' : 'Set Password')}
             </button>
           </div>
         </form>

@@ -37,10 +37,11 @@ export default function MakeOfferModal({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [generating, setGenerating] = useState(false)
-  const [generatedPdf, setGeneratedPdf] = useState<Blob | null>(null)
   const [offerMode, setOfferMode] = useState<'none' | 'upload' | 'generate'>('none')
   const [sector, setSector] = useState('general')
   const [extras, setExtras] = useState<Set<string>>(new Set())
+  const [offerLetterText, setOfferLetterText] = useState('')
+  const [generateStep, setGenerateStep] = useState<'idle' | 'edit' | 'review'>('idle')
 
   // Reset form when modal opens
   useEffect(() => {
@@ -54,10 +55,11 @@ export default function MakeOfferModal({
       setOfferLetter(null)
       setError('')
       setOfferMode('none')
-      setGeneratedPdf(null)
       setGenerating(false)
       setSector('general')
       setExtras(new Set())
+      setOfferLetterText('')
+      setGenerateStep('idle')
     }
   }, [isOpen])
 
@@ -128,28 +130,30 @@ export default function MakeOfferModal({
       const data = await res.json()
       if (data.error) { setError(data.error); return }
 
-      // Build PDF from returned text using jsPDF
-      const { jsPDF } = await import('jspdf')
-      const doc = new jsPDF()
-      const text = data.text || ''
-      const margin = 20
-      const pageWidth = doc.internal.pageSize.getWidth() - margin * 2
-      doc.setFontSize(11)
-      const lines = doc.splitTextToSize(text, pageWidth)
-      let y = margin
-      for (const line of lines) {
-        if (y > 270) { doc.addPage(); y = margin }
-        doc.text(line, margin, y)
-        y += 6
-      }
-      const blob = doc.output('blob')
-      setGeneratedPdf(blob)
-      setOfferLetter(new File([blob], `Offer-Letter-${candidateName.replace(/\s+/g, '-')}.pdf`, { type: 'application/pdf' }))
+      setOfferLetterText(data.text || '')
+      setGenerateStep('edit')
     } catch (err: any) {
       setError(err.message || 'Failed to generate offer letter')
     } finally {
       setGenerating(false)
     }
+  }
+
+  const buildPdfFromText = async (text: string): Promise<File> => {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF()
+    const margin = 20
+    const pageWidth = doc.internal.pageSize.getWidth() - margin * 2
+    doc.setFontSize(11)
+    const lines = doc.splitTextToSize(text, pageWidth)
+    let y = margin
+    for (const line of lines) {
+      if (y > 270) { doc.addPage(); y = margin }
+      doc.text(line, margin, y)
+      y += 6
+    }
+    const blob = doc.output('blob')
+    return new File([blob], `Offer-Letter-${candidateName.replace(/\s+/g, '-')}.pdf`, { type: 'application/pdf' })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,16 +181,44 @@ export default function MakeOfferModal({
         return
       }
 
+      // In generate mode, require the employer to review the letter first
+      if (offerMode === 'generate') {
+        if (!offerLetterText.trim()) {
+          setError('Please generate or write an offer letter')
+          setSubmitting(false)
+          return
+        }
+        if (generateStep !== 'review') {
+          setError('Please click "Review Offer Letter" to check it before sending')
+          setSubmitting(false)
+          return
+        }
+      }
+
+      // Build PDF from edited text at send-time (generate mode only)
+      let generatedFile: File | null = null
+      if (offerMode === 'generate' && offerLetterText.trim()) {
+        try {
+          generatedFile = await buildPdfFromText(offerLetterText)
+        } catch (err) {
+          console.error('Failed to build PDF:', err)
+          setError('Failed to build offer letter PDF')
+          setSubmitting(false)
+          return
+        }
+      }
+      const fileToUpload = offerLetter || generatedFile
+
       // Upload offer letter if provided
       let offerLetterUrl: string | null = null
-      if (offerLetter) {
-        const fileExt = offerLetter.name.split('.').pop()
+      if (fileToUpload) {
+        const fileExt = fileToUpload.name.split('.').pop()
         const fileName = `${Date.now()}.${fileExt}`
         const filePath = `offer-letters/${session.user.id}/${fileName}`
 
         const { error: uploadError } = await supabase.storage
           .from('profiles')
-          .upload(filePath, offerLetter, { contentType: offerLetter.type, upsert: true })
+          .upload(filePath, fileToUpload, { contentType: fileToUpload.type, upsert: true })
 
         if (uploadError) {
           console.error('Error uploading offer letter:', uploadError)
@@ -422,9 +454,9 @@ export default function MakeOfferModal({
           <div className={styles.formGroup}>
             <label className={styles.label}>Offer Letter (Optional)</label>
 
-            {offerMode === 'none' && !generatedPdf && (
+            {offerMode === 'none' && (
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="button" onClick={() => setOfferMode('generate')} style={{ flex: 1, padding: '0.625rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#f8fafc', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+                <button type="button" onClick={() => { setOfferMode('generate'); setGenerateStep('idle') }} style={{ flex: 1, padding: '0.625rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#f8fafc', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
                   ✨ Generate with AI
                 </button>
                 <button type="button" onClick={() => setOfferMode('upload')} style={{ flex: 1, padding: '0.625rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: '0.85rem' }}>
@@ -442,7 +474,7 @@ export default function MakeOfferModal({
               </div>
             )}
 
-            {offerMode === 'generate' && (
+            {offerMode === 'generate' && generateStep === 'idle' && (
               <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.875rem' }}>
                 {/* Sector dropdown */}
                 <div style={{ marginBottom: '0.75rem' }}>
@@ -485,14 +517,56 @@ export default function MakeOfferModal({
                   {generating ? 'Generating...' : '✨ Generate Offer Letter'}
                 </button>
 
-                {generatedPdf && (
-                  <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.75rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.8rem', color: '#15803d', fontWeight: 500 }}>✓ Offer letter generated</span>
-                    <button type="button" onClick={() => { const url = URL.createObjectURL(generatedPdf); window.open(url) }} style={{ fontSize: '0.75rem', color: '#0369a1', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Preview</button>
-                  </div>
-                )}
+                <p style={{ fontSize: '0.7rem', color: '#64748b', margin: '0.5rem 0 0', textAlign: 'center' }}>
+                  or <button type="button" onClick={() => { setOfferLetterText(''); setGenerateStep('edit') }} style={{ color: '#0369a1', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.7rem', padding: 0 }}>write it yourself</button>
+                </p>
 
-                <button type="button" onClick={() => { setOfferMode('none'); setGeneratedPdf(null); setOfferLetter(null) }} style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', marginTop: '0.375rem' }}>Cancel</button>
+                <button type="button" onClick={() => { setOfferMode('none'); setOfferLetterText(''); setGenerateStep('idle') }} style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', marginTop: '0.375rem' }}>Cancel</button>
+              </div>
+            )}
+
+            {offerMode === 'generate' && generateStep === 'edit' && (
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.875rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#334155' }}>Offer Letter — Edit</label>
+                  <button type="button" onClick={handleGenerateOfferLetter} disabled={generating || !salary}
+                    style={{ fontSize: '0.72rem', color: '#0369a1', background: 'none', border: 'none', cursor: generating ? 'not-allowed' : 'pointer', textDecoration: 'underline' }}>
+                    {generating ? 'Regenerating...' : '↻ Regenerate with AI'}
+                  </button>
+                </div>
+                <textarea
+                  value={offerLetterText}
+                  onChange={(e) => setOfferLetterText(e.target.value)}
+                  placeholder="Write your offer letter here, or generate one with AI..."
+                  rows={14}
+                  style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical', boxSizing: 'border-box' }}
+                />
+                <p style={{ fontSize: '0.7rem', color: '#64748b', margin: '0.5rem 0 0.75rem', lineHeight: 1.4 }}>
+                  Tip: replace any <code style={{ background: '#f1f5f9', padding: '0 0.25rem', borderRadius: 3 }}>[Address Line 1]</code> / <code style={{ background: '#f1f5f9', padding: '0 0.25rem', borderRadius: 3 }}>[City]</code> placeholders with the candidate's details.
+                </p>
+                <button type="button" onClick={() => setGenerateStep('review')} disabled={!offerLetterText.trim()}
+                  style={{ width: '100%', padding: '0.625rem', background: !offerLetterText.trim() ? '#94a3b8' : '#0f172a', color: '#FFE500', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: '0.85rem', cursor: !offerLetterText.trim() ? 'not-allowed' : 'pointer' }}>
+                  Review Offer Letter →
+                </button>
+                <button type="button" onClick={() => { setOfferMode('none'); setOfferLetterText(''); setGenerateStep('idle') }} style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', marginTop: '0.375rem' }}>Cancel</button>
+              </div>
+            )}
+
+            {offerMode === 'generate' && generateStep === 'review' && (
+              <div style={{ border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.875rem', background: '#f0fdf4' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#15803d' }}>✓ Review — this is what the candidate will receive</label>
+                  <button type="button" onClick={() => setGenerateStep('edit')}
+                    style={{ fontSize: '0.72rem', color: '#0369a1', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                    ← Back to edit
+                  </button>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.875rem', maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif', fontSize: '0.85rem', lineHeight: 1.6, color: '#1e293b' }}>
+                  {offerLetterText}
+                </div>
+                <p style={{ fontSize: '0.75rem', color: '#15803d', margin: '0.625rem 0 0', fontWeight: 500 }}>
+                  Looks good? Click <strong>Send Offer</strong> below to deliver it to {candidateName}.
+                </p>
               </div>
             )}
           </div>
@@ -523,7 +597,12 @@ export default function MakeOfferModal({
             >
               Cancel
             </button>
-            <button type="submit" className={styles.submitBtn} disabled={submitting}>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={submitting || (offerMode === 'generate' && generateStep !== 'review')}
+              title={offerMode === 'generate' && generateStep !== 'review' ? 'Click "Review Offer Letter" above first' : undefined}
+            >
               {submitting ? 'Sending Offer...' : 'Send Offer'}
             </button>
           </div>

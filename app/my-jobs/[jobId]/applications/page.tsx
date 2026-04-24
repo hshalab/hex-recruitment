@@ -57,8 +57,6 @@ export default function JobApplicationsPage() {
   const [offerApplication, setOfferApplication] = useState<Application | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedLetters, setExpandedLetters] = useState(new Set<string>())
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [bulkUpdating, setBulkUpdating] = useState(false)
   const [rejectModalApp, setRejectModalApp] = useState<Application | null>(null)
   const [rejectMessage, setRejectMessage] = useState('')
   const [rejectSending, setRejectSending] = useState(false)
@@ -879,61 +877,6 @@ export default function JobApplicationsPage() {
           </div>
         ) : (
           <div className={styles.applicationsList}>
-            {/* Bulk action bar */}
-            {selectedIds.size > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 1rem', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0369a1' }}>{selectedIds.size} selected</span>
-                <select
-                  disabled={bulkUpdating}
-                  onChange={async (e) => {
-                    const newStatus = e.target.value as Application['status']
-                    if (!newStatus) return
-                    setBulkUpdating(true)
-                    try {
-                      const ids = Array.from(selectedIds)
-                      await supabase.from('job_applications').update({ status: newStatus, status_updated_at: new Date().toISOString() }).in('id', ids)
-
-                      // Send notifications + emails for each affected candidate
-                      const affected = applications.filter(a => ids.includes(a.id))
-                      for (const app of affected) {
-                        // Reuse the same notification logic as single-status updates
-                        const notifMap: Record<string, { title: string; message: string }> = {
-                          reviewing: { title: 'Application Under Review', message: `Your application for ${app.jobTitle} at ${app.company} is being reviewed.` },
-                          shortlisted: { title: 'Application Shortlisted', message: `Great news! Your application for ${app.jobTitle} at ${app.company} has been shortlisted.` },
-                          rejected: { title: 'Application Update', message: `Your application for ${app.jobTitle} at ${app.company} was not selected to move forward.` },
-                        }
-                        const notif = notifMap[newStatus]
-                        if (notif) {
-                          supabase.from('notifications').insert({
-                            user_id: app.candidateId, type: 'application_update',
-                            title: notif.title, message: notif.message, read: false,
-                            related_id: app.id, related_type: 'application', link: '/applications',
-                          }).then()
-                          if (app.candidateEmail) {
-                            fetch('/api/email/send', {
-                              method: 'POST', headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ to: app.candidateEmail, type: 'application_status', data: { status: newStatus, companyName: app.company, jobTitle: app.jobTitle, candidateName: app.candidateName } }),
-                            }).catch(() => {})
-                          }
-                        }
-                      }
-
-                      setApplications(prev => prev.map(a => ids.includes(a.id) ? { ...a, status: newStatus } : a))
-                      setSelectedIds(new Set())
-                    } catch { /* ignore */ }
-                    setBulkUpdating(false)
-                    e.target.value = ''
-                  }}
-                  style={{ fontSize: '0.8rem', padding: '0.35rem 0.5rem', border: '1px solid #d1d5db', borderRadius: 4, background: '#fff' }}
-                >
-                  <option value="">Change status...</option>
-                  <option value="reviewing">Reviewing</option>
-                  <option value="shortlisted">Shortlisted</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-                <button onClick={() => setSelectedIds(new Set())} style={{ fontSize: '0.8rem', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>
-              </div>
-            )}
             {applications
               .filter(a => {
                 if (focusedApplicationId) return a.id === focusedApplicationId
@@ -943,23 +886,6 @@ export default function JobApplicationsPage() {
               .map(application => {
               return (
                 <div key={application.id} className={styles.applicationCard}>
-                  {/* Bulk selection checkbox */}
-                  <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', zIndex: 1 }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(application.id)}
-                      onChange={(e) => {
-                        e.stopPropagation()
-                        setSelectedIds(prev => {
-                          const next = new Set(prev)
-                          if (next.has(application.id)) next.delete(application.id)
-                          else next.add(application.id)
-                          return next
-                        })
-                      }}
-                      style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#0369a1' }}
-                    />
-                  </div>
                   <div className={styles.cardMain}>
                     {/* Candidate Photo */}
                     <div className={styles.candidatePhoto}>
@@ -1161,8 +1087,8 @@ export default function JobApplicationsPage() {
                         )}
                         {application.offer.offerLetterUrl && (
                           <p>
-                            <SignedLink src={application.offer.offerLetterUrl} className={styles.offerLetterLink}>
-                              View Offer Letter
+                            <SignedLink src={application.offer.offerLetterUrl} className={styles.offerLetterLink} download>
+                              ⬇ Download Offer Letter
                             </SignedLink>
                           </p>
                         )}
