@@ -159,17 +159,37 @@ ${data.companyDescription ? `About the company: ${data.companyDescription}` : ''
         if (cl.uniformProvided) allClauses.push('Uniform will be provided')
       }
 
+      // Build the candidate's address block from whatever the profile has.
+      // Any missing lines are simply dropped so we never render a stray
+      // blank line or a "null" in the letter head.
+      const candidateAddressLines = [
+        data.candidateAddressLine1,
+        data.candidateAddressLine2,
+        data.candidateCity,
+        data.candidatePostcode,
+      ].filter((line: unknown): line is string => typeof line === 'string' && !!line.trim())
+
+      const addressBlock = candidateAddressLines.length > 0
+        ? candidateAddressLines.join('\n')
+        : '[no address on file — use no address block at all, do not emit placeholders]'
+
       userPrompt = `Write a formal offer letter with these details:
 Letter Date: ${todayUK}
 Company: ${data.company || 'The Company'}
 Candidate: ${data.candidateName || 'The Candidate'}
+Candidate Address:
+${addressBlock}
 Job Title: ${data.jobTitle || 'The Role'}
 Salary: ${data.salary || 'Competitive'}
 Start Date: ${data.startDate || 'TBC'}
 Contract Type: ${data.contractType || 'Full-time'}
 Sector: ${data.sector || 'General'}
 ${allClauses.length > 0 ? `\nClauses to include:\n${allClauses.map((c: string) => `- ${c}`).join('\n')}` : ''}
-${data.additionalTerms ? `\nAdditional terms: ${data.additionalTerms}` : ''}`
+${data.additionalTerms ? `\nAdditional terms: ${data.additionalTerms}` : ''}
+
+Formatting rules:
+- Use the supplied Candidate Address verbatim in the addressee block, one line per element, directly under the candidate's name.
+- If the Candidate Address line above is the bracketed "[no address on file...]" note, omit the addressee address block entirely — do NOT invent placeholders like "[Address Line 1]" or "[City]".`
 
       const offerRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',

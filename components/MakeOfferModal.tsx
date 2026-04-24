@@ -117,6 +117,14 @@ export default function MakeOfferModal({
         ...(additionalTerms.trim() ? [additionalTerms.trim()] : []),
       ]
 
+      // Pull the candidate's postal address so the AI can write a real
+      // addressee block instead of leaving [Address Line 1] placeholders.
+      const { data: profileRow } = await supabase
+        .from('candidate_profiles')
+        .select('address_line_1, address_line_2, city, postcode')
+        .eq('user_id', candidateId)
+        .maybeSingle()
+
       const res = await fetch('/api/ai-assist', {
         method: 'POST',
         headers: {
@@ -129,6 +137,10 @@ export default function MakeOfferModal({
             candidateName, company, jobTitle, salary, startDate, contractType, additionalTerms,
             sector,
             clausesList: allClauses,
+            candidateAddressLine1: profileRow?.address_line_1 || null,
+            candidateAddressLine2: profileRow?.address_line_2 || null,
+            candidateCity: profileRow?.city || null,
+            candidatePostcode: profileRow?.postcode || null,
           },
         }),
       })
@@ -391,7 +403,7 @@ export default function MakeOfferModal({
         `Start Date: ${formattedDate}`,
         `Contract Type: ${contractLabel}`,
         ...(additionalTerms.trim() ? ['', `Additional Terms: ${additionalTerms.trim()}`] : []),
-        ...(offerLetterUrl ? ['', `Offer Letter: ${offerLetterUrl}`] : []),
+        ...(offerLetterUrl ? ['', 'The full offer letter is attached to your application — open it from My Applications to review, download and sign.'] : []),
         '',
         'Please review the offer and respond via your Applications page.',
         '',
