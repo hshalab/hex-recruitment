@@ -506,7 +506,10 @@ export default function EmployerDashboardPage() {
   const [totalApplications, setTotalApplications] = useState(0)
   const [totalViews, setTotalViews] = useState(0)
   const [newJobsThisWeek, setNewJobsThisWeek] = useState(0)
-  const [newAppsThisWeek, setNewAppsThisWeek] = useState(0)
+  // Count of applications the employer hasn't yet opened (viewed_at IS NULL).
+  // Drops automatically as they review applications, since the per-job
+  // applications page auto-stamps viewed_at on open.
+  const [unviewedAppsCount, setUnviewedAppsCount] = useState(0)
 
   // Data
   const [applications, setApplications] = useState<any[]>([])
@@ -602,16 +605,19 @@ export default function EmployerDashboardPage() {
             try {
               const { data: appData } = await supabase
                 .from('job_applications')
-                .select('id, job_id, job_title, company, status, created_at, candidate_id')
+                .select('id, job_id, job_title, company, status, created_at, candidate_id, viewed_at')
                 .in('job_id', jobIds)
                 .order('created_at', { ascending: false })
 
               if (appData) {
                 setTotalApplications(appData.length)
 
-                // Compute "new apps this week" badge
-                const appsThisWeek = appData.filter(a => a.created_at && new Date(a.created_at) >= weekStart).length
-                setNewAppsThisWeek(appsThisWeek)
+                // Badge = applications still awaiting first review.
+                // The per-job applications page auto-stamps viewed_at when
+                // the employer opens it, so this count decreases naturally
+                // each time they review an application.
+                const unviewed = appData.filter(a => !a.viewed_at).length
+                setUnviewedAppsCount(unviewed)
 
                 // Build per-job application count map for enriching jobsData
                 const appCountByJob: Record<string, number> = {}
@@ -900,9 +906,12 @@ export default function EmployerDashboardPage() {
           <button className={styles.statPill} onClick={() => router.push('/my-jobs')}>
             <span style={{ position: 'relative', display: 'inline-block' }}>
               <span className={styles.statPillNum}>{totalApplications}</span>
-              {newAppsThisWeek > 0 && (
-                <span style={{ position: 'absolute', top: -4, right: -12, minWidth: 16, height: 16, borderRadius: 8, background: '#ef4444', color: '#fff', fontSize: '0.55rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', border: '2px solid #fff' }}>
-                  {newAppsThisWeek > 99 ? '99+' : newAppsThisWeek}
+              {unviewedAppsCount > 0 && (
+                <span
+                  title={`${unviewedAppsCount} awaiting your review`}
+                  style={{ position: 'absolute', top: -4, right: -12, minWidth: 16, height: 16, borderRadius: 8, background: '#ef4444', color: '#fff', fontSize: '0.55rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', border: '2px solid #fff' }}
+                >
+                  {unviewedAppsCount > 99 ? '99+' : unviewedAppsCount}
                 </span>
               )}
             </span>
