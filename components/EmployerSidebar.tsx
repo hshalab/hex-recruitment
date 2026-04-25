@@ -137,12 +137,15 @@ export default function EmployerSidebar() {
     },
     {
       label: 'Offers',
+      // Signed-contract metaphor — document silhouette with a signature
+      // squiggle along the bottom — visually distinct from the
+      // clipboard-with-check icons used by Applicants and Manage Job Ads.
       href: '/offers',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
           <polyline points="14 2 14 8 20 8" />
-          <path d="M9 15l2 2 4-4" />
+          <path d="M7 17c1-1.5 2-1.5 3 0s2 1.5 3 0 2-1.5 3 0" />
         </svg>
       ),
     },
