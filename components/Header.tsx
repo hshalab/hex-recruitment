@@ -231,8 +231,6 @@ export default function Header() {
 
   const isEmployer = user?.user_metadata?.role === 'employer'
 
-  const logoTagline = 'Hire People · Build Careers'
-
   // Get user initials for avatar fallback
   const getUserInitials = () => {
     const name = user?.user_metadata?.full_name || user?.email || 'U'
@@ -564,11 +562,8 @@ export default function Header() {
         <div className={(showSidebar || showCandidateSidebar) ? styles.headerFull : 'container'}>
           <div className={styles.headerContent}>
             <Link href={logoHref} className={styles.logo} {...((showSidebar || showCandidateSidebar) ? { 'data-sidebar-logo': '' } : {})}>
-              <ThriveMark size={28} className={styles.logoIcon} />
-              <div className={styles.logoBrand}>
-                <span className={styles.logoText}>THRIVE</span>
-                <span className={styles.logoTagline}>{logoTagline}</span>
-              </div>
+              <ThriveMark size={42} className={styles.logoIcon} />
+              <span className={styles.logoText}>Thrive</span>
             </Link>
 
             <nav className={styles.nav}>
