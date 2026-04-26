@@ -109,7 +109,7 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroInner}>
           <h1 className={styles.heroTitle}>
-            FIND PEOPLE<br />HIRE PEOPLE<br />GET HIRED
+            FIND GREAT JOBS<br />HIRE GREAT PEOPLE
           </h1>
           <p className={styles.heroSubtitle}>
             Post jobs, search candidates, manage your pipeline, schedule interviews —
