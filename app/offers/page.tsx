@@ -379,21 +379,6 @@ export default function OffersPage() {
                         ) : (
                           <span style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>—</span>
                         )}
-                        {o.aiTags.length > 0 && (
-                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-                            {o.aiTags.slice(0, 3).map(t => {
-                              const s = tagStyle(t)
-                              return (
-                                <span key={t} style={{ display: 'inline-block', padding: '0.05rem 0.4rem', borderRadius: 99, background: s.bg, color: s.fg, fontSize: '0.66rem', fontWeight: 600 }}>
-                                  {s.label}
-                                </span>
-                              )
-                            })}
-                            {o.aiTags.length > 3 && (
-                              <span style={{ fontSize: '0.66rem', color: '#94a3b8' }}>+{o.aiTags.length - 3}</span>
-                            )}
-                          </div>
-                        )}
                       </td>
                       <td style={{ padding: '0.625rem 0.75rem', color: '#475569', whiteSpace: 'nowrap' }}>{o.salary}</td>
                       <td style={{ padding: '0.625rem 0.75rem', color: '#475569', whiteSpace: 'nowrap' }}>{fmtDate(o.startDate)}</td>
