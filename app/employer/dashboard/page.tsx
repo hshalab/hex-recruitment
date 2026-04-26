@@ -791,6 +791,16 @@ export default function EmployerDashboardPage() {
     }
   }, [router])
 
+  // ── Simulator tick ──────────────────────────────────────
+  // Fires once the employer dashboard has a real user. The simulator endpoint
+  // is throttled server-side (60s) so navigating in and out repeatedly is a
+  // no-op. Hobby plan can't run sub-daily crons, so this stands in for one.
+  useEffect(() => {
+    if (DEV_MODE) return
+    if (!user) return
+    fetch('/api/simulate/run', { method: 'POST' }).catch(() => {})
+  }, [user])
+
   // ── Derived data ────────────────────────────────────────
 
   const statusCounts = useMemo(() => {
