@@ -350,15 +350,15 @@ export default function OffersPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Candidate</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', minWidth: 160 }}>Job</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', minWidth: 220 }}>Summary</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Salary</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Start</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155' }}>Status</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Sent</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Candidate signed</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155' }}>PDF</th>
+                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Candidate</th>
+                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', minWidth: 160 }}>Job</th>
+                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', minWidth: 220 }}>Summary</th>
+                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Salary</th>
+                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Start</th>
+                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155' }}>Status</th>
+                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Sent</th>
+                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Candidate signed</th>
+                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155' }}>PDF</th>
                 </tr>
               </thead>
               <tbody>
@@ -371,9 +371,9 @@ export default function OffersPage() {
                       style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', verticalAlign: 'top' }}
                       onClick={() => router.push(`/my-jobs/${o.jobId}/applications?applicationId=${o.applicationId}`)}
                     >
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>{o.candidateName}</td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>{o.jobTitle}</td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
+                      <td style={{ padding: '0.625rem 0.75rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>{o.candidateName}</td>
+                      <td style={{ padding: '0.625rem 0.75rem', color: '#475569' }}>{o.jobTitle}</td>
+                      <td style={{ padding: '0.625rem 0.75rem', color: '#475569' }}>
                         {o.aiSummary ? (
                           <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.4, color: '#334155' }}>{o.aiSummary}</p>
                         ) : (
@@ -381,7 +381,7 @@ export default function OffersPage() {
                         )}
                         {o.aiTags.length > 0 && (
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-                            {o.aiTags.slice(0, 6).map(t => {
+                            {o.aiTags.slice(0, 3).map(t => {
                               const s = tagStyle(t)
                               return (
                                 <span key={t} style={{ display: 'inline-block', padding: '0.05rem 0.4rem', borderRadius: 99, background: s.bg, color: s.fg, fontSize: '0.66rem', fontWeight: 600 }}>
@@ -389,15 +389,15 @@ export default function OffersPage() {
                                 </span>
                               )
                             })}
-                            {o.aiTags.length > 6 && (
-                              <span style={{ fontSize: '0.66rem', color: '#94a3b8' }}>+{o.aiTags.length - 6}</span>
+                            {o.aiTags.length > 3 && (
+                              <span style={{ fontSize: '0.66rem', color: '#94a3b8' }}>+{o.aiTags.length - 3}</span>
                             )}
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#475569', whiteSpace: 'nowrap' }}>{o.salary}</td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#475569', whiteSpace: 'nowrap' }}>{fmtDate(o.startDate)}</td>
-                      <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '0.625rem 0.75rem', color: '#475569', whiteSpace: 'nowrap' }}>{o.salary}</td>
+                      <td style={{ padding: '0.625rem 0.75rem', color: '#475569', whiteSpace: 'nowrap' }}>{fmtDate(o.startDate)}</td>
+                      <td style={{ padding: '0.625rem 0.75rem', whiteSpace: 'nowrap' }}>
                         <span style={{ display: 'inline-block', padding: '0.15rem 0.55rem', borderRadius: 99, background: badge.bg, color: badge.fg, fontSize: '0.72rem', fontWeight: 600 }}>
                           {badge.label}
                         </span>
@@ -407,9 +407,9 @@ export default function OffersPage() {
                           </span>
                         )}
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#64748b', whiteSpace: 'nowrap' }}>{fmtDate(o.sentAt)}</td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#64748b', whiteSpace: 'nowrap' }}>{fmtDate(o.signedAt)}</td>
-                      <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                      <td style={{ padding: '0.625rem 0.75rem', color: '#64748b', whiteSpace: 'nowrap' }}>{fmtDate(o.sentAt)}</td>
+                      <td style={{ padding: '0.625rem 0.75rem', color: '#64748b', whiteSpace: 'nowrap' }}>{fmtDate(o.signedAt)}</td>
+                      <td style={{ padding: '0.625rem 0.75rem', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                         {o.offerLetterUrl ? (
                           <SignedLink src={o.offerLetterUrl} download style={{ color: '#0369a1', fontSize: '0.8rem', textDecoration: 'underline' }}>
                             ⬇ Download
