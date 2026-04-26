@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import SignaturePad from './SignaturePad'
+import type { SignatureSlot } from '@/lib/buildOfferPdf'
 import styles from './MakeOfferModal.module.css'
 
 interface MakeOfferModalProps {
@@ -156,23 +157,6 @@ export default function MakeOfferModal({
     }
   }
 
-  const buildPdfFromText = async (text: string): Promise<File> => {
-    const { jsPDF } = await import('jspdf')
-    const doc = new jsPDF()
-    const margin = 20
-    const pageWidth = doc.internal.pageSize.getWidth() - margin * 2
-    doc.setFontSize(11)
-    const lines = doc.splitTextToSize(text, pageWidth)
-    let y = margin
-    for (const line of lines) {
-      if (y > 270) { doc.addPage(); y = margin }
-      doc.text(line, margin, y)
-      y += 6
-    }
-    const blob = doc.output('blob')
-    return new File([blob], `Offer-Letter-${candidateName.replace(/\s+/g, '-')}.pdf`, { type: 'application/pdf' })
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -212,11 +196,51 @@ export default function MakeOfferModal({
         }
       }
 
-      // Build PDF from edited text at send-time (generate mode only)
+      const nowIso = new Date().toISOString()
+      let employerSignatureImagePath: string | null = null
+      let employerSignatureIp: string | null = null
+      let employerSignedAt: string | null = null
+      let employerSlot: SignatureSlot | null = null
+      let candidateSlot: SignatureSlot | null = null
+
+      const hasEmployerSig =
+        offerMode === 'generate' && !!employerSignatureDataUrl && !!employerSignerName.trim()
+
+      // Best-effort IP for audit trail (only fetched when actually signing)
+      if (hasEmployerSig) {
+        try {
+          const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
+          if (res.ok) {
+            const data = await res.json()
+            if (typeof data?.ip === 'string') employerSignatureIp = data.ip
+          }
+        } catch { /* audit IP is best-effort */ }
+      }
+
+      // Build PDF from edited text at send-time (generate mode only).
+      // buildOfferPdf renders the deterministic signature block and stamps the
+      // employer signature directly on the body line if provided. Slot coords
+      // are returned so we can persist them on job_offers.
       let generatedFile: File | null = null
       if (offerMode === 'generate' && offerLetterText.trim()) {
         try {
-          generatedFile = await buildPdfFromText(offerLetterText)
+          const { buildOfferPdf } = await import('@/lib/buildOfferPdf')
+          const result = await buildOfferPdf({
+            bodyText: offerLetterText,
+            companyName: company,
+            candidateName,
+            employerSignature: hasEmployerSig
+              ? {
+                  dataUrl: employerSignatureDataUrl!,
+                  name: employerSignerName.trim(),
+                  signedAt: new Date(nowIso),
+                }
+              : undefined,
+          })
+          generatedFile = result.file
+          employerSlot = result.employerSlot
+          candidateSlot = result.candidateSlot
+          if (hasEmployerSig) employerSignedAt = nowIso
         } catch (err) {
           console.error('Failed to build PDF:', err)
           setError('Failed to build offer letter PDF')
@@ -226,40 +250,28 @@ export default function MakeOfferModal({
       }
       let fileToUpload: File | null = offerLetter || generatedFile
 
-      // If we're in generate mode and the employer drew a signature, flatten
-      // that signature onto the PDF as a certificate page before upload so
-      // the candidate receives a pre-signed document.
-      let employerSignatureImagePath: string | null = null
-      let employerSignatureIp: string | null = null
-      let employerSignedAt: string | null = null
-      const nowIso = new Date().toISOString()
-      if (offerMode === 'generate' && generatedFile && employerSignatureDataUrl && employerSignerName.trim()) {
+      // If the employer signed, append the audit certificate page and upload
+      // the raw signature PNG separately. The visible signature is already on
+      // the body of the letter (via buildOfferPdf above) — the cert page is
+      // purely for the audit trail (timestamp, IP, UA per UK Electronic
+      // Communications Act 2000).
+      if (hasEmployerSig && generatedFile) {
         try {
-          // Best-effort IP for audit trail
-          try {
-            const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
-            if (res.ok) {
-              const data = await res.json()
-              if (typeof data?.ip === 'string') employerSignatureIp = data.ip
-            }
-          } catch { /* audit IP is best-effort */ }
-
           const { appendSignaturesToPdf, dataUrlToBytes } = await import('@/lib/signPdf')
           const originalBytes = new Uint8Array(await generatedFile.arrayBuffer())
           const signedBytes = await appendSignaturesToPdf(originalBytes, [{
             role: 'Employer',
             name: employerSignerName.trim(),
-            imageBytes: dataUrlToBytes(employerSignatureDataUrl),
+            imageBytes: dataUrlToBytes(employerSignatureDataUrl!),
             signedAt: nowIso,
             ip: employerSignatureIp,
             userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
           }])
           fileToUpload = new File([signedBytes as any], generatedFile.name, { type: 'application/pdf' })
-          employerSignedAt = nowIso
 
-          // Upload employer signature PNG separately (for in-app rendering and audit)
+          // Upload employer signature PNG separately for in-app rendering & audit
           const sigBlob = await (async () => {
-            const b64 = employerSignatureDataUrl.split(',')[1] || ''
+            const b64 = employerSignatureDataUrl!.split(',')[1] || ''
             const bin = atob(b64)
             const arr = new Uint8Array(bin.length)
             for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
@@ -271,8 +283,9 @@ export default function MakeOfferModal({
             .upload(sigPath, sigBlob, { contentType: 'image/png', upsert: true })
           if (!sigUpErr) employerSignatureImagePath = sigPath
         } catch (err) {
-          // Non-fatal: send the offer unsigned rather than blocking.
-          console.error('Employer signature embed failed (continuing unsigned):', err)
+          // Non-fatal: PDF body still has the visible signature; only the
+          // audit cert page / sig PNG upload is missing.
+          console.error('Employer cert append / sig PNG upload failed (continuing):', err)
         }
       }
 
@@ -319,6 +332,8 @@ export default function MakeOfferModal({
           employer_signature_timestamp: employerSignedAt,
           employer_signature_ip: employerSignatureIp,
           employer_signature_user_agent: employerSignatureImagePath && typeof navigator !== 'undefined' ? navigator.userAgent : null,
+          employer_signature_slot: employerSlot,
+          candidate_signature_slot: candidateSlot,
         })
         .select('id')
         .single()

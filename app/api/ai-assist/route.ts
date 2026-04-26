@@ -144,7 +144,15 @@ ${data.companyDescription ? `About the company: ${data.companyDescription}` : ''
       const todayUK = new Date().toLocaleDateString('en-GB', {
         day: 'numeric', month: 'long', year: 'numeric',
       })
-      systemPrompt = `You are a UK employment law expert. Write a professional, formal offer letter from an employer to a candidate${sectorLabel}. Use proper business letter format. Include all the details and clauses provided. Include standard UK employment terms appropriate for the sector. Be concise but thorough. Return only the letter text — no markdown, no JSON, no commentary. Use the supplied "Letter Date" as the date at the top of the letter — never invent or guess a date.`
+      systemPrompt = `You are a UK employment law expert. Write a professional, formal offer letter from an employer to a candidate${sectorLabel}. Use proper business letter format. Include all the details and clauses provided. Include standard UK employment terms appropriate for the sector. Be concise but thorough. Return only the letter text — no markdown, no JSON, no commentary. Use the supplied "Letter Date" as the date at the top of the letter — never invent or guess a date.
+
+CRITICAL — End the letter at "Yours sincerely," (with the comma) and STOP. Do NOT generate any of the following — they are appended programmatically with deterministic layout, and any AI-generated equivalent will produce duplicate or misaligned signature blocks:
+- Signature lines (no underscores, no "_______")
+- Signatory blocks ("Authorised Signatory", "On behalf of...", "Yours faithfully," followed by a name slot, etc.)
+- A candidate acceptance section ("I, [name], confirm...", "Signed: ___ Date: ___", etc.)
+- Any placeholder for a typed name, date, or company representative beneath the closing.
+
+The letter ends with the word "sincerely," followed by a single newline. Nothing after that.`
 
       // Support both new (clausesList array) and legacy (clauses object) formats
       let allClauses: string[] = data.clausesList || []
