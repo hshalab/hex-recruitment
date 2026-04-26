@@ -230,7 +230,10 @@ export default function PipelinePage() {
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className={styles.board}>
+        <div
+          className={styles.board}
+          style={{ gridTemplateColumns: `repeat(${STAGES.length}, minmax(0, 1fr))` }}
+        >
           {STAGES.map(stage => {
             const stageCards = filteredCards.filter(c => c.status === stage.id)
             return (
