@@ -39,13 +39,13 @@ export default function SignedLink({ src, children, className, style, onClick, o
   return (
     <a
       href={resolvedUrl}
-      target="_blank"
-      rel="noopener noreferrer"
       className={className}
       style={style}
       onClick={onClick}
       onMouseDown={onMouseDown}
-      {...(download ? { download: typeof download === 'string' ? download : '' } : {})}
+      {...(download
+        ? { download: typeof download === 'string' ? download : '' }
+        : { target: '_blank', rel: 'noopener noreferrer' })}
     >
       {children}
     </a>
