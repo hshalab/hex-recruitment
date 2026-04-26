@@ -231,13 +231,7 @@ export default function Header() {
 
   const isEmployer = user?.user_metadata?.role === 'employer'
 
-  const logoTagline = (() => {
-    if (!mounted) return 'WHERE CAREERS THRIVE'
-    if (user) return isEmployer ? 'HIRE GREAT PEOPLE' : 'FIND GREAT JOBS'
-    if (pathname === '/login/employer' || pathname === '/register/employer') return 'HIRE GREAT PEOPLE'
-    if (pathname === '/login/employee' || pathname === '/register/employee') return 'FIND GREAT JOBS'
-    return 'WHERE CAREERS THRIVE'
-  })()
+  const logoTagline = 'Hire People · Build Careers'
 
   // Get user initials for avatar fallback
   const getUserInitials = () => {
