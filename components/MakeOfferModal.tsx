@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import SignaturePad from './SignaturePad'
+import ReviewAndSign from './ReviewAndSign'
 import type { SignatureSlot } from '@/lib/buildOfferPdf'
 import styles from './MakeOfferModal.module.css'
 
@@ -157,8 +157,28 @@ export default function MakeOfferModal({
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Build the offer letter PDF on demand (no signatures yet) so the employer
+  // can download the in-progress letter for offline reading during review.
+  const handleDownloadPreview = async () => {
+    if (!offerLetterText.trim()) return
+    const { buildOfferPdf } = await import('@/lib/buildOfferPdf')
+    const result = await buildOfferPdf({
+      bodyText: offerLetterText,
+      companyName: company,
+      candidateName,
+    })
+    const url = URL.createObjectURL(result.file)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = result.file.name
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     setError('')
     setSubmitting(true)
 
@@ -669,37 +689,29 @@ export default function MakeOfferModal({
 
             {offerMode === 'generate' && generateStep === 'review' && (
               <div style={{ border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.875rem', background: '#f0fdf4' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#15803d' }}>✓ Review — this is what the candidate will receive</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#15803d' }}>✓ Review and sign before sending</label>
                   <button type="button" onClick={() => setGenerateStep('edit')}
                     style={{ fontSize: '0.72rem', color: '#0369a1', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
                     ← Back to edit
                   </button>
                 </div>
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.875rem', maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif', fontSize: '0.85rem', lineHeight: 1.6, color: '#1e293b' }}>
-                  {offerLetterText}
-                </div>
-                <p style={{ fontSize: '0.75rem', color: '#15803d', margin: '0.625rem 0 0.75rem', fontWeight: 500 }}>
-                  Looks good? Sign below and click <strong>Send Offer</strong> to deliver it to {candidateName}.
-                </p>
-
-                {/* Employer signature capture — baked onto the PDF before send */}
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.75rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>
-                    Your name *
-                  </label>
-                  <input
-                    type="text"
-                    value={employerSignerName}
-                    onChange={(e) => setEmployerSignerName(e.target.value)}
-                    placeholder="e.g. Paul Davies, HR Manager"
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', boxSizing: 'border-box', marginBottom: '0.625rem' }}
-                  />
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>
-                    Draw your signature *
-                  </label>
-                  <SignaturePad onChange={setEmployerSignatureDataUrl} height={140} />
-                </div>
+                <ReviewAndSign
+                  bodyText={offerLetterText}
+                  role="employer"
+                  subCopy="Read through the offer to confirm everything is correct before signing."
+                  signerNameLabel="Hiring Manager name"
+                  declarationText="I confirm this offer is accurate and ready to send."
+                  signButtonLabel="Sign and send"
+                  signerName={employerSignerName}
+                  onSignerNameChange={setEmployerSignerName}
+                  signatureDataUrl={employerSignatureDataUrl}
+                  onSignatureChange={setEmployerSignatureDataUrl}
+                  onSign={handleSubmit}
+                  onCancel={() => setGenerateStep('edit')}
+                  submitting={submitting}
+                  onDownloadPdf={handleDownloadPreview}
+                />
               </div>
             )}
           </div>
@@ -721,34 +733,36 @@ export default function MakeOfferModal({
 
           {error && <div className={styles.error}>{error}</div>}
 
-          <div className={styles.actions}>
-            <button
-              type="button"
-              onClick={onClose}
-              className={styles.cancelBtn}
-              disabled={submitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={
-                submitting
-                || (offerMode === 'generate' && generateStep !== 'review')
-                || (offerMode === 'generate' && generateStep === 'review' && (!employerSignatureDataUrl || !employerSignerName.trim()))
-              }
-              title={
-                offerMode === 'generate' && generateStep !== 'review'
-                  ? 'Click "Review Offer Letter" above first'
-                  : offerMode === 'generate' && generateStep === 'review' && (!employerSignatureDataUrl || !employerSignerName.trim())
-                    ? 'Sign the offer at the bottom of the review card first'
+          {/* Generate-mode review step owns its own Sign/Cancel buttons via
+              ReviewAndSign — hide the form-level actions to avoid duplicate
+              "send" affordances. Other modes keep the form-level actions. */}
+          {!(offerMode === 'generate' && generateStep === 'review') && (
+            <div className={styles.actions}>
+              <button
+                type="button"
+                onClick={onClose}
+                className={styles.cancelBtn}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className={styles.submitBtn}
+                disabled={
+                  submitting
+                  || (offerMode === 'generate' && generateStep !== 'review')
+                }
+                title={
+                  offerMode === 'generate' && generateStep !== 'review'
+                    ? 'Click "Review Offer Letter" above first'
                     : undefined
-              }
-            >
-              {submitting ? 'Sending Offer...' : 'Send Offer'}
-            </button>
-          </div>
+                }
+              >
+                {submitting ? 'Sending Offer...' : 'Send Offer'}
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>
