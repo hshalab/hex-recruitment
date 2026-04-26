@@ -27,7 +27,7 @@ function buildConfirmationEmail(name: string): string {
           </p>
           <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
             <tr><td style="background:#FFD700;border-radius:8px;">
-              <a href="https://thrivecareers.co.uk" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#0f0f0f;text-decoration:none;">
+              <a href="https://thrivecareer.co.uk" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#0f0f0f;text-decoration:none;">
                 Explore Thrive
               </a>
             </td></tr>
@@ -35,7 +35,7 @@ function buildConfirmationEmail(name: string): string {
         </td></tr>
         <tr><td style="padding-top:28px;text-align:center;">
           <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.35);">
-            Thrive &mdash; thrivecareers.co.uk
+            Thrive &mdash; thrivecareer.co.uk
           </p>
         </td></tr>
       </table>

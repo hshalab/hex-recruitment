@@ -10,7 +10,7 @@ import { useSavedJobs } from '@/lib/useSavedJobs'
 import { Sprout } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const NotificationBell = dynamic(() => import('./NotificationBell'), { ssr: false })
-import HoneycombLogo from './HoneycombLogo'
+import ThriveMark from './ThriveMark'
 const EmployerSidebar = dynamic(() => import('./EmployerSidebar'), { ssr: false })
 const CandidateSidebar = dynamic(() => import('./CandidateSidebar'), { ssr: false })
 import styles from './Header.module.css'
@@ -564,7 +564,7 @@ export default function Header() {
         <div className={(showSidebar || showCandidateSidebar) ? styles.headerFull : 'container'}>
           <div className={styles.headerContent}>
             <Link href={logoHref} className={styles.logo} {...((showSidebar || showCandidateSidebar) ? { 'data-sidebar-logo': '' } : {})}>
-              <HoneycombLogo size={28} color="var(--primary-yellow)" className={styles.logoIcon} />
+              <ThriveMark size={28} className={styles.logoIcon} />
               <div className={styles.logoBrand}>
                 <span className={styles.logoText}>THRIVE</span>
                 <span className={styles.logoTagline}>{logoTagline}</span>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { DEV_MODE, getMockUserType } from '@/lib/mockAuth'
-import HoneycombLogo from './HoneycombLogo'
+import ThriveMark from './ThriveMark'
 import {
   getTrialStatus,
   calculateTrialExpiry,
@@ -171,7 +171,7 @@ export default function TrialStatusBanner({ userType: propUserType }: TrialStatu
   return (
     <div className={`${styles.banner} ${styles.active}`}>
       <div className={styles.content}>
-        <HoneycombLogo size={18} color="currentColor" />
+        <ThriveMark size={18} />
         <span className={styles.title}>
           Free trial: {formatTrialCountdown(status.daysRemaining)}
         </span>

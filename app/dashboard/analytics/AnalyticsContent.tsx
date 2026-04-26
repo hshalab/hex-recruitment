@@ -2042,6 +2042,10 @@ export default function AnalyticsContent() {
       pdf.rect(0, 0, W, 36, 'F')
 
       // Thrive logo (sprout — two strokes)
+      // TODO: redraw to the new monogram — yellow rounded tile #FFD23F with
+      // cut-out navy "T" #0A1628 (matches public/logo/thrive-mark.svg). Out
+      // of scope for the logo-replacement commit; kept on the old sprout so
+      // the PDF still renders.
       pdf.setDrawColor(255, 229, 0)
       pdf.setLineWidth(1.2)
       // Stem

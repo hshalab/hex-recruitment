@@ -86,8 +86,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/icon.svg',
-    apple: '/apple-touch-icon.png',
+    apple: '/apple-icon',
   },
+  manifest: '/manifest.webmanifest',
 }
 
 export default function RootLayout({

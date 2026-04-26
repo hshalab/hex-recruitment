@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
-import HoneycombLogo from '@/components/HoneycombLogo'
+import ThriveMark from '@/components/ThriveMark'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
 
@@ -302,12 +302,12 @@ export default function Home() {
               '@context': 'https://schema.org',
               '@type': 'WebSite',
               name: 'Thrive',
-              url: 'https://thrivecareers.co.uk',
+              url: 'https://thrivecareer.co.uk',
               potentialAction: {
                 '@type': 'SearchAction',
                 target: {
                   '@type': 'EntryPoint',
-                  urlTemplate: 'https://thrivecareers.co.uk/jobs?search={search_term_string}',
+                  urlTemplate: 'https://thrivecareer.co.uk/jobs?search={search_term_string}',
                 },
                 'query-input': 'required name=search_term_string',
               },
@@ -316,8 +316,8 @@ export default function Home() {
               '@context': 'https://schema.org',
               '@type': 'Organization',
               name: 'Thrive',
-              url: 'https://thrivecareers.co.uk',
-              logo: 'https://thrivecareers.co.uk/icon.svg',
+              url: 'https://thrivecareer.co.uk',
+              logo: 'https://thrivecareer.co.uk/icon.svg',
               sameAs: ['https://www.linkedin.com/company/thrivecareers'],
             },
           ]),
@@ -328,7 +328,7 @@ export default function Home() {
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
-            <HoneycombLogo size={24} color="#FFE500" />
+            <ThriveMark size={24} />
             <div className={styles.footerBrandText}>
               <span className={styles.footerLogo}>Thrive</span>
               <span className={styles.footerTagline}>Talent Recruitment</span>
@@ -340,7 +340,7 @@ export default function Home() {
             <button onClick={() => (window as any).__openCookiePreferences?.()} className={styles.footerLink} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>Cookie Settings</button>
             <Link href="/jobs" className={styles.footerLink}>Browse Jobs</Link>
             <Link href="/subscribe" className={styles.footerLink}>Employer Plans</Link>
-            <a href="mailto:contact@thrivecareers.co.uk" className={styles.footerLink}>Contact Us</a>
+            <a href="mailto:contact@thrivecareer.co.uk" className={styles.footerLink}>Contact Us</a>
           </div>
           <p className={styles.footerCopy}>&copy; 2026 Thrive. All rights reserved.</p>
         </div>

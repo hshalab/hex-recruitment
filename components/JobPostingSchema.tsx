@@ -15,7 +15,7 @@ function mapEmploymentType(types: string[]): string[] {
 }
 
 export default function JobPostingSchema({ job }: { job: Job }) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareers.co.uk'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareer.co.uk'
 
   const salaryUnit = job.salaryPeriod === 'hour' ? 'HOUR' : 'YEAR'
 

@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://thrivecareers.co.uk'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://thrivecareer.co.uk'
 
 export function emailLayout(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html>
@@ -16,7 +16,8 @@ export function emailLayout(title: string, bodyHtml: string): string {
           <!-- Header -->
           <tr>
             <td style="background-color:#1e293b;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center;">
-              <span style="font-size:28px;font-weight:800;color:#FFE500;letter-spacing:2px;">THRIVE</span>
+              <img src="${BASE_URL}/logo/thrive-mark-192.png" alt="Thrive" width="36" height="36" style="display:inline-block;vertical-align:middle;border:0;" />
+              <span style="display:inline-block;vertical-align:middle;margin-left:12px;font-size:28px;font-weight:800;color:#FFE500;letter-spacing:2px;">THRIVE</span>
             </td>
           </tr>
           <!-- Body -->

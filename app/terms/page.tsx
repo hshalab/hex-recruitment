@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Header from '@/components/Header'
-import HoneycombLogo from '@/components/HoneycombLogo'
+import ThriveMark from '@/components/ThriveMark'
 import styles from './page.module.css'
 
 const sections = [
@@ -140,8 +140,8 @@ export default function TermsPage() {
             <p>
               You are responsible for maintaining the security of your account and password. You must
               notify us immediately at{' '}
-              <a href="mailto:support@thrivecareers.co.uk" className={styles.link}>
-                support@thrivecareers.co.uk
+              <a href="mailto:support@thrivecareer.co.uk" className={styles.link}>
+                support@thrivecareer.co.uk
               </a>{' '}
               if you become aware of any unauthorised access to your account.
             </p>
@@ -395,8 +395,8 @@ export default function TermsPage() {
             <div className={styles.contactBox}>
               <p>
                 <strong>Email:</strong>{' '}
-                <a href="mailto:support@thrivecareers.co.uk" className={styles.link}>
-                  support@thrivecareers.co.uk
+                <a href="mailto:support@thrivecareer.co.uk" className={styles.link}>
+                  support@thrivecareer.co.uk
                 </a>
               </p>
             </div>
@@ -413,7 +413,7 @@ export default function TermsPage() {
       <footer className={styles.footer}>
         <div className={styles.footerContent}>
           <div className={styles.footerBrand}>
-            <span className={styles.footerLogo}><HoneycombLogo size={20} color="currentColor" /> THRIVE</span>
+            <span className={styles.footerLogo}><ThriveMark size={20} /> THRIVE</span>
             <p className={styles.footerTagline}>
               Connecting talent with opportunity
             </p>
@@ -422,7 +422,7 @@ export default function TermsPage() {
             <Link href="/terms" className={styles.footerLinkActive}>Terms of Service</Link>
             <Link href="/privacy-policy" className={styles.footerLink}>Privacy Policy</Link>
             <button onClick={() => (window as any).__openCookiePreferences?.()} className={styles.footerLink} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>Cookie Settings</button>
-            <a href="mailto:support@thrivecareers.co.uk" className={styles.footerLink}>Contact</a>
+            <a href="mailto:support@thrivecareer.co.uk" className={styles.footerLink}>Contact</a>
           </div>
           <p className={styles.footerCopyright}>
             &copy; {new Date().getFullYear()} Thrive. All rights reserved.

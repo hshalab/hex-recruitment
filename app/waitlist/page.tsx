@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import HoneycombLogo from '@/components/HoneycombLogo'
+import ThriveMark from '@/components/ThriveMark'
 import styles from './page.module.css'
 
 export default function WaitlistPage() {
@@ -72,7 +72,7 @@ function WaitlistContent() {
       <div className={styles.inner}>
         {/* Logo */}
         <Link href="/" className={styles.logo}>
-          <HoneycombLogo size={36} color="#FFE500" />
+          <ThriveMark size={36} />
         </Link>
 
         {/* Full banner */}

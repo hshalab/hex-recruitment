@@ -8,7 +8,7 @@ if (!process.env.RESEND_API_KEY) {
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 const FROM_ADDRESS = process.env.RESEND_DOMAIN_VERIFIED === 'true'
-  ? 'Thrive <noreply@thrivecareers.co.uk>'
+  ? 'Thrive <noreply@thrivecareer.co.uk>'
   : 'Thrive <onboarding@resend.dev>'
 
 export async function sendEmail(

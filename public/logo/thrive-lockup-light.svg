@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 44" role="img" aria-label="Thrive">
+  <rect x="6" y="6" width="32" height="32" rx="9" fill="#FFD23F"/>
+  <path d="M10 12 L34 12 L34 17 L24.5 17 L24.5 36 L19.5 36 L19.5 17 L10 17 Z" fill="#0A1628"/>
+  <text x="52" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif" font-size="22" font-weight="500" fill="#FFFFFF" letter-spacing="-0.4">Thrive</text>
+</svg>

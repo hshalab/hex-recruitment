@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareers.co.uk'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareer.co.uk'
 
 const UK_CITIES = [
   'london', 'manchester', 'birmingham', 'leeds', 'glasgow',
