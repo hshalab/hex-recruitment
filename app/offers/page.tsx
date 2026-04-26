@@ -351,7 +351,7 @@ export default function OffersPage() {
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Candidate</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155' }}>Job</th>
+                  <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', minWidth: 160 }}>Job</th>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', minWidth: 220 }}>Summary</th>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Salary</th>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Start</th>
@@ -368,7 +368,7 @@ export default function OffersPage() {
                   return (
                     <tr
                       key={o.id}
-                      style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}
+                      style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', verticalAlign: 'top' }}
                       onClick={() => router.push(`/my-jobs/${o.jobId}/applications?applicationId=${o.applicationId}`)}
                     >
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>{o.candidateName}</td>
