@@ -113,7 +113,7 @@ export async function runSimulatorTick(): Promise<SimulatorCounts> {
         const { error: insErr } = await admin.from('job_applications').insert({
           candidate_id: pick.user_id,
           job_id: job.id,
-          status: 'applied',
+          status: 'pending',
           cover_letter: coverLetter,
           job_title: job.title,
           company: job.company,
