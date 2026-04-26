@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedLink from '@/components/SignedLink'
 import SignedImage from '@/components/SignedImage'
-import SignatureModal from '@/components/SignatureModal'
 import DeclineOfferModal from '@/components/DeclineOfferModal'
 import { supabase } from '@/lib/supabase'
 import { Interview, Offer } from '@/lib/types'
@@ -46,7 +46,6 @@ export default function MyJobsPage() {
   const [loading, setLoading] = useState(true)
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null)
   const [showConfirm, setShowConfirm] = useState<string | null>(null)
-  const [signatureModalOpen, setSignatureModalOpen] = useState(false)
   const [declineModalOpen, setDeclineModalOpen] = useState(false)
   const [selectedOffer, setSelectedOffer] = useState<{ offer: Offer; application: JobApplication } | null>(null)
   const [candidateName, setCandidateName] = useState('Candidate')
@@ -944,15 +943,13 @@ export default function MyJobsPage() {
                           </div>
                           {application.offer.status === 'pending' && (
                             <div className={styles.offerActions}>
-                              <button
+                              <Link
+                                href={`/applications/${application.id}/review`}
                                 className={styles.acceptOfferBtn}
-                                onClick={() => {
-                                  setSelectedOffer({ offer: application.offer!, application })
-                                  setSignatureModalOpen(true)
-                                }}
+                                style={{ display: 'inline-block', textAlign: 'center', textDecoration: 'none' }}
                               >
-                                Accept Offer
-                              </button>
+                                Review &amp; Counter-sign
+                              </Link>
                               <button
                                 className={styles.declineOfferBtn}
                                 onClick={() => {
@@ -1073,24 +1070,9 @@ export default function MyJobsPage() {
         )}
       </div>
 
-      {/* Signature Modal (Accept Offer) */}
+      {/* Decline modal — Accept flow now lives at /applications/[id]/review */}
       {selectedOffer && (
         <>
-          <SignatureModal
-            isOpen={signatureModalOpen}
-            onClose={() => {
-              setSignatureModalOpen(false)
-              setSelectedOffer(null)
-            }}
-            offerId={selectedOffer.offer.id}
-            applicationId={selectedOffer.application.id}
-            jobId={selectedOffer.application.jobId}
-            jobTitle={selectedOffer.application.jobTitle}
-            company={selectedOffer.application.company}
-            candidateName={candidateName}
-            employerId={selectedOffer.offer.employerId}
-            onSuccess={() => loadApplications()}
-          />
           <DeclineOfferModal
             isOpen={declineModalOpen}
             onClose={() => {
