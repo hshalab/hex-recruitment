@@ -92,11 +92,10 @@ export async function POST(req: NextRequest) {
     if (interviewId) {
       const { data: interview } = await supabaseAdmin
         .from('interviews')
-        .select('application_id, job_id')
+        .select('application_id')
         .eq('id', interviewId)
         .maybeSingle()
       applicationId = interview?.application_id || null
-      var interviewJobId = interview?.job_id || null
 
       await supabaseAdmin
         .from('interviews')
@@ -160,7 +159,7 @@ export async function POST(req: NextRequest) {
         read: false,
         related_id: applicationId,
         related_type: 'application',
-        link: interviewJobId ? `/my-jobs/${interviewJobId}/applications` : '/my-jobs',
+        link: '/interviews',
       },
     ]
     await supabaseAdmin.from('notifications').insert(notifications)
