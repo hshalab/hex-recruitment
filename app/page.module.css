@@ -24,11 +24,13 @@
 }
 
 .heroInner {
+  width: 100%;
   max-width: 800px;
   margin: 0 auto;
   padding: 0 2rem;
   position: relative;
   z-index: 1;
+  box-sizing: border-box;
 }
 
 /* Scroll Reveal Animations */
@@ -52,53 +54,74 @@
 }
 
 .heroTitle {
-  font-size: 2.75rem;
-  font-weight: 900;
+  font-size: 2.25rem; /* 36px */
+  font-weight: 500;
   color: var(--white);
   margin-bottom: 1.25rem;
-  line-height: 1.15;
-  letter-spacing: -0.5px;
+  line-height: 1.1;
+  letter-spacing: -0.6px;
 }
 
 .heroSubtitle {
-  font-size: 1.15rem;
+  font-size: 1rem; /* 16px */
   color: rgba(255, 255, 255, 0.7);
-  max-width: 600px;
-  margin: 0 auto 1.25rem;
-  line-height: 1.7;
+  max-width: 480px;
+  margin: 0 auto 1.75rem;
+  line-height: 1.55;
 }
 
-.spotsCounter {
-  margin: 1.25rem auto 1.5rem;
-  max-width: 420px;
+/* Three proof points sitting between sub-copy and CTAs.
+   auto-fit + min 150px → wraps to 2 cards then 1 on narrower viewports
+   without needing media-query branching. */
+.heroProofGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 720px;
+  margin: 0 auto 1.75rem;
 }
 
-.spotsBar {
-  width: 100%;
-  height: 6px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 999px;
-  overflow: hidden;
-  margin-bottom: 8px;
+.heroProofCard {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* Floor so single-line-body cards keep visual rhythm with the
+     two-line one when stacked on mobile (grid auto-stretches in a
+     row, so this only matters once auto-fit wraps to one column). */
+  min-height: 110px;
 }
 
-.spotsBarFill {
-  height: 100%;
-  background: #FFD700;
-  border-radius: 999px;
-  transition: width 0.8s ease;
-  min-width: 4px;
+.heroProofIcon {
+  color: var(--primary-yellow);
 }
 
-.spotsText {
-  font-size: 0.875rem;
-  color: rgba(255,255,255,0.9);
-  margin: 0;
-}
-
-.spotsFree {
-  color: #FFD700;
+.heroProofHeadline {
+  font-size: 1rem;
   font-weight: 600;
+  color: var(--primary-yellow);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.heroProofBody {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Bottom strip — replaces the 0/600 progress bar. Single muted line of
+   reassurance, not a counter. */
+.heroBottomStrip {
+  margin: 1.25rem auto 0;
+  max-width: 640px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.45;
 }
 
 .heroCtas {
@@ -144,48 +167,6 @@
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-2px);
-}
-
-/* Stats Bar */
-.statsBar {
-  background: var(--white);
-  padding: 1.5rem 0;
-  border-bottom: 1px solid var(--border-gray);
-}
-
-.statsInner {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-}
-
-.statNumber {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--text-dark);
-}
-
-.statLabel {
-  font-size: 0.8rem;
-  color: var(--text-gray);
-  font-weight: 500;
-}
-
-.statDivider {
-  width: 1px;
-  height: 36px;
-  background: var(--border-gray);
 }
 
 /* Section Shared Styles */
@@ -598,6 +579,13 @@
 }
 
 /* Responsive */
+/* Tablet (≤1024px) — headline 32px per spec */
+@media (max-width: 1024px) {
+  .heroTitle {
+    font-size: 2rem; /* 32px */
+  }
+}
+
 @media (max-width: 768px) {
   .hero {
     min-height: auto;
@@ -606,24 +594,7 @@
   }
 
   .heroTitle {
-    font-size: 2.25rem;
-  }
-
-  .heroSubtitle {
-    font-size: 1rem;
-  }
-
-  .statsInner {
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .statDivider {
-    display: none;
-  }
-
-  .stat {
-    min-width: 120px;
+    font-size: 1.75rem; /* 28px */
   }
 
   .stepsGrid {
@@ -650,15 +621,6 @@
 }
 
 @media (max-width: 480px) {
-  .heroTitle {
-    font-size: 1.5rem;
-    line-height: 1.2;
-  }
-
-  .heroSubtitle {
-    font-size: 1rem;
-  }
-
   .heroCtas {
     flex-direction: column;
     align-items: center;

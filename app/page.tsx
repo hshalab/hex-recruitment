@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -8,39 +8,9 @@ import ThriveMark from '@/components/ThriveMark'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
 
-function useCountUp(end: number, duration: number = 2000, startCounting: boolean = false) {
-  const [count, setCount] = useState(0)
-
-  useEffect(() => {
-    if (!startCounting) return
-    let startTime: number | null = null
-    let animationFrame: number
-
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp
-      const progress = Math.min((timestamp - startTime) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setCount(Math.floor(eased * end))
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(animate)
-      }
-    }
-
-    animationFrame = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(animationFrame)
-  }, [end, duration, startCounting])
-
-  return count
-}
-
 export default function Home() {
   const router = useRouter()
-  const statsRef = useRef<HTMLElement>(null)
-  const [statsVisible, setStatsVisible] = useState(false)
   const [authRedirecting, setAuthRedirecting] = useState(false)
-  const [jobsTarget, setJobsTarget] = useState(0)
-  const [candidatesTarget, setCandidatesTarget] = useState(0)
-  const [employerCount, setEmployerCount] = useState<number | null>(null)
 
   // Redirect logged-in users to their dashboard (non-blocking — page renders immediately)
   useEffect(() => {
@@ -54,42 +24,6 @@ export default function Home() {
       // Supabase unreachable — just show landing page
     })
   }, [router])
-
-  // Fetch real counts from DB, use fallbacks if too low or on error
-  useEffect(() => {
-    supabase.from('jobs').select('id', { count: 'exact', head: true }).then(({ count, error }) => {
-      if (!error && count !== null) setJobsTarget(count)
-    })
-
-    supabase.from('candidate_profiles').select('id', { count: 'exact', head: true }).then(({ count, error }) => {
-      if (!error && count !== null) setCandidatesTarget(count)
-    })
-
-    fetch('/api/stats')
-      .then(r => r.json())
-      .then(d => setEmployerCount(d.employerCount ?? 0))
-      .catch(() => {})
-  }, [])
-
-  // Observe stats bar
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setStatsVisible(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.3 }
-    )
-    if (statsRef.current) observer.observe(statsRef.current)
-    return () => observer.disconnect()
-  }, [])
-
-
-  const jobsCount = useCountUp(jobsTarget, 2000, statsVisible)
-  const candidatesCount = useCountUp(candidatesTarget, 2000, statsVisible)
-  const sectorsCount = useCountUp(20, 1500, statsVisible)
 
   // If a logged-in session was found, show minimal UI while redirecting
   if (authRedirecting) {
@@ -109,53 +43,56 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroInner}>
           <h1 className={styles.heroTitle}>
-            FIND GREAT JOBS<br />HIRE GREAT PEOPLE
+            From job ad to signed offer, in one place.
           </h1>
           <p className={styles.heroSubtitle}>
-            Post jobs, search candidates, manage your pipeline, schedule interviews —
-            one platform, all UK sectors. 6 months free for the first 600 employers.
+            A modern UK recruitment platform that handles the whole hire.
           </p>
-          <div className={styles.spotsCounter}>
-            <div className={styles.spotsBar}>
-              <div className={styles.spotsBarFill} style={{ width: `${Math.min((employerCount ?? 0) / 600 * 100, 100)}%` }} />
+
+          <div className={styles.heroProofGrid}>
+            <div className={styles.heroProofCard}>
+              <svg className={styles.heroProofIcon} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <p className={styles.heroProofHeadline}>3 minutes</p>
+              <p className={styles.heroProofBody}>AI-assisted job ad, posted live</p>
             </div>
-            <p className={styles.spotsText}>
-              <span className={styles.spotsFree}>{employerCount ?? '—'} of 600</span> free spots claimed — <span className={styles.spotsFree}>no card needed</span>
-            </p>
+            <div className={styles.heroProofCard}>
+              <svg className={styles.heroProofIcon} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
+              <p className={styles.heroProofHeadline}>Track everything</p>
+              <p className={styles.heroProofBody}>Every applicant, from CV to offer</p>
+            </div>
+            <div className={styles.heroProofCard}>
+              <svg className={styles.heroProofIcon} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <polyline points="9 15 11 17 15 13" />
+              </svg>
+              <p className={styles.heroProofHeadline}>Sign in-platform</p>
+              <p className={styles.heroProofBody}>Offer letters, signed both sides</p>
+            </div>
           </div>
+
           <div className={styles.heroCtas}>
             <Link href="/register/employer-free" className={styles.ctaPrimary}>
-              Claim your free spot →
+              Hire on Thrive →
             </Link>
             <Link href="/jobs" className={styles.ctaSecondary}>
-              Browse jobs (free for candidates)
+              Find a job
             </Link>
           </div>
-        </div>
-      </section>
 
-      {/* Stats Bar */}
-      <section className={`${styles.statsBar}`} ref={statsRef}>
-        <div className={styles.statsInner}>
-          <div className={styles.stat}>
-            <span className={styles.statNumber}>{jobsCount.toLocaleString()}+</span>
-            <span className={styles.statLabel}>Jobs Posted</span>
-          </div>
-          <div className={styles.statDivider} />
-          <div className={styles.stat}>
-            <span className={styles.statNumber}>{candidatesCount.toLocaleString()}+</span>
-            <span className={styles.statLabel}>Candidates</span>
-          </div>
-          <div className={styles.statDivider} />
-          <div className={styles.stat}>
-            <span className={styles.statNumber}>{sectorsCount}</span>
-            <span className={styles.statLabel}>UK Sectors</span>
-          </div>
-          <div className={styles.statDivider} />
-          <div className={styles.stat}>
-            <span className={styles.statNumber}>Free</span>
-            <span className={styles.statLabel}>For Job Seekers</span>
-          </div>
+          <p className={styles.heroBottomStrip}>
+            First 600 employers get 6 months free · no card needed · always free for candidates
+          </p>
         </div>
       </section>
 
@@ -284,7 +221,7 @@ export default function Home() {
           </p>
           <div className={styles.heroCtas}>
             <Link href="/register/employer-free" className={styles.ctaPrimary}>
-              Claim your free spot →
+              Hire on Thrive →
             </Link>
             <Link href="/jobs" className={styles.ctaSecondary}>
               Or browse jobs as a candidate
