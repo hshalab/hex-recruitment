@@ -157,6 +157,7 @@ export default function MyJobsPage() {
               contractType: offer.contract_type,
               additionalTerms: offer.additional_terms,
               offerLetterUrl: offer.offer_letter_url,
+              offerLetterText: offer.offer_letter_text,
               status: offer.status,
               signatureName: offer.signature_name,
               signatureTimestamp: offer.signature_timestamp,
@@ -982,6 +983,21 @@ export default function MyJobsPage() {
                           {application.offer.status === 'declined' && (
                             <p className={styles.offerDeclinedText}>You declined this offer</p>
                           )}
+                          {(application.offer.status === 'withdrawn' || application.offer.status === 'rescinded') && (
+                            <div style={{ marginTop: '0.5rem' }}>
+                              <p style={{ margin: 0, fontSize: '0.85rem', color: '#b91c1c', fontWeight: 600 }}>
+                                {application.offer.status === 'withdrawn'
+                                  ? 'This offer was withdrawn by the employer.'
+                                  : 'This offer was rescinded by the employer.'}
+                              </p>
+                              <Link
+                                href={`/applications/${application.id}/review`}
+                                style={{ fontSize: '0.78rem', color: '#0369a1', textDecoration: 'underline' }}
+                              >
+                                See details
+                              </Link>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -992,7 +1008,15 @@ export default function MyJobsPage() {
                         >
                           View Job
                         </button>
-                        {application.status !== 'rejected' && (
+                        {/* Once an offer has been counter-signed/accepted, withdrawing the
+                            APPLICATION is no longer meaningful — the contract exists. Hide
+                            both the Withdraw button (for accepted) and for terminated offers
+                            (rescinded/withdrawn — application already ended). */}
+                        {application.status !== 'rejected'
+                         && application.offer?.status !== 'accepted'
+                         && application.offer?.status !== 'rescinded'
+                         && application.offer?.status !== 'withdrawn'
+                         && (
                           <>
                             {showConfirm === application.id ? (
                               <div className={styles.confirmGroup}>

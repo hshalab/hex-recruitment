@@ -8,6 +8,8 @@ import SignedLink from '@/components/SignedLink'
 import SignedImage from '@/components/SignedImage'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import MakeOfferModal from '@/components/MakeOfferModal'
+import WithdrawOrRescindModal, { type WithdrawScenario, type WithdrawConfirmPayload } from '@/components/WithdrawOrRescindModal'
+import { isOfferConditional } from '@/lib/offerConditional'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { useJobs } from '@/lib/JobsContext'
@@ -60,6 +62,12 @@ export default function JobApplicationsPage() {
   const [rejectModalApp, setRejectModalApp] = useState<Application | null>(null)
   const [rejectMessage, setRejectMessage] = useState('')
   const [rejectSending, setRejectSending] = useState(false)
+  // Withdraw/rescind state — single modal with three scenarios driven by
+  // current offer status + whether the offer letter contains pre-employment
+  // conditions (RTW/refs/DBS/probation).
+  const [withdrawApp, setWithdrawApp] = useState<Application | null>(null)
+  const [withdrawSubmitting, setWithdrawSubmitting] = useState(false)
+  const [withdrawError, setWithdrawError] = useState<string | null>(null)
 
   useEffect(() => {
     const checkAuthAndLoadData = async () => {
@@ -195,6 +203,7 @@ export default function JobApplicationsPage() {
               contractType: offer.contract_type,
               additionalTerms: offer.additional_terms,
               offerLetterUrl: offer.offer_letter_url,
+              offerLetterText: offer.offer_letter_text,
               status: offer.status,
               signatureName: offer.signature_name,
               signatureTimestamp: offer.signature_timestamp,
@@ -313,6 +322,7 @@ export default function JobApplicationsPage() {
             contractType: offer.contract_type,
             additionalTerms: offer.additional_terms,
             offerLetterUrl: offer.offer_letter_url,
+            offerLetterText: offer.offer_letter_text,
             status: offer.status,
             signatureName: offer.signature_name,
             signatureTimestamp: offer.signature_timestamp,
@@ -711,6 +721,44 @@ export default function JobApplicationsPage() {
       refreshJobs()
     } catch (err) {
       console.error('Error confirming hire:', err)
+    }
+  }
+
+  // Submit a withdraw or rescind to /api/offers/[offerId]/withdraw. The
+  // server enforces audit-first ordering — a failed audit insert aborts the
+  // action and returns an error here, so the offer's candidate-visible state
+  // can never change without a corresponding audit row.
+  const handleConfirmWithdraw = async (payload: WithdrawConfirmPayload) => {
+    if (!withdrawApp?.offer) return
+    setWithdrawSubmitting(true)
+    setWithdrawError(null)
+    try {
+      const session = await getSessionWithRetry()
+      if (!session) throw new Error('Not signed in')
+
+      const res = await fetch(`/api/offers/${withdrawApp.offer.id}/withdraw`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setWithdrawError(body.error || 'Could not complete the action. Try again.')
+        return
+      }
+
+      // Success — close modal, reload list so the card reflects the new state
+      setWithdrawApp(null)
+      loadApplications()
+    } catch (err) {
+      console.error('[withdraw] request failed:', err)
+      setWithdrawError('Could not reach the server. Check your connection and try again.')
+    } finally {
+      setWithdrawSubmitting(false)
     }
   }
 
@@ -1127,6 +1175,17 @@ export default function JobApplicationsPage() {
                           </p>
                         )}
                       </div>
+                      {application.offer.status === 'pending' && (
+                        <div className={styles.interviewActions}>
+                          <button
+                            type="button"
+                            className={styles.barBtn}
+                            onClick={() => setWithdrawApp(application)}
+                          >
+                            Withdraw offer
+                          </button>
+                        </div>
+                      )}
                       {application.offer.status === 'accepted' && application.status !== 'hired' && (
                         <div className={styles.interviewActions}>
                           <button
@@ -1134,6 +1193,13 @@ export default function JobApplicationsPage() {
                             onClick={() => handleConfirmHire(application)}
                           >
                             Confirm Hire
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.barBtn}
+                            onClick={() => setWithdrawApp(application)}
+                          >
+                            Rescind offer
                           </button>
                         </div>
                       )}
@@ -1302,6 +1368,34 @@ export default function JobApplicationsPage() {
           }}
         />
       )}
+
+      {/* Withdraw / rescind modal — scenario picked from offer status +
+          conditional-clause detection on the body text. */}
+      {withdrawApp?.offer && (() => {
+        const status = withdrawApp.offer.status
+        const conditional = isOfferConditional(withdrawApp.offer.offerLetterText ?? null)
+        const scenario: WithdrawScenario =
+          status === 'pending'
+            ? 'pending'
+            : conditional ? 'rescind_conditional' : 'rescind_unconditional'
+        return (
+          <WithdrawOrRescindModal
+            isOpen
+            scenario={scenario}
+            candidateName={withdrawApp.candidateName}
+            jobTitle={withdrawApp.jobTitle}
+            submitting={withdrawSubmitting}
+            errorMessage={withdrawError}
+            onClose={() => {
+              if (withdrawSubmitting) return
+              setWithdrawApp(null)
+              setWithdrawError(null)
+            }}
+            onConfirm={handleConfirmWithdraw}
+          />
+        )
+      })()}
+
       {/* Reject with message modal */}
       {rejectModalApp && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}

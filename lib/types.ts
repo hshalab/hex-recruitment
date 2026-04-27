@@ -39,7 +39,11 @@ export interface Offer {
   contractType: 'full-time' | 'part-time' | 'temporary' | 'fixed-term' | 'zero-hours' | 'casual'
   additionalTerms: string | null
   offerLetterUrl: string | null
-  status: 'pending' | 'accepted' | 'declined' | 'withdrawn'
+  /** Body text persisted at offer creation. Used at withdraw-time for
+   *  conditional-clause detection (rescind modal scenario picker). Null on
+   *  legacy / employer-uploaded offers. */
+  offerLetterText: string | null
+  status: 'pending' | 'accepted' | 'declined' | 'withdrawn' | 'rescinded'
   signatureName: string | null
   signatureTimestamp: string | null
   signatureImageUrl: string | null

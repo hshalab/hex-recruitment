@@ -46,7 +46,7 @@ export default function TermsPage() {
             Back to Home
           </Link>
           <h1 className={styles.heroTitle}>Terms of Service</h1>
-          <p className={styles.heroDate}>Last updated: February 2026</p>
+          <p className={styles.heroDate}>Last updated: April 2026</p>
         </div>
       </section>
 
@@ -204,6 +204,28 @@ export default function TermsPage() {
             <p className={styles.warningText}>
               Spam applications, misuse of the messaging system, or other abusive behaviour will result
               in account suspension.
+            </p>
+
+            <h3 id="offer-rights" className={styles.highlightTitle} style={{ marginTop: '1.5rem' }}>
+              Your rights when an offer changes
+            </h3>
+            <p>
+              Offers move through stages and your legal position depends on which stage:
+            </p>
+            <ul className={styles.list}>
+              <li>
+                <strong>Before you counter-sign:</strong> no contract is formed; an employer may
+                withdraw freely.
+              </li>
+              <li>
+                <strong>After you counter-sign:</strong> a binding employment contract is formed
+                under UK law. The employer may only rescind for a stated pre-employment reason or by
+                mutual agreement.
+              </li>
+            </ul>
+            <p>
+              If you have questions about your specific situation, you may wish to consult an
+              employment solicitor or Citizens Advice. Thrive does not provide legal advice.
             </p>
           </section>
 

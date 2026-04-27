@@ -8,7 +8,7 @@ import SignedLink from '@/components/SignedLink'
 import { supabase } from '@/lib/supabase'
 import ReviewClient from './ReviewClient'
 
-type OfferStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn'
+type OfferStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn' | 'rescinded'
 
 interface OfferRow {
   id: string
@@ -29,7 +29,8 @@ type Phase =
   | { kind: 'pending'; offer: OfferRow; candidateName: string }
   | { kind: 'accepted'; offer: OfferRow }
   | { kind: 'declined'; offer: OfferRow }
-  | { kind: 'withdrawn'; offer: OfferRow }
+  | { kind: 'withdrawn'; offer: OfferRow; summary: string | null }
+  | { kind: 'rescinded'; offer: OfferRow; summary: string | null }
 
 export default function ReviewOfferPage() {
   const params = useParams<{ applicationId: string }>()
@@ -80,11 +81,31 @@ export default function ReviewOfferPage() {
       }
       const candidateName = (session.user.user_metadata as { full_name?: string } | null)?.full_name || 'Candidate'
 
+      // For terminal states (withdrawn / rescinded) fetch the sanitised
+      // candidate-facing summary from the server. Audit log itself isn't
+      // candidate-readable; the endpoint reads it server-side and returns
+      // only the safe fields.
+      let summary: string | null = null
+      if (offer.status === 'withdrawn' || offer.status === 'rescinded') {
+        try {
+          const res = await fetch(`/api/offers/${offer.id}/status-summary`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` },
+          })
+          if (res.ok) {
+            const body = await res.json()
+            summary = body.message || null
+          }
+        } catch (err) {
+          console.error('[review] status-summary fetch failed (rendering fallback):', err)
+        }
+      }
+
       switch (offer.status) {
         case 'pending': setPhase({ kind: 'pending', offer, candidateName }); break
         case 'accepted': setPhase({ kind: 'accepted', offer }); break
         case 'declined': setPhase({ kind: 'declined', offer }); break
-        case 'withdrawn': setPhase({ kind: 'withdrawn', offer }); break
+        case 'withdrawn': setPhase({ kind: 'withdrawn', offer, summary }); break
+        case 'rescinded': setPhase({ kind: 'rescinded', offer, summary }); break
         default: setPhase({ kind: 'not_found' })
       }
     })()
@@ -99,7 +120,8 @@ export default function ReviewOfferPage() {
         {phase.kind === 'loading' && <CenterMessage>Loading offer…</CenterMessage>}
         {phase.kind === 'redirecting' && <CenterMessage>Redirecting to sign in…</CenterMessage>}
         {phase.kind === 'not_found' && <NotFoundCard />}
-        {phase.kind === 'withdrawn' && <WithdrawnCard offer={phase.offer} />}
+        {phase.kind === 'withdrawn' && <WithdrawnCard offer={phase.offer} summary={phase.summary} />}
+        {phase.kind === 'rescinded' && <RescindedCard offer={phase.offer} summary={phase.summary} />}
         {phase.kind === 'declined' && <DeclinedCard offer={phase.offer} />}
         {phase.kind === 'accepted' && <AcceptedCard offer={phase.offer} />}
         {phase.kind === 'pending' && (
@@ -116,7 +138,7 @@ export default function ReviewOfferPage() {
               kind: 'accepted',
               offer: { ...phase.offer, status: 'accepted', offerLetterUrl: newOfferUrl, signatureTimestamp: new Date().toISOString() },
             })}
-            onWithdrawn={() => setPhase({ kind: 'withdrawn', offer: { ...phase.offer, status: 'withdrawn' } })}
+            onWithdrawn={() => setPhase({ kind: 'withdrawn', offer: { ...phase.offer, status: 'withdrawn' }, summary: null })}
           />
         )}
       </main>
@@ -144,13 +166,29 @@ function NotFoundCard() {
   )
 }
 
-function WithdrawnCard({ offer }: { offer: OfferRow }) {
+function WithdrawnCard({ offer, summary }: { offer: OfferRow; summary: string | null }) {
   return (
     <Card>
       <h1 style={titleStyle}>This offer is no longer available</h1>
       <p style={bodyStyle}>
-        The employer has withdrawn the offer for <strong>{offer.jobTitle}</strong> at <strong>{offer.company}</strong>.
-        If this is unexpected, contact them directly.
+        {summary || `The employer has withdrawn the offer for ${offer.jobTitle} at ${offer.company}.`}
+      </p>
+      <BackLink />
+    </Card>
+  )
+}
+
+function RescindedCard({ offer, summary }: { offer: OfferRow; summary: string | null }) {
+  return (
+    <Card>
+      <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        Offer rescinded
+      </p>
+      <h1 style={{ ...titleStyle, marginTop: '0.5rem' }}>
+        {offer.jobTitle} at {offer.company}
+      </h1>
+      <p style={bodyStyle}>
+        {summary || 'This offer was rescinded by the employer after you had counter-signed it.'}
       </p>
       <BackLink />
     </Card>
