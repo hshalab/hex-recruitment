@@ -717,8 +717,10 @@ function JobsPageContent() {
         console.warn('Supabase insert warning:', insertError.message)
       }
 
-      // Increment application_count on the job
-      ;(supabase as any).rpc('increment_application_count', { p_job_id: selectedJob.id }).catch(() => {})
+      // Increment application_count on the job. Supabase v2 rpc() returns a
+      // thenable, not a Promise — using .catch() throws TypeError synchronously
+      // and aborts the rest of this function. Use .then(_, errHandler) instead.
+      ;(supabase as any).rpc('increment_application_count', { p_job_id: selectedJob.id }).then(undefined, () => {})
 
       // 2. Send notification to employer
       if (selectedJob.employerId) {
