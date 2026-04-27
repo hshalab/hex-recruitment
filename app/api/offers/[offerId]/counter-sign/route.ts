@@ -243,8 +243,13 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to update offer status' }, { status: 500 })
   }
 
-  // ── Notify employer (preserves existing behaviour from SignatureModal) ─
-  // Candidate-side confirmation email lands in commit 6.
+  // ── Notifications + emails (best-effort; never block the success response) ─
+  // Both sides get an in-app notification + an email. The candidate's email
+  // points back at /applications/[id]/review (auth-gated, fresh signed URL
+  // generated on demand) rather than embedding a Supabase signed URL that
+  // expires in an hour.
+
+  // Employer in-app notification (preserves prior behaviour from SignatureModal)
   try {
     await supabaseAdmin.from('notifications').insert({
       user_id: offer.employer_id,
@@ -260,7 +265,23 @@ export async function POST(
     console.error('[counter-sign] employer notification insert failed:', err)
   }
 
-  // Best-effort email — don't block the success response on it.
+  // Candidate in-app notification (new in commit 6)
+  try {
+    await supabaseAdmin.from('notifications').insert({
+      user_id: user.id,
+      title: 'Offer Signed',
+      message: `Your signed offer for ${jobTitle} is ready — download your copy.`,
+      type: 'application_status_change',
+      read: false,
+      related_id: offer.application_id,
+      related_type: 'application',
+      link: `/applications/${offer.application_id}/review`,
+    })
+  } catch (err) {
+    console.error('[counter-sign] candidate notification insert failed:', err)
+  }
+
+  // Employer email (preserves prior behaviour)
   fetch(new URL('/api/email/send', req.url), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -269,6 +290,23 @@ export async function POST(
       data: { recipientUserId: offer.employer_id, status: 'offer_accepted', companyName: company, jobTitle, candidateName },
     }),
   }).catch(err => console.error('[counter-sign] employer email failed:', err))
+
+  // Candidate email (new in commit 6) — confirmation with link to download.
+  fetch(new URL('/api/email/send', req.url), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'application_status',
+      data: {
+        recipientUserId: user.id,
+        status: 'offer_counter_signed',
+        companyName: company,
+        jobTitle,
+        candidateName,
+        applicationId: offer.application_id,
+      },
+    }),
+  }).catch(err => console.error('[counter-sign] candidate email failed:', err))
 
   return NextResponse.json({
     ok: true,

@@ -120,7 +120,7 @@ export async function POST(req: Request) {
             html: `<p>${applyVariables(customTpl.body, vars).replace(/\n/g, '</p><p>')}</p>`,
           }
         } else {
-          email = applicationStatusEmail(data.status, data.companyName, data.jobTitle, data.candidateName, data.reason)
+          email = applicationStatusEmail(data.status, data.companyName, data.jobTitle, data.candidateName, data.reason, data.applicationId)
         }
         break
       }

@@ -196,7 +196,9 @@ export async function POST(
     console.error('[withdraw] candidate notification insert failed (non-fatal):', err)
   }
 
-  // Email is best-effort and async — don't block the response.
+  // Email is best-effort and async — don't block the response. applicationId
+  // is threaded so the email template can build a /applications/[id]/review
+  // URL that's auth-gated and generates a fresh signed URL on demand.
   fetch(new URL('/api/email/send', req.url), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -207,6 +209,7 @@ export async function POST(
         status: action === 'withdrawn' ? 'offer_withdrawn' : 'offer_rescinded',
         companyName: company,
         jobTitle,
+        applicationId: offer.application_id,
       },
     }),
   }).catch(err => console.error('[withdraw] candidate email failed (non-fatal):', err))

@@ -43,7 +43,8 @@ export function applicationStatusEmail(
   companyName: string,
   jobTitle: string,
   candidateName?: string,
-  reason?: string
+  reason?: string,
+  applicationId?: string,
 ): { subject: string; html: string } {
   // Employer-facing statuses use different subjects
   if (status === 'offer_accepted') {
@@ -74,6 +75,72 @@ export function applicationStatusEmail(
         You can view the full details and decide on next steps from your dashboard.
       </p>
       ${ctaButton('View Applications', `${BASE_URL}/my-jobs`)}
+    `)
+    return { subject, html }
+  }
+
+  // Candidate-facing: their counter-sign confirmation. Sent to the candidate
+  // after they counter-sign so they have a durable reference + a link back
+  // to the auth-gated review page (which generates a fresh signed URL on
+  // demand — Supabase signed URLs only live an hour, so the email link must
+  // hop through the platform rather than embedding the URL directly).
+  if (status === 'offer_counter_signed') {
+    const subject = `Your signed offer for ${jobTitle} at ${companyName}`
+    const reviewUrl = applicationId
+      ? `${BASE_URL}/applications/${applicationId}/review`
+      : `${BASE_URL}/applications`
+    const html = emailLayout(subject, `
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Your signed offer is ready</h1>
+      <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+        You've counter-signed your offer for <strong>${jobTitle}</strong> at <strong>${companyName}</strong>. Your fully-signed copy is ready to download.
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
+        Keep this copy for your records. You can come back to download it any time from your applications dashboard.
+      </p>
+      ${ctaButton('Download signed copy', reviewUrl)}
+    `)
+    return { subject, html }
+  }
+
+  // Candidate-facing: employer withdrew BEFORE counter-sign. No contract
+  // was formed; this is the low-impact case.
+  if (status === 'offer_withdrawn') {
+    const subject = `Offer withdrawn — ${jobTitle} at ${companyName}`
+    const reviewUrl = applicationId
+      ? `${BASE_URL}/applications/${applicationId}/review`
+      : `${BASE_URL}/applications`
+    const html = emailLayout(subject, `
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Offer withdrawn</h1>
+      <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+        <strong>${companyName}</strong> has withdrawn the offer for <strong>${jobTitle}</strong>.
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
+        As you had not yet counter-signed, no contract was formed. The offer can no longer be accepted.
+      </p>
+      ${ctaButton('View details', reviewUrl)}
+    `)
+    return { subject, html }
+  }
+
+  // Candidate-facing: employer rescinded AFTER counter-sign. Single neutral
+  // template regardless of whether the underlying audit row is
+  // rescinded_for_condition or rescinded_unconditional — the in-app review
+  // page surfaces the sanitised reason via /api/offers/[id]/status-summary.
+  // Email's job is to bring the candidate back to the source of truth.
+  if (status === 'offer_rescinded') {
+    const subject = `Offer rescinded — ${jobTitle} at ${companyName}`
+    const reviewUrl = applicationId
+      ? `${BASE_URL}/applications/${applicationId}/review`
+      : `${BASE_URL}/applications`
+    const html = emailLayout(subject, `
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Offer rescinded</h1>
+      <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+        <strong>${companyName}</strong> has rescinded the offer for <strong>${jobTitle}</strong> that you had previously counter-signed.
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
+        Open your applications dashboard to view the details.
+      </p>
+      ${ctaButton('View details', reviewUrl)}
     `)
     return { subject, html }
   }
