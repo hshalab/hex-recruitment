@@ -929,7 +929,7 @@ export default function EmployerDashboardPage() {
           </button>
           <div className={styles.statPillDivider} />
           <button className={styles.statPill} onClick={() => router.push('/my-jobs?filter=interviewing')}>
-            <span className={styles.statPillNum}>{statusCounts['interviewing'] || 0}</span>
+            <span className={styles.statPillNum}>{statusCounts['interview'] || 0}</span>
             <span className={styles.statPillLabel}>Interviewing</span>
           </button>
           <div className={styles.statPillDivider} />
