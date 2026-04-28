@@ -1,13 +1,13 @@
 # Thrive — Launch Plan
 
 *Goal: Fill 600 free employer slots as fast as possible*
-*Created: 2026-03-21 | Updated: 2026-04-11*
+*Created: 2026-03-21 | Updated: 2026-04-28*
 
 ---
 
-## The Offer — "6 for 600"
+## The Offer — "3 for 600"
 
-**First 600 employers get 6 months free.** Full platform access — post jobs, search candidates, manage pipeline, schedule interviews (Google Calendar sync), pre-screening questions, make offers, analytics. No card required. No catch. After 600 slots are filled, new employers pay from day one (£29.99/mo or £59.99/mo). Candidates are always free.
+**First 600 employers get 3 months free.** Full platform access — post jobs, search candidates, manage pipeline, schedule interviews (Google Calendar sync), pre-screening questions, make offers, analytics. No card required. No catch. After 600 slots are filled, new employers pay from day one (£99/mo, single plan). Candidates are always free.
 
 This is the entire launch engine. Every channel, every message, every tactic leads to one CTA: **"Claim your free spot before they're gone."**
 
@@ -20,7 +20,7 @@ The 600-slot cap creates three powerful forces:
 2. **Zero friction** — no card, no commitment, no risk
 3. **Social proof loop** — as slots fill, the remaining count creates more urgency ("Only 23 spots left")
 
-The 6-month runway means employers will be deeply embedded in the platform before pricing kicks in — job history, candidate data, pipeline state, interview records, calendar integration. Switching cost builds naturally.
+The 3-month runway means employers will be deeply embedded in the platform before pricing kicks in — job history, candidate data, pipeline state, interview records, calendar integration. Switching cost builds naturally.
 
 ---
 
@@ -51,7 +51,7 @@ The 6-month runway means employers will be deeply embedded in the platform befor
 | **Sector associations** | UK Hospitality, British Retail Consortium, Care England, British Institute of Innkeeping, tech meetups, etc. Ask to be featured in member newsletters — "free hiring platform for your members." |
 | **Recruitment podcasts / newsletters** | Pitch founder story to UK business podcasts. "I built a job board because agencies kept charging me £3k per hire." |
 | **Local press** | "Local entrepreneur launches free hiring platform for UK businesses" — easy angle for regional business pages. |
-| **Accountants and business advisors** | They talk to SME owners daily. Give them a referral link — "tell your clients they can hire for free for 6 months." |
+| **Accountants and business advisors** | They talk to SME owners daily. Give them a referral link — "tell your clients they can hire for free for 3 months." |
 
 ---
 
@@ -73,7 +73,7 @@ The 6-month runway means employers will be deeply embedded in the platform befor
 ### Phase 2: Soft Launch (Week 0)
 *Goal: Get first 50 employers signed up from warm network*
 
-- [ ] **Personal outreach**: Email/call 50 business owners you know personally. "I built this for people like you. First 600 get 6 months free."
+- [ ] **Personal outreach**: Email/call 50 business owners you know personally. "I built this for people like you. First 600 get 3 months free."
 - [ ] **Waitlist email**: Send launch announcement to waitlist. "We're live. 600 free spots. Claim yours now."
 - [ ] **LinkedIn launch post**: Founder personal story + offer. Ask connections to share.
 - [ ] **Update counter**: Make it real-time — every sign-up reduces the number
@@ -82,7 +82,7 @@ The 6-month runway means employers will be deeply embedded in the platform befor
 ### Phase 3: Push Launch (Weeks 1-2)
 *Goal: Get to 200 employers*
 
-- [ ] **Facebook group posts**: Share the offer in 15-20 groups (one per day, staggered). Lead with value: "I built a free hiring tool for UK businesses — first 600 get 6 months free."
+- [ ] **Facebook group posts**: Share the offer in 15-20 groups (one per day, staggered). Lead with value: "I built a free hiring tool for UK businesses — first 600 get 3 months free."
 - [ ] **LinkedIn content blitz**: Post daily — mix of tips, behind-the-scenes, customer wins, spots-remaining updates
 - [ ] **Sector association outreach**: Email 10+ trade bodies across all sectors offering free access for their members
 - [ ] **Local Chamber of Commerce**: Present at next networking event
@@ -96,14 +96,14 @@ The 6-month runway means employers will be deeply embedded in the platform befor
 - [ ] **Urgency messaging**: "Only 200 spots left" — update all channels
 - [ ] **Testimonial collection**: Ask first 100 employers for a one-line quote and permission to use their logo
 - [ ] **Case study content**: "How [Company Name] hired 3 staff in their first week on Thrive — for free"
-- [ ] **Retargeting**: If budget allows, run a small LinkedIn/Facebook ad campaign targeting UK business owners. £10-20/day. "6 months free. Only [X] spots left."
+- [ ] **Retargeting**: If budget allows, run a small LinkedIn/Facebook ad campaign targeting UK business owners. £10-20/day. "3 months free. Only [X] spots left."
 - [ ] **PR push**: Send case study + scarcity angle to local press and trade publications
 - [ ] **Email to non-openers**: Re-send launch email with different subject line to those who didn't open
 
 ### Phase 5: Close & Transition (Week 5+)
 *Goal: Fill final spots and transition to paid model*
 
-- [ ] **"Last chance" email**: "Only [X] free spots remaining. After this, it's £29.99/mo."
+- [ ] **"Last chance" email**: "Only [X] free spots remaining. After this, it's £99/mo."
 - [ ] **Final social push**: Countdown posts — "50 spots left", "10 spots left", "Last spot claimed"
 - [ ] **Announce sold out**: "All 600 free spots are taken. Thank you to every early employer." This becomes social proof for paid sign-ups.
 - [ ] **Paid model live**: Update pricing page, remove free offer, enable Stripe billing
@@ -116,7 +116,7 @@ The 6-month runway means employers will be deeply embedded in the platform befor
 ### Waitlist Nurture (Pre-Launch)
 | Day | Subject | Content |
 |-----|---------|---------|
-| 0 | "You're on the list" | Confirm waitlist spot. Explain the offer. "600 free spots, 6 months, no card." |
+| 0 | "You're on the list" | Confirm waitlist spot. Explain the offer. "600 free spots, 3 months, no card." |
 | 3 | "Why we built Thrive" | Founder story. The agency fee frustration. What Thrive does differently. |
 | 7 | "What you'll get for free" | Feature walkthrough: jobs, candidate search, pipeline, interviews, Google Calendar sync, pre-screening, analytics. |
 | 10 | "We launch in [X] days" | Countdown. Remind them to be ready on launch day. Early access link. |
@@ -135,7 +135,7 @@ The 6-month runway means employers will be deeply embedded in the platform befor
 ## Key Messages by Audience
 
 ### For Employers (Primary — drives the 600 slots)
-**Headline:** "6 months free. Only 600 spots."
+**Headline:** "3 months free. Only 600 spots."
 **Supporting:**
 - Post jobs, search candidates, manage your whole hiring pipeline — one platform
 - Google Calendar sync, pre-screening questions, automated status notifications
@@ -214,7 +214,7 @@ Update in real-time from the `employer_subscriptions` table count. When it hits 
 
 Once 600 slots are filled:
 1. **Announce the milestone** publicly — social proof for paid employers
-2. **Switch to paid model** — £29.99/mo Standard or £59.99/mo Professional
+2. **Switch to paid model** — £99/mo (single plan)
 3. **Offer a launch discount** for the next cohort — "Our early supporters got it free. You get 50% off your first 3 months."
 4. **Collect testimonials** from free cohort — use in all paid marketing
 5. **Build case studies** — "How [Company] hired [X] people in [Y] weeks using Thrive"

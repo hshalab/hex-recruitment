@@ -30,3 +30,5 @@ tsconfig.tsbuildinfo
 # Per-machine Claude Code settings (permissions, etc.) — shared repo keeps
 # only .claude/settings.json, which applies to the whole team.
 .claude/settings.local.json
+.claude/credentials.local.json
+.claude/scheduled_tasks.lock
