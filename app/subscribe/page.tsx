@@ -993,7 +993,7 @@ export default function SubscribePage() {
                     Processing your payment details...
                   </>
                 ) : (
-                  'Start Free 14-Day Trial'
+                  'Start Free 3-Month Trial'
                 )}
               </button>
               <div className={styles.securityBadge}>
