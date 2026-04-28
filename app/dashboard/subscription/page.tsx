@@ -224,7 +224,7 @@ export default function SubscriptionPage() {
                 </span>
               </div>
               <div className={styles.planPrice}>
-                <span className={styles.priceAmount}>£{PLAN_PRICE.toFixed(2)}</span>
+                <span className={styles.priceAmount}>£{PLAN_PRICE}</span>
                 <span className={styles.pricePeriod}>/month</span>
               </div>
             </div>
@@ -269,7 +269,7 @@ export default function SubscriptionPage() {
               {isCanceled ? 'Resubscribe to continue' : 'Get started'}
             </h2>
             <p className={styles.pricingSubtitle}>
-              6-month free trial. Cancel anytime.
+              3-month free trial. Cancel anytime.
             </p>
 
             <div className={styles.pricingGrid}>
@@ -277,11 +277,11 @@ export default function SubscriptionPage() {
                 <h3 className={styles.cardTitle}>{PLAN_NAME}</h3>
                 <p className={styles.cardSubtitle}>For Employers</p>
                 <div className={styles.cardPrice}>
-                  <span className={styles.cardPriceAmount}>£{PLAN_PRICE.toFixed(2)}</span>
+                  <span className={styles.cardPriceAmount}>£{PLAN_PRICE}</span>
                   <span className={styles.cardPricePeriod}>/month</span>
                 </div>
                 <ul className={styles.cardFeatures}>
-                  <li><span className={styles.checkMark}>&#10003;</span> 6-month free trial</li>
+                  <li><span className={styles.checkMark}>&#10003;</span> 3-month free trial</li>
                   {PLAN_FEATURES.map((f) => (
                     <li key={f}><span className={styles.checkMark}>&#10003;</span> {f}</li>
                   ))}

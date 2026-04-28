@@ -7,8 +7,8 @@
 export const SUBSCRIPTION_TIERS = {
   standard: {
     name: 'Standard',
-    price: 149.99,
-    trialDays: 182, // 6-month free trial
+    price: 99,
+    trialDays: 91, // 3-month free trial
     maxActiveJobs: Infinity,
     features: [
       'Unlimited job listings',

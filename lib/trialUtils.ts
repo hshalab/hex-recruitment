@@ -1,6 +1,6 @@
 // Trial pricing configuration
-export const TRIAL_DURATION_DAYS = 182 // 6-month free trial
-export const EMPLOYER_SUBSCRIPTION_PRICE = 149.99
+export const TRIAL_DURATION_DAYS = 91 // 3-month free trial
+export const EMPLOYER_SUBSCRIPTION_PRICE = 99
 export const JOB_SEEKER_REACTIVATION_PRICE = 1.00
 export const WARNING_PERIOD_DAYS = 7
 
@@ -131,7 +131,7 @@ export function getPaymentRedirectUrl(userType: UserType): string {
  */
 export function getPriceLabel(userType: UserType): string {
   if (userType === 'employer') {
-    return `£${EMPLOYER_SUBSCRIPTION_PRICE.toFixed(2)}/month`
+    return `£${EMPLOYER_SUBSCRIPTION_PRICE}/month`
   }
   return `£${JOB_SEEKER_REACTIVATION_PRICE.toFixed(2)} one-time`
 }

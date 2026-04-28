@@ -239,7 +239,7 @@ export default function TermsPage() {
             <div className={styles.highlightBox}>
               <h3 className={styles.highlightTitle}>Free Trial</h3>
               <p>
-                New employer accounts receive a <strong>14-day free trial</strong> with full access to
+                New employer accounts receive a <strong>3-month free trial</strong> with full access to
                 all Platform features. No payment details are required during the trial period.
               </p>
             </div>
@@ -247,7 +247,7 @@ export default function TermsPage() {
             <p>After the trial period, employer access requires a paid subscription:</p>
             <ul className={styles.list}>
               <li>
-                <strong>Monthly subscription:</strong> &pound;149.99 per month (GBP, inclusive of VAT)
+                <strong>Monthly subscription:</strong> &pound;99 per month (GBP, inclusive of VAT)
               </li>
               <li>Subscriptions renew automatically each month</li>
               <li>

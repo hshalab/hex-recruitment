@@ -83,11 +83,11 @@ function WaitlistContent() {
         )}
 
         {/* Headline */}
-        <h1 className={styles.headline}>{isFull ? 'Join the waitlist' : 'Get 6 months free — before we launch'}</h1>
+        <h1 className={styles.headline}>{isFull ? 'Join the waitlist' : 'Get 3 months free — before we launch'}</h1>
 
         {/* Subheadline */}
         <p className={styles.subheadline}>
-          Join the waitlist. The first 600 employers on Thrive get 6 months free. No card needed.
+          Join the waitlist. The first 600 employers on Thrive get 3 months free. No card needed.
         </p>
 
         {/* Spots counter */}
@@ -146,7 +146,7 @@ function WaitlistContent() {
               {loading ? 'Claiming...' : 'Claim my free spot →'}
             </button>
             {error && <p className={styles.error}>{error}</p>}
-            <p className={styles.fine}>No credit card. No catch. Free for 6 months.</p>
+            <p className={styles.fine}>No credit card. No catch. Free for 3 months.</p>
           </form>
         ) : (
           <div className={styles.card}>

@@ -63,11 +63,11 @@ export async function GET(req: Request) {
         .eq('is_flagged', true),
     ])
 
-    // Count active + trialing subs — single plan at £149.99/month
+    // Count active + trialing subs — single plan at £99/month
     const allSubs = [...(subsActive.data || []), ...(subsTrialing.data || [])]
     const activeCount = (subsActive.data || []).length
     const trialCount = (subsTrialing.data || []).length
-    const monthlyRevenue = activeCount * 149.99
+    const monthlyRevenue = activeCount * 99
 
     // Build monthly growth data
     const months: string[] = []

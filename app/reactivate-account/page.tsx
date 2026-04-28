@@ -137,7 +137,7 @@ export default function ReactivateAccountPage() {
               <p className={styles.greeting}>Welcome back, {profileName}</p>
             )}
             <p className={styles.subtitle}>
-              Your 14-day free trial ended{expiredDate && ` on ${expiredDate}`}.
+              Your free trial ended{expiredDate && ` on ${expiredDate}`}.
               Make a one-time payment to continue using Thrive.
             </p>
           </div>

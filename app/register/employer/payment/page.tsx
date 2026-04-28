@@ -252,7 +252,7 @@ export default function EmployerPaymentPage() {
         </div>
 
         <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#94a3b8', marginTop: '1.5rem' }}>
-          After your free trial, your plan is £149.99/month. Cancel anytime from your dashboard.
+          After your free trial, your plan is £99/month. Cancel anytime from your dashboard.
         </p>
       </div>
     </main>

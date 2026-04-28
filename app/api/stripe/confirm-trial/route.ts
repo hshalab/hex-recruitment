@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, STRIPE_PRICE_ID } from '@/lib/stripe'
+import { TRIAL_DURATION_DAYS } from '@/lib/trialUtils'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
-
-const TRIAL_DAYS = 182 // 6 months
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Create subscription with trial
-    const trialEnd = Math.floor(Date.now() / 1000) + TRIAL_DAYS * 24 * 60 * 60
+    const trialEnd = Math.floor(Date.now() / 1000) + TRIAL_DURATION_DAYS * 24 * 60 * 60
 
     const subscription = await stripe.subscriptions.create({
       customer: customerId,

@@ -36,7 +36,7 @@ function SuccessContent() {
       </div>
       <h1 className={styles.title}>Welcome to Thrive!</h1>
       <p className={styles.message}>
-        Your subscription is now active. You have a 14-day free trial — no charges until it ends.
+        Your subscription is now active. You have a 3-month free trial — no charges until it ends.
       </p>
       <div className={styles.features}>
         <p className={styles.featureLabel}>You can now:</p>

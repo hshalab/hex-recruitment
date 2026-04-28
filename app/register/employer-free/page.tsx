@@ -146,7 +146,7 @@ export default function RegisterEmployerFreePage() {
           {/* Free banner */}
           <div className={styles.freeBanner}>
             {spotsRemaining === null
-              ? '\ud83c\udf89 Join the first 600 employers on Thrive \u2014 6 months free, no card needed.'
+              ? '\ud83c\udf89 Join the first 600 employers on Thrive \u2014 3 months free, no card needed.'
               : spotsRemaining <= 10
                 ? `\ud83d\udd34 Only ${spotsRemaining} spot${spotsRemaining === 1 ? '' : 's'} left \u2014 claim yours now before they\u2019re gone.`
                 : `\ud83d\udfe1 ${spotsRemaining} of 600 free spots remaining \u2014 no card needed.`}
@@ -166,7 +166,7 @@ export default function RegisterEmployerFreePage() {
           ) : (
           <>
           <h1 className={loginStyles.title}>Start hiring for free</h1>
-          <p className={loginStyles.subtitle}>Join the first 600 employers on Thrive — 6 months free, no card needed.</p>
+          <p className={loginStyles.subtitle}>Join the first 600 employers on Thrive — 3 months free, no card needed.</p>
 
           {error && <div className={loginStyles.error}>{error}</div>}
 

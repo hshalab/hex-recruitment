@@ -110,7 +110,7 @@ function pctChange(current: number, previous: number): number {
   return Math.round(((current - previous) / previous) * 100)
 }
 
-const PLAN_PRICE = 149.99
+const PLAN_PRICE = 99
 
 // ============================================================
 // Section Handlers

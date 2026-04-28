@@ -751,7 +751,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           cvUrl = await uploadFile(formData.cv, `cvs/${authData.user.id}`)
         }
 
-        // Save profile data with 14-day free trial
+        // Save profile data with free trial (duration from TRIAL_DURATION_DAYS in lib/trialUtils)
         const now = new Date()
         const trialExpiresAt = calculateTrialExpiry(now)
 

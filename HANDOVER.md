@@ -4,7 +4,7 @@
 
 ## What is Thrive?
 
-Thrive is a multi-sector UK recruitment platform. Employers post jobs, search candidates, manage a hiring pipeline (applications → shortlist → interview → offer → hire), and candidates browse jobs, apply, and track their applications — all in one platform. Free for candidates, free-launch offer (6 months free for first 600 employers) for employers.
+Thrive is a multi-sector UK recruitment platform. Employers post jobs, search candidates, manage a hiring pipeline (applications → shortlist → interview → offer → hire), and candidates browse jobs, apply, and track their applications — all in one platform. Free for candidates, free-launch offer (3 months free for first 600 employers) for employers.
 
 **Live URL:** https://hex-recruitment.vercel.app
 **Custom domain:** https://thrivecareer.co.uk
@@ -105,7 +105,7 @@ supabase/migrations/          SQL migration files (some applied via MCP, not all
 - **Google OAuth** sign-in for both employers and candidates (separate callback paths)
 - **Email verification** before dashboard access (email/password registrations)
 - **Pre-screening questions** on job listings (up to 5, required/optional)
-- **Employer subscription** — free launch tier (6 months, 600 cap) + Stripe paid tiers
+- **Employer subscription** — free launch tier (3 months, 600 cap) + Stripe paid tiers
 - **Job auto-expiry** — active jobs > 60 days old automatically expire
 - **Interview reminders** — daily cron sends 24h reminders
 - **Admin panel** at /admin (user management, analytics, waitlist)
@@ -167,7 +167,7 @@ CRON_SECRET
 - Email verification on registration
 - Interview reminder cron + job auto-expiry cron
 - Status-change notifications (reviewing, offered, hired)
-- Free launch offer updated to "6 for 600" (6 months free, 600 employer cap)
+- Free launch offer updated to "3 for 600" (3 months free, 600 employer cap)
 - Sector-agnostic copy sweep (removed hospitality-specific defaults)
 
 ### Known issues / next steps

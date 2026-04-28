@@ -7,7 +7,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
-// Single-plan Stripe Price ID. Create the £149.99/month recurring price in
+// Single-plan Stripe Price ID. Create the £99/month recurring price in
 // the Stripe dashboard and set STRIPE_PRICE_ID in .env.local.
 export const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || ''
 

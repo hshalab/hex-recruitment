@@ -80,7 +80,7 @@ export async function GET(req: Request) {
       )
     }
 
-    // Revenue summary — single plan at £149.99/month
+    // Revenue summary — single plan at £99/month
     const { data: allActive } = await db
       .from('employer_subscriptions')
       .select('subscription_status')
@@ -88,7 +88,7 @@ export async function GET(req: Request) {
 
     const totalActive = (allActive || []).filter(s => s.subscription_status === 'active').length
     const totalTrialing = (allActive || []).filter(s => s.subscription_status === 'trialing').length
-    const PLAN_PRICE = 149.99
+    const PLAN_PRICE = 99
 
     return NextResponse.json({
       subscriptions,

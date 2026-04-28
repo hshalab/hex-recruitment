@@ -7,7 +7,7 @@
 **What it does:** Thrive is a two-sided recruitment marketplace. Job seekers create profiles, upload CVs, browse jobs, and apply for free. Employers subscribe to post jobs, search candidate profiles, manage applications through a pipeline, schedule interviews (with Google Calendar sync), add pre-screening questions, make offers, and track hiring analytics — all in one platform.
 **Product category:** Online recruitment platform / Job board
 **Product type:** SaaS marketplace (two-sided)
-**Business model:** Freemium. Job seekers: free forever. Employers: 6 months free for the first 600 (no card required), then £29.99/mo (Standard, 3 jobs) or £59.99/mo (Professional, unlimited jobs + analytics + priority access). Payments via Stripe, monthly billing, 7-day cancellation notice.
+**Business model:** Freemium. Job seekers: free forever. Employers: 3 months free for the first 600 (no card required), then £99/mo (Standard — single plan with unlimited jobs, candidate search, messaging, pipeline, interview scheduling, and analytics). Payments via Stripe, monthly billing, 7-day cancellation notice.
 **Domain:** thrivecareer.co.uk
 
 ## Target Audience
@@ -53,7 +53,7 @@
 - Pre-interview interest check — candidates confirm interest before scheduling
 - Sign in with Google (alongside email/password)
 - Free for candidates (drives candidate supply)
-- £29.99/mo flat subscription vs per-listing or per-hire fees
+- £99/mo flat subscription vs per-listing or per-hire fees
 - UK-focused with all 20 sectors covered (not just tech or one sector)
 - Built-in messaging, interview scheduling with conflict detection, calendar sync, and offer management
 **How we do it differently:** One subscription gives employers the full recruitment toolkit — no add-on fees for candidate search, messaging, or analytics. Candidates never pay, so the talent pool grows organically.
@@ -65,15 +65,15 @@
 |-----------|----------|
 | "I already use Indeed/Reed" | Thrive gives you candidate search, pipeline management, interview scheduling with Google Calendar sync, pre-screening questions, and analytics that Indeed doesn't — for a flat monthly fee instead of per-listing costs. |
 | "Will I get enough candidates?" | Candidates registered across 20 sectors and growing. Free access for job seekers means the pool grows faster than paid boards. |
-| "I'm not sure it's worth paying for" | The first 600 employers get 6 months completely free — no card, no catch. Use it, see the results, then decide. Spots are limited. |
+| "I'm not sure it's worth paying for" | The first 600 employers get 3 months completely free — no card, no catch. Use it, see the results, then decide. Spots are limited. |
 
 **Anti-persona:** Enterprise companies (500+ employees) who need ATS integrations, bulk hiring workflows, or global coverage. Thrive is built for SMEs and mid-size companies making 1-50 hires at a time.
 
 ## Switching Dynamics
 **Push:** Frustrated with high agency fees. Tired of irrelevant applications on mass boards. No visibility into what's working.
-**Pull:** 6 months free for first 600 employers — zero risk. All-in-one platform. UK sector coverage. No agency fees ever.
+**Pull:** 3 months free for first 600 employers — zero risk. All-in-one platform. UK sector coverage. No agency fees ever.
 **Habit:** "We've always used Indeed" / "Our agency knows our business" / "Posting on Facebook works well enough"
-**Anxiety:** "Will candidates actually be on a newer platform?" / "What happens after the 6 months?" / "Is it secure?"
+**Anxiety:** "Will candidates actually be on a newer platform?" / "What happens after the 3 months?" / "Is it secure?"
 
 ## Customer Language
 **How they describe the problem:**
@@ -99,7 +99,7 @@
 ## Proof Points
 **Metrics:**
 - 20 UK sectors covered *(live — platform supports all 20)*
-- 6 months free for first 600 employers *(live launch offer — "6 for 600")*
+- 3 months free for first 600 employers *(live launch offer — "3 for 600")*
 - Profiles created in under 2 minutes *(live)*
 - Google Calendar two-way sync *(live)*
 - Pre-screening questions on job listings *(live)*
@@ -109,14 +109,14 @@
 **Value themes:**
 | Theme | Proof |
 |-------|-------|
-| Affordable | £29.99/mo flat fee vs 15-25% agency fees |
+| Affordable | £99/mo flat fee vs 15-25% agency fees |
 | All-in-one | Jobs + candidates + pipeline + interviews + calendar sync + offers + analytics |
 | Fast | Profile in 2 min, trial in seconds, no card required |
 | Free for candidates | Drives organic talent pool growth |
 | UK-focused | All 20 sectors, UK cities, GBP pricing, GDPR compliant |
 
 ## Goals
-**Business goal:** Fill 600 free employer slots as fast as possible. First 600 employers get 6 months free access (full platform, no card required). After the 600 cap is reached, new employers pay from signup. Candidates are always free.
-**Conversion action:** Employer signs up for free launch offer → posts first job → becomes an active user during the 6-month window → converts to paid when the free period ends.
+**Business goal:** Fill 600 free employer slots as fast as possible. First 600 employers get 3 months free access (full platform, no card required). After the 600 cap is reached, new employers pay from signup. Candidates are always free.
+**Conversion action:** Employer signs up for free launch offer → posts first job → becomes an active user during the 3-month window → converts to paid when the free period ends.
 **Primary metric:** Speed to 600 employer sign-ups. Secondary: candidate registrations, jobs posted per employer, applications per job.
-**Launch model:** Free launch offer ("6 for 600") creates urgency (limited to 600 slots) and removes all friction for early adopters. The 6-month runway gives employers time to see value before paying, building retention and word-of-mouth.
+**Launch model:** Free launch offer ("3 for 600") creates urgency (limited to 600 slots) and removes all friction for early adopters. The 3-month runway gives employers time to see value before paying, building retention and word-of-mouth.

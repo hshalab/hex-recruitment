@@ -138,7 +138,7 @@ export default function RenewSubscriptionPage() {
               <p className={styles.greeting}>{companyName}</p>
             )}
             <p className={styles.subtitle}>
-              Your 14-day free trial ended{expiredDate && ` on ${expiredDate}`}.
+              Your free trial ended{expiredDate && ` on ${expiredDate}`}.
               Subscribe to keep accessing qualified candidates.
             </p>
           </div>

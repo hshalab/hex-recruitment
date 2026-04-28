@@ -94,7 +94,7 @@ export default function SubscribePage() {
   const [companyAddressFound, setCompanyAddressFound] = useState(false)
   const [billingAddressFound, setBillingAddressFound] = useState(false)
 
-  // 6-month free trial (duration comes from TRIAL_DURATION_DAYS in lib/trialUtils)
+  // 3-month free trial (duration comes from TRIAL_DURATION_DAYS in lib/trialUtils)
   const trialEndDate = calculateTrialExpiry(new Date())
   const formattedTrialEnd = trialEndDate.toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -377,8 +377,8 @@ export default function SubscribePage() {
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>Post Jobs - Free for 6 Months</h1>
-          <p className={styles.heroSubtitle}>Then £149.99/month. Cancel anytime.</p>
+          <h1 className={styles.heroTitle}>Post Jobs - Free for 3 Months</h1>
+          <p className={styles.heroSubtitle}>Then £99/month. Cancel anytime.</p>
           <div className={styles.benefitsList}>
             <div className={styles.benefitItem}>✓ Post unlimited job vacancies</div>
             <div className={styles.benefitItem}>✓ Access qualified candidate profiles</div>
@@ -713,7 +713,7 @@ export default function SubscribePage() {
                 Card Payment Details
               </h2>
 
-              <p className={styles.cardNote}>Card required, but you won't be charged for 6 months</p>
+              <p className={styles.cardNote}>Card required, but you won't be charged for 3 months</p>
 
               <div className={styles.cardIcons}>
                 <span className={`${styles.cardIcon} ${cardType === 'visa' ? styles.active : ''}`} title="Visa">
@@ -952,7 +952,7 @@ export default function SubscribePage() {
                     onChange={handleChange}
                   />
                   <span className={styles.checkmark}></span>
-                  I understand my card will be charged £149.99/month starting {formattedTrialEnd} *
+                  I understand my card will be charged £99/month starting {formattedTrialEnd} *
                 </label>
 
                 <label className={`${styles.checkboxLabel} ${errors.agreeRecurring ? styles.checkboxError : ''}`}>
@@ -972,9 +972,9 @@ export default function SubscribePage() {
             <div className={styles.trialTermsBox}>
               <h3 className={styles.trialTermsTitle}>FREE TRIAL TERMS</h3>
               <ul className={styles.trialTermsList}>
-                <li>Your 6-month free trial starts today</li>
+                <li>Your 3-month free trial starts today</li>
                 <li>No charge until <strong>{formattedTrialEnd}</strong></li>
-                <li>Then £149.99/month (inc. VAT where applicable)</li>
+                <li>Then £99/month (inc. VAT where applicable)</li>
                 <li>Cancel during trial with no charges</li>
                 <li>Cancel anytime after trial</li>
               </ul>

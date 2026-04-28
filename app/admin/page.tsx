@@ -128,7 +128,7 @@ export default function AdminOverviewPage() {
         <div className={styles.revenueBreakdown}>
           <div className={styles.revenueItem}>
             <span className={styles.revLabel}>Active ({stats.subscriptions.active})</span>
-            <span>£{(stats.subscriptions.active * 149.99).toFixed(2)}</span>
+            <span>£{(stats.subscriptions.active * 99).toFixed(2)}</span>
           </div>
           <div className={styles.revenueItem}>
             <span className={styles.revLabel}>Trials</span>
