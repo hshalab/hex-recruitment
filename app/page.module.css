@@ -518,6 +518,17 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* On mobile, body reserves 80px at the bottom for the floating
+   feedback widget. Bleed the dark footer through that gap so the
+   landing page doesn't end on a stray strip of white below the
+   footer when scrolled to the very bottom. */
+@media (max-width: 768px) {
+  .footer {
+    margin-bottom: -80px;
+    padding-bottom: calc(2.5rem + 80px);
+  }
+}
+
 .footerInner {
   max-width: 1100px;
   margin: 0 auto;

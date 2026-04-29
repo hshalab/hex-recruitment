@@ -266,7 +266,11 @@
 /* Month grid */
 .monthGrid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  /* minmax(0, 1fr) prevents an event pill (white-space: nowrap)
+     from forcing its column to grow past the equal-width track and
+     stretching the row visually. */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: minmax(96px, auto);
   gap: 1px;
   background: #e5e7eb;
   border: 1px solid #e5e7eb;
@@ -282,10 +286,12 @@
   text-transform: uppercase;
   font-weight: 600;
   letter-spacing: 0.03em;
+  min-width: 0;
 }
 .monthDay {
   background: white;
   min-height: 96px;
+  min-width: 0;
   padding: 0.3rem 0.4rem;
   display: flex;
   flex-direction: column;
@@ -293,6 +299,7 @@
   cursor: pointer;
   transition: background 0.15s;
   position: relative;
+  overflow: hidden;
 }
 .monthDay:hover { background: #f9fafb; }
 .monthDayOther { background: #fafbfc; color: #9ca3af; }
@@ -312,6 +319,7 @@
   text-overflow: ellipsis;
   background: #0f172a;
   color: #FFE500;
+  max-width: 100%;
 }
 .monthEventPillScheduled { background: #e0f2fe; color: #0369a1; }
 .monthEventPillCancelled { background: #f3f4f6; color: #9ca3af; text-decoration: line-through; }
@@ -319,6 +327,30 @@
   font-size: 0.65rem;
   color: #6b7280;
   margin-top: 2px;
+}
+
+/* Mobile: columns are ~46px wide, so showing "1pm Name" causes
+   ugly mid-word truncation. Render a slim coloured strip instead —
+   tapping the day still opens it. */
+@media (max-width: 600px) {
+  .monthDay {
+    padding: 0.25rem 0.2rem;
+    gap: 0.15rem;
+  }
+  .monthDayNum {
+    font-size: 0.8rem;
+  }
+  .monthEventPill {
+    font-size: 0;
+    line-height: 0;
+    height: 4px;
+    padding: 0;
+    border-radius: 2px;
+  }
+  .monthMore {
+    font-size: 0.6rem;
+    margin-top: 1px;
+  }
 }
 
 /* Sidebar */
