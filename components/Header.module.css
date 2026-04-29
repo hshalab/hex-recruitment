@@ -687,6 +687,13 @@
     font-size: 1.375rem;
   }
 
+  /* Tighten the gap between mark and wordmark on mobile so "Thrive"
+     can sit alongside the T without crowding the right-hand auth
+     buttons. */
+  .logo {
+    gap: 0.5rem;
+  }
+
   .searchBar {
     display: none;
   }
@@ -735,9 +742,9 @@
   }
 }
 
-@media (max-width: 480px) {
-  /* Mark-only on the smallest screens — wordmark gets reclaimed for the
-     login buttons / nav. The mark itself is the brand anchor. */
+/* Wordmark stays visible down to ~360px (modern phones). Below that
+   the auth buttons crowd it, so fall back to mark-only. */
+@media (max-width: 360px) {
   .logoText {
     display: none;
   }
