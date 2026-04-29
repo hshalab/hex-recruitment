@@ -88,20 +88,6 @@
 }
 .welcomeActionSecondary:hover { background: rgba(255, 255, 255, 0.25); }
 
-/* ── Onboarding Banner ──────────────────────────────── */
-.onboardingBanner { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; gap: 1rem; }
-.onboardingLeft { flex: 1; }
-.onboardingTitle { font-size: 1rem; font-weight: 700; color: #FFE500; margin: 0 0 0.25rem; }
-.onboardingSubtitle { font-size: 0.82rem; color: rgba(255,255,255,0.6); margin: 0 0 0.75rem; }
-.onboardingItems { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.onboardingItem { font-size: 0.8rem; color: white; background: rgba(255,255,255,0.1); padding: 0.25rem 0.75rem; border-radius: 99px; text-decoration: none; display: flex; align-items: center; gap: 0.35rem; }
-.onboardingItem:hover { background: rgba(255,255,255,0.18); }
-.onboardingItemDot { width: 6px; height: 6px; border-radius: 50%; background: #FFE500; flex-shrink: 0; }
-.onboardingMore { font-size: 0.8rem; color: rgba(255,255,255,0.4); padding: 0.25rem 0; }
-.onboardingProgress { flex-shrink: 0; text-align: center; }
-.onboardingPct { display: block; font-size: 2rem; font-weight: 800; color: #FFE500; line-height: 1; }
-.onboardingPctLabel { font-size: 0.72rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; }
-
 /* ── Grid layout ─────────────────────────────────────── */
 .grid {
   display: grid;
@@ -1095,11 +1081,6 @@
   .avatarPlaceholder {
     width: 48px;
     height: 48px;
-  }
-
-  .onboardingBanner {
-    padding: 1rem;
-    gap: 0.5rem;
   }
 
   .dashboardWrap {

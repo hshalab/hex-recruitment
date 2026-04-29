@@ -69,7 +69,8 @@
   display: flex;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  background: #eff6ff;
+  background: var(--ds-bg-subtle);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   margin-bottom: 1rem;
   align-items: flex-start;
@@ -83,18 +84,18 @@
 
 .infoBox strong {
   font-size: 0.9rem;
-  color: #1e40af;
+  color: var(--ds-text-primary);
 }
 
 .infoBoxText {
   font-size: 0.85rem;
-  color: #3b5998;
+  color: var(--ds-text-muted);
   margin: 0.25rem 0 0 0;
   line-height: 1.5;
 }
 
 .infoLink {
-  color: #1e40af;
+  color: var(--ds-text-primary);
   font-weight: 600;
   text-decoration: underline;
 }
@@ -261,22 +262,23 @@
 
 .saveBtn {
   padding: 0.75rem 1.5rem;
-  background: #3b82f6;
-  color: white;
+  background: var(--ds-yellow);
+  color: var(--ds-text-primary);
   border: none;
   border-radius: 8px;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .saveBtn:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--ds-yellow-hover);
 }
 
 .saveBtn:disabled {
-  background: #93c5fd;
+  background: var(--ds-yellow);
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
