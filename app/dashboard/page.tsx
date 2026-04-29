@@ -705,20 +705,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* ── Matching fields nudge ─────────────────────── */}
-            {completionPct >= 50 && candidate && (
-              !candidate.jobSector || !(candidate.preferredJobTypes?.length) || !(candidate.workLocationPreferences?.length) || !(candidate.salaryMin || candidate.salaryMax || candidate.desiredSalary)
-            ) && (
-              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>💡</span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: '0.875rem', color: '#92400e' }}>Improve your job matches</p>
-                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#a16207' }}>Add your sector, salary range, job type and work style to get better recommendations.</p>
-                </div>
-                <Link href="/profile" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#b45309', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>Update →</Link>
-              </div>
-            )}
-
             {/* ── 3. APPLICATION TRACKER ───────────────────── */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>

@@ -77,6 +77,20 @@ function csvEscape(value: string): string {
   return value
 }
 
+// Salary strings come from the DB as free text and are inconsistent — some
+// are pre-formatted ("£105,000 per annum"), others are raw ("60000 per annum").
+// Normalise display only; storage is untouched. Already-formatted rows pass
+// through. Non-numeric labels ("Competitive", "DOE") fall through unchanged.
+function formatOfferSalary(raw: string): string {
+  if (!raw) return '—'
+  if (raw.includes('£')) return raw
+  const m = raw.match(/^(\d[\d,]*)(.*)$/)
+  if (!m) return raw
+  const n = parseInt(m[1].replace(/,/g, ''), 10)
+  if (Number.isNaN(n)) return raw
+  return `£${n.toLocaleString('en-GB')}${m[2]}`
+}
+
 export default function OffersPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -310,7 +324,7 @@ export default function OffersPage() {
               <option key={t} value={t}>{tagStyle(t).label}</option>
             ))}
           </select>
-          <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', flex: '1 1 240px' }}>
+          <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', flex: '1 1 240px', flexWrap: 'wrap', minWidth: 0 }}>
             <label style={{ fontSize: '0.75rem', color: '#64748b' }}>Sent:</label>
             <input
               type="date"
@@ -352,7 +366,7 @@ export default function OffersPage() {
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                   <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Candidate</th>
                   <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', minWidth: 160 }}>Job</th>
-                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', minWidth: 220 }}>Summary</th>
+                  <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', minWidth: 180 }}>Summary</th>
                   <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Salary</th>
                   <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Start</th>
                   <th style={{ textAlign: 'left', padding: '0.625rem 0.75rem', fontWeight: 600, color: '#334155' }}>Status</th>
@@ -380,7 +394,7 @@ export default function OffersPage() {
                           <span style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>—</span>
                         )}
                       </td>
-                      <td style={{ padding: '0.625rem 0.75rem', color: '#475569', whiteSpace: 'nowrap' }}>{o.salary}</td>
+                      <td style={{ padding: '0.625rem 0.75rem', color: '#475569', whiteSpace: 'nowrap' }}>{formatOfferSalary(o.salary)}</td>
                       <td style={{ padding: '0.625rem 0.75rem', color: '#475569', whiteSpace: 'nowrap' }}>{fmtDate(o.startDate)}</td>
                       <td style={{ padding: '0.625rem 0.75rem', whiteSpace: 'nowrap' }}>
                         <span style={{ display: 'inline-block', padding: '0.15rem 0.55rem', borderRadius: 99, background: badge.bg, color: badge.fg, fontSize: '0.72rem', fontWeight: 600 }}>

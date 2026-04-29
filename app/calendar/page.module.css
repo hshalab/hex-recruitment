@@ -135,7 +135,8 @@
   gap: 1.5rem;
 }
 @media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: 1fr; min-width: 0; }
+  .layout > * { min-width: 0; max-width: 100%; }
   .page { padding: 1rem; }
 }
 
