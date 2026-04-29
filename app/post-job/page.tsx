@@ -582,15 +582,28 @@ function PostJobContent() {
         }
       }
 
-      // Trigger job alert matching for new jobs (non-blocking)
+      // Trigger job alert matching for new jobs (non-blocking).
+      // The endpoint requires a Bearer token — either CRON_SECRET or a
+      // user session — so without one we silently 401 and alerts never
+      // fire. Resolve the session here and pass its access token.
       if (!isEditMode && newJob?.id) {
-        fetch('/api/job-alerts/match', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobId: newJob.id }),
-        }).catch(err => {
-          console.error('[PostJob] Alert matching failed (non-blocking):', err)
-        })
+        ;(async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+            if (!token) return
+            await fetch('/api/job-alerts/match', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ jobId: newJob.id }),
+            })
+          } catch (err) {
+            console.error('[PostJob] Alert matching failed (non-blocking):', err)
+          }
+        })()
       }
 
       setSuccess(true)
