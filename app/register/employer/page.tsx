@@ -10,10 +10,12 @@ import PostcodeLookup, { type AddressData } from '@/components/PostcodeLookup'
 import styles from '../../login/page.module.css'
 import registerStyles from './page.module.css'
 
+// Launch phase has a single £99/month plan. The page redirects to
+// /register/employer-free immediately (see the useEffect below), so this
+// dictionary only matters if the redirect is ever removed — keep it
+// truthful so the form below doesn't render a stale price if that happens.
 const planDetails: Record<string, { name: string; price: number }> = {
-  starter: { name: 'Starter', price: 49 },
-  professional: { name: 'Professional', price: 149 },
-  enterprise: { name: 'Enterprise', price: 299 },
+  standard: { name: 'Standard', price: 99 },
 }
 
 function RegisterEmployerPageContent() {

@@ -294,7 +294,7 @@ export default function SubscriptionPage() {
                   {checkoutLoading ? (
                     <><span className={styles.btnSpinner} /> Processing...</>
                   ) : (
-                    'Start Free 6-Month Trial'
+                    'Start Free 3-Month Trial'
                   )}
                 </button>
               </div>
