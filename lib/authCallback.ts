@@ -34,6 +34,10 @@ export async function handleAuthCallback(
 
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
+  const tokenHash = url.searchParams.get('token_hash')
+  const otpType = url.searchParams.get('type') as
+    | 'signup' | 'magiclink' | 'recovery' | 'invite' | 'email' | 'email_change' | null
+  const nextParam = url.searchParams.get('next')
   const errorParam = url.searchParams.get('error')
   const errorDesc = url.searchParams.get('error_description')
 
@@ -43,6 +47,9 @@ export async function handleAuthCallback(
   console.log('[auth/callback] GET', {
     origin,
     hasCode: Boolean(code),
+    hasTokenHash: Boolean(tokenHash),
+    otpType,
+    nextParam,
     roleParam,
     roleSource: hardcodedRole ? 'path' : 'query',
     errorParam,
@@ -51,7 +58,7 @@ export async function handleAuthCallback(
   if (errorParam) {
     return NextResponse.redirect(`${origin}/login?auth_error=${encodeURIComponent(errorDesc || errorParam)}`)
   }
-  if (!code) {
+  if (!code && !tokenHash) {
     return NextResponse.redirect(`${origin}/login?auth_error=missing_code`)
   }
 
@@ -70,13 +77,33 @@ export async function handleAuthCallback(
       },
     }
   )
-  console.log('[auth/callback] step:exchange')
-  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-  if (exchangeError) {
-    console.error('[auth/callback] exchangeCodeForSession FAILED', exchangeError.message)
-    return NextResponse.redirect(`${origin}/login?auth_error=${encodeURIComponent(exchangeError.message)}`)
+  if (tokenHash && otpType) {
+    // Email-link OTP flow: link in the confirmation email points directly
+    // at this route with a token_hash. verifyOtp consumes the hash and
+    // writes session cookies onto `response` via the SSR cookie adapter.
+    console.log('[auth/callback] step:verifyOtp')
+    const { error: otpError } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: otpType,
+    })
+    if (otpError) {
+      console.error('[auth/callback] verifyOtp FAILED', otpError.message)
+      return NextResponse.redirect(
+        `${origin}/login?error=verification_failed&reason=${encodeURIComponent(otpError.message)}`
+      )
+    }
+    console.log('[auth/callback] step:verifyOtp OK')
+  } else {
+    // Legacy/PKCE flow: emails sent before the template change land here
+    // via Supabase /auth/v1/verify → 303 → /auth/confirm?code=...
+    console.log('[auth/callback] step:exchange')
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code!)
+    if (exchangeError) {
+      console.error('[auth/callback] exchangeCodeForSession FAILED', exchangeError.message)
+      return NextResponse.redirect(`${origin}/login?auth_error=${encodeURIComponent(exchangeError.message)}`)
+    }
+    console.log('[auth/callback] step:exchange OK')
   }
-  console.log('[auth/callback] step:exchange OK')
 
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) {
@@ -186,8 +213,13 @@ export async function handleAuthCallback(
   // Route decision: employers need a Stripe subscription to reach the
   // dashboard. New employers always go to payment; returning employers go
   // to payment only if they haven't completed card setup.
+  // Honor ?next= only for returning users with an existing role — for
+  // brand-new employers we keep the payment-gate route so they can't
+  // skip Stripe setup via a crafted next= value. Same-origin paths only.
   let destination = '/dashboard'
-  if (role === 'employer') {
+  if (existingRole && nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')) {
+    destination = nextParam
+  } else if (role === 'employer') {
     if (!existingRole) {
       destination = '/register/employer/payment'
     } else {
