@@ -313,8 +313,8 @@ export default function EmployerSidebar() {
           ))}
           <button
             className={`${styles.item} ${styles.mobileOnly}`}
-            data-tooltip="Thrive Assistant"
-            title="Thrive Assistant"
+            data-tooltip="Ask Thrive"
+            title="Ask Thrive"
             onClick={() => {
               setMobileOpen(false)
               window.dispatchEvent(new CustomEvent('open-thrive-chatbot'))
@@ -323,7 +323,7 @@ export default function EmployerSidebar() {
             <span className={styles.icon}>
               <Sprout size={20} color="#FFE500" strokeWidth={2} />
             </span>
-            <span className={styles.label}>Thrive Assistant</span>
+            <span className={styles.label}>Ask Thrive</span>
           </button>
         </nav>
 

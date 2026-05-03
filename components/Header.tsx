@@ -354,7 +354,7 @@ export default function Header() {
             }}
           >
             <Sprout className={styles.dropdownIcon} size={20} color="#FFE500" strokeWidth={2} />
-            Thrive Assistant
+            Ask Thrive
           </button>
           <div className={styles.dropdownDivider} />
           <button

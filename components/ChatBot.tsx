@@ -305,7 +305,7 @@ export default function ChatBot() {
     if (isOpen && messages.length === 0) {
       const welcomeMessage: Message = {
         id: 'welcome',
-        content: "Hi! I'm your Thrive Assistant. How can I help you today?",
+        content: "Hi! I'm here to help. Ask me about pricing, posting jobs, scheduling interviews, or anything else.",
         sender: 'bot',
         timestamp: new Date()
       }
@@ -392,7 +392,7 @@ export default function ChatBot() {
   const handleNewConversation = () => {
     setMessages([{
       id: 'welcome-new',
-      content: "Hi! I'm your Thrive Assistant. How can I help you today?",
+      content: "Hi! I'm here to help. Ask me about pricing, posting jobs, scheduling interviews, or anything else.",
       sender: 'bot',
       timestamp: new Date()
     }])
@@ -410,7 +410,7 @@ export default function ChatBot() {
       <button
         className={`${styles.chatButton} ${isOpen ? styles.hidden : ''}`}
         onClick={handleOpenChat}
-        aria-label="Open chat assistant"
+        aria-label="Open Ask Thrive chat"
       >
         <span className={styles.chatIcon}><ThriveIcon size={24} /></span>
         {showBadge && <span className={styles.chatBadge}>Need help?</span>}
@@ -420,13 +420,13 @@ export default function ChatBot() {
       <div
         className={`${styles.chatWindow} ${isOpen ? styles.open : ''}`}
         role="dialog"
-        aria-label="Chat with Thrive Assistant"
+        aria-label="Ask Thrive — help chat"
       >
         {/* Header */}
         <div className={styles.chatHeader}>
           <div className={styles.headerInfo}>
             <span className={styles.headerIcon}><ThriveIcon size={18} /></span>
-            <h3 className={styles.headerTitle}>THRIVE Chat</h3>
+            <h3 className={styles.headerTitle}>Ask Thrive</h3>
           </div>
           <div className={styles.headerActions}>
             <button
@@ -542,7 +542,7 @@ export default function ChatBot() {
 
         {/* Footer */}
         <div className={styles.chatFooter}>
-          Powered by Thrive AI
+          Built-in help
         </div>
       </div>
     </>
