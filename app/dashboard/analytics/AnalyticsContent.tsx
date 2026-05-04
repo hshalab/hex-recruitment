@@ -96,7 +96,6 @@ export default function AnalyticsContent() {
   const [jobViews, setJobViews] = useState<any[]>([])
   const [clickEvents, setClickEvents] = useState<any[]>([])
   const [impressions, setImpressions] = useState<any[]>([])
-  const [recentNotifications, setRecentNotifications] = useState<any[]>([])
   const [candidateProfiles, setCandidateProfiles] = useState<any[]>([])
 
   // Platform-wide data for benchmarking
@@ -210,7 +209,7 @@ export default function AnalyticsContent() {
 
       if (jobIds.length > 0) {
         // Step 2: Fetch related data in parallel
-        const [appsResult, interviewsResult, offersResult, notifsResult] = await Promise.all([
+        const [appsResult, interviewsResult, offersResult] = await Promise.all([
           supabase
             .from('job_applications')
             .select('id, job_id, candidate_id, status, applied_at, viewed_at, shortlisted_at, status_updated_at, created_at')
@@ -226,18 +225,11 @@ export default function AnalyticsContent() {
             .select('id, application_id, job_id, candidate_id, status, created_at')
             .eq('employer_id', employerId)
             .order('created_at', { ascending: false }),
-          supabase
-            .from('notifications')
-            .select('id, type, title, message, created_at, related_type')
-            .eq('user_id', employerId)
-            .order('created_at', { ascending: false })
-            .limit(20),
         ])
 
         setApplications(appsResult.data || [])
         setInterviews(interviewsResult.data || [])
         setOffers(offersResult.data || [])
-        setRecentNotifications(notifsResult.data || [])
 
         // Step 3: Fetch job views (with fallback for missing columns)
         const { data: viewsData, error: viewsError } = await supabase

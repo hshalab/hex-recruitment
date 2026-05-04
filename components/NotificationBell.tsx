@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useNotifications } from '@/lib/NotificationsContext'
 import {
   getNotificationIcon,
   formatNotificationTime,
@@ -16,60 +17,17 @@ interface NotificationBellProps {
 
 export default function NotificationBell({ className }: NotificationBellProps) {
   const router = useRouter()
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } = useNotifications()
+
   const [isOpen, setIsOpen] = useState(false)
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
   // Tracks locally-resolved interview_interest notifications so their inline
-  // action buttons flip to a confirmation without waiting for the next poll.
+  // action buttons flip to a confirmation immediately on response.
   const [resolvedInterest, setResolvedInterest] = useState<Record<string, 'interested' | 'not_interested'>>({})
+  // Local-only: hide notifications the user has just responded to in the bell
+  // dropdown. They remain in the shared context so other surfaces (full
+  // /notifications page, dashboard panel) still show them as read history.
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
   const dropdownRef = useRef<HTMLDivElement>(null)
-
-  // Track if notifications table is available
-  const tableOk = useRef(true)
-
-  // Load notifications
-  const loadNotifications = useCallback(async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        setIsLoading(false)
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-      if (error) {
-        // Table missing or other error — stop polling
-        tableOk.current = false
-      } else {
-        setNotifications(data || [])
-        const unread = (data || []).filter((n: Notification) => !n.read).length
-        setUnreadCount(unread)
-      }
-    } catch {
-      // Network errors — fail silently
-      tableOk.current = false
-    }
-    setIsLoading(false)
-  }, [])
-
-  useEffect(() => {
-    let pollInterval: ReturnType<typeof setInterval> | null = null
-
-    loadNotifications().then(() => {
-      if (tableOk.current) {
-        pollInterval = setInterval(loadNotifications, 30000)
-      }
-    })
-
-    return () => { if (pollInterval) clearInterval(pollInterval) }
-  }, [loadNotifications])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -95,41 +53,15 @@ export default function NotificationBell({ className }: NotificationBellProps) {
     // Toggle expand/collapse
     setExpandedId(prev => prev === notification.id ? null : notification.id)
 
-    // Mark as read
+    // Mark as read via shared context (optimistic update + DB write).
     if (!notification.read) {
-      try {
-        await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('id', notification.id)
-
-        setNotifications(prev =>
-          prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
-        )
-        setUnreadCount(prev => Math.max(0, prev - 1))
-      } catch {
-        // Fail silently on network errors
-      }
+      await markAsRead(notification.id)
     }
   }
 
   // Handle mark all as read
   const handleMarkAllRead = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-
-      await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', session.user.id)
-        .eq('read', false)
-
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-      setUnreadCount(0)
-    } catch {
-      // Fail silently on network errors
-    }
+    await markAllAsRead()
   }
 
   // Respond to an interview_interest notification directly from the dropdown.
@@ -172,13 +104,16 @@ export default function NotificationBell({ className }: NotificationBellProps) {
       return
     }
 
-    // Mark the notification as read and remove it from the list
-    await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('id', notification.id)
-    setNotifications(prev => prev.filter(n => n.id !== notification.id))
-    setUnreadCount(prev => Math.max(0, prev - (notification.read ? 0 : 1)))
+    // Mark as read via shared context. Locally hide it from the bell so
+    // the user doesn't see it as a pending action item; it stays in the
+    // shared list so other surfaces (full /notifications page, dashboard
+    // panel) keep it as resolved history.
+    await markAsRead(notification.id)
+    setDismissedIds(prev => {
+      const next = new Set(prev)
+      next.add(notification.id)
+      return next
+    })
 
     const employerId = (appRow as any)?.jobs?.employer_id
     const jobTitle = (appRow as any)?.jobs?.title || (appRow as any)?.job_title || 'the role'
@@ -341,13 +276,13 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                 <div className={styles.loadingSpinner}></div>
                 <span>Loading...</span>
               </div>
-            ) : notifications.length === 0 ? (
+            ) : notifications.filter(n => !dismissedIds.has(n.id)).length === 0 ? (
               <div className={styles.emptyState}>
                 <span className={styles.emptyIcon}>🔔</span>
                 <p className={styles.emptyText}>No notifications yet</p>
               </div>
             ) : (
-              notifications.map(notification => {
+              notifications.filter(n => !dismissedIds.has(n.id)).map(notification => {
                 const isInterest = notification.type === 'interview_interest'
                 const resolvedResponse = resolvedInterest[notification.id]
                 return (

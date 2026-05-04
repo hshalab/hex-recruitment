@@ -16,108 +16,51 @@ import {
   formatNotificationTime,
   type Notification
 } from '@/lib/mockNotifications'
+import { useNotifications } from '@/lib/NotificationsContext'
 import styles from './page.module.css'
 
 export default function NotificationsPage() {
   const router = useRouter()
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(true)
+
+  // Production: read from the shared NotificationsProvider (single fetch +
+  // realtime subscription; the previous local channel + initial GET were
+  // duplicates of what the context already does).
+  const ctx = useNotifications()
+  // DEV_MODE: keep the existing in-memory mock store.
+  const [mockNotifs, setMockNotifs] = useState<Notification[]>([])
+  const [mockLoading, setMockLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
 
+  const notifications = DEV_MODE ? mockNotifs : ctx.notifications
+  const loading = DEV_MODE ? mockLoading : ctx.isLoading
+
   useEffect(() => {
-    const loadNotifications = async () => {
-      if (DEV_MODE) {
-        const userType = getMockUserType()
-        if (!userType) {
-          router.push('/login')
-          return
-        }
-        initializeNotifications(userType)
-        setNotifications(getNotifications())
-        setLoading(false)
-        return
-      }
-
-      // Non-dev mode: check session and fetch from Supabase
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-        if (sessionError || !session) {
-          router.push('/login')
-          return
-        }
-
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false })
-
-        if (error) {
-          // Fetch failed — show empty state
-        } else {
-          setNotifications(data || [])
-        }
-      } catch {
-        // Load failed
-      }
-      setLoading(false)
+    if (!DEV_MODE) return // Production path is fully handled by the context.
+    const userType = getMockUserType()
+    if (!userType) {
+      router.push('/login')
+      return
     }
+    initializeNotifications(userType)
+    setMockNotifs(getNotifications())
+    setMockLoading(false)
+  }, [router])
 
-    loadNotifications()
-
-    // Subscribe to realtime notifications (production only)
-    let channel: ReturnType<typeof supabase.channel> | null = null
-
-    if (!DEV_MODE) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session) return
-
-        channel = supabase
-          .channel('notifications-page')
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'notifications',
-              filter: `user_id=eq.${session.user.id}`,
-            },
-            (payload) => {
-              setNotifications(prev => [payload.new as Notification, ...prev])
-            }
-          )
-          .subscribe()
-      }).catch(() => {
-        // Fail silently if session check fails
-      })
-    }
-
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-    }
+  // Redirect to login if there's no session in production.
+  useEffect(() => {
+    if (DEV_MODE) return
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) router.push('/login')
+    }).catch(() => {})
   }, [router])
 
   const handleMarkAsRead = async (notification: Notification) => {
     if (!notification.read) {
       if (DEV_MODE) {
         mockMarkAsRead(notification.id)
-        setNotifications(getNotifications())
+        setMockNotifs(getNotifications())
       } else {
-        try {
-          await supabase
-            .from('notifications')
-            .update({ read: true })
-            .eq('id', notification.id)
-
-          setNotifications(prev =>
-            prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
-          )
-        } catch {
-          // Mark-read failed — UI already updated optimistically
-        }
+        await ctx.markAsRead(notification.id)
       }
     }
 
@@ -130,22 +73,9 @@ export default function NotificationsPage() {
   const handleMarkAllAsRead = async () => {
     if (DEV_MODE) {
       mockMarkAllAsRead()
-      setNotifications(getNotifications())
+      setMockNotifs(getNotifications())
     } else {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) return
-
-        await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('user_id', session.user.id)
-          .eq('read', false)
-
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-      } catch {
-        // Mark-all-read failed — UI already updated optimistically
-      }
+      await ctx.markAllAsRead()
     }
   }
 

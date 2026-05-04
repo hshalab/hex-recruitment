@@ -2,10 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
+import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import { PROFILE_BOOST_TIERS, type BoostTier } from '@/lib/boostTypes'
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
+// Lazy: don't fetch Stripe.js until the modal actually opens. Module-level
+// `loadStripe()` would inject the script tag at import time, which is what
+// the AUDIT_2026-05-03 U3 finding flagged for the candidate dashboard.
+let stripePromise: Promise<Stripe | null> | null = null
+function getStripePromise(): Promise<Stripe | null> {
+  if (!stripePromise) {
+    stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
+  }
+  return stripePromise
+}
 
 // ── Payment form (has Stripe context) ──────────────────────
 function BoostPaymentForm({
@@ -277,7 +286,7 @@ export default function ProfileBoostPaymentModal({
 
         {step === 'pay' && clientSecret && (
           <Elements
-            stripe={stripePromise}
+            stripe={getStripePromise()}
             options={{
               clientSecret,
               appearance: { theme: 'stripe', variables: { colorPrimary: '#16a34a' } },

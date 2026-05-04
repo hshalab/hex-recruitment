@@ -14,8 +14,16 @@ import { useSavedJobs } from '@/lib/useSavedJobs'
 import { scoreAndRankJobs, RecommendedJob } from '@/lib/recommendations'
 import { Boost, getDaysRemaining } from '@/lib/boostTypes'
 import { Notification, formatNotificationTime } from '@/lib/mockNotifications'
+import { useNotifications } from '@/lib/NotificationsContext'
 import Header from '@/components/Header'
-import ProfileBoostPaymentModal from '@/components/ProfileBoostPaymentModal'
+import dynamic from 'next/dynamic'
+
+// Lazy-load the boost modal so Stripe.js isn't pulled into the candidate
+// dashboard's initial bundle. Only fetches when boostModalOpen flips true.
+const ProfileBoostPaymentModal = dynamic(() => import('@/components/ProfileBoostPaymentModal'), {
+  ssr: false,
+  loading: () => null,
+})
 import SignedImage from '@/components/SignedImage'
 import styles from './page.module.css'
 
@@ -163,8 +171,9 @@ export default function DashboardPage() {
   const [activeBoost, setActiveBoost] = useState<Boost | null>(null)
   const [boostModalOpen, setBoostModalOpen] = useState(false)
 
-  // Notifications
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  // Notifications come from the shared NotificationsProvider — no per-page
+  // fetch. The dashboard panel just shows the top 5 of the same list.
+  const { notifications } = useNotifications()
   const [upcomingInterviews, setUpcomingInterviews] = useState<any[]>([])
 
   // Activity feed data
@@ -334,16 +343,7 @@ export default function DashboardPage() {
         if (boostData && boostData.length > 0) setActiveBoost(boostData[0])
       } catch { /* table may not exist */ }
 
-      // Fetch notifications
-      try {
-        const { data: notifData } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(5)
-        if (notifData) setNotifications(notifData)
-      } catch { /* table may not exist */ }
+      // Notifications now come from useNotifications() — no per-page fetch.
 
       // Fetch upcoming interviews for this candidate
       try {
@@ -1145,31 +1145,34 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Profile Boost Payment Modal */}
-      <ProfileBoostPaymentModal
-        isOpen={boostModalOpen}
-        onClose={() => setBoostModalOpen(false)}
-        onSuccess={async () => {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session) {
-            try {
-              const { data } = await supabase
-                .from('boosts')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .eq('boost_type', 'profile')
-                .eq('is_active', true)
-                .gt('expires_at', new Date().toISOString())
-                .order('expires_at', { ascending: false })
-                .limit(1)
-              if (data && data.length > 0) setActiveBoost(data[0])
-            } catch { /* ignore */ }
-          }
-        }}
-        userId={user?.id || ''}
-        userEmail={user?.email || ''}
-        targetId={user?.id || ''}
-      />
+      {/* Profile Boost Payment Modal — only mounted when the user opens it,
+          so Stripe.js isn't fetched on every candidate dashboard load. */}
+      {boostModalOpen && (
+        <ProfileBoostPaymentModal
+          isOpen={boostModalOpen}
+          onClose={() => setBoostModalOpen(false)}
+          onSuccess={async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session) {
+              try {
+                const { data } = await supabase
+                  .from('boosts')
+                  .select('*')
+                  .eq('user_id', session.user.id)
+                  .eq('boost_type', 'profile')
+                  .eq('is_active', true)
+                  .gt('expires_at', new Date().toISOString())
+                  .order('expires_at', { ascending: false })
+                  .limit(1)
+                if (data && data.length > 0) setActiveBoost(data[0])
+              } catch { /* ignore */ }
+            }
+          }}
+          userId={user?.id || ''}
+          userEmail={user?.email || ''}
+          targetId={user?.id || ''}
+        />
+      )}
     </main>
   )
 }
