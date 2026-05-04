@@ -64,24 +64,27 @@
 }
 
 /* ── Board ──
-   Desktop: every stage column fits on the page at once — no horizontal
-   scroll. The column count comes from STAGES.length on the JSX (inline
-   grid-template-columns) so this stays correct if stages are added or
-   removed. Each column shares width equally (minmax(0,1fr) allows them
-   to shrink below their content min-width so the grid never overflows).
-   Mobile keeps the flex + scroll-snap layout below, so swipe behaves
-   the same on touch. */
+   Use the same horizontal-flex-scroll pattern at every viewport. Five
+   columns × ~260px is wider than common laptop viewports, and the
+   previous "fit everything at 1fr" approach quietly cropped the
+   rightmost columns at 1280px (audit U8). The mobile media query below
+   stays for narrower per-column widths + scroll-snap on touch. */
 .board {
-  display: grid;
-  gap: 0.5rem;
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  overflow-y: visible;
   padding: 1.25rem 1.5rem;
   min-height: calc(100vh - 160px);
   align-items: flex-start;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 /* ── Column ── */
 .column {
-  min-width: 0;
+  flex: 0 0 260px;
+  min-width: 260px;
   background: #fff;
   border-radius: 12px;
   border: 1px solid #e2e8f0;

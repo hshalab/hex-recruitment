@@ -46,6 +46,31 @@
   to { transform: rotate(360deg); }
 }
 
+/* Contextual banner: shown when /post-job redirects a pre-trial employer
+   here so they understand why they landed on the subscription page
+   (audit U5). On-brand pale-yellow, no icon, non-dismissible. */
+.contextBanner {
+  background: rgba(255, 229, 0, 0.1);
+  border-left: 4px solid #FFE500;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 0 0 1.5rem;
+}
+
+.contextBannerTitle {
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.contextBannerBody {
+  font-size: 0.9rem;
+  color: var(--text-gray);
+  margin: 0;
+  line-height: 1.45;
+}
+
 /* Banners */
 .warningBanner,
 .errorBanner,

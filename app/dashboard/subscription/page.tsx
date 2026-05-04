@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
@@ -22,8 +22,22 @@ const PLAN_PRICE = SUBSCRIPTION_TIERS.standard.price
 const PLAN_NAME = SUBSCRIPTION_TIERS.standard.name
 const PLAN_FEATURES = SUBSCRIPTION_TIERS.standard.features
 
+// useSearchParams() requires a Suspense boundary at the page level when
+// prerendering — wrap the content and export the wrapper as default.
 export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={null}>
+      <SubscriptionContent />
+    </Suspense>
+  )
+}
+
+function SubscriptionContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  // Contextual banner: shown when /post-job redirects here for a pre-trial
+  // employer (audit U5). Hidden once the user has an active subscription.
+  const cameFromPostJob = searchParams?.get('from') === 'post-job'
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
@@ -176,6 +190,15 @@ export default function SubscriptionPage() {
           <h1 className={styles.title}>Subscription</h1>
           <p className={styles.subtitle}>Manage your plan and billing</p>
         </div>
+
+        {/* Contextual banner: explains why a pre-trial employer landed here
+            from /post-job. Hidden once they're on an active plan. */}
+        {cameFromPostJob && !isActive && (
+          <div className={styles.contextBanner}>
+            <p className={styles.contextBannerTitle}>Start your trial to post your first job</p>
+            <p className={styles.contextBannerBody}>Pick a plan below — first 600 employers get 3 months free.</p>
+          </div>
+        )}
 
         {/* Trial Warning Banner */}
         {isTrial && trialDaysRemaining <= 7 && (

@@ -652,7 +652,9 @@ function PostJobContent() {
   }
 
   if (!hasSubscription) {
-    router.push('/dashboard/subscription')
+    // ?from=post-job triggers a contextual banner on /dashboard/subscription
+    // explaining why the user landed there (audit U5).
+    router.push('/dashboard/subscription?from=post-job')
     return (
       <main>
         <Header />
