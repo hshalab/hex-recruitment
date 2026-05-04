@@ -9,31 +9,13 @@ import SignedImage from '@/components/SignedImage'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import MakeOfferModal from '@/components/MakeOfferModal'
 import WithdrawOrRescindModal, { type WithdrawScenario, type WithdrawConfirmPayload } from '@/components/WithdrawOrRescindModal'
+import DeclineModal from '@/components/DeclineModal'
 import { isOfferConditional } from '@/lib/offerConditional'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { useJobs } from '@/lib/JobsContext'
 import { Interview, Offer } from '@/lib/types'
 import styles from './page.module.css'
-
-// Default rejection copy used when an employer has not saved a custom
-// "Rejected" template. {{jobTitle}} and {{companyName}} are substituted
-// before display via applyVars below; whatever the user finally edits in
-// the textarea is sent as the single source of truth (email + in-app
-// conversation message).
-const DEFAULT_REJECTED_BODY = "Thank you for applying for the {{jobTitle}} role at {{companyName}}. Due to a high number of applications, we've decided not to move forward with yours at this time, as we don't feel your experience is quite the right match for what we're looking for. We genuinely appreciate the time you took to apply and wish you all the best in your search."
-
-// Local copy of lib/customEmailTemplate.ts:applyVariables — that module
-// instantiates a service-role Supabase client at the top level and is
-// server-only, so we re-implement the regex substitution here for the
-// client component.
-function applyVars(text: string, vars: Record<string, string>): string {
-  let result = text
-  for (const [key, value] of Object.entries(vars)) {
-    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value)
-  }
-  return result
-}
 
 interface Application {
   id: string
@@ -78,16 +60,12 @@ export default function JobApplicationsPage() {
   const [offerApplication, setOfferApplication] = useState<Application | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedLetters, setExpandedLetters] = useState(new Set<string>())
-  const [rejectModalApp, setRejectModalApp] = useState<Application | null>(null)
-  const [rejectMessage, setRejectMessage] = useState('')
-  const [rejectSending, setRejectSending] = useState(false)
-  // Pre-fill state for the decline modal: tracks the initial body so we
-  // can dirty-check before navigating away to /settings/email-templates,
-  // and whether the body came from a saved employer template (controls
-  // the source-hint copy beneath the textarea).
-  const [rejectInitialMessage, setRejectInitialMessage] = useState('')
-  const [rejectIsCustomTemplate, setRejectIsCustomTemplate] = useState(false)
-  const [rejectTemplateLoading, setRejectTemplateLoading] = useState(false)
+  // Decline modal state — the modal itself owns its template/edit/send
+  // state in components/DeclineModal.tsx. We only track which application
+  // is currently being declined and the employer's session id (passed
+  // through to the modal).
+  const [declineApp, setDeclineApp] = useState<Application | null>(null)
+  const [employerId, setEmployerId] = useState<string | null>(null)
   // Withdraw/rescind state — single modal with three scenarios driven by
   // current offer status + whether the offer letter contains pre-employment
   // conditions (RTW/refs/DBS/probation).
@@ -103,6 +81,7 @@ export default function JobApplicationsPage() {
         return
       }
       setIsEmployer(true)
+      setEmployerId(session.user.id)
 
       // Find the job
       const foundJob = jobs.find(j => j.id === jobId)
@@ -368,8 +347,7 @@ export default function JobApplicationsPage() {
 
   const updateApplicationStatus = async (
     applicationId: string,
-    newStatus: Application['status'],
-    options?: { bodyOverride?: string }
+    newStatus: Application['status']
   ) => {
     const application = applications.find(a => a.id === applicationId)
 
@@ -429,7 +407,6 @@ export default function JobApplicationsPage() {
                 jobTitle: application.jobTitle,
                 candidateName: application.candidateName,
                 employerId: (await supabase.auth.getSession()).data.session?.user.id,
-                ...(options?.bodyOverride ? { bodyOverride: options.bodyOverride } : {}),
               },
             }),
           }).catch(() => {})
@@ -453,104 +430,6 @@ export default function JobApplicationsPage() {
     setApplications(prev =>
       prev.map(app => app.id === applicationId ? { ...app, status: newStatus } : app)
     )
-  }
-
-  const openRejectModal = (application: Application) => {
-    setRejectModalApp(application)
-    setRejectMessage('')
-    setRejectInitialMessage('')
-    setRejectIsCustomTemplate(false)
-    setRejectTemplateLoading(true)
-
-    // Fetch the employer's saved "rejected" template (if any) and pre-fill
-    // the textarea with the personalised body. Falls back to
-    // DEFAULT_REJECTED_BODY when no custom template exists or RLS blocks
-    // the read (which would be unexpected — RLS allows own rows).
-    ;(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) return
-
-        const { data } = await supabase
-          .from('employer_email_templates')
-          .select('body, is_active')
-          .eq('employer_id', session.user.id)
-          .eq('template_type', 'rejected')
-          .maybeSingle()
-
-        const useCustom = !!(data && data.is_active && data.body)
-        const rawBody = useCustom ? (data!.body as string) : DEFAULT_REJECTED_BODY
-        const filled = applyVars(rawBody, {
-          candidateName: application.candidateName,
-          jobTitle: application.jobTitle,
-          companyName: application.company,
-        })
-        setRejectMessage(filled)
-        setRejectInitialMessage(filled)
-        setRejectIsCustomTemplate(useCustom)
-      } finally {
-        setRejectTemplateLoading(false)
-      }
-    })()
-  }
-
-  const handleDeclineAndSend = async () => {
-    if (!rejectModalApp || !rejectMessage.trim()) return
-    setRejectSending(true)
-    try {
-      // Pass bodyOverride so /api/email/send uses this exact text instead
-      // of the default templated copy — the textarea is the single source
-      // of truth for both email + in-app conversation message.
-      await updateApplicationStatus(rejectModalApp.id, 'rejected', { bodyOverride: rejectMessage.trim() })
-
-      // Mirror the same body to an in-app conversation message so the
-      // candidate sees the identical decline copy in their messages tab.
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        const employerId = session.user.id
-        const { data: existingConv } = await supabase
-          .from('conversations')
-          .select('id')
-          .or(`and(participant_1.eq.${employerId},participant_2.eq.${rejectModalApp.candidateId}),and(participant_1.eq.${rejectModalApp.candidateId},participant_2.eq.${employerId})`)
-          .maybeSingle()
-
-        let conversationId = existingConv?.id
-        if (!conversationId) {
-          const { data: newConv } = await supabase.from('conversations').insert({
-            participant_1: employerId,
-            participant_2: rejectModalApp.candidateId,
-            participant_1_name: rejectModalApp.company,
-            participant_1_role: 'employer',
-            participant_1_company: rejectModalApp.company,
-            participant_2_name: rejectModalApp.candidateName,
-            participant_2_role: 'candidate',
-            related_job_title: rejectModalApp.jobTitle,
-            last_message: rejectMessage.trim(),
-            last_message_at: new Date().toISOString(),
-          }).select('id').single()
-          conversationId = newConv?.id
-        }
-
-        if (conversationId) {
-          await supabase.from('messages').insert({
-            conversation_id: conversationId,
-            sender_id: employerId,
-            sender_name: rejectModalApp.company,
-            sender_role: 'employer',
-            content: rejectMessage.trim(),
-            is_read: false,
-          })
-          if (existingConv) {
-            await supabase.from('conversations').update({
-              last_message: rejectMessage.trim(),
-              last_message_at: new Date().toISOString(),
-            }).eq('id', conversationId)
-          }
-        }
-      }
-    } catch { /* handled by updateApplicationStatus */ }
-    setRejectSending(false)
-    setRejectModalApp(null)
   }
 
   const handleShortlist = async (application: Application) => {
@@ -1153,7 +1032,7 @@ export default function JobApplicationsPage() {
                           </button>
                           <button
                             className={styles.rejectInterviewBtn}
-                            onClick={() => openRejectModal(application)}
+                            onClick={() => setDeclineApp(application)}
                           >
                             Reject
                           </button>
@@ -1325,7 +1204,7 @@ export default function JobApplicationsPage() {
                         <button className={styles.barBtnPrimary} onClick={() => updateApplicationStatus(application.id, 'reviewing')}>
                           Review →
                         </button>
-                        <button className={styles.barBtnReject} onClick={() => openRejectModal(application)}>
+                        <button className={styles.barBtnReject} onClick={() => setDeclineApp(application)}>
                           Reject
                         </button>
                       </>
@@ -1337,7 +1216,7 @@ export default function JobApplicationsPage() {
                         <button className={styles.barBtnPrimary} onClick={() => handleShortlist(application)}>
                           Shortlist →
                         </button>
-                        <button className={styles.barBtnReject} onClick={() => openRejectModal(application)}>
+                        <button className={styles.barBtnReject} onClick={() => setDeclineApp(application)}>
                           Reject
                         </button>
                       </>
@@ -1349,7 +1228,7 @@ export default function JobApplicationsPage() {
                         <button className={styles.barBtnPrimary} onClick={() => handleScheduleInterview(application)}>
                           Schedule Interview →
                         </button>
-                        <button className={styles.barBtnReject} onClick={() => openRejectModal(application)}>
+                        <button className={styles.barBtnReject} onClick={() => setDeclineApp(application)}>
                           Reject
                         </button>
                       </>
@@ -1370,7 +1249,7 @@ export default function JobApplicationsPage() {
                             Awaiting candidate response...
                           </span>
                         )}
-                        <button className={styles.barBtnReject} onClick={() => openRejectModal(application)}>
+                        <button className={styles.barBtnReject} onClick={() => setDeclineApp(application)}>
                           Withdraw
                         </button>
                       </>
@@ -1462,73 +1341,24 @@ export default function JobApplicationsPage() {
         )
       })()}
 
-      {/* Decline application modal — always emails the candidate (no
-          silent decline). Body is pre-filled from the employer's saved
-          "Rejected" template if present, otherwise from
-          DEFAULT_REJECTED_BODY. Whatever the user finally edits is the
-          single source of truth for both email + in-app message. */}
-      {rejectModalApp && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-          onClick={() => !rejectSending && setRejectModalApp(null)}>
-          <div style={{ background: '#fff', borderRadius: 12, maxWidth: 480, width: '100%', padding: '1.5rem' }}
-            onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700 }}>Decline application</h3>
-            <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 1rem' }}>
-              {rejectModalApp.candidateName} — {rejectModalApp.jobTitle}
-            </p>
-
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>
-              Message to candidate
-            </label>
-            <textarea
-              value={rejectMessage}
-              onChange={e => setRejectMessage(e.target.value)}
-              rows={7}
-              disabled={rejectTemplateLoading || rejectSending}
-              placeholder={rejectTemplateLoading ? 'Loading template…' : ''}
-              style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem', resize: 'vertical', lineHeight: 1.5, background: rejectTemplateLoading ? '#f8fafc' : '#fff' }}
-            />
-
-            <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.5rem 0 0' }}>
-              {rejectTemplateLoading
-                ? 'Loading your template…'
-                : rejectIsCustomTemplate
-                  ? 'Using your saved Rejected template. '
-                  : 'Using the default decline copy. '}
-              {!rejectTemplateLoading && (
-                <Link
-                  href="/settings/email-templates"
-                  onClick={(e) => {
-                    if (rejectMessage !== rejectInitialMessage) {
-                      const ok = window.confirm('You have unsaved edits in this message. Leave to edit your saved template?')
-                      if (!ok) e.preventDefault()
-                    }
-                  }}
-                  style={{ color: '#0f172a', textDecoration: 'underline' }}
-                >
-                  Edit your template
-                </Link>
-              )}
-            </p>
-
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-              <button
-                onClick={() => setRejectModalApp(null)}
-                disabled={rejectSending}
-                style={{ flex: 1, padding: '0.625rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeclineAndSend}
-                disabled={rejectSending || rejectTemplateLoading || !rejectMessage.trim()}
-                style={{ flex: 1, padding: '0.625rem', border: 'none', borderRadius: 8, background: (rejectSending || rejectTemplateLoading) ? '#94a3b8' : '#dc2626', color: '#fff', cursor: (rejectSending || rejectTemplateLoading) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.9rem' }}
-              >
-                {rejectSending ? 'Sending…' : 'Send & Decline'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Decline modal lives in components/DeclineModal.tsx — owns its
+          own template/edit/send state. We just supply the application
+          + employer context and react to onDeclined to keep the local
+          applications list in sync. */}
+      {declineApp && employerId && (
+        <DeclineModal
+          applicationId={declineApp.id}
+          candidateId={declineApp.candidateId}
+          candidateEmail={declineApp.candidateEmail || null}
+          candidateName={declineApp.candidateName}
+          jobTitle={declineApp.jobTitle}
+          companyName={declineApp.company}
+          employerId={employerId}
+          onClose={() => setDeclineApp(null)}
+          onDeclined={() => {
+            setApplications(prev => prev.map(a => a.id === declineApp.id ? { ...a, status: 'rejected' } : a))
+          }}
+        />
       )}
     </main>
   )

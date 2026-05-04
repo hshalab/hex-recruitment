@@ -7,11 +7,11 @@ import { supabase } from '@/lib/supabase'
 
 const TEMPLATE_TYPES = [
   { id: 'shortlisted', label: 'Shortlisted', description: 'Sent when you shortlist a candidate', defaultSubject: 'Application Shortlisted \u2014 {{jobTitle}}', defaultBody: "Great news! Your application for {{jobTitle}} at {{companyName}} has been shortlisted. We'll be in touch with next steps." },
-  { id: 'rejected', label: 'Not Selected', description: 'Sent when a candidate is not selected', defaultSubject: 'Application Update \u2014 {{jobTitle}}', defaultBody: 'Thank you for your interest in {{jobTitle}} at {{companyName}}. After careful consideration, we have decided not to proceed with your application at this time. We wish you the best in your job search.' },
+  { id: 'rejected', label: 'Declined', description: 'Sent when you decline a candidate', defaultSubject: 'Application Update \u2014 {{jobTitle}}', defaultBody: 'Thank you for your interest in {{jobTitle}} at {{companyName}}. After careful consideration, we have decided not to proceed with your application at this time. We wish you the best in your job search.' },
   { id: 'reviewing', label: 'Under Review', description: 'Sent when you start reviewing', defaultSubject: 'Application Under Review \u2014 {{jobTitle}}', defaultBody: "Your application for {{jobTitle}} at {{companyName}} is currently being reviewed. We'll be in touch soon." },
   { id: 'interview_invite', label: 'Interview Invite', description: 'Sent with interview invitation', defaultSubject: 'Interview Invitation \u2014 {{jobTitle}}', defaultBody: 'We would like to invite you for an interview for {{jobTitle}} at {{companyName}}. Please check your Thrive dashboard for details and to confirm your attendance.' },
   { id: 'offered', label: 'Job Offer', description: 'Sent when you make an offer', defaultSubject: 'Job Offer \u2014 {{jobTitle}}', defaultBody: 'Congratulations! We are pleased to offer you the position of {{jobTitle}} at {{companyName}}. Please check your messages for full details.' },
-  { id: 'hired', label: 'Hired Confirmation', description: 'Sent when candidate is marked as hired', defaultSubject: 'Welcome to {{companyName}}!', defaultBody: 'Congratulations! You have been hired for {{jobTitle}} at {{companyName}}. We look forward to working with you.' },
+  { id: 'hired', label: 'Welcome aboard', description: 'Sent when you officially hire a candidate', defaultSubject: 'Welcome to {{companyName}}!', defaultBody: 'Congratulations! You have been hired for {{jobTitle}} at {{companyName}}. We look forward to working with you.' },
 ]
 
 const VARIABLES = ['{{candidateName}}', '{{jobTitle}}', '{{companyName}}']

@@ -7,20 +7,28 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import SignedLink from '@/components/SignedLink'
+import DeclineModal from '@/components/DeclineModal'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
 
+// DECLINED is appended at the end and rendered with a muted neutral
+// accent — the column reads as an outcome (end-state), not punishment.
+// Drag is disabled both ways; status changes to/from 'rejected' happen
+// only via the kebab menu (Decline opens the template-aware modal,
+// Restore returns the card to Reviewing silently).
 const STAGES = [
   { id: 'reviewing', label: 'Reviewing', color: '#3b82f6' },
   { id: 'shortlisted', label: 'Shortlisted', color: '#8b5cf6' },
   { id: 'interview', label: 'Interview', color: '#06b6d4' },
   { id: 'offered', label: 'Offered', color: '#10b981' },
   { id: 'hired', label: 'Hired', color: '#16a34a' },
+  { id: 'rejected', label: 'Declined', color: '#6B7280' },
 ]
 
 interface PipelineCard {
   id: string
   candidateId: string
+  candidateEmail: string | null
   candidateName: string
   candidatePhoto: string | null
   jobTitle: string
@@ -50,6 +58,7 @@ const STAGE_CTA: Record<string, { label: string; toApplications: boolean } | nul
   interview: { label: 'Make Offer →', toApplications: true },
   offered: { label: 'View Offer →', toApplications: true },
   hired: null,
+  rejected: null,
 }
 
 export default function PipelinePage() {
@@ -59,6 +68,15 @@ export default function PipelinePage() {
   const [filterJob, setFilterJob] = useState<string>('all')
   const [jobs, setJobs] = useState<{ id: string; title: string }[]>([])
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
+  // Kebab + decline/restore state. employerId/employerCompany are
+  // captured in loadData and passed to the shared DeclineModal so the
+  // candidate email + in-app conversation message attribute correctly.
+  const [openMenuCardId, setOpenMenuCardId] = useState<string | null>(null)
+  const [declineCard, setDeclineCard] = useState<PipelineCard | null>(null)
+  const [restoreCard, setRestoreCard] = useState<PipelineCard | null>(null)
+  const [restoring, setRestoring] = useState(false)
+  const [employerId, setEmployerId] = useState<string | null>(null)
+  const [employerCompany, setEmployerCompany] = useState<string>('')
 
   const loadData = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -67,30 +85,33 @@ export default function PipelinePage() {
       return
     }
 
-    const employerId = session.user.id
+    const sessionEmployerId = session.user.id
+    setEmployerId(sessionEmployerId)
+    setEmployerCompany(session.user.user_metadata?.company_name || '')
 
-    // Fetch active (non-rejected, non-pending) applications for this employer's jobs.
-    // 'pending' lives on the Applicants page; Pipeline only tracks candidates actively
-    // moving through stages.
+    // 'pending' lives on the Applicants page; Pipeline tracks the active
+    // funnel + the DECLINED end-state. We DO want 'rejected' rows here
+    // so they render in the new column.
     const { data: appData } = await supabase
       .from('job_applications')
       .select('id, candidate_id, job_id, job_title, status, cover_letter, created_at, status_updated_at')
       .in('job_id', (
-        await supabase.from('jobs').select('id').eq('employer_id', employerId)
+        await supabase.from('jobs').select('id').eq('employer_id', sessionEmployerId)
       ).data?.map((j: any) => j.id) || [])
-      .not('status', 'in', '(rejected,pending)')
+      .neq('status', 'pending')
       .order('created_at', { ascending: false })
 
     if (!appData) { setLoading(false); return }
 
-    // Fetch candidate details
+    // Fetch candidate details (incl. email — needed by DeclineModal so
+    // the decline email goes out without a server-side user lookup).
     const candidateIds = Array.from(new Set(appData.map(a => a.candidate_id).filter(Boolean)))
-    let profileMap: Record<string, { name: string; photo: string | null; location: string; experience: number; cvUrl: string | null }> = {}
+    let profileMap: Record<string, { name: string; photo: string | null; location: string; experience: number; cvUrl: string | null; email: string | null }> = {}
 
     if (candidateIds.length > 0) {
       const { data: profiles } = await supabase
         .from('candidate_profiles')
-        .select('user_id, full_name, profile_picture_url, city, location, years_experience, cv_url')
+        .select('user_id, full_name, profile_picture_url, city, location, years_experience, cv_url, email')
         .in('user_id', candidateIds)
 
       for (const p of profiles || []) {
@@ -100,6 +121,7 @@ export default function PipelinePage() {
           location: p.city || p.location || '',
           experience: p.years_experience || 0,
           cvUrl: p.cv_url || null,
+          email: p.email || null,
         }
       }
     }
@@ -115,11 +137,12 @@ export default function PipelinePage() {
 
     // Map to pipeline cards
     const mapped: PipelineCard[] = appData.map(a => {
-      const profile = profileMap[a.candidate_id] || { name: 'Candidate', photo: null, location: '', experience: 0, cvUrl: null }
+      const profile = profileMap[a.candidate_id] || { name: 'Candidate', photo: null, location: '', experience: 0, cvUrl: null, email: null }
       const stageDate = a.status_updated_at || a.created_at
       return {
         id: a.id,
         candidateId: a.candidate_id,
+        candidateEmail: profile.email,
         candidateName: profile.name,
         candidatePhoto: profile.photo,
         jobTitle: a.job_title || 'Role',
@@ -140,10 +163,32 @@ export default function PipelinePage() {
 
   useEffect(() => { loadData() }, [loadData])
 
+  // Close the kebab popover on outside click or Escape.
+  useEffect(() => {
+    if (!openMenuCardId) return
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Element | null
+      if (!target?.closest(`.${styles.cardKebabWrap}`)) setOpenMenuCardId(null)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenMenuCardId(null) }
+    document.addEventListener('click', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('click', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [openMenuCardId])
+
   // Handle drag and drop
   const handleDragEnd = async (result: DropResult) => {
     const { draggableId, destination, source } = result
     if (!destination || destination.droppableId === source.droppableId) return
+
+    // Decline must always go through the modal so the email gets sent.
+    // The DECLINED column is configured isDropDisabled and its cards
+    // isDragDisabled, so this branch shouldn't fire — defensive guard
+    // in case those props get loosened later.
+    if (destination.droppableId === 'rejected' || source.droppableId === 'rejected') return
 
     const newStatus = destination.droppableId
     const card = cards.find(c => c.id === draggableId)
@@ -230,19 +275,17 @@ export default function PipelinePage() {
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div
-          className={styles.board}
-          style={{ gridTemplateColumns: `repeat(${STAGES.length}, minmax(0, 1fr))` }}
-        >
+        <div className={styles.board}>
           {STAGES.map(stage => {
             const stageCards = filteredCards.filter(c => c.status === stage.id)
+            const isDeclined = stage.id === 'rejected'
             return (
-              <div key={stage.id} className={styles.column}>
+              <div key={stage.id} className={`${styles.column} ${isDeclined ? styles.columnDeclined : ''}`}>
                 <div className={styles.columnHeader} style={{ borderTopColor: stage.color }}>
                   <span className={styles.columnTitle}>{stage.label}</span>
                   <span className={styles.columnCount} style={{ background: stage.color }}>{stageCards.length}</span>
                 </div>
-                <Droppable droppableId={stage.id}>
+                <Droppable droppableId={stage.id} isDropDisabled={isDeclined}>
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
@@ -250,13 +293,13 @@ export default function PipelinePage() {
                       className={`${styles.columnBody} ${snapshot.isDraggingOver ? styles.columnBodyDragOver : ''}`}
                     >
                       {stageCards.map((card, index) => (
-                        <Draggable key={card.id} draggableId={card.id} index={index}>
+                        <Draggable key={card.id} draggableId={card.id} index={index} isDragDisabled={isDeclined}>
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`${styles.card} ${snapshot.isDragging ? styles.cardDragging : ''}`}
+                              className={`${styles.card} ${snapshot.isDragging ? styles.cardDragging : ''} ${isDeclined ? styles.cardDeclined : ''}`}
                             >
                               <div className={styles.cardHeader}>
                                 <div className={styles.cardAvatar}>
@@ -271,6 +314,44 @@ export default function PipelinePage() {
                                 <div className={styles.cardInfo}>
                                   <span className={styles.cardName}>{card.candidateName}</span>
                                   <span className={styles.cardJob}>{card.jobTitle}</span>
+                                </div>
+                                <div className={styles.cardKebabWrap}>
+                                  <button
+                                    type="button"
+                                    aria-label="Card actions"
+                                    aria-expanded={openMenuCardId === card.id}
+                                    className={styles.cardKebab}
+                                    onMouseDown={e => e.stopPropagation()}
+                                    onClick={e => {
+                                      e.stopPropagation()
+                                      setOpenMenuCardId(prev => prev === card.id ? null : card.id)
+                                    }}
+                                  >
+                                    ⋯
+                                  </button>
+                                  {openMenuCardId === card.id && (
+                                    <div className={styles.cardMenu} role="menu" onClick={e => e.stopPropagation()}>
+                                      {card.status === 'rejected' ? (
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          className={styles.cardMenuItem}
+                                          onClick={() => { setOpenMenuCardId(null); setRestoreCard(card) }}
+                                        >
+                                          Restore to Reviewing
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          className={styles.cardMenuItem}
+                                          onClick={() => { setOpenMenuCardId(null); setDeclineCard(card) }}
+                                        >
+                                          Decline
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                               {(() => {
@@ -350,6 +431,77 @@ export default function PipelinePage() {
           })}
         </div>
       </DragDropContext>
+
+      {/* Decline modal — shared with /my-jobs/[jobId]/applications. Owns
+          its own template/edit/send state; we react via onDeclined to
+          flip the local card's status without a refetch. */}
+      {declineCard && employerId && (
+        <DeclineModal
+          applicationId={declineCard.id}
+          candidateId={declineCard.candidateId}
+          candidateEmail={declineCard.candidateEmail}
+          candidateName={declineCard.candidateName}
+          jobTitle={declineCard.jobTitle}
+          companyName={employerCompany}
+          employerId={employerId}
+          onClose={() => setDeclineCard(null)}
+          onDeclined={() => {
+            const cardId = declineCard.id
+            setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'rejected', daysInStage: 0 } : c))
+          }}
+        />
+      )}
+
+      {/* Restore confirmation — silent move back to Reviewing. No email,
+          no notification (it's an internal correction, not a candidate-
+          facing event). */}
+      {restoreCard && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          onClick={() => !restoring && setRestoreCard(null)}
+        >
+          <div
+            style={{ background: '#fff', borderRadius: 12, maxWidth: 420, width: '100%', padding: '1.5rem' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 700 }}>Restore candidate?</h3>
+            <p style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.5, margin: '0 0 1.25rem' }}>
+              This will move <strong>{restoreCard.candidateName}</strong> back to Reviewing. No email will be sent.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setRestoreCard(null)}
+                disabled={restoring}
+                style={{ flex: 1, padding: '0.625rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!restoreCard) return
+                  setRestoring(true)
+                  const cardId = restoreCard.id
+                  const { error } = await supabase
+                    .from('job_applications')
+                    .update({ status: 'reviewing', status_updated_at: new Date().toISOString() })
+                    .eq('id', cardId)
+                  setRestoring(false)
+                  if (error) {
+                    alert('Failed to restore. Please try again.')
+                    return
+                  }
+                  setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'reviewing', daysInStage: 0 } : c))
+                  setRestoreCard(null)
+                }}
+                disabled={restoring}
+                style={{ flex: 1, padding: '0.625rem', border: 'none', borderRadius: 8, background: restoring ? '#94a3b8' : '#0f172a', color: '#FFE500', cursor: restoring ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.9rem' }}
+              >
+                {restoring ? 'Restoring…' : 'Restore'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

@@ -152,6 +152,16 @@
   font-style: italic;
 }
 
+/* DECLINED column — muted neutral accent. Reads as outcome / end-state,
+   not punishment, so we soften the body background and skip the active
+   colour cue used elsewhere. */
+.columnDeclined {
+  background: #f8fafc;
+}
+.columnDeclined .columnHeader {
+  background: #f1f5f9;
+}
+
 /* ── Card ── */
 .card {
   background: #fff;
@@ -161,6 +171,19 @@
   cursor: grab;
   transition: box-shadow 0.2s, transform 0.15s, border-color 0.2s;
   user-select: none;
+}
+
+/* Cards in DECLINED are non-draggable (isDragDisabled) so the cursor
+   stays default and the body desaturates a touch — visual cue that the
+   only way out is the kebab → Restore. */
+.cardDeclined {
+  cursor: default;
+  background: #f8fafc;
+  opacity: 0.92;
+}
+.cardDeclined:hover {
+  box-shadow: none;
+  border-color: #e2e8f0;
 }
 
 .card:hover {
@@ -179,6 +202,65 @@
   display: flex;
   gap: 0.625rem;
   align-items: center;
+}
+
+/* Kebab + popover menu. Wrapper is position:relative so the popover
+   anchors under the button. z-index 1000 sits above sibling cards but
+   below the modal overlay (9999). The columnBody has overflow-y:auto so
+   the popover may clip when the card is at the very bottom of a long
+   column — acceptable for v1; switch to a portal later if it bites. */
+.cardKebabWrap {
+  position: relative;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.cardKebab {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.cardKebab:hover,
+.cardKebab[aria-expanded="true"] {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.cardMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  padding: 0.25rem;
+  z-index: 1000;
+}
+.cardMenuItem {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  color: #0f172a;
+  cursor: pointer;
+}
+.cardMenuItem:hover {
+  background: #f1f5f9;
 }
 
 .cardAvatar {
@@ -344,7 +426,10 @@
   background: #cbd5e1;
 }
 
-/* ── Responsive ── */
+/* ── Responsive ──
+   Mobile (≤768px): 3×2 grid layout. Six stage columns wrap into 3 rows ×
+   2 cols at ~half-viewport width each. Vertical scroll handles the long
+   page; no horizontal-snap workaround needed. */
 @media (max-width: 768px) {
   .topBar {
     flex-direction: column;
@@ -352,33 +437,19 @@
     align-items: flex-start;
   }
 
-  /* Drop the desktop grid in favour of a horizontal strip that the
-     user can swipe through; works better than six cramped columns
-     below 768px. */
   .board {
-    display: flex;
-    overflow-x: auto;
-    padding: 0.75rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
+    padding: 0.75rem;
+    overflow-x: hidden;
+    overflow-y: visible;
+    min-height: auto;
   }
 
   .column {
-    flex: 0 0 220px;
-    min-width: 220px;
-  }
-}
-
-@media (max-width: 480px) {
-  .column {
-    flex: 0 0 85vw;
-    min-width: 85vw;
-  }
-
-  .board {
-    scroll-snap-type: x mandatory;
-  }
-
-  .column {
-    scroll-snap-align: start;
+    flex: unset;
+    min-width: 0;
+    max-height: none;
   }
 }
