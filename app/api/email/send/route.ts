@@ -113,8 +113,27 @@ export async function POST(req: Request) {
         if (data.employerId) {
           customTpl = await getCustomTemplate(data.employerId, data.status)
         }
-        if (customTpl) {
-          const vars = { candidateName: data.candidateName || '', jobTitle: data.jobTitle || '', companyName: data.companyName || '' }
+        const vars = { candidateName: data.candidateName || '', jobTitle: data.jobTitle || '', companyName: data.companyName || '' }
+
+        if (data.bodyOverride) {
+          // Caller (decline modal) passed an edited body — that's the
+          // single source of truth. Subject still comes from the saved
+          // template if present, otherwise the default. The body is
+          // HTML-escaped before being wrapped in <p> tags so that any
+          // angle brackets the employer typed render as text rather than
+          // injecting markup.
+          const escapeHtml = (s: string) => s
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+          const subject = customTpl
+            ? applyVariables(customTpl.subject, vars)
+            : applicationStatusEmail(data.status, data.companyName, data.jobTitle, data.candidateName, data.reason, data.applicationId).subject
+          email = {
+            subject,
+            html: `<p>${escapeHtml(String(data.bodyOverride)).replace(/\n/g, '</p><p>')}</p>`,
+          }
+        } else if (customTpl) {
           email = {
             subject: applyVariables(customTpl.subject, vars),
             html: `<p>${applyVariables(customTpl.body, vars).replace(/\n/g, '</p><p>')}</p>`,

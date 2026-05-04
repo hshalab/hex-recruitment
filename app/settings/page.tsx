@@ -59,6 +59,14 @@ const settingsCards: SettingCard[] = [
     forUserTypes: ['employer'],
   },
   {
+    id: 'email-templates',
+    title: 'Email Templates',
+    description: 'Customise the emails sent to candidates at each stage of your hiring pipeline',
+    icon: '✉️',
+    href: '/settings/email-templates',
+    forUserTypes: ['employer'],
+  },
+  {
     id: 'notifications',
     title: 'Notifications',
     description: 'Manage email and SMS notification preferences',
