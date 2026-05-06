@@ -356,6 +356,22 @@
   white-space: nowrap;
 }
 
+/* Surfaced on cards in the Interview column when no live interview row
+   exists for the application — the candidate is "in interview stage" but
+   nothing is actually scheduled. Amber, not red: a state to act on, not
+   an error. Tokens reused from globals.css ds-status-amber-*. */
+.needsSchedulingBadge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ds-status-amber-fg);
+  background: var(--ds-status-amber-bg);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
 .cardSecondaryActions {
   display: flex;
   gap: 0.35rem;

@@ -8,6 +8,8 @@ import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import SignedLink from '@/components/SignedLink'
 import DeclineModal from '@/components/DeclineModal'
+import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
+import BackwardToInterviewModal, { type BackwardToInterviewChoice } from '@/components/BackwardToInterviewModal'
 import Toast from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
@@ -82,6 +84,13 @@ interface PipelineCard {
   experience: number
   cvUrl: string | null
   hasCoverLetter: boolean
+  // True if the application has at least one row in `interviews` with
+  // status pending_selection|scheduled|confirmed. Drives the "needs
+  // scheduling" badge on Interview-column cards. The drag-gate ensures
+  // forward drags only land here after a successful schedule, but the
+  // backward "move back, no new interview" path can land a card here
+  // legitimately without one.
+  hasLiveInterview: boolean
 }
 
 function formatDaysAgo(dateStr: string): string {
@@ -124,6 +133,13 @@ export default function PipelinePage() {
   // employer knows interviews/offers were touched.
   const [backwardMove, setBackwardMove] = useState<{ card: PipelineCard; newStatus: string; stageLabel: string } | null>(null)
   const [backwardSubmitting, setBackwardSubmitting] = useState(false)
+  // Forward drag into the Interview column gates on a successful schedule —
+  // we hold the card here while ScheduleInterviewModal is open. Cancel
+  // closes the modal without ever writing job_applications.status.
+  const [scheduleCard, setScheduleCard] = useState<PipelineCard | null>(null)
+  // Backward drag into the Interview column shows BackwardToInterviewModal
+  // first so the employer can pick: cancel / move-only / move-and-schedule.
+  const [backwardToInterview, setBackwardToInterview] = useState<{ card: PipelineCard; previousStageLabel: string } | null>(null)
   const [toast, setToast] = useState<{ message: string; key: number } | null>(null)
 
   const loadData = useCallback(async () => {
@@ -183,6 +199,20 @@ export default function PipelinePage() {
 
     setJobs(jobData || [])
 
+    // Single batched query for live interview rows so cards in the
+    // Interview column can show the "needs scheduling" badge when the
+    // candidate is in stage but has no live commitment.
+    const appIds = appData.map(a => a.id)
+    let liveSet = new Set<string>()
+    if (appIds.length > 0) {
+      const { data: liveInterviews } = await supabase
+        .from('interviews')
+        .select('application_id')
+        .in('application_id', appIds)
+        .in('status', ['pending_selection', 'scheduled', 'confirmed'])
+      liveSet = new Set((liveInterviews || []).map(i => i.application_id))
+    }
+
     // Map to pipeline cards
     const mapped: PipelineCard[] = appData.map(a => {
       const profile = profileMap[a.candidate_id] || { name: 'Candidate', photo: null, location: '', experience: 0, cvUrl: null, email: null }
@@ -202,6 +232,7 @@ export default function PipelinePage() {
         experience: profile.experience,
         cvUrl: profile.cvUrl,
         hasCoverLetter: !!a.cover_letter,
+        hasLiveInterview: liveSet.has(a.id),
       }
     })
 
@@ -298,9 +329,23 @@ export default function PipelinePage() {
     const toIdx = stageIndex(newStatus)
     const stageLabel = STAGES.find(s => s.id === newStatus)?.label || newStatus
 
-    // Backward drag (e.g. Hired → Offered, Interview → Shortlisted).
-    // The DB trigger doesn't undo past actions; the user gets a confirm
-    // explaining what's preserved before the move commits.
+    // Drag into Interview is gated. Forward (Reviewing/Shortlisted/etc.
+    // → Interview) opens ScheduleInterviewModal; the move only happens if
+    // the schedule succeeds. Backward (Offered/Hired → Interview) opens
+    // BackwardToInterviewModal where the employer picks the right path.
+    if (newStatus === 'interview') {
+      if (fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx) {
+        const previousStageLabel = STAGES.find(s => s.id === source.droppableId)?.label || source.droppableId
+        setBackwardToInterview({ card, previousStageLabel })
+      } else {
+        setScheduleCard(card)
+      }
+      return
+    }
+
+    // Backward drag elsewhere (e.g. Hired → Offered). The DB trigger
+    // doesn't undo past actions; the user gets a confirm explaining
+    // what's preserved before the move commits.
     if (fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx) {
       setBackwardMove({ card, newStatus, stageLabel })
       return
@@ -419,6 +464,14 @@ export default function PipelinePage() {
                                   )}
                                 </div>
                               </div>
+                              {card.status === 'interview' && !card.hasLiveInterview && (
+                                <span
+                                  className={styles.needsSchedulingBadge}
+                                  title="No interview scheduled yet — open the application to set one up."
+                                >
+                                  Needs scheduling
+                                </span>
+                              )}
                               {(() => {
                                 const cta = STAGE_CTA[card.status]
                                 if (!cta) return null
@@ -612,6 +665,61 @@ export default function PipelinePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Forward-into-Interview gate. Card stays at source until the
+          schedule succeeds; cancel = no DB write. After success, do an
+          optimistic flip on hasLiveInterview so the badge never flashes,
+          then refetch via loadData() for correctness. */}
+      {scheduleCard && employerId && (
+        <ScheduleInterviewModal
+          isOpen
+          onClose={() => setScheduleCard(null)}
+          applicationId={scheduleCard.id}
+          jobId={scheduleCard.jobId}
+          jobTitle={scheduleCard.jobTitle}
+          company={employerCompany}
+          candidateId={scheduleCard.candidateId}
+          candidateName={scheduleCard.candidateName}
+          candidateEmail={scheduleCard.candidateEmail || undefined}
+          onSuccess={() => {
+            const cardId = scheduleCard.id
+            setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'interview', daysInStage: 0, hasLiveInterview: true } : c))
+            setScheduleCard(null)
+            setToast({ message: `Moved to Interview. Schedule sent to ${scheduleCard.candidateName.split(' ')[0]}.`, key: Date.now() })
+            loadData()
+          }}
+        />
+      )}
+
+      {/* Backward-into-Interview chooser. Three buttons: cancel (no
+          write), move-only (status flips, no new interview row → badge
+          appears), move-and-schedule (status flips then ScheduleInterviewModal opens). */}
+      {backwardToInterview && (
+        <BackwardToInterviewModal
+          candidateName={backwardToInterview.card.candidateName}
+          previousStageLabel={backwardToInterview.previousStageLabel}
+          onChoose={async (choice) => {
+            const { card, previousStageLabel } = backwardToInterview
+            setBackwardToInterview(null)
+            if (choice === 'cancel') return
+
+            await applyMove(card, 'interview', card.status, 'Interview')
+            // Optimistic: no live interview yet → badge will render. The
+            // applyMove path didn't refetch, so set the field locally.
+            setCards(prev => prev.map(c => c.id === card.id ? { ...c, hasLiveInterview: false } : c))
+
+            if (choice === 'move-and-schedule') {
+              // Re-open the schedule modal in the same tick. If the
+              // employer cancels, the card stays in Interview with the
+              // badge — they accepted the backward intent.
+              setScheduleCard({ ...card, status: 'interview', hasLiveInterview: false })
+            }
+            // Suppress unused-warning for previousStageLabel — kept in scope
+            // for clarity at the call site.
+            void previousStageLabel
+          }}
+        />
       )}
 
       {toast && (
