@@ -8,6 +8,7 @@ import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import SignedLink from '@/components/SignedLink'
 import DeclineModal from '@/components/DeclineModal'
+import Toast from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
 
@@ -24,6 +25,47 @@ const STAGES = [
   { id: 'hired', label: 'Hired', color: '#16a34a' },
   { id: 'rejected', label: 'Declined', color: '#6B7280' },
 ]
+
+// Forward-direction order. Indices match the kanban layout above (rejected
+// is intentionally excluded — it's reached via the modal, never the drag).
+// Used to detect backward drags that need the confirm dialog.
+const STAGE_ORDER = ['reviewing', 'shortlisted', 'interview', 'offered', 'hired'] as const
+
+function stageIndex(status: string): number {
+  return STAGE_ORDER.indexOf(status as typeof STAGE_ORDER[number])
+}
+
+// Turn the rows the cascade trigger wrote during this move into a
+// human-readable toast. Empty array → silent forward move with no
+// dependants → fall back to a generic "Moved to {stage}".
+interface CascadeLogRow {
+  cascade_kind: string
+  details: { count?: number } | null
+}
+function summarizeCascade(rows: CascadeLogRow[], stageLabel: string): string {
+  if (!rows.length) return `Moved to ${stageLabel}.`
+  const parts: string[] = []
+  let interviewsCompleted = 0
+  let interviewsCancelled = 0
+  let offerAccepted = false
+  let offerWithdrawn = false
+  let backward = false
+  for (const r of rows) {
+    const n = r.details?.count ?? 1
+    if (r.cascade_kind === 'interview_completed') interviewsCompleted += n
+    else if (r.cascade_kind === 'interview_cancelled') interviewsCancelled += n
+    else if (r.cascade_kind === 'offer_accepted') offerAccepted = true
+    else if (r.cascade_kind === 'offer_withdrawn') offerWithdrawn = true
+    else if (r.cascade_kind === 'backward_move') backward = true
+  }
+  if (offerAccepted) parts.push('1 offer accepted')
+  if (offerWithdrawn) parts.push('1 offer withdrawn')
+  if (interviewsCompleted) parts.push(`${interviewsCompleted} interview${interviewsCompleted === 1 ? '' : 's'} completed`)
+  if (interviewsCancelled) parts.push(`${interviewsCancelled} interview${interviewsCancelled === 1 ? '' : 's'} cancelled`)
+  if (backward && parts.length === 0) return `Moved back to ${stageLabel}. Past actions preserved.`
+  if (parts.length === 0) return `Moved to ${stageLabel}.`
+  return `Moved to ${stageLabel}. ${parts.join(', ')}.`
+}
 
 interface PipelineCard {
   id: string
@@ -77,6 +119,12 @@ export default function PipelinePage() {
   const [restoring, setRestoring] = useState(false)
   const [employerId, setEmployerId] = useState<string | null>(null)
   const [employerCompany, setEmployerCompany] = useState<string>('')
+  // Backward-move confirm + post-move toast. The trigger keeps the DB
+  // consistent regardless; the toast describes what cascaded so the
+  // employer knows interviews/offers were touched.
+  const [backwardMove, setBackwardMove] = useState<{ card: PipelineCard; newStatus: string; stageLabel: string } | null>(null)
+  const [backwardSubmitting, setBackwardSubmitting] = useState(false)
+  const [toast, setToast] = useState<{ message: string; key: number } | null>(null)
 
   const loadData = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -179,52 +227,29 @@ export default function PipelinePage() {
     }
   }, [openMenuCardId])
 
-  // Handle drag and drop
-  const handleDragEnd = async (result: DropResult) => {
-    const { draggableId, destination, source } = result
-    if (!destination || destination.droppableId === source.droppableId) return
-
-    // Decline must always go through the modal so the email gets sent.
-    // The DECLINED column is configured isDropDisabled and its cards
-    // isDragDisabled, so this branch shouldn't fire — defensive guard
-    // in case those props get loosened later.
-    if (destination.droppableId === 'rejected' || source.droppableId === 'rejected') return
-
-    const newStatus = destination.droppableId
-    const card = cards.find(c => c.id === draggableId)
-    if (!card) return
-
-    // Block drag-back out of the Interview column. If an interview is booked
-    // the employer must cancel or reschedule it explicitly — silently
-    // undoing a stage change would leave the interview orphaned.
-    if (
-      source.droppableId === 'interview' &&
-      (newStatus === 'reviewing' || newStatus === 'shortlisted')
-    ) {
-      alert(
-        `This candidate has a scheduled interview. To change course, open their ` +
-        `application and use Reschedule or Cancel Interview — those actions will ` +
-        `notify the candidate properly.`
-      )
-      return
-    }
-
+  // Apply a stage move to the DB and surface what cascaded as a toast.
+  // Used by both the forward-drag path and the backward-confirm path so
+  // every move runs the same optimistic update, supabase write, candidate
+  // notification, and cascade-log read.
+  const applyMove = async (card: PipelineCard, newStatus: string, fromStatus: string, stageLabel: string) => {
     // Optimistic update
-    setCards(prev => prev.map(c => c.id === draggableId ? { ...c, status: newStatus, daysInStage: 0 } : c))
+    setCards(prev => prev.map(c => c.id === card.id ? { ...c, status: newStatus, daysInStage: 0 } : c))
 
-    // Update DB
+    // Capture cutoff so the cascade-log read only sees rows from this move.
+    const requestStartIso = new Date().toISOString()
+
     const { error } = await supabase
       .from('job_applications')
       .update({ status: newStatus, status_updated_at: new Date().toISOString() })
-      .eq('id', draggableId)
+      .eq('id', card.id)
 
     if (error) {
-      // Revert on failure
-      setCards(prev => prev.map(c => c.id === draggableId ? { ...c, status: source.droppableId } : c))
+      setCards(prev => prev.map(c => c.id === card.id ? { ...c, status: fromStatus } : c))
+      setToast({ message: 'Move failed. Please try again.', key: Date.now() })
       return
     }
 
-    // Send notification to candidate at every stage transition.
+    // Candidate-facing bell notification on key transitions.
     if (card.candidateId) {
       const notifMap: Record<string, { title: string; message: string }> = {
         reviewing: { title: 'Application Under Review', message: `Your application for ${card.jobTitle} is being reviewed.` },
@@ -242,6 +267,46 @@ export default function PipelinePage() {
         }).then()
       }
     }
+
+    // Read what the cascade trigger did (if anything) so the toast is honest.
+    const { data: logRows } = await supabase
+      .from('pipeline_cascade_log')
+      .select('cascade_kind, details')
+      .eq('application_id', card.id)
+      .gte('created_at', requestStartIso)
+      .order('created_at', { ascending: false })
+
+    setToast({ message: summarizeCascade((logRows as CascadeLogRow[]) || [], stageLabel), key: Date.now() })
+  }
+
+  // Handle drag and drop
+  const handleDragEnd = async (result: DropResult) => {
+    const { draggableId, destination, source } = result
+    if (!destination || destination.droppableId === source.droppableId) return
+
+    // Decline must always go through the modal so the email gets sent.
+    // The DECLINED column is configured isDropDisabled and its cards
+    // isDragDisabled, so this branch shouldn't fire — defensive guard
+    // in case those props get loosened later.
+    if (destination.droppableId === 'rejected' || source.droppableId === 'rejected') return
+
+    const newStatus = destination.droppableId
+    const card = cards.find(c => c.id === draggableId)
+    if (!card) return
+
+    const fromIdx = stageIndex(source.droppableId)
+    const toIdx = stageIndex(newStatus)
+    const stageLabel = STAGES.find(s => s.id === newStatus)?.label || newStatus
+
+    // Backward drag (e.g. Hired → Offered, Interview → Shortlisted).
+    // The DB trigger doesn't undo past actions; the user gets a confirm
+    // explaining what's preserved before the move commits.
+    if (fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx) {
+      setBackwardMove({ card, newStatus, stageLabel })
+      return
+    }
+
+    await applyMove(card, newStatus, source.droppableId, stageLabel)
   }
 
   const filteredCards = filterJob === 'all' ? cards : cards.filter(c => c.jobId === filterJob)
@@ -501,6 +566,60 @@ export default function PipelinePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Backward-move confirmation. The DB trigger preserves past
+          actions (sent emails, scheduled interviews, offer history) on
+          backward moves and writes an audit row to pipeline_cascade_log
+          — this dialog warns the employer before that happens. */}
+      {backwardMove && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          onClick={() => !backwardSubmitting && setBackwardMove(null)}
+        >
+          <div
+            style={{ background: '#fff', borderRadius: 12, maxWidth: 480, width: '100%', padding: '1.5rem' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 700 }}>
+              Move {backwardMove.card.candidateName} back to {backwardMove.stageLabel}?
+            </h3>
+            <p style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.5, margin: '0 0 1.25rem' }}>
+              Their past actions stay in place — emails sent, interviews logged, offer history. Nothing is undone. The move is recorded for audit.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setBackwardMove(null)}
+                disabled={backwardSubmitting}
+                style={{ flex: 1, padding: '0.625rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!backwardMove) return
+                  setBackwardSubmitting(true)
+                  const { card, newStatus, stageLabel } = backwardMove
+                  await applyMove(card, newStatus, card.status, stageLabel)
+                  setBackwardSubmitting(false)
+                  setBackwardMove(null)
+                }}
+                disabled={backwardSubmitting}
+                style={{ flex: 1, padding: '0.625rem', border: 'none', borderRadius: 8, background: backwardSubmitting ? '#94a3b8' : '#0f172a', color: '#FFE500', cursor: backwardSubmitting ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.9rem' }}
+              >
+                {backwardSubmitting ? 'Moving…' : 'Move back'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <Toast
+          key={toast.key}
+          message={toast.message}
+          onDismiss={() => setToast(null)}
+        />
       )}
     </main>
   )
