@@ -407,8 +407,13 @@ export default function ScheduleInterviewModal({
   }
 
   // ═══ Manual-mode submit (UNCHANGED legacy logic)
-  // ═══ Self-schedule: create interview with pending_self_schedule status
-  // and send the candidate a link to pick their own time
+  // ═══ Self-schedule: create interview with pending_selection status
+  // and send the candidate a link to pick their own time. The CHECK
+  // constraint on interviews.status only permits the 6 enum values
+  // listed in the table; pending_selection is the closest semantic
+  // match ("candidate hasn't picked yet") and is shared with the
+  // multi-slot manual mode — both are distinguished by whether
+  // proposed_slots is populated (manual) or empty (self-schedule).
   const handleSendSelfSchedule = async () => {
     setSubmitting(true)
     setError('')
@@ -430,7 +435,7 @@ export default function ScheduleInterviewModal({
           interview_type: interviewType,
           location_or_link: interviewType === 'video' ? (meetingLink.trim() || 'Video Call') : interviewType === 'in-person' ? 'In-Person' : 'Phone Call',
           notes: notes.trim() || null,
-          status: 'pending_self_schedule',
+          status: 'pending_selection',
         })
         .select('id, scheduling_token')
         .single()

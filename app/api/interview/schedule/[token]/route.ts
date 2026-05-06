@@ -31,7 +31,7 @@ export async function GET(
       return NextResponse.json({ error: 'Interview not found' }, { status: 404 })
     }
 
-    if (interview.status !== 'pending_self_schedule') {
+    if (interview.status !== 'pending_selection') {
       return NextResponse.json({
         error: interview.status === 'scheduled' || interview.status === 'confirmed'
           ? 'This interview has already been scheduled'
