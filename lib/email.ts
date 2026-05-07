@@ -7,14 +7,13 @@ if (!process.env.RESEND_API_KEY) {
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
-const FROM_ADDRESS = process.env.RESEND_DOMAIN_VERIFIED === 'true'
-  ? 'Thrive <noreply@thrivecareer.co.uk>'
-  : 'Thrive <onboarding@resend.dev>'
+const FROM_ADDRESS = 'Thrive <noreply@thrivecareer.co.uk>'
 
 export async function sendEmail(
   to: string,
   subject: string,
-  html: string
+  html: string,
+  replyTo: string = 'hello@thrivecareer.co.uk'
 ): Promise<{ success: boolean; error?: string }> {
   if (!resend) {
     console.warn(`[Email] Would send to ${to}: ${subject} (Resend not configured)`)
@@ -27,6 +26,7 @@ export async function sendEmail(
       to,
       subject,
       html,
+      replyTo,
     })
 
     if (error) {
