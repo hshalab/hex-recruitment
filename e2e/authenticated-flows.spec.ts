@@ -4,7 +4,7 @@ import * as path from 'path'
 
 dotenv.config({ path: path.resolve(__dirname, '../.env.test') })
 
-const BASE = process.env.BASE_URL || 'https://hex-recruitment.vercel.app'
+const BASE = process.env.BASE_URL || 'https://thrivecareer.co.uk'
 const EMPLOYER_EMAIL = process.env.EMPLOYER_EMAIL!
 const EMPLOYER_PASS = process.env.EMPLOYER_PASS!
 const CANDIDATE_EMAIL = process.env.CANDIDATE_EMAIL!

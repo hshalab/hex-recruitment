@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-const BASE = process.env.BASE_URL || 'https://hex-recruitment.vercel.app'
+const BASE = process.env.BASE_URL || 'https://thrivecareer.co.uk'
 
 async function dismissCookieBanner(page: import('@playwright/test').Page) {
   const acceptBtn = page.locator('button:has-text("Accept All")')
