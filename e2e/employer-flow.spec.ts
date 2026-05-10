@@ -115,8 +115,10 @@ test.describe('Employer Flow — register → post job → view applications →
     await page.waitForLoadState('networkidle')
     await expect(page.locator('text=Loading')).not.toBeVisible({ timeout: 10000 })
 
-    // Check that jobs list or empty state is shown
-    const jobCards = page.locator('[class*="jobCard"], [class*="listCard"]')
+    // Check that jobs list or empty state is shown.
+    // /my-jobs renders rows post-toggle-removal; legacy selectors kept for
+    // safety (candidate-side /jobs still uses jobCard).
+    const jobCards = page.locator('[class*="jobRow"], [class*="jobCard"], [class*="listCard"]')
     const emptyState = page.locator('[class*="emptyState"], text=No jobs')
 
     const hasJobs = await jobCards.count() > 0
