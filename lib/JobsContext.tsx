@@ -91,6 +91,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       if (updates.workAuthorization !== undefined) supabaseUpdates.work_authorization = updates.workAuthorization
       if (updates.location !== undefined) supabaseUpdates.location = updates.location
       if (updates.area !== undefined) supabaseUpdates.area = updates.area
+      if (updates.venue !== undefined) supabaseUpdates.venue = updates.venue || null
       if (updates.fullLocation !== undefined) supabaseUpdates.full_location = updates.fullLocation
       if (updates.salaryMin !== undefined) supabaseUpdates.salary_min = updates.salaryMin
       if (updates.salaryMax !== undefined) supabaseUpdates.salary_max = updates.salaryMax

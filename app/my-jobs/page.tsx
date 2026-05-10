@@ -18,6 +18,9 @@ interface PostedJob {
   company: string
   companyLogo: string
   location: string
+  /** Optional property/site name for multi-venue operators (e.g. "The Ember", "Ember Soho").
+   *  Null for single-site operators or multi-site roles. */
+  venue?: string
   postedDate: string
   applicationCount: number
   viewCount: number
@@ -123,6 +126,7 @@ function MyJobsContent() {
           company: row.company,
           companyLogo: row.company_logo_url || '',
           location: row.location || '',
+          venue: row.venue || undefined,
           postedDate: row.posted_at ? new Date(row.posted_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           applicationCount: 0,
           viewCount: row.views || 0,
@@ -714,6 +718,10 @@ function MyJobsContent() {
         {isOpen && (
           <div className={styles.kebabMenu} role="menu">
             <button type="button" role="menuitem" className={styles.kebabItem}
+              onClick={(e) => choose(e, () => router.push(`/post-job?edit=${job.id}`))}>
+              Manage job
+            </button>
+            <button type="button" role="menuitem" className={styles.kebabItem}
               onClick={(e) => choose(e, () => router.push(`/job/${job.id}?from=my-jobs`))}>
               View public job
             </button>
@@ -1060,21 +1068,19 @@ function MyJobsContent() {
                             }}
                           >
                             <div className={styles.rowMain}>
-                              <h3 className={styles.rowTitle}>{job.title}</h3>
+                              <h3 className={styles.rowTitle}>
+                                {job.title}
+                                {job.venue && (
+                                  <>
+                                    <span className={styles.rowTitleDot}> · </span>
+                                    <span className={styles.rowVenue}>{job.venue}</span>
+                                  </>
+                                )}
+                              </h3>
                               <div className={styles.rowMeta}>
                                 <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
                                 <span className={styles.rowDot}>·</span>
-                                <span>{job.employmentType.join(', ')}</span>
-                                <span className={styles.rowDot}>·</span>
                                 <span>📍 {job.location}</span>
-                                <span className={styles.rowDot}>·</span>
-                                <span>Posted {formatDate(job.postedDate)}</span>
-                                {job.expiresDate && (
-                                  <>
-                                    <span className={styles.rowDot}>·</span>
-                                    <span>Closes {formatDate(job.expiresDate)}</span>
-                                  </>
-                                )}
                                 {interviewMeta && (
                                   <>
                                     <span className={styles.rowDot}>·</span>
@@ -1133,10 +1139,11 @@ function MyJobsContent() {
                               />
                               <div className={styles.cardTitleArea}>
                                 <h3 className={styles.jobTitle}>{job.title}</h3>
+                                {job.venue && (
+                                  <div className={styles.cardVenue}>{job.venue}</div>
+                                )}
                                 <div className={styles.cardSecondary}>
                                   <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
-                                  <span className={styles.cardDot}>·</span>
-                                  <span>{job.employmentType.join(', ')}</span>
                                 </div>
                               </div>
                               <div className={styles.cardSide}>
@@ -1152,9 +1159,6 @@ function MyJobsContent() {
                               </span>
                               <span className={styles.cardMetaMuted}>
                                 📍 {job.location}
-                                {job.expiresDate && (
-                                  <> · Closes {formatDate(job.expiresDate)}</>
-                                )}
                               </span>
                               {interviewMeta && (
                                 <span className={styles.cardMetaInterview}>

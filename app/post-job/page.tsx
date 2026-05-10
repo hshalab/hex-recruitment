@@ -73,6 +73,7 @@ function PostJobContent() {
     salaryPeriod: 'hour' as 'hour' | 'year',
     location: '',
     area: '',
+    venue: '',
     postcode: '',
     city: '',
     description: '',
@@ -221,6 +222,7 @@ function PostJobContent() {
           salaryPeriod: jobToEdit.salaryPeriod || 'hour',
           location: jobToEdit.location || '',
           area: jobToEdit.area || '',
+          venue: jobToEdit.venue || '',
           postcode: jobToEdit.fullLocation?.postcode || '',
           city: jobToEdit.fullLocation?.city || '',
           description: combinedDescription,
@@ -539,6 +541,7 @@ function PostJobContent() {
         employmentType: employmentType as ('Full-time' | 'Part-time' | 'Permanent' | 'Contract' | 'Temporary' | 'Flexible')[],
         location: formData.location,
         area: formData.area || 'London',
+        venue: formData.venue.trim() || undefined,
         fullLocation: {
           addressLine1: formData.location,
           city: formData.city || formData.area?.split(' ')[0] || 'London',
@@ -1008,6 +1011,21 @@ function PostJobContent() {
                   Area set to: {formData.area}
                 </p>
               )}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label} htmlFor="venue">Venue (optional)</label>
+              <input
+                type="text"
+                id="venue"
+                name="venue"
+                value={formData.venue}
+                onChange={handleChange}
+                placeholder="e.g. Shoreditch House, LSEG, Ham Yard Hotel"
+                className={styles.input}
+                autoComplete="off"
+                maxLength={80}
+              />
             </div>
 
             <div className={styles.formRow}>

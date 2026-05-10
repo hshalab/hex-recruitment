@@ -733,3 +733,19 @@ SELECT
   (SELECT COUNT(*) FROM inserted_interviews)  AS interviews_inserted,
   (SELECT json_object_agg(status, n) FROM (SELECT status, COUNT(*) AS n FROM inserted_apps GROUP BY status) s) AS apps_by_status,
   (SELECT json_object_agg(status, n) FROM (SELECT status, COUNT(*) AS n FROM inserted_interviews GROUP BY status) s) AS interviews_by_status;
+
+-- ── Venue assignment ────────────────────────────────────────────────────────
+-- Multi-site demo: 13/14 jobs get a venue ("The Ember", "Ember Soho",
+-- "Ember Bridge", "Ember HQ"); the Operations Manager covers all 4 sites
+-- so it stays NULL to demo the single-site fallback render on /my-jobs.
+-- Grouping is driven by the existing area field — keeps this idempotent
+-- and avoids depending on title spellings.
+UPDATE public.jobs
+SET venue = CASE area
+  WHEN 'Mayfair, W1K'    THEN 'The Ember'
+  WHEN 'Soho, W1F'       THEN 'Ember Soho'
+  WHEN 'Shoreditch, E2'  THEN 'Ember Bridge'
+  WHEN 'Marylebone, W1U' THEN 'Ember HQ'
+  ELSE NULL
+END
+WHERE employer_id = '277c20ae-ac3e-4048-9b99-66f41cbf1861'::uuid;
