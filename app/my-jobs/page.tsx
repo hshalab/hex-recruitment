@@ -72,6 +72,21 @@ function MyJobsContent() {
   const [jobBoosts, setJobBoosts] = useState<Record<string, Boost>>({})
   const [myJobsSearch, setMyJobsSearch] = useState('')
   const [myJobsLocationSearch, setMyJobsLocationSearch] = useState('')
+  // List vs card layout. Rows default at 6+ jobs; localStorage override wins.
+  // Mobile (<768px) is forced to cards via CSS — this state controls desktop only.
+  const [viewMode, setViewMode] = useState<'rows' | 'cards'>('cards')
+  const [hasLoadedViewPref, setHasLoadedViewPref] = useState(false)
+  const [openMenuJobId, setOpenMenuJobId] = useState<string | null>(null)
+  // Force the simplified-card variant on mobile regardless of saved preference;
+  // rows compress poorly below ~640px and the spec calls for cards there.
+  const [isNarrowViewport, setIsNarrowViewport] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const sync = () => setIsNarrowViewport(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
 
   // Read filter from URL query param (e.g. /my-jobs?filter=interviewing)
   const filterParam = searchParams.get('filter')
@@ -639,6 +654,101 @@ function MyJobsContent() {
     return jobs
   }, [viewData.filtered, myJobsSearch, myJobsLocationSearch])
 
+  // Load saved view preference once on mount; if unset, default rows at 6+ jobs.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('thrive-myjobs-view')
+      if (saved === 'rows' || saved === 'cards') {
+        setViewMode(saved)
+      } else if (displayJobs.length >= 6) {
+        setViewMode('rows')
+      }
+    } catch {
+      /* localStorage unavailable (private mode, etc.) — silent fallback */
+    }
+    setHasLoadedViewPref(true)
+  }, [displayJobs.length])
+
+  const updateViewMode = (mode: 'rows' | 'cards') => {
+    setViewMode(mode)
+    try { localStorage.setItem('thrive-myjobs-view', mode) } catch { /* silent */ }
+  }
+
+  // Close kebab on outside click or Escape.
+  useEffect(() => {
+    if (!openMenuJobId) return
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Element | null
+      if (!target?.closest(`.${styles.kebabWrap}`)) setOpenMenuJobId(null)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenMenuJobId(null) }
+    document.addEventListener('click', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('click', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [openMenuJobId])
+
+  // Kebab popover. Lives inside a Link/Card click target, so every handler
+  // must preventDefault + stopPropagation to avoid the parent navigating.
+  const renderKebab = (job: PostedJob, isBoosted: boolean) => {
+    const isOpen = openMenuJobId === job.id
+    const stop = (e: React.MouseEvent | React.KeyboardEvent) => {
+      e.preventDefault(); e.stopPropagation()
+    }
+    const choose = (e: React.MouseEvent, fn: () => void) => {
+      stop(e); fn(); setOpenMenuJobId(null)
+    }
+    return (
+      <div className={styles.kebabWrap} onClick={stop}>
+        <button
+          type="button"
+          aria-label="Job actions"
+          aria-expanded={isOpen}
+          className={styles.kebabBtn}
+          onClick={(e) => { stop(e); setOpenMenuJobId(isOpen ? null : job.id) }}
+        >
+          ⋯
+        </button>
+        {isOpen && (
+          <div className={styles.kebabMenu} role="menu">
+            <button type="button" role="menuitem" className={styles.kebabItem}
+              onClick={(e) => choose(e, () => router.push(`/job/${job.id}?from=my-jobs`))}>
+              View public job
+            </button>
+            <button type="button" role="menuitem" className={styles.kebabItem}
+              onClick={(e) => choose(e, () => router.push(`/employer/analytics/${job.id}`))}>
+              View analytics
+            </button>
+            <button type="button" role="menuitem" className={styles.kebabItem}
+              onClick={(e) => choose(e, () => router.push(`/candidates?jobId=${job.id}`))}>
+              Find candidates
+            </button>
+            {job.status !== 'archived' && job.status !== 'filled' && (
+              <button type="button" role="menuitem" className={styles.kebabItem}
+                onClick={(e) => choose(e, () => { setBoostTargetJob(job); setBoostModalOpen(true) })}>
+                ⚡ {isBoosted ? 'Boosted (manage)' : 'Boost this job'}
+              </button>
+            )}
+            {(job.status === 'archived' || job.status === 'filled') && (
+              <button type="button" role="menuitem" className={styles.kebabItem}
+                onClick={(e) => choose(e, () => handleReactivateJob(job.id))}>
+                Reactivate
+              </button>
+            )}
+            {job.status === 'archived' && (
+              <button type="button" role="menuitem" className={styles.kebabItem}
+                onClick={(e) => choose(e, () => handleRepostJob(job))}>
+                Repost job
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <main>
@@ -897,137 +1007,174 @@ function MyJobsContent() {
                 </div>
               )}
 
-              {/* Job cards — show for all other tabs */}
-              {activeTab !== 'offers' && activeTab !== 'hired' && (
-              <div className={styles.jobsList}>
-                {displayJobs.map(job => {
-                  const status = getStatusLabel(job.status)
-                  return (
-                    <div key={job.id} className={styles.jobCard}>
-                      <div className={styles.cardHeader}>
-                        <div className={styles.jobInfo}>
-                          <h3 className={styles.jobTitle}>{job.title}</h3>
-                          <div className={styles.jobKeyInfo}>
-                            <span className={styles.salaryBadge}>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
-                            <span className={styles.cardDot}>·</span>
-                            <span className={styles.typeBadge}>{job.employmentType.join(', ')}</span>
-                          </div>
-                        </div>
-                        <CompanyLogo
-                          src={job.companyLogo}
-                          alt={job.company}
-                          className={styles.companyLogo}
-                        />
-                      </div>
-
-                      <div className={styles.cardContent}>
-                        {job.expiresDate && (
-                          <p className={styles.cardMeta}>Closes: {formatDate(job.expiresDate)}</p>
-                        )}
-
-                        {activeTab === 'interviewing' && viewData.nextInterviewMap[job.id] && (
-                          <div className={styles.interviewBadge}>
-                            <span className={styles.interviewBadgeIcon}>📅</span>
-                            <span>
-                              Interview: <strong>{formatInterviewDate(viewData.nextInterviewMap[job.id].date, viewData.nextInterviewMap[job.id].time)}</strong>
-                              {viewData.nextInterviewMap[job.id].candidateName && (
-                                <> — {viewData.nextInterviewMap[job.id].candidateName}</>
-                              )}
-                            </span>
-                          </div>
-                        )}
-                        {job.hiredCandidate && (
-                          <div className={styles.hiredInfo}>
-                            <span className={styles.hiredIcon}>&#10003;</span>
-                            <span>
-                              Hired: <strong>{job.hiredCandidate.name}</strong>
-                              {job.hiredCandidate.hiredAt && (
-                                <> on {formatDate(job.hiredCandidate.hiredAt)}</>
-                              )}
-                            </span>
-                          </div>
-                        )}
-
-                        <div className={styles.cardActions}>
-                          {/* Row 1 */}
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.cardAction}
-                          >
-                            📍 {job.location}
-                          </a>
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => router.push(`/employer/analytics/${job.id}`)}
-                          >
-                            👁 {job.viewCount} {job.viewCount === 1 ? 'view' : 'views'}
-                          </button>
-                          {/* Row 2 */}
-                          <button
-                            className={styles.cardAction}
-                            onClick={(e) => { e.stopPropagation(); router.push(`/my-jobs/${job.id}/applications`) }}
-                          >
-                            👥 {job.applicationCount} {job.applicationCount === 1 ? 'application' : 'applications'}
-                          </button>
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => router.push(`/job/${job.id}?from=my-jobs`)}
-                          >
-                            View Job
-                          </button>
-                          {/* Row 3 */}
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => router.push(`/employer/analytics/${job.id}`)}
-                          >
-                            ↗ View Analytics
-                          </button>
-                          <button
-                            className={styles.cardAction}
-                            onClick={() => router.push(`/candidates?jobId=${job.id}`)}
-                          >
-                            Find Candidates
-                          </button>
-
-                          {(job.status === 'archived' || job.status === 'filled') && (
-                            <button
-                              className={styles.cardAction}
-                              onClick={() => handleReactivateJob(job.id)}
-                            >
-                              Reactivate
-                            </button>
-                          )}
-                          {job.status === 'archived' && (
-                            <button
-                              className={styles.cardAction}
-                              onClick={() => handleRepostJob(job)}
-                            >
-                              Repost Job
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className={styles.cardBottom}>
-                        <span className={`${styles.statusBadge} ${job.status === 'active' ? styles.statusActiveGreen : status.className}`}>
-                          {status.label}
-                        </span>
-                        <span className={styles.postedDate}>Posted {formatDate(job.postedDate)}</span>
-                        {job.status !== 'archived' && job.status !== 'filled' ? (
-                          <button
-                            className={`${styles.boostBtn} ${jobBoosts[job.id] ? styles.boostBtnActive : ''}`}
-                            onClick={() => { setBoostTargetJob(job); setBoostModalOpen(true) }}
-                          >
-                            ⚡ {jobBoosts[job.id] ? 'Boosted' : 'Boost'}
-                          </button>
-                        ) : <span />}
-                      </div>
+              {/* Job list — rows or cards. Same information arch in both;
+                  rows are dense for high-volume employers, cards for low-volume
+                  or screenshot moments. Whole row/card click → applications;
+                  secondary actions live in the kebab. Mobile <768px is forced
+                  to cards via CSS regardless of viewMode. */}
+              {activeTab !== 'offers' && activeTab !== 'hired' && hasLoadedViewPref && (
+                <>
+                  {displayJobs.length >= 6 && (
+                    <div className={styles.viewToggle} role="tablist" aria-label="View layout">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={viewMode === 'rows'}
+                        className={`${styles.viewToggleBtn} ${viewMode === 'rows' ? styles.viewToggleBtnActive : ''}`}
+                        onClick={() => updateViewMode('rows')}
+                      >
+                        ☰ List
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={viewMode === 'cards'}
+                        className={`${styles.viewToggleBtn} ${viewMode === 'cards' ? styles.viewToggleBtnActive : ''}`}
+                        onClick={() => updateViewMode('cards')}
+                      >
+                        ▦ Cards
+                      </button>
                     </div>
-                  )
-                })}
-              </div>
+                  )}
+                  {(viewMode === 'rows' && !isNarrowViewport) ? (
+                    <div className={styles.jobRows}>
+                      {displayJobs.map(job => {
+                        const status = getStatusLabel(job.status)
+                        const statusClass = job.status === 'active' ? styles.statusActiveGreen : status.className
+                        const isBoosted = !!jobBoosts[job.id]
+                        const interviewMeta = activeTab === 'interviewing' && viewData.nextInterviewMap[job.id]
+                          ? viewData.nextInterviewMap[job.id] : null
+                        const goToApps = () => router.push(`/my-jobs/${job.id}/applications`)
+                        return (
+                          <div
+                            key={job.id}
+                            className={styles.jobRow}
+                            role="link"
+                            tabIndex={0}
+                            onClick={goToApps}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                goToApps()
+                              }
+                            }}
+                          >
+                            <div className={styles.rowMain}>
+                              <h3 className={styles.rowTitle}>{job.title}</h3>
+                              <div className={styles.rowMeta}>
+                                <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
+                                <span className={styles.rowDot}>·</span>
+                                <span>{job.employmentType.join(', ')}</span>
+                                <span className={styles.rowDot}>·</span>
+                                <span>📍 {job.location}</span>
+                                <span className={styles.rowDot}>·</span>
+                                <span>Posted {formatDate(job.postedDate)}</span>
+                                {job.expiresDate && (
+                                  <>
+                                    <span className={styles.rowDot}>·</span>
+                                    <span>Closes {formatDate(job.expiresDate)}</span>
+                                  </>
+                                )}
+                                {interviewMeta && (
+                                  <>
+                                    <span className={styles.rowDot}>·</span>
+                                    <span>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span>
+                                  </>
+                                )}
+                                {job.hiredCandidate && (
+                                  <>
+                                    <span className={styles.rowDot}>·</span>
+                                    <span>✓ Hired {job.hiredCandidate.name}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <div className={styles.rowSide}>
+                              <span className={`${styles.statusBadge} ${statusClass}`}>{status.label}</span>
+                              <span className={styles.appCountBadge}>
+                                <strong>{job.applicationCount}</strong>
+                                {' '}
+                                {job.applicationCount === 1 ? 'application' : 'applications'}
+                              </span>
+                              {renderKebab(job, isBoosted)}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className={styles.jobsList}>
+                      {displayJobs.map(job => {
+                        const status = getStatusLabel(job.status)
+                        const statusClass = job.status === 'active' ? styles.statusActiveGreen : status.className
+                        const isBoosted = !!jobBoosts[job.id]
+                        const interviewMeta = activeTab === 'interviewing' && viewData.nextInterviewMap[job.id]
+                          ? viewData.nextInterviewMap[job.id] : null
+                        const goToApps = () => router.push(`/my-jobs/${job.id}/applications`)
+                        return (
+                          <div
+                            key={job.id}
+                            className={`${styles.jobCard} ${styles.cardCompact}`}
+                            role="link"
+                            tabIndex={0}
+                            onClick={goToApps}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                goToApps()
+                              }
+                            }}
+                          >
+                            <div className={styles.cardTop}>
+                              <CompanyLogo
+                                src={job.companyLogo}
+                                alt={job.company}
+                                className={styles.cardLogo}
+                              />
+                              <div className={styles.cardTitleArea}>
+                                <h3 className={styles.jobTitle}>{job.title}</h3>
+                                <div className={styles.cardSecondary}>
+                                  <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
+                                  <span className={styles.cardDot}>·</span>
+                                  <span>{job.employmentType.join(', ')}</span>
+                                </div>
+                              </div>
+                              <div className={styles.cardSide}>
+                                <span className={`${styles.statusBadge} ${statusClass}`}>{status.label}</span>
+                                {renderKebab(job, isBoosted)}
+                              </div>
+                            </div>
+                            <div className={styles.cardSummary}>
+                              <span className={styles.appCountPrimary}>
+                                <strong>{job.applicationCount}</strong>
+                                {' '}
+                                {job.applicationCount === 1 ? 'application' : 'applications'}
+                              </span>
+                              <span className={styles.cardMetaMuted}>
+                                📍 {job.location}
+                                {job.expiresDate && (
+                                  <> · Closes {formatDate(job.expiresDate)}</>
+                                )}
+                              </span>
+                              {interviewMeta && (
+                                <span className={styles.cardMetaInterview}>
+                                  📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}
+                                  {interviewMeta.candidateName && <> — {interviewMeta.candidateName}</>}
+                                </span>
+                              )}
+                              {job.hiredCandidate && (
+                                <span className={styles.cardMetaHired}>
+                                  ✓ Hired {job.hiredCandidate.name}
+                                  {job.hiredCandidate.hiredAt && <> · {formatDate(job.hiredCandidate.hiredAt)}</>}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
