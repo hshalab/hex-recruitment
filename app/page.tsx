@@ -116,7 +116,7 @@ export default function Home() {
             <div className={styles.step}>
               <div className={styles.stepNumber}>1</div>
               <h3 className={styles.stepTitle}>Post your job</h3>
-              <p className={styles.stepText}>Describe the role, set the salary, and publish. It goes live across all UK sectors instantly.</p>
+              <p className={styles.stepText}>Describe the role, set the salary, and publish. It goes live in minutes.</p>
             </div>
             <div className={styles.step}>
               <div className={styles.stepNumber}>2</div>
@@ -146,7 +146,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className={styles.benefitTitle}>Post unlimited jobs</h3>
-              <p className={styles.stepText}>Publish across all 20 UK sectors. Jobs go live instantly and reach candidates searching in your area.</p>
+              <p className={styles.stepText}>Post unlimited jobs. Reach hospitality candidates actively searching in your area.</p>
             </div>
             <div className={styles.benefitCard}>
               <div className={styles.benefitIcon}>
@@ -205,19 +205,6 @@ export default function Home() {
               <h3 className={styles.stepTitle}>No per-listing costs</h3>
               <p className={styles.stepText}>Other boards charge per job post. On Thrive, post as many jobs as you need — included in your account.</p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Sectors */}
-      <section className={`${styles.sectors}`}>
-        <div className={styles.sectionInner}>
-          <h2 className={styles.sectionTitle}>All UK Sectors Covered</h2>
-          <p className={styles.sectionSubtitle}>From accountancy to transport — we cover every industry</p>
-          <div className={styles.sectorPills}>
-            {['Accountancy & Finance', 'Business & Management', 'Charity', 'Creative & Design', 'Digital & IT', 'Energy & Utilities', 'Engineering', 'Environment & Agriculture', 'Healthcare', 'Hospitality & Tourism', 'Law & Legal', 'Marketing & PR', 'Media', 'Property & Construction', 'Public Services', 'Recruitment & HR', 'Retail & Sales', 'Science', 'Teaching & Education', 'Transport & Logistics'].map(sector => (
-              <Link key={sector} href={`/jobs?sector=${encodeURIComponent(sector)}`} className={styles.sectorPill}>{sector}</Link>
-            ))}
           </div>
         </div>
       </section>
