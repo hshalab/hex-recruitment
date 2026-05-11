@@ -1,11 +1,14 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Browse Candidates - Find Qualified UK Talent',
-  description: 'Browse thousands of qualified candidates across all UK sectors. Filter by skills, experience, location and availability. Find your next hire today.',
+  // No "— Thrive" suffix on document title — the root metadata.template
+  // ("%s | Thrive") appends it automatically. og title below keeps the
+  // suffix because the template doesn't apply to og.
+  title: 'Find Hospitality Talent',
+  description: 'Browse qualified hospitality candidates across the UK. Chefs, front of house, management and operations talent.',
   openGraph: {
-    title: 'Browse Candidates - Find Qualified UK Talent',
-    description: 'Browse thousands of qualified candidates across all UK sectors. Find your next hire today.',
+    title: 'Find Hospitality Talent — Thrive',
+    description: 'Browse qualified hospitality candidates across the UK. Chefs, front of house, management and operations talent.',
   },
   alternates: {
     canonical: '/candidates',

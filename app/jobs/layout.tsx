@@ -1,16 +1,19 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Browse Jobs in the UK - Hospitality, Admin, Tech & More',
-  description: 'Search and apply for thousands of UK jobs across all sectors. Filter by location, salary, job type and more. New jobs added daily. Free for job seekers.',
+  // No "— Thrive" suffix on document title — the root metadata.template
+  // ("%s | Thrive") appends it automatically. og/twitter titles below
+  // keep the suffix because the template doesn't apply to those fields.
+  title: 'Hospitality Jobs in the UK',
+  description: 'Search and apply for hospitality jobs across the UK. Kitchen, front of house, sales and operations roles from London restaurants, hotels and hospitality groups.',
   openGraph: {
-    title: 'Browse Jobs in the UK - Hospitality, Admin, Tech & More',
-    description: 'Search and apply for thousands of UK jobs across all sectors. Filter by location, salary, job type and more.',
+    title: 'Hospitality Jobs in the UK — Thrive',
+    description: 'Search and apply for hospitality jobs across the UK. Kitchen, front of house, sales and operations roles from London restaurants, hotels and hospitality groups.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Find Jobs Across All UK Sectors | Thrive',
-    description: 'Browse thousands of jobs across all industries.',
+    title: 'Hospitality Jobs in the UK — Thrive',
+    description: 'Search and apply for hospitality jobs across the UK. Kitchen, front of house, sales and operations roles from London restaurants, hotels and hospitality groups.',
     images: ['/opengraph-image'],
   },
   alternates: {
