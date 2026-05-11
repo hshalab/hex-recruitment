@@ -228,18 +228,20 @@
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
 }
 
-/* Candidate identity strip — flat single-row layout matching the
-   /my-jobs row rhythm. Photo on the left, name + position + location +
-   applied as inline flex children with · separators, action links on
-   the right. Aim: ~64px row instead of the prior ~140px dark hero. */
+/* Candidate identity strip — flat single-row layout on the dark hero
+   background that matches the candidate profile page header. Photo on
+   the left, name + position + location + applied as inline flex
+   children with · separators, action links on the right. ~64px row
+   instead of the prior ~140px stacked layout. */
 .cardMain {
   display: flex;
   gap: 0.5rem;
   align-items: center;
   justify-content: flex-start;
+  background: var(--ds-hero);
   margin: 0 -1.25rem 1rem;
   padding: 0.875rem 1.25rem;
-  border-bottom: 1px solid var(--ds-border);
+  color: #fff;
 }
 
 /* Candidate Photo */
@@ -250,7 +252,7 @@
   overflow: hidden;
   flex-shrink: 0;
   background: #fff;
-  border: 1px solid var(--ds-border);
+  border: 2px solid rgba(255, 215, 0, 0.4);
 }
 
 .photoImage {
@@ -274,7 +276,7 @@
 .candidateName {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--ds-text-primary);
+  color: #fff;
   margin: 0;
   line-height: 1.3;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -284,16 +286,16 @@
 .candidateLocation,
 .appliedDate {
   font-size: 0.875rem;
-  color: var(--ds-text-secondary);
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
   line-height: 1.3;
   white-space: nowrap;
   flex: 0 0 auto;
 }
-.candidatePosition { color: var(--ds-text-primary); font-weight: 600; }
+.candidatePosition { color: var(--ds-yellow); font-weight: 600; }
 .cardSep {
   flex: 0 0 auto;
-  color: var(--ds-text-primary);
+  color: rgba(255, 255, 255, 0.4);
   font-size: 0.875rem;
   line-height: 1.3;
   user-select: none;
@@ -307,8 +309,8 @@
   justify-content: center;
   padding: 0.4rem 0.85rem;
   background: transparent;
-  color: var(--ds-text-primary);
-  border: 1px solid var(--ds-border);
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
   border-radius: 8px;
   font-size: 0.82rem;
   font-weight: 600;
@@ -325,8 +327,8 @@
 }
 
 .viewProfileLink:hover {
-  background: var(--ds-bg-soft, #f1f5f9);
-  border-color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 215, 0, 0.5);
 }
 
 /* Screening answers — dark panel so the Q&A pops out of the body */
