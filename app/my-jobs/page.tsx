@@ -1025,7 +1025,7 @@ function MyJobsContent() {
                           <div className={styles.rowMeta}>
                             <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
                             <span className={styles.rowDot}>·</span>
-                            <span>📍 {job.location}</span>
+                            <span>{job.location}</span>
                             {interviewMeta && (
                               <>
                                 <span className={styles.rowDot}>·</span>

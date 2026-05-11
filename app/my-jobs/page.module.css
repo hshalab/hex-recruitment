@@ -133,8 +133,22 @@
 .jobRow:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-color: #d1d5db; }
 .jobRow:active { transform: translateY(1px); }
 .jobRow:focus-visible { outline: 2px solid var(--primary-yellow); outline-offset: 2px; }
-.rowMain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+/* Single-line inline cluster: title (h3) sits beside the meta block,
+   sharing a text baseline. Title yields first (flex: 0 1 auto + min-width:0)
+   so .rowMeta stays visible at narrower desktops while the title
+   ellipsises. Mobile media block below reverts to a column stack. */
+.rowMain {
+  flex: 1; min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
 .rowTitle {
+  flex: 0 1 auto;
+  min-width: 0;
   font-size: 0.98rem; font-weight: 700; color: var(--text-dark);
   margin: 0; padding: 0; line-height: 1.3;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -142,8 +156,13 @@
 .rowTitleDot { color: var(--border-gray); font-weight: 400; }
 .rowVenue { color: var(--text-gray); font-weight: 500; }
 .rowMeta {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem;
+  display: flex; flex-wrap: nowrap; align-items: baseline; gap: 0.35rem;
   font-size: 0.82rem; color: var(--text-gray); line-height: 1.4;
+  white-space: nowrap; flex-shrink: 0;
+}
+.rowMeta::before {
+  content: '·';
+  color: var(--border-gray);
 }
 .rowDot { color: var(--border-gray); }
 .rowSide {
@@ -219,7 +238,11 @@
   }
   .rowMain {
     flex: 1 1 0;
-    /* Keep title beside logo; .rowSide reflows to a new line below. */
+    /* Revert the desktop row layout: stack title and meta vertically again. */
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.2rem;
+    overflow: visible;
     min-width: 0;
   }
   .rowTitle {
@@ -229,6 +252,12 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
   }
+  .rowMeta {
+    flex-wrap: wrap;
+    white-space: normal;
+    flex-shrink: 1;
+  }
+  .rowMeta::before { display: none; }
   .rowSide {
     /* Move below the logo+title+kebab cluster on its own row.
        order:1 sends it after the implicit-order-0 siblings (logo,
