@@ -903,42 +903,40 @@ export default function JobApplicationsPage() {
                       )}
                     </div>
 
-                    {/* Candidate Info */}
-                    <div className={styles.candidateInfo}>
-                      <h3 className={styles.candidateName}>{application.candidateName}</h3>
-                      <p className={styles.candidatePosition}>{application.candidatePosition}</p>
-                      {application.candidateCity && (
-                        <p className={styles.candidateLocation}>
-                          <span className={styles.locationIcon}>📍</span>
-                          {application.candidateCity}
-                        </p>
-                      )}
-                      <p className={styles.appliedDate}>
-                        Applied {formatDate(application.appliedAt)}
-                      </p>
-                    </div>
+                    {/* Candidate Info — single line: name · position · location · applied */}
+                    <h3 className={styles.candidateName}>{application.candidateName}</h3>
+                    <span className={styles.cardSep} aria-hidden="true">·</span>
+                    <span className={styles.candidatePosition}>{application.candidatePosition}</span>
+                    {application.candidateCity && (
+                      <>
+                        <span className={styles.cardSep} aria-hidden="true">·</span>
+                        <span className={styles.candidateLocation}>{application.candidateCity}</span>
+                      </>
+                    )}
+                    <span className={styles.cardSep} aria-hidden="true">·</span>
+                    <span className={styles.appliedDate}>
+                      Applied {formatDate(application.appliedAt)}
+                    </span>
 
-                    {/* Profile actions (top right) */}
-                    <div className={styles.profileLinkSection}>
-                      <Link
-                        href={`/candidates/${application.candidateId}`}
-                        className={styles.viewProfileLink}
+                    {/* Profile actions (right) */}
+                    <Link
+                      href={`/candidates/${application.candidateId}`}
+                      className={styles.viewProfileLink}
+                    >
+                      View Profile
+                    </Link>
+                    {application.candidateCv ? (
+                      <SignedLink src={application.candidateCv} className={styles.viewProfileLink}>
+                        View CV
+                      </SignedLink>
+                    ) : (
+                      <span
+                        className={`${styles.viewProfileLink} ${styles.viewCvDisabled}`}
+                        title="No CV uploaded"
                       >
-                        View Profile
-                      </Link>
-                      {application.candidateCv ? (
-                        <SignedLink src={application.candidateCv} className={styles.viewProfileLink}>
-                          View CV
-                        </SignedLink>
-                      ) : (
-                        <span
-                          className={`${styles.viewProfileLink} ${styles.viewCvDisabled}`}
-                          title="No CV uploaded"
-                        >
-                          View CV
-                        </span>
-                      )}
-                    </div>
+                        View CV
+                      </span>
+                    )}
                   </div>
 
                   {/* Interview Details */}
