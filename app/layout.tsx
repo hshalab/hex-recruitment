@@ -37,11 +37,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareer.co.uk
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Thrive — Free UK Job Board | No Agency Fees',
+    default: 'Thrive — Hiring platform for hospitality',
     template: '%s | Thrive',
   },
-  description: 'Find jobs or hire great people across all UK sectors. Post unlimited jobs free — no agency fees, no card needed. Search candidates, manage applications and schedule interviews in one platform.',
-  keywords: ['UK jobs', 'job board', 'find jobs UK', 'hire staff UK', 'no agency fees', 'free job posting', 'jobs across all sectors', 'Thrive'],
+  description: 'Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations. £99/month, 3-month free trial.',
+  keywords: ['hospitality jobs UK', 'restaurant jobs London', 'hotel jobs UK', 'chef jobs London', 'front of house jobs', 'hospitality hiring platform', 'restaurant hiring software', 'Thrive'],
   authors: [{ name: 'Thrive' }],
   creator: 'Thrive',
   publisher: 'Thrive',
@@ -50,21 +50,21 @@ export const metadata: Metadata = {
     locale: 'en_GB',
     url: SITE_URL,
     siteName: 'Thrive',
-    title: 'Thrive — Free UK Job Board | No Agency Fees',
-    description: 'Find jobs or hire great people across all UK sectors. Post unlimited jobs free — no agency fees, no card needed.',
+    title: 'Thrive — Hiring platform for hospitality',
+    description: 'Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations.',
     images: [
       {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'Thrive — Free UK Job Board',
+        alt: 'Thrive — Hire faster. Apply smarter.',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Thrive — Free UK Job Board | No Agency Fees',
-    description: 'Find jobs or hire great people across all UK sectors. Post unlimited jobs free — no agency fees, no card needed.',
+    title: 'Thrive — Hiring platform for hospitality',
+    description: 'Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations.',
     images: ['/opengraph-image'],
   },
   robots: {
