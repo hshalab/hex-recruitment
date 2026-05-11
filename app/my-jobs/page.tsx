@@ -1013,32 +1013,18 @@ function MyJobsContent() {
                           className={styles.rowLogo}
                         />
                         <div className={styles.rowMain}>
-                          <h3 className={styles.rowTitle}>
-                            {job.title}
-                            {job.venue && (
-                              <>
-                                <span className={styles.rowTitleDot}> · </span>
-                                <span className={styles.rowVenue}>{job.venue}</span>
-                              </>
-                            )}
-                          </h3>
-                          <div className={styles.rowMeta}>
-                            <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
-                            <span className={styles.rowDot}>·</span>
-                            <span>{job.location}</span>
-                            {interviewMeta && (
-                              <>
-                                <span className={styles.rowDot}>·</span>
-                                <span>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span>
-                              </>
-                            )}
-                            {job.hiredCandidate && (
-                              <>
-                                <span className={styles.rowDot}>·</span>
-                                <span>✓ Hired {job.hiredCandidate.name}</span>
-                              </>
-                            )}
-                          </div>
+                          <h3 className={styles.rowTitle}>{job.title}</h3>
+                          {job.venue && (
+                            <span className={styles.rowVenue}>{job.venue}</span>
+                          )}
+                          <span className={styles.rowSalary}>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
+                          <span className={styles.rowLocation}>{job.location}</span>
+                          {interviewMeta && (
+                            <span className={styles.rowInterview}>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span>
+                          )}
+                          {job.hiredCandidate && (
+                            <span className={styles.rowHired}>✓ Hired {job.hiredCandidate.name}</span>
+                          )}
                         </div>
                         <div className={styles.rowSide}>
                           <span className={`${styles.statusBadge} ${statusClass}`}>{status.label}</span>
