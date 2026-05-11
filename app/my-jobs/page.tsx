@@ -1012,31 +1012,38 @@ function MyJobsContent() {
                           alt={job.company}
                           className={styles.rowLogo}
                         />
-                        <div className={styles.rowMain}>
-                          <h3 className={styles.rowTitle}>{job.title}</h3>
-                          {job.venue && (
+                        <h3 className={styles.rowTitle}>{job.title}</h3>
+                        {job.venue && (
+                          <>
+                            <span className={styles.rowSep} aria-hidden="true">·</span>
                             <span className={styles.rowVenue}>{job.venue}</span>
-                          )}
-                          <span className={styles.rowSalary}>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
-                          <span className={styles.rowLocation}>{job.location}</span>
-                          {interviewMeta && (
+                          </>
+                        )}
+                        <span className={styles.rowSep} aria-hidden="true">·</span>
+                        <span className={styles.rowSalary}>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
+                        <span className={styles.rowSep} aria-hidden="true">·</span>
+                        <span className={styles.rowLocation}>{job.location}</span>
+                        {interviewMeta && (
+                          <>
+                            <span className={styles.rowSep} aria-hidden="true">·</span>
                             <span className={styles.rowInterview}>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span>
-                          )}
-                          {job.hiredCandidate && (
+                          </>
+                        )}
+                        {job.hiredCandidate && (
+                          <>
+                            <span className={styles.rowSep} aria-hidden="true">·</span>
                             <span className={styles.rowHired}>✓ Hired {job.hiredCandidate.name}</span>
-                          )}
-                        </div>
-                        <div className={styles.rowSide}>
-                          <span className={`${styles.statusBadge} ${statusClass}`}>{status.label}</span>
-                          <span className={styles.appCountBadge}>
-                            <strong>{job.applicationCount}</strong>
-                            {' '}
-                            <span className={styles.appCountWord}>
-                              {job.applicationCount === 1 ? 'application' : 'applications'}
-                            </span>
-                            <span className={styles.appCountWordShort}>apps</span>
+                          </>
+                        )}
+                        <span className={`${styles.statusBadge} ${statusClass}`}>{status.label}</span>
+                        <span className={styles.appCountBadge}>
+                          <strong>{job.applicationCount}</strong>
+                          {' '}
+                          <span className={styles.appCountWord}>
+                            {job.applicationCount === 1 ? 'application' : 'applications'}
                           </span>
-                        </div>
+                          <span className={styles.appCountWordShort}>apps</span>
+                        </span>
                         {renderKebab(job, isBoosted)}
                       </div>
                     )
