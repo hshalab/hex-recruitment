@@ -695,10 +695,9 @@ function MyJobsContent() {
               onClick={(e) => choose(e, () => router.push(`/employer/analytics/${job.id}`))}>
               View analytics
             </button>
-            <button type="button" role="menuitem" className={styles.kebabItem}
-              onClick={(e) => choose(e, () => router.push(`/candidates?jobId=${job.id}`))}>
-              Find candidates
-            </button>
+            {/* "Find candidates" kebab item removed: feature pending
+                post-launch GDPR + pricing decision on full-database search.
+                /candidates route still exists, gated behind subscription. */}
             {job.status !== 'archived' && job.status !== 'filled' && (
               <button type="button" role="menuitem" className={styles.kebabItem}
                 onClick={(e) => choose(e, () => { setBoostTargetJob(job); setBoostModalOpen(true) })}>

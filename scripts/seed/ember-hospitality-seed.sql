@@ -572,10 +572,15 @@ candidate_data AS (
 ),
 
 -- ─── Insert auth.users for the 65 candidates ────────────────────────────────
+-- GoTrue's user-row scanner crashes on NULL token columns ("converting NULL
+-- to string is unsupported"), so the four token cols below MUST be set to ''
+-- not left as NULL. Real signups via /signup get '' defaults from GoTrue;
+-- direct SQL INSERTs need to mirror that explicitly.
 inserted_auth_users AS (
   INSERT INTO auth.users (
     id, instance_id, aud, role, email, email_confirmed_at,
     encrypted_password, raw_user_meta_data, raw_app_meta_data,
+    confirmation_token, email_change, recovery_token, email_change_token_new,
     created_at, updated_at
   )
   SELECT
@@ -592,6 +597,7 @@ inserted_auth_users AS (
       'is_simulated', true
     ),
     jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
+    '', '', '', '',
     now() - (cd.days_ago_created || ' days')::interval,
     now() - (cd.days_ago_created || ' days')::interval
   FROM candidate_data cd

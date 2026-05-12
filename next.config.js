@@ -5,6 +5,13 @@ const nextConfig = {
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
+  // /register on its own is a dead-end (no app/register/page.tsx). Send
+  // visitors to the employer signup since employers are the paying side;
+  // candidates have their own discovery path via /jobs → Apply → signup
+  // prompt. Temporary 307 keeps room for a role-chooser later.
+  redirects: async () => [
+    { source: '/register', destination: '/register/employer-free', permanent: false },
+  ],
   headers: async () => [
     {
       source: '/_next/static/:path*',
