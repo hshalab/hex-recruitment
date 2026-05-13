@@ -19,8 +19,13 @@ export async function GET() {
     `${base}-code-verifier`,
     ...Array.from({ length: 20 }, (_, i) => `${base}.${i}`),
   ]
+  // @supabase/ssr sets auth cookies with sameSite: 'lax' + secure: true on
+  // HTTPS. WebKit/Mobile Safari refuse to overwrite a cookie when the
+  // clearing Set-Cookie has different attributes than the original, so we
+  // must mirror those here — otherwise the empty cookie is created
+  // alongside (not over) the live one and the session lingers.
   for (const name of cookieNames) {
-    response.cookies.set(name, '', { path: '/', maxAge: 0 })
+    response.cookies.set(name, '', { path: '/', maxAge: 0, sameSite: 'lax', secure: true })
   }
 
   return response

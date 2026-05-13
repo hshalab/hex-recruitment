@@ -45,7 +45,10 @@ function readChunkedCookie(): { access_token?: string; refresh_token?: string } 
 function clearStaleAuthCookies() {
   if (typeof document === 'undefined') return
   const cookieName = `sb-${PROJECT_REF}-auth-token`
-  const clear = (n: string) => { document.cookie = `${n}=; path=/; max-age=0` }
+  // Match the attributes @supabase/ssr writes (SameSite=Lax; Secure on HTTPS).
+  // WebKit/Mobile Safari refuse to overwrite a Secure cookie unless the clear
+  // also carries Secure — same attribute-mismatch trap as the server route.
+  const clear = (n: string) => { document.cookie = `${n}=; path=/; max-age=0; SameSite=Lax; Secure` }
   clear(cookieName)
   for (let i = 0; i <= 10; i++) clear(`${cookieName}.${i}`)
   clear(`${cookieName}-code-verifier`)
