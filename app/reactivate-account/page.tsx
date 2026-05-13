@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { DEV_MODE } from '@/lib/mockAuth'
@@ -205,7 +204,7 @@ export default function ReactivateAccountPage() {
 
           <div className={styles.footer}>
             <p className={styles.footerText}>
-              Need help? <Link href="/contact" className={styles.link}>Contact Support</Link>
+              Need help? <a href="mailto:contact@thrivecareer.co.uk" className={styles.link}>Contact Support</a>
             </p>
           </div>
         </div>

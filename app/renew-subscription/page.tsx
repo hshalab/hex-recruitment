@@ -219,7 +219,7 @@ export default function RenewSubscriptionPage() {
 
           <div className={styles.footer}>
             <p className={styles.footerText}>
-              Need help? <Link href="/contact" className={styles.link}>Contact Support</Link>
+              Need help? <a href="mailto:contact@thrivecareer.co.uk" className={styles.link}>Contact Support</a>
             </p>
           </div>
         </div>
