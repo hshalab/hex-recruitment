@@ -108,9 +108,17 @@ Gate: consent screen status is **In Production** (PUBLISHED), not **Testing**. I
 
 | Check | Method | Result |
 |---|---|---|
-| Consent screen publish status | (GCP Console — APIs & Services → OAuth consent screen) | **CANNOT VERIFY FROM CLI.** No public API exposes this. |
+| Consent screen publish status | GCP Console — APIs & Services → OAuth consent screen (manual, 2026-05-14) | **In production** |
+| User type | (same) | External |
+| Scopes — non-sensitive table | GCP Console → Data Access | **empty (0 entries)** |
+| Scopes — sensitive table | (same) | **empty (0 entries)** |
+| Scopes — restricted table | (same) | **empty (0 entries)** |
 
-Sub-verdict: **NEEDS-MANUAL-STEP — own gate**. Before launch, open https://console.cloud.google.com/apis/credentials/consent for the project that owns the OAuth clients (one for Sign-in with Google, one for Calendar) and confirm the **Publishing status** banner shows **In production**, not **Testing**. If it shows Testing, click **Publish App** and proceed through Google's verification flow (no immediate Google review needed for basic scopes; calendar.events requires verification). **A "Testing" status here will silently break sign-in for every Google account that isn't on the test list.**
+The Data Access tables don't list the base `openid` / `email` / `profile` scopes by design — Google treats those as the implicit baseline for any OAuth client and only shows scopes that *require* added consent. Zero entries across all three tables means this app only requests the baseline scopes, so the 100-user cap (which applies when sensitive/restricted scopes are unverified) does **not** apply and **no Google verification submission is required**.
+
+Note: the Calendar OAuth client (Section 4b) uses `calendar` + `calendar.events`, which are sensitive scopes — but it's a *separate* OAuth client and its scopes are tracked on its own consent screen, not the sign-in one audited here. Verification of the Calendar client is a post-launch concern (interview booking is an authenticated-employer feature, not the first-touch experience).
+
+Sub-verdict: **GO**. Sign-in with Google is fully launchable to the public.
 
 ---
 
@@ -148,17 +156,16 @@ Gate: no service is **EXHAUSTED**. EXHAUSTED on any user-facing dependency is a 
 | Service | Status | Evidence |
 |---|---|---|
 | **Resend** | **OK** | Real send delivered 2026-05-14 12:24 UTC; no quota indicator in response but `sending: enabled` and recent `last_event: delivered`. Free tier (3k/mo) almost certainly not exhausted given send volume. |
-| **Postcoder** | **EXHAUSTED-OR-DISABLED — HARD BLOCKER** | `GET https://ws.postcoder.com/pcw/{key}/address/uk/SW1A1AA` returns `HTTP 403 Forbidden` from both direct API and the prod `/api/lookup-postcode` route (proxied 403 → 502). Postcoder uses key-in-URL; 403 means the key is being rejected (quota exhausted, account suspended, or key revoked). **Address-lookup is broken in production** — candidates trying to use the postcode autocomplete on signup get a 502. Manual address typing still works as fallback, but this is a known-suspect from the launch brief and the 403 confirms it. |
+| **Postcoder** | **EXHAUSTED — top-up requested 2026-05-14, pending provider action** | `GET https://ws.postcoder.com/pcw/{key}/address/uk/SW1A1AA` returns `HTTP 403 Forbidden` from both direct API and the prod `/api/lookup-postcode` route (proxied 403 → 502). Postcoder uses key-in-URL; 403 means the key is being rejected (quota exhausted, account suspended, or key revoked). **Address-lookup is broken in production** — candidates trying to use the postcode autocomplete on signup get a 502. Manual address typing still works as fallback. Top-up requested 2026-05-14; re-check by hitting the prod `/api/lookup-postcode?postcode=SW1A1AA` route and looking for HTTP 200 with a non-empty `addresses` array — that confirms the key is live again. |
 | **Firecrawl** | **OK** | `GET /v1/team/credit-usage` → `remaining_credits: 1016`, `plan_credits: 1000`, billing window ends 2026-06-11. Fresh window, plenty of headroom. |
 | **Anthropic** | **OK** | `GET /v1/models` returns 200 with valid model list, key authenticates. Usage endpoint not exposed without admin scope, so absolute spend isn't visible — but reachability and auth are confirmed. The key is used by Ask-Thrive, CV builder, and job-ad generator. |
 | **Cloudinary** | **N/A** | Grep across `app/`, `lib/`, `components/`, `package.json` returns zero matches for `cloudinary` / `Cloudinary` / `CLOUDINARY`. Not in use in this codebase. |
 
-Verdict on section: **NO-GO until Postcoder resolved.** Per the brief criteria ("EXHAUSTED = hard launch blocker"), the 403 from Postcoder is a NO-GO. Mitigations the user can choose between, listed for completeness (no action taken):
-- top up / reactivate the Postcoder account, OR
+Verdict on section: **NO-GO until Postcoder restored.** Top-up has been requested on 2026-05-14 and is pending provider action — no code change needed if the existing key reactivates. Fallback options remain available if the top-up doesn't land in time:
 - swap to the alternative postcode provider whose key is already on file in `.env.local` (`GETADDRESSES_API_KEY`) — but no code path currently uses it (the lookup route is hard-wired to Postcoder), so this would require a code change, OR
 - accept manual address entry as the launch experience and disable the autocomplete UI.
 
-The 502 from the prod route is real and reproducible right now.
+The 502 from the prod route was real and reproducible at the time of writing; re-verify with a single `GET https://thrivecareer.co.uk/api/lookup-postcode?postcode=SW1A1AA` after the top-up confirmation.
 
 ---
 
@@ -169,16 +176,15 @@ The 502 from the prod route is real and reproducible right now.
 | 1 | DNS + SSL | **GO** |
 | 2 | Resend transactional email | **GO** (DMARC missing — non-blocking) |
 | 3 | Stripe webhook | **GO** |
-| 4a | Google OAuth (Sign-in) — code + env | GO; **4c CONSENT-SCREEN STATUS = NEEDS-MANUAL-STEP — own gate** |
+| 4a | Google OAuth (Sign-in) — code + env | **GO** |
 | 4b | Google OAuth (Calendar) — code + env | **GO** |
-| 4c | Google OAuth consent screen publish status | **NEEDS-MANUAL-STEP (critical)** |
+| 4c | Google OAuth consent screen publish status | **GO** (manually verified 2026-05-14: In production, zero scopes in Data Access tables, no verification needed) |
 | 5 | B2 — anon EXECUTE revoked on 10 SECURITY DEFINER RPCs | **GO** |
-| 6 | Metered service credits | **NO-GO** — Postcoder 403 (HARD BLOCKER) |
+| 6 | Metered service credits | **NO-GO** — Postcoder 403 (top-up requested 2026-05-14, pending) |
 
 **Overall: NO-GO.**
 
-Two items must clear before launch:
-1. **Postcoder 403 resolved** (section 6) — hard blocker.
-2. **OAuth consent screen confirmed In Production** (section 4c) — silent breakage risk for every non-test-list Google account.
+One blocker remains:
+1. **Postcoder restored** (section 6) — top-up requested 2026-05-14; re-verify with `GET https://thrivecareer.co.uk/api/lookup-postcode?postcode=SW1A1AA` and look for HTTP 200 with a non-empty `addresses` array.
 
 Everything else is GO. No source code change recommended in this pass — all findings are configuration / external-service state, not bugs in the app code.
