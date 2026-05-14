@@ -156,16 +156,12 @@ Gate: no service is **EXHAUSTED**. EXHAUSTED on any user-facing dependency is a 
 | Service | Status | Evidence |
 |---|---|---|
 | **Resend** | **OK** | Real send delivered 2026-05-14 12:24 UTC; no quota indicator in response but `sending: enabled` and recent `last_event: delivered`. Free tier (3k/mo) almost certainly not exhausted given send volume. |
-| **Postcoder** | **EXHAUSTED — top-up requested 2026-05-14, pending provider action** | `GET https://ws.postcoder.com/pcw/{key}/address/uk/SW1A1AA` returns `HTTP 403 Forbidden` from both direct API and the prod `/api/lookup-postcode` route (proxied 403 → 502). Postcoder uses key-in-URL; 403 means the key is being rejected (quota exhausted, account suspended, or key revoked). **Address-lookup is broken in production** — candidates trying to use the postcode autocomplete on signup get a 502. Manual address typing still works as fallback. Top-up requested 2026-05-14; re-check by hitting the prod `/api/lookup-postcode?postcode=SW1A1AA` route and looking for HTTP 200 with a non-empty `addresses` array — that confirms the key is live again. |
+| **Postcoder** | **OK** | Top-up landed 2026-05-14. Re-verified manually against production on 2026-05-14: `GET https://thrivecareer.co.uk/api/lookup-postcode?postcode=SW1A1AA` now returns HTTP 200 with a non-empty `addresses` array. Address autocomplete is live in production. |
 | **Firecrawl** | **OK** | `GET /v1/team/credit-usage` → `remaining_credits: 1016`, `plan_credits: 1000`, billing window ends 2026-06-11. Fresh window, plenty of headroom. |
 | **Anthropic** | **OK** | `GET /v1/models` returns 200 with valid model list, key authenticates. Usage endpoint not exposed without admin scope, so absolute spend isn't visible — but reachability and auth are confirmed. The key is used by Ask-Thrive, CV builder, and job-ad generator. |
 | **Cloudinary** | **N/A** | Grep across `app/`, `lib/`, `components/`, `package.json` returns zero matches for `cloudinary` / `Cloudinary` / `CLOUDINARY`. Not in use in this codebase. |
 
-Verdict on section: **NO-GO until Postcoder restored.** Top-up has been requested on 2026-05-14 and is pending provider action — no code change needed if the existing key reactivates. Fallback options remain available if the top-up doesn't land in time:
-- swap to the alternative postcode provider whose key is already on file in `.env.local` (`GETADDRESSES_API_KEY`) — but no code path currently uses it (the lookup route is hard-wired to Postcoder), so this would require a code change, OR
-- accept manual address entry as the launch experience and disable the autocomplete UI.
-
-The 502 from the prod route was real and reproducible at the time of writing; re-verify with a single `GET https://thrivecareer.co.uk/api/lookup-postcode?postcode=SW1A1AA` after the top-up confirmation.
+Verdict on section: **GO**. Postcoder top-up landed and prod re-verification (2026-05-14) returned HTTP 200 with a non-empty `addresses` array. All other metered services remain OK / N/A as listed above.
 
 ---
 
@@ -180,11 +176,10 @@ The 502 from the prod route was real and reproducible at the time of writing; re
 | 4b | Google OAuth (Calendar) — code + env | **GO** |
 | 4c | Google OAuth consent screen publish status | **GO** (manually verified 2026-05-14: In production, zero scopes in Data Access tables, no verification needed) |
 | 5 | B2 — anon EXECUTE revoked on 10 SECURITY DEFINER RPCs | **GO** |
-| 6 | Metered service credits | **NO-GO** — Postcoder 403 (top-up requested 2026-05-14, pending) |
+| 6 | Metered service credits | **GO** (Postcoder top-up landed 2026-05-14, prod re-verified) |
 
-**Overall: NO-GO.**
+**Overall: GO.**
 
-One blocker remains:
-1. **Postcoder restored** (section 6) — top-up requested 2026-05-14; re-verify with `GET https://thrivecareer.co.uk/api/lookup-postcode?postcode=SW1A1AA` and look for HTTP 200 with a non-empty `addresses` array.
+No blockers remaining. One non-blocking post-launch item: publish a `_dmarc.thrivecareer.co.uk` TXT record (`v=DMARC1; p=none; rua=mailto:...`) for deliverability monitoring — SPF + DKIM alignment is already sufficient for inbox placement, so this doesn't affect launch.
 
-Everything else is GO. No source code change recommended in this pass — all findings are configuration / external-service state, not bugs in the app code.
+No source code change recommended in this pass — all findings are configuration / external-service state, not bugs in the app code.
