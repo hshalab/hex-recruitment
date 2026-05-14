@@ -32,22 +32,40 @@ const { chromium, webkit, devices } = require('playwright')
 const fs = require('fs')
 const path = require('path')
 
-// ── env loader (parse .env.local if present) ───────────────────────────────
-function loadDotEnv() {
-  const p = path.resolve(__dirname, '..', '.env.local')
+// ── env loader (parse .env.e2e.local first, then .env.local as fallback) ──
+// .env.e2e.local is the per-machine override slot for E2E runs — typically
+// holds STRIPE_SECRET_KEY=sk_live_... when running against production
+// (.env.local carries the test-mode key for local dev). Both files are
+// gitignored under the .env*.local pattern. First-loaded wins.
+// Tracks per-var source so cross-mode assertions can be relaxed when an
+// env var came from a different file than the key.
+const ENV_SOURCE = {}
+function loadDotEnvFile(p, label) {
   if (!fs.existsSync(p)) return
   const text = fs.readFileSync(p, 'utf-8')
   for (const line of text.split(/\r?\n/)) {
     const m = line.match(/^([A-Z0-9_]+)="?(.*?)"?$/)
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2]
+    if (m && !process.env[m[1]]) {
+      process.env[m[1]] = m[2]
+      ENV_SOURCE[m[1]] = label
+    }
   }
 }
-loadDotEnv()
+loadDotEnvFile(path.resolve(__dirname, '..', '.env.e2e.local'), 'e2e.local')
+loadDotEnvFile(path.resolve(__dirname, '..', '.env.local'), 'local')
 
 const BASE = process.argv[2] || process.env.E2E_BASE_URL || 'http://localhost:3000'
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+// STRIPE_PRICE_ID assertion: strict equality only when both the price and
+// the Stripe key came from the SAME env file (so they're guaranteed to be
+// in the same Stripe mode). When .env.e2e.local supplies the live key but
+// the price still comes from .env.local (test mode), drop the strict
+// match — assert only that a price ID is present. The price is set by the
+// API route from server env; if Stripe accepted the session, the price
+// was valid Stripe-side.
 const EXPECTED_PRICE = process.env.STRIPE_PRICE_ID
+const STRICT_PRICE_CHECK = EXPECTED_PRICE && ENV_SOURCE.STRIPE_PRICE_ID === ENV_SOURCE.STRIPE_SECRET_KEY
 const SUPABASE_URL = 'https://aaljufxcniacfggqiuls.supabase.co'
 const PROJECT_REF = 'aaljufxcniacfggqiuls'
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -266,10 +284,11 @@ async function step2_stripeCheckout(page, employerToken) {
   // reads NEXT_PUBLIC_BASE_URL from .env.local, which in this repo is set to
   // the production URL — that's correct behaviour for Stripe redirects.
   const urlOk = (u) => u && u.startsWith('https://') && !u.includes('localhost')
-  const ok =
-    urlOk(s.success_url) &&
-    urlOk(s.cancel_url) &&
-    (!EXPECTED_PRICE || (s.line_items?.data?.[0]?.price?.id === EXPECTED_PRICE))
+  const actualPrice = s.line_items?.data?.[0]?.price?.id
+  const priceOk = STRICT_PRICE_CHECK
+    ? actualPrice === EXPECTED_PRICE
+    : !!actualPrice && /^price_/.test(actualPrice)
+  const ok = urlOk(s.success_url) && urlOk(s.cancel_url) && priceOk
   // Always expire to keep Stripe-side state clean — even on assertion failure
   await stripeApi('POST', `/checkout/sessions/${sessionId}/expire`).catch(() => {})
   if (!ok) {
@@ -544,8 +563,8 @@ async function runOne(name, engine, options, suffix) {
 // ── orchestrator ───────────────────────────────────────────────────────────
 ;(async () => {
   console.log(`base: ${BASE}`)
-  console.log(`stripe key mode: ${STRIPE_KEY?.startsWith('sk_live_') ? 'live' : 'test'}`)
-  console.log(`expected price: ${EXPECTED_PRICE || '(any)'}`)
+  console.log(`stripe key mode: ${STRIPE_KEY?.startsWith('sk_live_') ? 'live' : 'test'} (source: ${ENV_SOURCE.STRIPE_SECRET_KEY || 'env'})`)
+  console.log(`price check: ${STRICT_PRICE_CHECK ? `strict match against ${EXPECTED_PRICE}` : 'loose (any price_* accepted; cross-mode override)'}`)
   preflight()
   const results = []
   for (const c of CONTEXTS) {
