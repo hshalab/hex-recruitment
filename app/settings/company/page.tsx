@@ -629,7 +629,7 @@ export default function CompanySettingsPage() {
             <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.75rem' }}>
               Paste your company website and we&apos;ll auto-fill your profile.
             </p>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className={styles.scrapeRow}>
               <input
                 type="text"
                 value={scrapeUrl}
@@ -639,16 +639,14 @@ export default function CompanySettingsPage() {
                   if (v && !v.match(/^https?:\/\//i)) setScrapeUrl('https://' + v)
                 }}
                 placeholder="https://yourcompany.com"
-                className={styles.input}
-                style={{ flex: 1 }}
+                className={`${styles.input} ${styles.scrapeInput}`}
                 disabled={scraping}
               />
               <button
                 type="button"
                 onClick={handleScrape}
                 disabled={scraping || !scrapeUrl.trim()}
-                className={styles.saveBtn}
-                style={{ whiteSpace: 'nowrap', minWidth: 'auto', padding: '0.5rem 1.25rem' }}
+                className={`${styles.saveBtn} ${styles.scrapeBtn}`}
               >
                 {scraping ? 'Importing…' : 'Auto-fill'}
               </button>
