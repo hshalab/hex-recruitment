@@ -608,8 +608,12 @@ function AvailabilitySettingsContent() {
 
           {/* Calendar feed */}
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Calendar feed</h2>
-            <p className={styles.sectionDescription}>Subscribe to this feed to see interviews in your own calendar.</p>
+            <h2 className={styles.sectionTitle}>Sync interviews to your own calendar</h2>
+            <p className={styles.sectionDescription}>
+              This is a private URL that any calendar app can subscribe to.
+              Interviews booked through Thrive show up automatically; your
+              calendar app re-syncs every few hours.
+            </p>
             <div className={styles.feedRow}>
               <input
                 type="text"
@@ -617,17 +621,115 @@ function AvailabilitySettingsContent() {
                 value={feedUrl}
                 className={styles.feedInput}
                 onClick={(e) => (e.target as HTMLInputElement).select()}
+                aria-label="Calendar subscription URL"
               />
               <button type="button" onClick={handleCopyFeed} className={styles.copyBtn}>
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? 'Copied' : 'Copy URL'}
               </button>
             </div>
-            <p className={styles.feedNote}>
-              Subscribe in Google Calendar: Other calendars › From URL
-            </p>
+
+            <div className={styles.feedSteps}>
+              <p className={styles.feedStepsIntro}>
+                Pick your calendar app and follow the steps below:
+              </p>
+
+              <details className={styles.feedDetails} open>
+                <summary className={styles.feedSummary}>
+                  <span className={styles.feedSummaryIcon} aria-hidden="true">📅</span>
+                  Google Calendar
+                </summary>
+                <ol className={styles.feedSteplist}>
+                  <li>Tap <strong>Copy URL</strong> above.</li>
+                  <li>
+                    Open{' '}
+                    <a
+                      href="https://calendar.google.com/calendar/r/settings/addbyurl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.feedLink}
+                    >
+                      Google Calendar → Add by URL
+                    </a>{' '}
+                    (you may need to sign in).
+                  </li>
+                  <li>Paste the URL into the box and click <strong>Add calendar</strong>.</li>
+                </ol>
+                <a
+                  href="https://calendar.google.com/calendar/r/settings/addbyurl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.feedCta}
+                >
+                  Open Google Calendar →
+                </a>
+              </details>
+
+              <details className={styles.feedDetails}>
+                <summary className={styles.feedSummary}>
+                  <span className={styles.feedSummaryIcon} aria-hidden="true">🍎</span>
+                  Apple Calendar (Mac / iPhone / iPad)
+                </summary>
+                <ol className={styles.feedSteplist}>
+                  <li>
+                    On Mac, Calendar → <em>File → New Calendar Subscription…</em>{' '}
+                    and paste the URL above.
+                  </li>
+                  <li>
+                    On iPhone / iPad, Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar, then paste the URL.
+                  </li>
+                  <li>
+                    Or use the one-tap link below — your Calendar app will open with the subscription dialog pre-filled.
+                  </li>
+                </ol>
+                {feedUrl && (
+                  <a
+                    href={feedUrl.replace(/^https?:\/\//, 'webcal://')}
+                    className={styles.feedCta}
+                  >
+                    Add to Apple Calendar →
+                  </a>
+                )}
+              </details>
+
+              <details className={styles.feedDetails}>
+                <summary className={styles.feedSummary}>
+                  <span className={styles.feedSummaryIcon} aria-hidden="true">📧</span>
+                  Outlook
+                </summary>
+                <ol className={styles.feedSteplist}>
+                  <li>Tap <strong>Copy URL</strong> above.</li>
+                  <li>
+                    Open{' '}
+                    <a
+                      href="https://outlook.live.com/calendar/0/addcalendar"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.feedLink}
+                    >
+                      Outlook → Add calendar
+                    </a>
+                    , then choose <strong>Subscribe from web</strong>.
+                  </li>
+                  <li>Paste the URL, give it a name, and click <strong>Import</strong>.</li>
+                </ol>
+                <a
+                  href="https://outlook.live.com/calendar/0/addcalendar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.feedCta}
+                >
+                  Open Outlook →
+                </a>
+              </details>
+            </div>
+
             <button type="button" onClick={handleRegenerate} className={styles.regenBtn}>
               Regenerate URL
             </button>
+            <p className={styles.feedRegenNote}>
+              Regenerating invalidates the old URL. Any calendar still
+              subscribed to the old one will stop receiving updates.
+            </p>
           </div>
 
           <div className={styles.actions}>
