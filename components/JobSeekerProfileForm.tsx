@@ -9,6 +9,7 @@ import { popularNationalities, allNationalities } from '@/lib/nationalities'
 import DatePicker from './DatePicker'
 import PostcodeLookup, { type AddressData } from './PostcodeLookup'
 import PasswordInput from './PasswordInput'
+import LanguageAutocomplete from './LanguageAutocomplete'
 import styles from './JobSeekerProfileForm.module.css'
 
 // Normalize URL to ensure it has https:// prefix
@@ -1246,14 +1247,12 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         <div key={index} className={styles.languageRow}>
           <div className={styles.formGroup} style={{ flex: 1 }}>
             <label className={styles.label} htmlFor={`langName-${index}`}>Language</label>
-            <input
-              type="text"
+            <LanguageAutocomplete
               id={`langName-${index}`}
               value={lang.name}
-              onChange={(e) => handleLanguageChange(index, 'name', e.target.value)}
+              onChange={(v) => handleLanguageChange(index, 'name', v)}
               className={styles.input}
-              placeholder="e.g. English, Spanish, French"
-              autoComplete="off"
+              placeholder="Start typing a language…"
             />
           </div>
           <div className={styles.formGroup} style={{ flex: 1 }}>
