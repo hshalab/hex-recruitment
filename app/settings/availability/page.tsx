@@ -52,6 +52,7 @@ function AvailabilitySettingsContent() {
   const [weekly, setWeekly] = useState<WeeklyRow[]>(DEFAULT_WEEKLY)
   const [overrides, setOverrides] = useState<Override[]>([])
   const [newBlockDate, setNewBlockDate] = useState('')
+  const [newBlockEndDate, setNewBlockEndDate] = useState('')
   const [newBlockReason, setNewBlockReason] = useState('')
   const [feedUrl, setFeedUrl] = useState('')
   const [copied, setCopied] = useState(false)
@@ -186,26 +187,85 @@ function AvailabilitySettingsContent() {
     setWeekly(prev => prev.map((w, i) => i === idx ? { ...w, [key]: val } : w))
   }
 
+  // Enumerate every YYYY-MM-DD between start and end inclusive. Both args
+  // are YYYY-MM-DD strings; if end is empty or equal to start, returns
+  // [start] (single-date behaviour). Returns [] if end is earlier than
+  // start (caller should treat that as a validation error).
+  const enumerateDates = (start: string, end: string): string[] => {
+    if (!start) return []
+    const effectiveEnd = end || start
+    if (effectiveEnd < start) return []
+    const out: string[] = []
+    // Anchor at noon UTC to dodge DST/timezone-edge issues when stepping
+    // a day at a time — we only care about the date portion.
+    const cursor = new Date(`${start}T12:00:00Z`)
+    const stop = new Date(`${effectiveEnd}T12:00:00Z`)
+    while (cursor <= stop) {
+      const y = cursor.getUTCFullYear()
+      const m = String(cursor.getUTCMonth() + 1).padStart(2, '0')
+      const d = String(cursor.getUTCDate()).padStart(2, '0')
+      out.push(`${y}-${m}-${d}`)
+      cursor.setUTCDate(cursor.getUTCDate() + 1)
+    }
+    return out
+  }
+
   const handleAddBlocked = async () => {
     if (!userId || !newBlockDate) return
+
+    // Validate end-on-or-after-start when a range is supplied
+    if (newBlockEndDate && newBlockEndDate < newBlockDate) {
+      setMessage({ type: 'error', text: 'End date must be on or after the start date.' })
+      return
+    }
+
+    const dates = enumerateDates(newBlockDate, newBlockEndDate)
+    // Sanity rail: refuse runaway ranges. A year is already generous for
+    // a holiday/sabbatical block-out; anything bigger is almost certainly
+    // a slip on the date pickers.
+    if (dates.length > 365) {
+      setMessage({ type: 'error', text: 'Range is longer than a year — please block in smaller chunks.' })
+      return
+    }
+
+    // Skip dates already blocked locally so we don't trip the unique
+    // constraint on (employer_id, override_date) and lose the whole batch.
+    const existing = new Set(overrides.map(o => o.override_date))
+    const fresh = dates.filter(d => !existing.has(d))
+    if (fresh.length === 0) {
+      // Everything in the requested range is already blocked
+      setNewBlockDate('')
+      setNewBlockEndDate('')
+      setNewBlockReason('')
+      return
+    }
+
+    const reason = newBlockReason.trim() || null
+    const rows = fresh.map(d => ({
+      employer_id: userId,
+      override_date: d,
+      is_blocked: true,
+      reason,
+    }))
+
     const { data, error } = await supabase
       .from('employer_availability_overrides')
-      .insert({
-        employer_id: userId,
-        override_date: newBlockDate,
-        is_blocked: true,
-        reason: newBlockReason.trim() || null,
-      })
+      .insert(rows)
       .select()
-      .single()
     if (error) {
       setMessage({ type: 'error', text: error.message })
       return
     }
-    setOverrides(prev => [...prev, { id: data.id, override_date: data.override_date, reason: data.reason }]
-      .sort((a, b) => a.override_date.localeCompare(b.override_date)))
+    setOverrides(prev => [
+      ...prev,
+      ...(data || []).map(o => ({ id: o.id, override_date: o.override_date, reason: o.reason })),
+    ].sort((a, b) => a.override_date.localeCompare(b.override_date)))
     setNewBlockDate('')
+    setNewBlockEndDate('')
     setNewBlockReason('')
+    if (fresh.length > 1) {
+      setMessage({ type: 'success', text: `Blocked ${fresh.length} dates.` })
+    }
   }
 
   const handleRemoveBlocked = async (id?: string) => {
@@ -548,19 +608,37 @@ function AvailabilitySettingsContent() {
               </div>
             )}
             <div className={styles.addRow}>
-              <input
-                type="date"
-                value={newBlockDate}
-                onChange={(e) => setNewBlockDate(e.target.value)}
-                min={new Date().toISOString().slice(0, 10)}
-                className={styles.addInput}
-              />
+              <div className={styles.addDateGroup}>
+                <label className={styles.addDateLabel} htmlFor="block-from">From</label>
+                <input
+                  id="block-from"
+                  type="date"
+                  value={newBlockDate}
+                  onChange={(e) => setNewBlockDate(e.target.value)}
+                  min={new Date().toISOString().slice(0, 10)}
+                  className={styles.addInput}
+                />
+              </div>
+              <div className={styles.addDateGroup}>
+                <label className={styles.addDateLabel} htmlFor="block-to">
+                  To <span className={styles.addDateOptional}>(optional, for a range)</span>
+                </label>
+                <input
+                  id="block-to"
+                  type="date"
+                  value={newBlockEndDate}
+                  onChange={(e) => setNewBlockEndDate(e.target.value)}
+                  min={newBlockDate || new Date().toISOString().slice(0, 10)}
+                  className={styles.addInput}
+                />
+              </div>
               <input
                 type="text"
                 value={newBlockReason}
                 onChange={(e) => setNewBlockReason(e.target.value)}
                 placeholder="Reason (optional)"
                 className={styles.addInput}
+                aria-label="Reason for blocking"
               />
               <button
                 type="button"
@@ -568,7 +646,7 @@ function AvailabilitySettingsContent() {
                 disabled={!newBlockDate}
                 className={styles.blockBtn}
               >
-                Block date
+                {newBlockEndDate && newBlockEndDate > newBlockDate ? 'Block range' : 'Block date'}
               </button>
             </div>
           </div>
