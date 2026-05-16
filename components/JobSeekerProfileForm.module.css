@@ -173,6 +173,42 @@
   cursor: pointer;
 }
 
+/* Date-of-Birth row — three native <select>s side by side. Desktop widths
+   match what the inline styles used to render (Day 70px / Month flex /
+   Year 80px); the mobile breakpoint widens Day + Year and tightens their
+   horizontal padding so iOS Safari's native chevron stops clipping the
+   "DD"/"YYYY" placeholders and the selected values. min-width:0 on the
+   Month select lets it shrink gracefully if the row gets very narrow. */
+.dobRow {
+  display: flex;
+  gap: 0.5rem;
+}
+.dobDay {
+  flex: 0 0 auto;
+  width: 70px;
+}
+.dobMonth {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.dobYear {
+  flex: 0 0 auto;
+  width: 80px;
+}
+
+@media (max-width: 480px) {
+  .dobDay {
+    width: 88px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  .dobYear {
+    width: 100px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
 /* Photo Upload */
 .photoUpload {
   display: flex;

@@ -1077,14 +1077,13 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       <div className={styles.formRow}>
         <div className={styles.formGroup}>
           <label className={styles.label}>Date of Birth *</label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className={styles.dobRow}>
             <select
               aria-label="Day"
               value={dobDay}
               onChange={e => handleDobChange('day', e.target.value)}
-              className={styles.select}
+              className={`${styles.select} ${styles.dobDay}`}
               autoComplete="bday-day"
-              style={{ flex: '0 0 auto', width: '70px' }}
             >
               <option value="">DD</option>
               {Array.from({ length: 31 }, (_, i) => {
@@ -1096,9 +1095,8 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
               aria-label="Month"
               value={dobMonth}
               onChange={e => handleDobChange('month', e.target.value)}
-              className={styles.select}
+              className={`${styles.select} ${styles.dobMonth}`}
               autoComplete="bday-month"
-              style={{ flex: '1 1 auto' }}
             >
               <option value="">Month</option>
               {['January','February','March','April','May','June','July','August','September','October','November','December'].map((name, i) => {
@@ -1110,9 +1108,8 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
               aria-label="Year"
               value={dobYear}
               onChange={e => handleDobChange('year', e.target.value)}
-              className={styles.select}
+              className={`${styles.select} ${styles.dobYear}`}
               autoComplete="bday-year"
-              style={{ flex: '0 0 auto', width: '80px' }}
             >
               <option value="">YYYY</option>
               {(() => {
