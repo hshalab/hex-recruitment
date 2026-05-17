@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 import { supabase } from '@/lib/supabase'
+import { isValidEmail } from '@/lib/validateEmail'
 import loginStyles from '../../login/page.module.css'
 import styles from './page.module.css'
 
@@ -48,6 +49,11 @@ export default function RegisterEmployerFreePage() {
 
     if (!agreeAll) {
       setError('Please agree to our Terms of Service and Privacy Policy to continue.')
+      return
+    }
+
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address (e.g. you@company.com).')
       return
     }
 

@@ -10,6 +10,7 @@ import DatePicker from './DatePicker'
 import PostcodeLookup, { type AddressData } from './PostcodeLookup'
 import PasswordInput from './PasswordInput'
 import LanguageAutocomplete from './LanguageAutocomplete'
+import { isValidEmail } from '@/lib/validateEmail'
 import styles from './JobSeekerProfileForm.module.css'
 
 // Normalize URL to ensure it has https:// prefix
@@ -526,7 +527,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           setError('Email is required')
           return false
         }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        if (!isValidEmail(formData.email)) {
           setError('Please enter a valid email address')
           return false
         }
