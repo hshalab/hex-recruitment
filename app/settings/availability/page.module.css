@@ -193,33 +193,14 @@
 
 .addRow {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto 1fr auto;
   gap: 0.5rem;
-  align-items: end;
 }
 .addInput {
   padding: 0.55rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 0.9rem;
-}
-.addDateGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.addDateLabel {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.addDateOptional {
-  text-transform: none;
-  font-weight: 400;
-  color: #94a3b8;
-  letter-spacing: 0;
 }
 .blockBtn {
   padding: 0.55rem 1rem;
