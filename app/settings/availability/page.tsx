@@ -212,10 +212,78 @@ function AvailabilitySettingsContent() {
     return out
   }
 
+  // Look up existing scheduled/confirmed interviews inside [from, to] so
+  // we can warn the employer before blocking days that already have
+  // commitments. Returns [] if nothing's affected.
+  const findInterviewsInRange = async (from: string, to: string) => {
+    if (!userId) return []
+    const { data, error } = await supabase
+      .from('interviews')
+      .select('id, candidate_id, interview_date, interview_time, status')
+      .eq('employer_id', userId)
+      .in('status', ['scheduled', 'confirmed', 'pending_selection'])
+      .gte('interview_date', from)
+      .lte('interview_date', to)
+      .order('interview_date')
+      .order('interview_time')
+    if (error || !data || data.length === 0) return []
+    // Pull candidate names so the warning lists "Ashvin Patel — Wed 20 May 11:30am"
+    // rather than uuids. Cheap second round-trip; the list is tiny.
+    const candidateIds = Array.from(new Set(data.map(d => d.candidate_id).filter(Boolean)))
+    const nameById = new Map<string, string>()
+    if (candidateIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('candidate_profiles')
+        .select('user_id, full_name')
+        .in('user_id', candidateIds)
+      for (const p of profiles || []) {
+        if (p.full_name) nameById.set(p.user_id, p.full_name)
+      }
+    }
+    return data.map(iv => ({
+      candidateName: nameById.get(iv.candidate_id) || 'Candidate',
+      date: iv.interview_date as string,
+      time: String(iv.interview_time).slice(0, 5),
+    }))
+  }
+
+  const formatConflictLine = (c: { candidateName: string; date: string; time: string }) => {
+    const dateLabel = new Date(c.date + 'T00:00:00').toLocaleDateString('en-GB', {
+      weekday: 'short', day: 'numeric', month: 'short',
+    })
+    const [hStr, mStr] = c.time.split(':')
+    let h = Number(hStr); const m = Number(mStr)
+    const ap = h >= 12 ? 'pm' : 'am'
+    h = h % 12 || 12
+    const timeLabel = `${h}:${String(m).padStart(2, '0')}${ap}`
+    return `• ${c.candidateName} — ${dateLabel} ${timeLabel}`
+  }
+
   const handleAddBlocked = async () => {
     if (!userId || !newBlockRange.from) return
     const reason = newBlockReason.trim() || null
     const isRange = !!newBlockRange.to && newBlockRange.to !== newBlockRange.from
+
+    // Conflict check — if the user is about to block dates that already
+    // contain a scheduled/confirmed interview, confirm before proceeding.
+    // We don't auto-cancel anything (matches Calendly behaviour); the
+    // existing interview row stays and the employer can decide whether
+    // to reschedule it manually. This is preventative — surfacing the
+    // information at the moment of decision, not after the fact when
+    // they happen to look at the calendar.
+    const rangeFrom = newBlockRange.from
+    const rangeTo = isRange ? newBlockRange.to : newBlockRange.from
+    const conflicts = await findInterviewsInRange(rangeFrom, rangeTo)
+    if (conflicts.length > 0) {
+      const lines = conflicts.map(formatConflictLine).join('\n')
+      const heading = conflicts.length === 1
+        ? 'This blocks a date that already has 1 interview:'
+        : `This blocks dates that already have ${conflicts.length} interviews:`
+      const proceed = window.confirm(
+        `${heading}\n\n${lines}\n\nExisting interviews stay scheduled — block anyway?`
+      )
+      if (!proceed) return
+    }
 
     if (!isRange) {
       // Solo single-day block — block_group_id stays NULL so it never
