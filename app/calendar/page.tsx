@@ -106,6 +106,7 @@ function DayView({
   day,
   events,
   availability,
+  blockedReason,
   now,
   onSelectEvent,
   onPrev,
@@ -114,6 +115,8 @@ function DayView({
   day: Date
   events: Event[]
   availability: WeeklyRule[]
+  // null = not blocked; '' = blocked with no reason; string = blocked with reason
+  blockedReason: string | null
   now: Date
   onSelectEvent: (e: Event) => void
   onPrev: () => void
@@ -156,6 +159,13 @@ function DayView({
               style={{ top: `${h * HOUR_HEIGHT}px` }}
             />
           ))}
+          {blockedReason !== null && (
+            <div className={styles.blockedOverlay} aria-label="Day blocked">
+              <span className={styles.blockedLabel}>
+                Blocked{blockedReason ? ` · ${blockedReason}` : ''}
+              </span>
+            </div>
+          )}
           {availability.map((r, idx) => {
             const sMin = parseHm(String(r.slot_start).slice(0, 5))
             const eMin = parseHm(String(r.slot_end).slice(0, 5))
@@ -220,6 +230,11 @@ export default function CalendarPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [events, setEvents] = useState<Event[]>([])
   const [weeklyRules, setWeeklyRules] = useState<WeeklyRule[]>([])
+  // Map of YYYY-MM-DD → reason (or null). Built from
+  // employer_availability_overrides so the calendar can paint blocked
+  // days as visibly unavailable, with any existing interviews still
+  // rendered on top so the employer sees the conflict.
+  const [blockedDates, setBlockedDates] = useState<Map<string, string | null>>(new Map())
   const [view, setView] = useState<'day' | 'week' | 'month'>('week')
   const [isMobile, setIsMobile] = useState(false)
   const [cursor, setCursor] = useState<Date>(() => {
@@ -389,7 +404,7 @@ export default function CalendarPage() {
     const fromStr = toDateStr(range.start)
     const toStr = toDateStr(range.end)
 
-    const [{ data: bookings }, { data: interviews }, { data: weekly }] = await Promise.all([
+    const [{ data: bookings }, { data: interviews }, { data: weekly }, { data: overrides }] = await Promise.all([
       supabase
         .from('interview_bookings')
         .select(`
@@ -415,6 +430,13 @@ export default function CalendarPage() {
         .select('day_of_week, slot_start, slot_end, is_active')
         .eq('employer_id', uid)
         .eq('is_active', true),
+      supabase
+        .from('employer_availability_overrides')
+        .select('override_date, reason')
+        .eq('employer_id', uid)
+        .eq('is_blocked', true)
+        .gte('override_date', fromStr)
+        .lte('override_date', toStr),
     ])
 
     // Collect candidate IDs from both sources
@@ -483,6 +505,9 @@ export default function CalendarPage() {
 
     setEvents(mapped)
     setWeeklyRules(((weekly as WeeklyRule[]) || []))
+    const blockMap = new Map<string, string | null>()
+    for (const o of overrides || []) blockMap.set(o.override_date, o.reason ?? null)
+    setBlockedDates(blockMap)
     setLoading(false)
   }, [range.start, range.end])
 
@@ -557,6 +582,14 @@ export default function CalendarPage() {
   const availabilityForDate = (d: Date) => {
     const dow = toAppDow(d.getDay())
     return weeklyRules.filter(r => r.day_of_week === dow && r.is_active)
+  }
+
+  // Returns the reason string (empty string allowed) if the given day is
+  // blocked, or null if it isn't. The null/non-null distinction is what
+  // each view uses to decide whether to render the overlay at all.
+  const blockedReasonForDate = (d: Date): string | null => {
+    const s = toDateStr(d)
+    return blockedDates.has(s) ? (blockedDates.get(s) ?? '') : null
   }
 
   const minutesSinceGridStart = (hm: string) => parseHm(hm) - DAY_GRID_START * 60
@@ -690,6 +723,7 @@ export default function CalendarPage() {
                 day={selectedDay}
                 events={eventsForDate(selectedDay)}
                 availability={availabilityForDate(selectedDay)}
+                blockedReason={blockedReasonForDate(selectedDay)}
                 now={now}
                 onSelectEvent={setSelected}
                 onPrev={() => setSelectedDay(addDays(selectedDay, -1))}
@@ -724,6 +758,7 @@ export default function CalendarPage() {
                     const isToday = isSameDay(d, today)
                     const dayEvents = eventsForDate(d)
                     const avail = availabilityForDate(d)
+                    const blockedReason = blockedReasonForDate(d)
                     return (
                       <div
                         key={`col-${i}`}
@@ -736,6 +771,13 @@ export default function CalendarPage() {
                             style={{ top: `${h * HOUR_HEIGHT}px` }}
                           />
                         ))}
+                        {blockedReason !== null && (
+                          <div className={styles.blockedOverlay} aria-label="Day blocked">
+                            <span className={styles.blockedLabel}>
+                              Blocked{blockedReason ? ` · ${blockedReason}` : ''}
+                            </span>
+                          </div>
+                        )}
                         {avail.map((r, idx) => {
                           const sMin = parseHm(String(r.slot_start).slice(0, 5))
                           const eMin = parseHm(String(r.slot_end).slice(0, 5))
@@ -804,13 +846,19 @@ export default function CalendarPage() {
                   const dayEvents = eventsForDate(d).sort((a,b) => a.time.localeCompare(b.time))
                   const inMonth = d.getMonth() === cursor.getMonth()
                   const isToday = isSameDay(d, today)
+                  const blockedReason = blockedReasonForDate(d)
                   return (
                     <div
                       key={i}
-                      className={`${styles.monthDay} ${!inMonth ? styles.monthDayOther : ''} ${isToday ? styles.monthDayToday : ''}`}
+                      className={`${styles.monthDay} ${!inMonth ? styles.monthDayOther : ''} ${isToday ? styles.monthDayToday : ''} ${blockedReason !== null ? styles.monthDayBlocked : ''}`}
                       onClick={() => { setCursor(new Date(d)); setView('week') }}
                     >
                       <span className={styles.monthDayNum}>{d.getDate()}</span>
+                      {blockedReason !== null && (
+                        <span className={styles.monthDayBlockedTag} title={blockedReason || 'Blocked'}>
+                          Blocked{blockedReason ? ` · ${blockedReason}` : ''}
+                        </span>
+                      )}
                       {dayEvents.slice(0, 3).map(ev => {
                         const cls =
                           ev.status === 'confirmed' ? styles.monthEventPill :

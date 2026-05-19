@@ -229,6 +229,46 @@
   pointer-events: none;
 }
 
+/* Full-day "Blocked" overlay — covers the visible time grid for a day
+   the employer marked as unavailable. z-index sits ABOVE availability/
+   hour-lines but BELOW event chips so any existing interview on a
+   blocked day still renders on top, surfacing the conflict at a glance.
+   pointer-events: none so it never intercepts clicks meant for the
+   underlying event chips. */
+.blockedOverlay {
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(220, 38, 38, 0.10) 0,
+    rgba(220, 38, 38, 0.10) 8px,
+    rgba(220, 38, 38, 0.04) 8px,
+    rgba(220, 38, 38, 0.04) 16px
+  );
+  border-left: 2px solid rgba(220, 38, 38, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 6px;
+  pointer-events: none;
+  z-index: 1;
+}
+.blockedLabel {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(220, 38, 38, 0.92);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 12px);
+}
+
 .event {
   position: absolute;
   left: 6px; right: 6px;
@@ -239,6 +279,10 @@
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   line-height: 1.3;
+  /* Sit above the blocked-day overlay (z-index:1) so existing interview
+     chips on a blocked day surface the conflict instead of being hidden
+     under the red hatch. */
+  z-index: 2;
 }
 .eventConfirmed { background: #0f172a; color: #FFE500; }
 .eventScheduled { background: #e0f2fe; color: #0369a1; }
@@ -304,6 +348,31 @@
 .monthDay:hover { background: #f9fafb; }
 .monthDayOther { background: #fafbfc; color: #9ca3af; }
 .monthDayToday { background: #FFFBEA; }
+.monthDayBlocked {
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(220, 38, 38, 0.10) 0,
+    rgba(220, 38, 38, 0.10) 6px,
+    rgba(220, 38, 38, 0.03) 6px,
+    rgba(220, 38, 38, 0.03) 12px
+  );
+}
+.monthDayBlockedTag {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 1px 5px;
+  background: rgba(220, 38, 38, 0.92);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 3px;
+  text-transform: uppercase;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .monthDayNum {
   font-size: 0.85rem;
   font-weight: 600;
