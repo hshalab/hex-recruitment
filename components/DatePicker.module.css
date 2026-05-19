@@ -91,10 +91,22 @@
   position: relative;
 }
 
+/* react-day-picker v9 with captionLayout="dropdown" emits both a styled
+   <select> (.rdpDropdown — already shows the chosen month/year) AND a
+   caption_label span containing the same text. With this label visible,
+   "May" / "2026" render *next to* the dropdowns and look duplicated at
+   every viewport width. Visually hide it (kept in DOM for screen readers
+   per the sr-only pattern). */
 .rdpCaptionLabel {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--black);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .rdpNav {
@@ -309,31 +321,15 @@
   background: none;
 }
 
-/* Mobile: keep the popup inside the viewport and hide the duplicate
-   caption label. react-day-picker v9 with captionLayout="dropdown"
-   emits both a styled <select> (.rdpDropdown — already shows the
-   chosen month/year) AND a caption_label span. With our font/weight
-   overrides above the label becomes visible, so "September" and "2024"
-   render on top of the dropdowns; at narrow widths they bleed out of
-   the panel. Visually hide the duplicate (kept in DOM for AT), and
-   anchor the panel so it can't extend past the right edge. */
+/* Mobile: keep the popup inside the viewport so it can't extend past
+   the right edge of the screen when the trigger sits near the right.
+   (The duplicate-caption-label fix is unconditional above, no longer
+   gated to this breakpoint.) */
 @media (max-width: 480px) {
   .panel {
     left: 0;
     right: auto;
     width: max-content;
     max-width: calc(100vw - 24px);
-  }
-
-  .rdpCaptionLabel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
   }
 }
