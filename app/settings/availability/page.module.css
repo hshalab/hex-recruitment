@@ -224,8 +224,16 @@
 
 .addRow {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(180px, auto) 1fr auto;
   gap: 0.5rem;
+  align-items: stretch;
+}
+.addDateWrap {
+  /* Width column for the DatePicker trigger button — minmax above lets
+     the picker have enough room to show the placeholder "Select date"
+     plus the calendar icon without crowding. On mobile the row stacks
+     to one column and this wrap fills the row. */
+  min-width: 180px;
 }
 .addInput {
   padding: 0.55rem 0.75rem;

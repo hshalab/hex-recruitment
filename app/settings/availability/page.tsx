@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import DatePicker from '@/components/DatePicker'
 import styles from './page.module.css'
 
 const DAYS: Array<{ value: number; label: string }> = [
@@ -560,13 +561,14 @@ function AvailabilitySettingsContent() {
               </div>
             )}
             <div className={styles.addRow}>
-              <input
-                type="date"
-                value={newBlockDate}
-                onChange={(e) => setNewBlockDate(e.target.value)}
-                min={new Date().toISOString().slice(0, 10)}
-                className={styles.addInput}
-              />
+              <div className={styles.addDateWrap}>
+                <DatePicker
+                  value={newBlockDate}
+                  onChange={setNewBlockDate}
+                  id="new-block-date"
+                  placeholder="Select date"
+                />
+              </div>
               <input
                 type="text"
                 value={newBlockReason}
