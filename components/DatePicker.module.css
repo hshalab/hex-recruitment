@@ -266,20 +266,37 @@
   background: #FFEA00;
 }
 
-/* Selected */
-.rdpDaySelected .rdpDayButton {
+/* Selected (single mode) + range endpoints */
+.rdpDaySelected .rdpDayButton,
+.rdpDayRangeStart .rdpDayButton,
+.rdpDayRangeEnd .rdpDayButton {
   background: #FFEA00 !important;
   color: var(--black) !important;
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(255, 234, 0, 0.4);
 }
 
-.rdpDaySelected .rdpDayButton:hover {
+.rdpDaySelected .rdpDayButton:hover,
+.rdpDayRangeStart .rdpDayButton:hover,
+.rdpDayRangeEnd .rdpDayButton:hover {
   background: #FFE500 !important;
 }
 
-.rdpDaySelected .rdpDayButton::after {
+.rdpDaySelected .rdpDayButton::after,
+.rdpDayRangeStart .rdpDayButton::after,
+.rdpDayRangeEnd .rdpDayButton::after {
   display: none;
+}
+
+/* Range — days strictly between start and end */
+.rdpDayRangeMiddle .rdpDayButton {
+  background: rgba(255, 234, 0, 0.22);
+  color: var(--black);
+  font-weight: 600;
+  border-radius: 0;
+}
+.rdpDayRangeMiddle .rdpDayButton:hover {
+  background: rgba(255, 234, 0, 0.32);
 }
 
 /* Disabled */

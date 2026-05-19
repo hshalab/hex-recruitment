@@ -241,6 +241,11 @@
   border-radius: 8px;
   font-size: 0.9rem;
 }
+.addHint {
+  margin: 0.6rem 0 0;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
 .blockBtn {
   padding: 0.55rem 1rem;
   background: #0f172a;

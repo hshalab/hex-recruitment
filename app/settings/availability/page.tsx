@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -31,7 +31,10 @@ const TIME_OPTIONS: string[] = (() => {
 })()
 
 type WeeklyRow = { enabled: boolean; start: string; end: string }
-type Override = { id?: string; override_date: string; reason: string | null }
+type Override = { id?: string; override_date: string; reason: string | null; block_group_id: string | null }
+type BlockEntry =
+  | { kind: 'single'; id: string; date: string; reason: string | null }
+  | { kind: 'range'; groupId: string; from: string; to: string; count: number; reason: string | null; ids: string[] }
 
 const DEFAULT_WEEKLY: WeeklyRow[] = DAYS.map((_, i) => ({
   enabled: i <= 4, // Mon–Fri on by default
@@ -52,7 +55,7 @@ function AvailabilitySettingsContent() {
   const [maxAdvanceDays, setMaxAdvanceDays] = useState<number>(28)
   const [weekly, setWeekly] = useState<WeeklyRow[]>(DEFAULT_WEEKLY)
   const [overrides, setOverrides] = useState<Override[]>([])
-  const [newBlockDate, setNewBlockDate] = useState('')
+  const [newBlockRange, setNewBlockRange] = useState<{ from: string; to: string }>({ from: '', to: '' })
   const [newBlockReason, setNewBlockReason] = useState('')
   const [feedUrl, setFeedUrl] = useState('')
   const [copied, setCopied] = useState(false)
@@ -91,12 +94,17 @@ function AvailabilitySettingsContent() {
     const today = new Date().toISOString().slice(0, 10)
     const { data: ov } = await supabase
       .from('employer_availability_overrides')
-      .select('id, override_date, reason, is_blocked')
+      .select('id, override_date, reason, is_blocked, block_group_id')
       .eq('employer_id', uid)
       .eq('is_blocked', true)
       .gte('override_date', today)
       .order('override_date')
-    setOverrides((ov || []).map(o => ({ id: o.id, override_date: o.override_date, reason: o.reason })))
+    setOverrides((ov || []).map(o => ({
+      id: o.id,
+      override_date: o.override_date,
+      reason: o.reason,
+      block_group_id: o.block_group_id ?? null,
+    })))
 
     // ICS feed token + Google Calendar connection status
     const { data: profile } = await supabase
@@ -187,42 +195,145 @@ function AvailabilitySettingsContent() {
     setWeekly(prev => prev.map((w, i) => i === idx ? { ...w, [key]: val } : w))
   }
 
+  // Enumerate every YYYY-MM-DD between start and end inclusive. Anchored
+  // at noon UTC so day-stepping is DST-safe; we only ever care about the
+  // date portion.
+  const enumerateDates = (start: string, end: string): string[] => {
+    const cursor = new Date(`${start}T12:00:00Z`)
+    const stop = new Date(`${end}T12:00:00Z`)
+    const out: string[] = []
+    while (cursor <= stop) {
+      const y = cursor.getUTCFullYear()
+      const m = String(cursor.getUTCMonth() + 1).padStart(2, '0')
+      const d = String(cursor.getUTCDate()).padStart(2, '0')
+      out.push(`${y}-${m}-${d}`)
+      cursor.setUTCDate(cursor.getUTCDate() + 1)
+    }
+    return out
+  }
+
   const handleAddBlocked = async () => {
-    if (!userId || !newBlockDate) return
-    const { data, error } = await supabase
-      .from('employer_availability_overrides')
-      .insert({
-        employer_id: userId,
-        override_date: newBlockDate,
-        is_blocked: true,
-        reason: newBlockReason.trim() || null,
-      })
-      .select()
-      .single()
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
+    if (!userId || !newBlockRange.from) return
+    const reason = newBlockReason.trim() || null
+    const isRange = !!newBlockRange.to && newBlockRange.to !== newBlockRange.from
+
+    if (!isRange) {
+      // Solo single-day block — block_group_id stays NULL so it never
+      // groups with anything else in the list.
+      const { data, error } = await supabase
+        .from('employer_availability_overrides')
+        .insert({
+          employer_id: userId,
+          override_date: newBlockRange.from,
+          is_blocked: true,
+          reason,
+        })
+        .select()
+        .single()
+      if (error) { setMessage({ type: 'error', text: error.message }); return }
+      setOverrides(prev => [...prev, {
+        id: data.id,
+        override_date: data.override_date,
+        reason: data.reason,
+        block_group_id: null,
+      }].sort((a, b) => a.override_date.localeCompare(b.override_date)))
+      setNewBlockRange({ from: '', to: '' })
+      setNewBlockReason('')
+      setTimeout(() => {
+        document.getElementById(`blocked-entry-${data.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 50)
       return
     }
-    setOverrides(prev => [...prev, { id: data.id, override_date: data.override_date, reason: data.reason }]
-      .sort((a, b) => a.override_date.localeCompare(b.override_date)))
-    setNewBlockDate('')
+
+    // Range — enumerate dates, generate one shared block_group_id, insert
+    // one row per date in a single round-trip.
+    const dates = enumerateDates(newBlockRange.from, newBlockRange.to)
+    if (dates.length > 365) {
+      setMessage({ type: 'error', text: 'Range is longer than a year — please block in smaller chunks.' })
+      return
+    }
+    const groupId = crypto.randomUUID()
+    const rows = dates.map(d => ({
+      employer_id: userId,
+      override_date: d,
+      is_blocked: true,
+      reason,
+      block_group_id: groupId,
+    }))
+    const { data, error } = await supabase
+      .from('employer_availability_overrides')
+      .insert(rows)
+      .select()
+    if (error) { setMessage({ type: 'error', text: error.message }); return }
+    setOverrides(prev => [
+      ...prev,
+      ...(data || []).map(o => ({
+        id: o.id,
+        override_date: o.override_date,
+        reason: o.reason,
+        block_group_id: o.block_group_id ?? null,
+      })),
+    ].sort((a, b) => a.override_date.localeCompare(b.override_date)))
+    setNewBlockRange({ from: '', to: '' })
     setNewBlockReason('')
-    // Scroll the new entry into view so the user actually sees it appear
-    // (and notices the Remove control next to it). Without this, on mobile
-    // the user is scrolled down at the form and the new row renders
-    // above the viewport — they get no visible feedback that anything
-    // happened, which previously read as "the Remove button is missing".
+    setMessage({ type: 'success', text: `Blocked ${dates.length} dates.` })
     setTimeout(() => {
-      const el = document.getElementById(`blocked-row-${data.id}`)
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      document.getElementById(`blocked-entry-${groupId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 50)
   }
 
-  const handleRemoveBlocked = async (id?: string) => {
-    if (!id) return
-    const { error } = await supabase.from('employer_availability_overrides').delete().eq('id', id)
-    if (error) { setMessage({ type: 'error', text: error.message }); return }
-    setOverrides(prev => prev.filter(o => o.id !== id))
+  // Group consecutive overrides sharing a block_group_id into one entry.
+  // NULL block_group_id is treated as solo and never grouped — explicit
+  // per the data-layer plan.
+  const blockedEntries = useMemo<BlockEntry[]>(() => {
+    const groups = new Map<string, Override[]>()
+    const solos: BlockEntry[] = []
+    for (const o of overrides) {
+      if (!o.block_group_id) {
+        solos.push({ kind: 'single', id: o.id!, date: o.override_date, reason: o.reason })
+        continue
+      }
+      const bucket = groups.get(o.block_group_id) || []
+      bucket.push(o)
+      groups.set(o.block_group_id, bucket)
+    }
+    const ranges: BlockEntry[] = []
+    Array.from(groups.entries()).forEach(([groupId, rows]) => {
+      const sorted = rows.slice().sort((a: Override, b: Override) => a.override_date.localeCompare(b.override_date))
+      ranges.push({
+        kind: 'range',
+        groupId,
+        from: sorted[0].override_date,
+        to: sorted[sorted.length - 1].override_date,
+        count: sorted.length,
+        reason: sorted[0].reason,
+        ids: sorted.map((r: Override) => r.id!).filter(Boolean),
+      })
+    })
+    return [...solos, ...ranges].sort((a, b) => {
+      const aStart = a.kind === 'single' ? a.date : a.from
+      const bStart = b.kind === 'single' ? b.date : b.from
+      return aStart.localeCompare(bStart)
+    })
+  }, [overrides])
+
+  const handleRemoveEntry = async (entry: BlockEntry) => {
+    if (entry.kind === 'single') {
+      const { error } = await supabase
+        .from('employer_availability_overrides')
+        .delete()
+        .eq('id', entry.id)
+      if (error) { setMessage({ type: 'error', text: error.message }); return }
+      setOverrides(prev => prev.filter(o => o.id !== entry.id))
+    } else {
+      // Range — delete every row sharing the block_group_id in one query.
+      const { error } = await supabase
+        .from('employer_availability_overrides')
+        .delete()
+        .eq('block_group_id', entry.groupId)
+      if (error) { setMessage({ type: 'error', text: error.message }); return }
+      setOverrides(prev => prev.filter(o => o.block_group_id !== entry.groupId))
+    }
   }
 
   const handleCopyFeed = async () => {
@@ -536,37 +647,46 @@ function AvailabilitySettingsContent() {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Blocked dates</h2>
             <p className={styles.sectionDescription}>Block out holidays or other days you&apos;re unavailable.</p>
-            {overrides.length > 0 && (
+            {blockedEntries.length > 0 && (
               <div className={styles.blockedList}>
-                {overrides.map(o => (
-                  <div key={o.id} id={`blocked-row-${o.id}`} className={styles.blockedRow}>
-                    <span className={styles.blockedDate}>
-                      {new Date(o.override_date + 'T00:00:00').toLocaleDateString('en-GB', {
-                        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
-                      })}
-                    </span>
-                    <span className={styles.blockedReason}>{o.reason || 'Blocked'}</span>
-                    <button
-                      type="button"
-                      className={styles.removeBtn}
-                      onClick={() => handleRemoveBlocked(o.id)}
-                      aria-label="Remove this blocked date"
-                      title="Remove"
-                    >
-                      <span aria-hidden="true" className={styles.removeIcon}>✕</span>
-                      <span className={styles.removeLabel}>Remove</span>
-                    </button>
-                  </div>
-                ))}
+                {blockedEntries.map(entry => {
+                  const entryKey = entry.kind === 'single' ? entry.id : entry.groupId
+                  const fmtDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', {
+                    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+                  })
+                  const fmtRangeEnd = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', {
+                    day: 'numeric', month: 'long', year: 'numeric',
+                  })
+                  const displayLabel = entry.kind === 'single'
+                    ? fmtDate(entry.date)
+                    : `${fmtRangeEnd(entry.from)} – ${fmtRangeEnd(entry.to)}`
+                  return (
+                    <div key={entryKey} id={`blocked-entry-${entryKey}`} className={styles.blockedRow}>
+                      <span className={styles.blockedDate}>{displayLabel}</span>
+                      <span className={styles.blockedReason}>{entry.reason || 'Blocked'}</span>
+                      <button
+                        type="button"
+                        className={styles.removeBtn}
+                        onClick={() => handleRemoveEntry(entry)}
+                        aria-label={entry.kind === 'single' ? 'Remove this blocked date' : `Remove this blocked range (${entry.count} days)`}
+                        title="Remove"
+                      >
+                        <span aria-hidden="true" className={styles.removeIcon}>✕</span>
+                        <span className={styles.removeLabel}>Remove</span>
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
             <div className={styles.addRow}>
               <div className={styles.addDateWrap}>
                 <DatePicker
-                  value={newBlockDate}
-                  onChange={setNewBlockDate}
+                  mode="range"
+                  value={newBlockRange}
+                  onChange={setNewBlockRange}
                   id="new-block-date"
-                  placeholder="Select date"
+                  placeholder="Select date(s)"
                 />
               </div>
               <input
@@ -579,12 +699,15 @@ function AvailabilitySettingsContent() {
               <button
                 type="button"
                 onClick={handleAddBlocked}
-                disabled={!newBlockDate}
+                disabled={!newBlockRange.from}
                 className={styles.blockBtn}
               >
-                Block date
+                {newBlockRange.to && newBlockRange.to !== newBlockRange.from ? 'Block range' : 'Block date'}
               </button>
             </div>
+            <p className={styles.addHint}>
+              Tap one day to block a single date, or tap a start day then an end day to block a whole range.
+            </p>
           </div>
 
           {/* Google Calendar two-way sync */}
