@@ -206,6 +206,15 @@ function AvailabilitySettingsContent() {
       .sort((a, b) => a.override_date.localeCompare(b.override_date)))
     setNewBlockDate('')
     setNewBlockReason('')
+    // Scroll the new entry into view so the user actually sees it appear
+    // (and notices the Remove control next to it). Without this, on mobile
+    // the user is scrolled down at the form and the new row renders
+    // above the viewport — they get no visible feedback that anything
+    // happened, which previously read as "the Remove button is missing".
+    setTimeout(() => {
+      const el = document.getElementById(`blocked-row-${data.id}`)
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 50)
   }
 
   const handleRemoveBlocked = async (id?: string) => {
@@ -529,7 +538,7 @@ function AvailabilitySettingsContent() {
             {overrides.length > 0 && (
               <div className={styles.blockedList}>
                 {overrides.map(o => (
-                  <div key={o.id} className={styles.blockedRow}>
+                  <div key={o.id} id={`blocked-row-${o.id}`} className={styles.blockedRow}>
                     <span className={styles.blockedDate}>
                       {new Date(o.override_date + 'T00:00:00').toLocaleDateString('en-GB', {
                         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
@@ -540,8 +549,11 @@ function AvailabilitySettingsContent() {
                       type="button"
                       className={styles.removeBtn}
                       onClick={() => handleRemoveBlocked(o.id)}
+                      aria-label="Remove this blocked date"
+                      title="Remove"
                     >
-                      Remove
+                      <span aria-hidden="true" className={styles.removeIcon}>✕</span>
+                      <span className={styles.removeLabel}>Remove</span>
                     </button>
                   </div>
                 ))}

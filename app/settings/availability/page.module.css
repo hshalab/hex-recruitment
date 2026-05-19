@@ -180,16 +180,47 @@
 .blockedDate { font-weight: 500; color: #0f172a; }
 .blockedReason { color: #6b7280; flex: 1; }
 .removeBtn {
-  padding: 0.3rem 0.6rem;
-  background: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  background: #fef2f2;
   border: 1px solid #fecaca;
   color: #b91c1c;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
 }
-.removeBtn:hover { background: #fef2f2; }
+.removeBtn:hover { background: #fee2e2; border-color: #fca5a5; }
+.removeBtn:active { background: #fecaca; }
+.removeIcon {
+  font-size: 0.95rem;
+  line-height: 1;
+  font-weight: 700;
+}
+.removeLabel {
+  /* On mobile (<= 480px), drop the text label and keep just the ✕ icon
+     so the row stays compact at iPhone widths while still presenting an
+     obvious destructive control. */
+}
+@media (max-width: 480px) {
+  .removeBtn {
+    padding: 0.5rem 0.65rem;
+  }
+  .removeLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
 
 .addRow {
   display: grid;
