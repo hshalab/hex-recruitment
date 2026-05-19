@@ -41,6 +41,20 @@ function addMinutes(dateStr: string, timeStr: string, minutes: number): string {
   return `${dt.getFullYear()}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`
 }
 
+/** YYYY-MM-DD → YYYYMMDD for iCalendar all-day events (no time portion). */
+function formatDateOnly(dateStr: string): string {
+  return dateStr.replace(/-/g, '')
+}
+
+/** Add N days to a YYYY-MM-DD date. iCalendar all-day DTEND is exclusive
+ *  per RFC 5545, so a Mon–Fri block needs DTSTART=Mon, DTEND=Sat. */
+function addDaysYMD(dateStr: string, days: number): string {
+  const [y, mo, d] = dateStr.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, mo - 1, d))
+  dt.setUTCDate(dt.getUTCDate() + days)
+  return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`
+}
+
 function utcStamp(): string {
   const d = new Date()
   return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`
@@ -72,6 +86,21 @@ export async function GET(
       `)
       .eq('employer_id', profile.user_id)
       .order('booked_date', { ascending: true })
+
+    // Also fetch block-outs so subscribed calendars (Google, Apple,
+    // Outlook) show the employer's marked-unavailable days alongside
+    // their scheduled interviews. Filter to recent history + future
+    // only — historical blocks are noise in a subscription feed.
+    const horizonStart = new Date()
+    horizonStart.setDate(horizonStart.getDate() - 30)
+    const horizonStartStr = horizonStart.toISOString().slice(0, 10)
+    const { data: blocks } = await supabaseAdmin
+      .from('employer_availability_overrides')
+      .select('id, override_date, reason, block_group_id')
+      .eq('employer_id', profile.user_id)
+      .eq('is_blocked', true)
+      .gte('override_date', horizonStartStr)
+      .order('override_date', { ascending: true })
 
     // Collect unique candidate IDs for name lookup
     const candidateIds = Array.from(
@@ -134,6 +163,66 @@ export async function GET(
         foldLine(`DESCRIPTION:${description}`),
         ...(location ? [foldLine(`LOCATION:${escapeText(location)}`)] : []),
         `STATUS:${b.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'}`,
+        'END:VEVENT',
+      ]
+      lines.push(...vevent)
+    }
+
+    // ── Block-out VEVENTs ───────────────────────────────────────────
+    // A range (rows sharing a block_group_id) emits as ONE multi-day
+    // all-day VEVENT so subscribers see "Blocked · Holiday — Mon-Fri"
+    // rather than five separate all-day events. Solo blocks
+    // (block_group_id NULL) emit as single all-day VEVENTs and are
+    // never grouped — matches the in-app list rendering.
+    type BlockGroup = { groupKey: string; from: string; to: string; reason: string | null }
+    const soloBlocks: BlockGroup[] = []
+    const groupedBlocks = new Map<string, BlockGroup>()
+    for (const b of blocks || []) {
+      if (!b.block_group_id) {
+        soloBlocks.push({
+          groupKey: `blocked-${b.id}`,
+          from: b.override_date,
+          to: b.override_date,
+          reason: b.reason ?? null,
+        })
+        continue
+      }
+      const existing = groupedBlocks.get(b.block_group_id)
+      if (!existing) {
+        groupedBlocks.set(b.block_group_id, {
+          groupKey: `blocked-group-${b.block_group_id}`,
+          from: b.override_date,
+          to: b.override_date,
+          reason: b.reason ?? null,
+        })
+      } else {
+        // Extend the range — `blocks` is sorted asc by override_date so
+        // a later row is always the new max end.
+        if (b.override_date < existing.from) existing.from = b.override_date
+        if (b.override_date > existing.to) existing.to = b.override_date
+      }
+    }
+    const allBlocks: BlockGroup[] = [...soloBlocks, ...Array.from(groupedBlocks.values())]
+      .sort((a, b) => a.from.localeCompare(b.from))
+
+    for (const entry of allBlocks) {
+      const summary = entry.reason ? `Blocked: ${entry.reason}` : 'Blocked'
+      const dtstart = formatDateOnly(entry.from)
+      // RFC 5545: all-day DTEND is EXCLUSIVE, so a Mon–Fri block must
+      // span DTSTART=Mon, DTEND=Sat to cover Friday.
+      const dtend = formatDateOnly(addDaysYMD(entry.to, 1))
+      const vevent = [
+        'BEGIN:VEVENT',
+        foldLine(`UID:${entry.groupKey}@thrivecareer.co.uk`),
+        `DTSTAMP:${stamp}`,
+        `DTSTART;VALUE=DATE:${dtstart}`,
+        `DTEND;VALUE=DATE:${dtend}`,
+        foldLine(`SUMMARY:${escapeText(summary)}`),
+        // OPAQUE = busy/blocking on the subscriber's calendar; TRANSPARENT
+        // would let other events overlap it. OPAQUE matches the
+        // employer's intent ("I am unavailable on these days").
+        'TRANSP:OPAQUE',
+        'STATUS:CONFIRMED',
         'END:VEVENT',
       ]
       lines.push(...vevent)
