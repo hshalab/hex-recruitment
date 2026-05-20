@@ -24,7 +24,7 @@ function buildConfirmationEmail(name: string): string {
         <tr><td style="background:#1a1a1a;border-radius:16px;padding:36px 32px;">
           <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#ffffff;">Hi ${firstName}, you're on the list!</h1>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.75);">
-            We're giving the first ${EMPLOYER_COHORT_CAP} employers on Thrive a full year free. We'll email you the moment we go live.
+            We're giving the first ${EMPLOYER_COHORT_CAP} employers on Thrive 3 months free. We'll email you the moment we go live.
           </p>
           <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
             <tr><td style="background:#FFD700;border-radius:8px;">
