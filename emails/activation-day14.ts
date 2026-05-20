@@ -33,7 +33,7 @@ export function activationDay14Email(companyName: string): { subject: string; ht
       </tr>
     </table>
     <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
-      Your free spot is locked in — no pressure, no expiry countdown. The platform is yours to use whenever you need to hire.
+      You're 2 weeks into your 3-month free trial — still plenty of runway to lock the rhythm in. We'll send a reminder a few days before your trial ends so there are no surprises.
     </p>
     ${ctaButton('Post another job', `${BASE_URL}/post-job`)}
   `)
