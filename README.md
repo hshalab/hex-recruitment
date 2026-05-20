@@ -1,8 +1,8 @@
-# Hospitality Hive - Next.js Setup Guide
+# Thrive - Next.js Setup Guide
 
 ## 🎉 Your New Modern Recruitment Platform!
 
-This is a complete rebuild of your Hospitality Hive website using:
+This is a complete rebuild of your Thrive platform using:
 - ✅ **Next.js 14** - Modern React framework
 - ✅ **TypeScript** - Type safety
 - ✅ **Supabase** - Your existing backend (already set up!)
