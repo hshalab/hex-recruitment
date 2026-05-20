@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
+import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -23,7 +24,7 @@ function buildConfirmationEmail(name: string): string {
         <tr><td style="background:#1a1a1a;border-radius:16px;padding:36px 32px;">
           <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#ffffff;">Hi ${firstName}, you're on the list!</h1>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.75);">
-            We're giving the first 100 employers on Thrive a full year free. We'll email you the moment we go live.
+            We're giving the first ${EMPLOYER_COHORT_CAP} employers on Thrive a full year free. We'll email you the moment we go live.
           </p>
           <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
             <tr><td style="background:#FFD700;border-radius:8px;">

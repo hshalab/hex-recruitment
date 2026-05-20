@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-const FREE_CAP = 600
 
 export async function GET() {
   const supabase = createClient(supabaseUrl, supabaseKey)
@@ -15,7 +14,7 @@ export async function GET() {
     .eq('subscription_tier', 'free')
 
   const claimed = error ? 0 : (count ?? 0)
-  const spotsRemaining = Math.max(0, FREE_CAP - claimed)
+  const spotsRemaining = Math.max(0, EMPLOYER_COHORT_CAP - claimed)
 
   return NextResponse.json({ spotsRemaining, isFull: spotsRemaining === 0 })
 }

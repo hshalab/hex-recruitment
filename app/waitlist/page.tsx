@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ThriveMark from '@/components/ThriveMark'
+import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import styles from './page.module.css'
 
 export default function WaitlistPage() {
@@ -78,7 +79,7 @@ function WaitlistContent() {
         {/* Full banner */}
         {isFull && (
           <div className={styles.fullBanner}>
-            All 100 free spots have been claimed — but you can join the waitlist and we&apos;ll let you know if any open up.
+            All {EMPLOYER_COHORT_CAP} free spots have been claimed — but you can join the waitlist and we&apos;ll let you know if any open up.
           </div>
         )}
 
@@ -87,18 +88,18 @@ function WaitlistContent() {
 
         {/* Subheadline */}
         <p className={styles.subheadline}>
-          Join the waitlist. The first 600 employers on Thrive get 3 months free. No card needed.
+          Join the waitlist. The first {EMPLOYER_COHORT_CAP} employers on Thrive get 3 months free. No card needed.
         </p>
 
         {/* Spots counter */}
         <div className={styles.spotsCounter}>
           <p className={styles.spotsText}>
-            {employerCount ?? '—'} of 100 spots already claimed
+            {employerCount ?? '—'} of {EMPLOYER_COHORT_CAP} spots already claimed
           </p>
           <div className={styles.spotsBar}>
             <div
               className={styles.spotsBarFill}
-              style={{ width: `${Math.min((employerCount ?? 0) / 100 * 100, 100)}%` }}
+              style={{ width: `${Math.min((employerCount ?? 0) / EMPLOYER_COHORT_CAP * 100, 100)}%` }}
             />
           </div>
         </div>

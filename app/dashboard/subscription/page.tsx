@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
 import { SUBSCRIPTION_TIERS } from '@/lib/subscription-tiers'
+import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import styles from './page.module.css'
 
 interface SubscriptionData {
@@ -196,7 +197,7 @@ function SubscriptionContent() {
         {cameFromPostJob && !isActive && (
           <div className={styles.contextBanner}>
             <p className={styles.contextBannerTitle}>Start your trial to post your first job</p>
-            <p className={styles.contextBannerBody}>Pick a plan below — first 600 employers get 3 months free.</p>
+            <p className={styles.contextBannerBody}>Pick a plan below — first {EMPLOYER_COHORT_CAP} employers get 3 months free.</p>
           </div>
         )}
 

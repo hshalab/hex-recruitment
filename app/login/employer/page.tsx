@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
+import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import styles from '../page.module.css'
 
 function EmployerLoginPageContent() {
@@ -161,7 +162,7 @@ function EmployerLoginPageContent() {
           <div className={styles.benefits}>
             <h3 className={styles.benefitsTitle}>Employer Benefits</h3>
             <ul className={styles.benefitsList}>
-              <li>3 months free for first 600 employers</li>
+              <li>3 months free for first {EMPLOYER_COHORT_CAP} employers</li>
               <li>Post unlimited jobs</li>
               <li>Search &amp; message candidates</li>
               <li>Full hiring pipeline</li>

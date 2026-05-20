@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import ThriveMark from '@/components/ThriveMark'
 import { supabase } from '@/lib/supabase'
+import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import styles from './page.module.css'
 
 export default function Home() {
@@ -101,7 +102,7 @@ export default function Home() {
           </div>
 
           <p className={styles.heroBottomStrip}>
-            First 600 employers get 3 months free · no card needed · always free for candidates
+            First {EMPLOYER_COHORT_CAP} employers get 3 months free · no card needed · always free for candidates
           </p>
         </div>
       </section>
@@ -136,7 +137,7 @@ export default function Home() {
       <section className={`${styles.benefits}`}>
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>Everything you need to hire — completely free</h2>
-          <p className={styles.sectionSubtitle}>The first 600 employers get 3 months free. No card. No catch.</p>
+          <p className={styles.sectionSubtitle}>The first {EMPLOYER_COHORT_CAP} employers get 3 months free. No card. No catch.</p>
           <div className={`${styles.benefitsGrid}`}>
             <div className={styles.benefitCard}>
               <div className={styles.benefitIcon}>

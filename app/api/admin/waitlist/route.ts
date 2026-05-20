@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyAdmin, createAdminClient } from '@/lib/admin'
+import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 
 export async function GET(req: Request) {
   const { authorized } = await verifyAdmin(req)
@@ -29,6 +30,6 @@ export async function GET(req: Request) {
   return NextResponse.json({
     entries: waitlistResult.data || [],
     freeSpotsClaimed,
-    spotsRemaining: Math.max(0, 100 - freeSpotsClaimed),
+    spotsRemaining: Math.max(0, EMPLOYER_COHORT_CAP - freeSpotsClaimed),
   })
 }

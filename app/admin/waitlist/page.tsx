@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAdminToken } from '@/lib/admin-context'
 import AdminTable, { Column, exportToCSV } from '@/components/admin/AdminTable'
 import StatsCard from '@/components/admin/StatsCard'
+import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import styles from './page.module.css'
 
 interface WaitlistEntry {
@@ -37,7 +38,7 @@ export default function AdminWaitlistPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [freeSpotsClaimed, setFreeSpotsClaimed] = useState(0)
-  const [spotsRemaining, setSpotsRemaining] = useState(100)
+  const [spotsRemaining, setSpotsRemaining] = useState(EMPLOYER_COHORT_CAP)
 
   useEffect(() => {
     if (!token) return
@@ -50,7 +51,7 @@ export default function AdminWaitlistPage() {
       if (data.entries && Array.isArray(data.entries)) {
         setEntries(data.entries)
         setFreeSpotsClaimed(data.freeSpotsClaimed ?? 0)
-        setSpotsRemaining(data.spotsRemaining ?? 100)
+        setSpotsRemaining(data.spotsRemaining ?? EMPLOYER_COHORT_CAP)
       } else if (Array.isArray(data)) {
         setEntries(data)
       }
