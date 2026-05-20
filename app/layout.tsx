@@ -37,7 +37,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareer.co.uk
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Thrive — Hiring platform for hospitality',
+    default: 'Thrive — Hire talent / Find jobs',
     template: '%s | Thrive',
   },
   description: 'Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations. £99/month, 3-month free trial.',
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     locale: 'en_GB',
     url: SITE_URL,
     siteName: 'Thrive',
-    title: 'Thrive — Hiring platform for hospitality',
+    title: 'Thrive — Hire talent / Find jobs',
     description: 'Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations.',
     images: [
       {
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Thrive — Hiring platform for hospitality',
+    title: 'Thrive — Hire talent / Find jobs',
     description: 'Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations.',
     images: ['/opengraph-image'],
   },

@@ -266,7 +266,7 @@ export default function Home() {
             <ThriveMark size={24} />
             <div className={styles.footerBrandText}>
               <span className={styles.footerLogo}>Thrive</span>
-              <span className={styles.footerTagline}>Talent Recruitment</span>
+              <span className={styles.footerTagline}>Hire talent / Find jobs</span>
             </div>
           </div>
           <div className={styles.footerLinks}>
