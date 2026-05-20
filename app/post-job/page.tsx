@@ -646,7 +646,7 @@ function PostJobContent() {
               You need an employer subscription to post jobs on Thrive.
             </p>
             <a href="/subscribe" className="btn btn-primary">
-              Start Free 14-Day Trial
+              Start 3-month free trial
             </a>
           </div>
         </div>

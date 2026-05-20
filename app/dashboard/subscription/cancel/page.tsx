@@ -24,9 +24,9 @@ export default function SubscriptionCancelPage() {
           <div className={styles.info}>
             <p>Remember, all plans include:</p>
             <ul>
-              <li>14-day free trial</li>
+              <li>3-month free trial</li>
               <li>No upfront payment required</li>
-              <li>1 week cancellation notice</li>
+              <li>14 days' cancellation notice</li>
             </ul>
           </div>
           <div className={styles.actions}>
