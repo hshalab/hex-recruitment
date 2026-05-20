@@ -149,7 +149,7 @@ export default function RenewSubscriptionPage() {
               <span className={styles.price}>{EMPLOYER_SUBSCRIPTION_PRICE.toFixed(2)}</span>
             </div>
             <span className={styles.priceLabel}>per month</span>
-            <span className={styles.priceNote}>1 week cancellation notice</span>
+            <span className={styles.priceNote}>14 days' cancellation notice</span>
           </div>
 
           <div className={styles.benefits}>

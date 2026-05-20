@@ -2702,14 +2702,16 @@ export default function AnalyticsContent() {
     <main className={styles.page}>
       <Header />
 
-      {/* Professional Tier Upgrade Overlay for Standard Users */}
+      {/* Subscription-required overlay — currently dead code (isProfessional
+          is hardcoded true above), but kept structurally in case the gate is
+          re-enabled. Copy refers to the single £99/month plan, not a tier. */}
       {!isProfessional && (
         <div className={styles.upgradeOverlay}>
           <div className={styles.upgradeCard}>
-            <h2 className={styles.upgradeTitle}>Upgrade to Professional</h2>
+            <h2 className={styles.upgradeTitle}>Subscribe to access Analytics</h2>
             <p className={styles.upgradeText}>
-              The Analytics Dashboard is available exclusively on the Professional plan.
-              Upgrade to access detailed recruitment insights, candidate demographics,
+              The Analytics Dashboard is available with an active Thrive subscription.
+              Subscribe to access detailed recruitment insights, candidate demographics,
               market benchmarking, and more.
             </p>
             <Link href="/dashboard/subscription" className={styles.upgradeBtnLink}>

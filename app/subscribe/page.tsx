@@ -384,7 +384,7 @@ export default function SubscribePage() {
             <div className={styles.benefitItem}>✓ Access qualified candidate profiles</div>
             <div className={styles.benefitItem}>✓ Direct messaging with candidates</div>
             <div className={styles.benefitItem}>✓ Featured job listings</div>
-            <div className={styles.benefitItem}>✓ 1 week cancellation notice</div>
+            <div className={styles.benefitItem}>✓ 14 days' cancellation notice</div>
           </div>
         </div>
       </section>
