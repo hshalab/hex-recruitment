@@ -66,27 +66,22 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   },
   {
     keywords: ['free trial', 'trial', '3 month', 'three month', 'try free'],
-    response: "Yes! You get 3 months completely FREE when you sign up as an employer. During your trial you get full access to:\n• Post jobs based on your plan tier\n• Browse all candidate profiles\n• Send and receive messages\n• Schedule interviews\n• Send job offers\n\nNo charges until your trial ends. Cancel with 1 week's notice.",
+    response: "Yes! You get 3 months completely FREE when you sign up as an employer. During your trial you get full access to:\n• Unlimited job listings\n• Browse all candidate profiles\n• Send and receive messages\n• Schedule interviews\n• Send job offers\n\nNo charges until your trial ends. Cancel anytime with 14 days' notice.",
     links: [{ text: 'Start Free Trial', href: '/subscribe' }]
   },
   {
-    keywords: ['standard plan', 'basic plan', 'starter plan'],
-    response: "The **Standard plan** is £99/month and includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nStart with a 3-month free trial — cancel anytime!",
-    links: [{ text: 'Subscribe', href: '/subscribe' }]
-  },
-  {
-    keywords: ['professional plan', 'pro plan', 'premium plan', 'unlimited'],
-    response: "We now have a single plan at **£99/month** which includes everything:\n• Unlimited job listings\n• Priority candidate access\n• Full analytics dashboard\n• Dedicated account support\n\nStart with a 3-month free trial — cancel anytime!",
+    keywords: ['standard plan', 'basic plan', 'starter plan', 'professional plan', 'pro plan', 'premium plan', 'unlimited', 'which plan', 'what plan', 'tier', 'tiers'],
+    response: "Thrive has **one plan: £99/month** — no tiers, no upsell. It includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nStart with a 3-month free trial — cancel anytime with 14 days' notice.",
     links: [{ text: 'Subscribe', href: '/subscribe' }]
   },
   {
     keywords: ['cancel', 'unsubscribe', 'stop subscription', 'end subscription'],
-    response: "You can cancel your subscription from your Settings page with 1 week's notice. If you cancel during your free trial, you won't be charged at all. Your access continues until the end of the notice period.",
+    response: "You can cancel your subscription from your Settings page with 14 days' notice. If you cancel during your free trial, you won't be charged at all. Your access continues until the end of the notice period.",
     links: [{ text: 'Settings', href: '/settings' }]
   },
   {
     keywords: ['upgrade', 'change plan', 'switch plan', 'downgrade'],
-    response: "You can upgrade or change your plan from the Settings page. Upgrading to Professional unlocks unlimited job listings and the full analytics dashboard. Changes take effect immediately.",
+    response: "Thrive has a single plan at £99/month — there are no tiers to upgrade or downgrade between. Everything's included. If you've cancelled and want to resubscribe, you can do that from your Settings page.",
     links: [{ text: 'Settings', href: '/settings' }]
   },
 
@@ -238,7 +233,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── SIDEBAR / NAVIGATION ──
   {
     keywords: ['sidebar', 'navigation', 'menu', 'where do i find', 'how to navigate'],
-    response: "The employer sidebar gives you quick access to all key areas:\n\n• **Post Job** — Create a new listing\n• **Browse Jobs** — See all active jobs on the platform\n• **Candidates** — Browse the candidate database\n• **My Candidates** — Your jobs and applicants\n• **Interviews** — Upcoming and past interviews\n• **Offers** — Pending and accepted offers\n• **Hired** — Successfully hired candidates\n• **Analytics** — Performance dashboard (Professional plan)\n• **Reviews** — Feedback and ratings\n• **Settings** — Account and subscription management\n\nYou can collapse or expand the sidebar using the arrow button."
+    response: "The employer sidebar gives you quick access to all key areas:\n\n• **Post Job** — Create a new listing\n• **Browse Jobs** — See all active jobs on the platform\n• **Candidates** — Browse the candidate database\n• **My Candidates** — Your jobs and applicants\n• **Interviews** — Upcoming and past interviews\n• **Offers** — Pending and accepted offers\n• **Hired** — Successfully hired candidates\n• **Analytics** — Performance dashboard\n• **Reviews** — Feedback and ratings\n• **Settings** — Account and subscription management\n\nYou can collapse or expand the sidebar using the arrow button."
   },
 
   // ── EMPLOYER: GENERAL HIRING ──
