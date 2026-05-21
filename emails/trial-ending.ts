@@ -1,4 +1,5 @@
 import { emailLayout, ctaButton, BASE_URL } from './layout'
+import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
 
 export function trialEndingEmail(
   companyName: string,
@@ -34,7 +35,7 @@ export function trialEndingEmail(
       </tr>
     </table>
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
-      Your subscription will be <strong>&pound;99/month</strong>. Cancel anytime.
+      Your subscription will be <strong>&pound;${EMPLOYER_SUBSCRIPTION_PRICE}/month</strong>. Cancel anytime.
     </p>
     ${ctaButton('Subscribe Now', `${BASE_URL}/dashboard/subscription`)}
     <p style="margin:0;font-size:14px;color:#94a3b8;">

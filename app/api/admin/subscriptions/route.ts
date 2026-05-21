@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyAdmin, createAdminClient } from '@/lib/admin'
+import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
 
 const PAGE_SIZE = 20
 
@@ -88,7 +89,6 @@ export async function GET(req: Request) {
 
     const totalActive = (allActive || []).filter(s => s.subscription_status === 'active').length
     const totalTrialing = (allActive || []).filter(s => s.subscription_status === 'trialing').length
-    const PLAN_PRICE = 99
 
     return NextResponse.json({
       subscriptions,
@@ -96,7 +96,7 @@ export async function GET(req: Request) {
       page,
       totalPages: Math.ceil((count || 0) / PAGE_SIZE),
       revenue: {
-        mrr: totalActive * PLAN_PRICE,
+        mrr: totalActive * EMPLOYER_SUBSCRIPTION_PRICE,
         totalActive,
         totalTrialing,
       },

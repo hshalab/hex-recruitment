@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyAdmin, createAdminClient } from '@/lib/admin'
+import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
 
 // ============================================================
 // Types
@@ -109,8 +110,6 @@ function pctChange(current: number, previous: number): number {
   if (previous === 0) return current > 0 ? 100 : 0
   return Math.round(((current - previous) / previous) * 100)
 }
-
-const PLAN_PRICE = 99
 
 // ============================================================
 // Section Handlers
@@ -223,7 +222,7 @@ async function fetchKPI(db: any, startDate: string, granularity: 'day' | 'week' 
   // MRR calculation — single plan
   const subs = subscriptions.data || []
   const activeSubs = subs.filter((s: any) => s.subscription_status === 'active')
-  const mrr = Math.round(activeSubs.length * PLAN_PRICE * 100) / 100
+  const mrr = Math.round(activeSubs.length * EMPLOYER_SUBSCRIPTION_PRICE * 100) / 100
 
   // Churn: canceled in last 30d / active at start of period
   const canceledLast30 = subs.filter((s: any) =>
@@ -649,7 +648,7 @@ async function fetchRevenue(db: any, startDate: string, granularity: 'day' | 'we
 
     return {
       period: month,
-      mrr: Math.round(activeCount * PLAN_PRICE * 100) / 100,
+      mrr: Math.round(activeCount * EMPLOYER_SUBSCRIPTION_PRICE * 100) / 100,
     }
   })
 

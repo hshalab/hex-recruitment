@@ -7,7 +7,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { supabase } from '@/lib/supabase'
 import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 import Header from '@/components/Header'
-import { TRIAL_DURATION_DAYS, TRIAL_MONTHS } from '@/lib/trialUtils'
+import { EMPLOYER_SUBSCRIPTION_PRICE, TRIAL_DURATION_DAYS, TRIAL_MONTHS } from '@/lib/trialUtils'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -251,7 +251,7 @@ export default function EmployerPaymentPage() {
         </div>
 
         <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#94a3b8', marginTop: '1.5rem' }}>
-          After your free trial, your plan is £99/month. Cancel anytime from your dashboard.
+          After your free trial, your plan is £{EMPLOYER_SUBSCRIPTION_PRICE}/month. Cancel anytime from your dashboard.
         </p>
       </div>
     </main>

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
 import ThriveMark from '@/components/ThriveMark'
-import { trialPhraseFormal } from '@/lib/trialUtils'
+import { EMPLOYER_SUBSCRIPTION_PRICE, trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 const sections = [
@@ -248,7 +248,7 @@ export default function TermsPage() {
             <p>After the trial period, employer access requires a paid subscription:</p>
             <ul className={styles.list}>
               <li>
-                <strong>Monthly subscription:</strong> &pound;99 per month (GBP, inclusive of VAT)
+                <strong>Monthly subscription:</strong> &pound;{EMPLOYER_SUBSCRIPTION_PRICE} per month (GBP, inclusive of VAT)
               </li>
               <li>Subscriptions renew automatically each month</li>
               <li>

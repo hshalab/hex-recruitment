@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getCategoryLabel } from '@/lib/categories'
+import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
@@ -1493,7 +1494,7 @@ export default function AnalyticsContent() {
 
   // Cost Per Hire
   const costPerHire = useMemo(() => {
-    const MONTHLY_COST = 99
+    const MONTHLY_COST = EMPLOYER_SUBSCRIPTION_PRICE
 
     if (!employerCreatedAt) return null
 
@@ -2715,7 +2716,7 @@ export default function AnalyticsContent() {
               market benchmarking, and more.
             </p>
             <Link href="/dashboard/subscription" className={styles.upgradeBtnLink}>
-              Subscribe — £99/month
+              Subscribe — £{EMPLOYER_SUBSCRIPTION_PRICE}/month
             </Link>
           </div>
         </div>
@@ -4193,7 +4194,7 @@ export default function AnalyticsContent() {
                 <div className={styles.cphBreakdownCard}>
                   <div className={styles.cphBreakdownLabel}>Total Spent</div>
                   <div className={styles.cphBreakdownValue}>£{costPerHire.totalCost.toFixed(2)}</div>
-                  <div className={styles.cphBreakdownSub}>{costPerHire.totalMonths} month{costPerHire.totalMonths !== 1 ? 's' : ''} × £99</div>
+                  <div className={styles.cphBreakdownSub}>{costPerHire.totalMonths} month{costPerHire.totalMonths !== 1 ? 's' : ''} × £{EMPLOYER_SUBSCRIPTION_PRICE}</div>
                 </div>
                 <div className={styles.cphBreakdownCard}>
                   <div className={styles.cphBreakdownLabel}>Total Hires</div>
@@ -4205,7 +4206,7 @@ export default function AnalyticsContent() {
                 <div className={styles.cphBreakdownCard}>
                   <div className={styles.cphBreakdownLabel}>Member Since</div>
                   <div className={styles.cphBreakdownValue} style={{ fontSize: '1rem' }}>{costPerHire.memberSince}</div>
-                  <div className={styles.cphBreakdownSub}>£99/month subscription</div>
+                  <div className={styles.cphBreakdownSub}>£{EMPLOYER_SUBSCRIPTION_PRICE}/month subscription</div>
                 </div>
               </div>
             </div>

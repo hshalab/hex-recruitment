@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Sprout } from 'lucide-react'
-import { TRIAL_MONTHS, trialPhraseFormal } from '@/lib/trialUtils'
+import { EMPLOYER_SUBSCRIPTION_PRICE, TRIAL_MONTHS, trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './ChatBot.module.css'
 
 const ThriveIcon = ({ size = 20 }: { size?: number }) => (
@@ -31,7 +31,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── GENERAL / ABOUT ──
   {
     keywords: ['what is thrive', 'about thrive', 'how does it work', 'tell me about', 'what does thrive do'],
-    response: `Thrive — Hire talent / Find jobs is the UK's recruitment platform connecting employers across all industries with qualified professionals.\n\n**For Job Seekers:** Completely free! Create your profile, upload your CV, browse jobs, and apply directly.\n\n**For Employers:** Post jobs, browse candidate profiles, schedule interviews, send offers, and track your hiring pipeline. Start with a ${trialPhraseFormal()}, then £99/month.`,
+    response: `Thrive — Hire talent / Find jobs is the UK's recruitment platform connecting employers across all industries with qualified professionals.\n\n**For Job Seekers:** Completely free! Create your profile, upload your CV, browse jobs, and apply directly.\n\n**For Employers:** Post jobs, browse candidate profiles, schedule interviews, send offers, and track your hiring pipeline. Start with a ${trialPhraseFormal()}, then £${EMPLOYER_SUBSCRIPTION_PRICE}/month.`,
     links: [{ text: 'Learn More', href: '/' }]
   },
   {
@@ -62,7 +62,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── PRICING & SUBSCRIPTION ──
   {
     keywords: ['cost', 'price', 'pay', 'how much', 'pricing', 'fee', 'charge', 'subscription', 'plan'],
-    response: `Great question! Thrive offers a **${TRIAL_MONTHS}-month FREE trial**, then just **£99/month**.\n\nYour plan includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nCancel anytime. No hidden fees.`,
+    response: `Great question! Thrive offers a **${TRIAL_MONTHS}-month FREE trial**, then just **£${EMPLOYER_SUBSCRIPTION_PRICE}/month**.\n\nYour plan includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nCancel anytime. No hidden fees.`,
     links: [{ text: 'View Plans', href: '/subscribe' }]
   },
   {
@@ -72,7 +72,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   },
   {
     keywords: ['standard plan', 'basic plan', 'starter plan', 'professional plan', 'pro plan', 'premium plan', 'unlimited', 'which plan', 'what plan', 'tier', 'tiers'],
-    response: `Thrive has **one plan: £99/month** — no tiers, no upsell. It includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nStart with a ${trialPhraseFormal()} — cancel anytime with 14 days' notice.`,
+    response: `Thrive has **one plan: £${EMPLOYER_SUBSCRIPTION_PRICE}/month** — no tiers, no upsell. It includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nStart with a ${trialPhraseFormal()} — cancel anytime with 14 days' notice.`,
     links: [{ text: 'Subscribe', href: '/subscribe' }]
   },
   {
@@ -82,7 +82,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   },
   {
     keywords: ['upgrade', 'change plan', 'switch plan', 'downgrade'],
-    response: "Thrive has a single plan at £99/month — there are no tiers to upgrade or downgrade between. Everything's included. If you've cancelled and want to resubscribe, you can do that from your Settings page.",
+    response: `Thrive has a single plan at £${EMPLOYER_SUBSCRIPTION_PRICE}/month — there are no tiers to upgrade or downgrade between. Everything's included. If you've cancelled and want to resubscribe, you can do that from your Settings page.`,
     links: [{ text: 'Settings', href: '/settings' }]
   },
 
@@ -147,7 +147,7 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── EMPLOYER: ANALYTICS ──
   {
     keywords: ['analytics', 'dashboard', 'stats', 'statistics', 'performance', 'metrics', 'report', 'chart'],
-    response: `The Analytics dashboard gives you insights into your recruitment performance:\n\n• Job posting views and application rates\n• Candidate pipeline breakdown\n• Hiring funnel conversion rates\n• Trend charts over time\n• Top-performing job listings\n\nThe analytics dashboard is included in your plan (£99/month after ${trialPhraseFormal()}).`,
+    response: `The Analytics dashboard gives you insights into your recruitment performance:\n\n• Job posting views and application rates\n• Candidate pipeline breakdown\n• Hiring funnel conversion rates\n• Trend charts over time\n• Top-performing job listings\n\nThe analytics dashboard is included in your plan (£${EMPLOYER_SUBSCRIPTION_PRICE}/month after ${trialPhraseFormal()}).`,
     links: [{ text: 'View Analytics', href: '/dashboard/analytics' }]
   },
 

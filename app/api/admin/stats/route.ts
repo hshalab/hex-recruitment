@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyAdmin, createAdminClient } from '@/lib/admin'
+import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
 
 export async function GET(req: Request) {
   const { authorized, token } = await verifyAdmin(req)
@@ -67,7 +68,7 @@ export async function GET(req: Request) {
     const allSubs = [...(subsActive.data || []), ...(subsTrialing.data || [])]
     const activeCount = (subsActive.data || []).length
     const trialCount = (subsTrialing.data || []).length
-    const monthlyRevenue = activeCount * 99
+    const monthlyRevenue = activeCount * EMPLOYER_SUBSCRIPTION_PRICE
 
     // Build monthly growth data
     const months: string[] = []

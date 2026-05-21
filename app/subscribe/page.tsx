@@ -7,7 +7,7 @@ import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import PostcodeLookup, { type AddressData } from '@/components/PostcodeLookup'
 import { supabase } from '@/lib/supabase'
-import { calculateTrialExpiry, TRIAL_MONTHS, trialPhraseFormal } from '@/lib/trialUtils'
+import { calculateTrialExpiry, EMPLOYER_SUBSCRIPTION_PRICE, TRIAL_MONTHS, trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 interface FormData {
@@ -378,7 +378,7 @@ export default function SubscribePage() {
       <section className={styles.hero}>
         <div className={styles.heroContent}>
           <h1 className={styles.heroTitle}>Post Jobs - Free for {TRIAL_MONTHS} Months</h1>
-          <p className={styles.heroSubtitle}>Then £99/month. Cancel anytime.</p>
+          <p className={styles.heroSubtitle}>Then £{EMPLOYER_SUBSCRIPTION_PRICE}/month. Cancel anytime.</p>
           <div className={styles.benefitsList}>
             <div className={styles.benefitItem}>✓ Post unlimited job vacancies</div>
             <div className={styles.benefitItem}>✓ Access qualified candidate profiles</div>
@@ -952,7 +952,7 @@ export default function SubscribePage() {
                     onChange={handleChange}
                   />
                   <span className={styles.checkmark}></span>
-                  I understand my card will be charged £99/month starting {formattedTrialEnd} *
+                  I understand my card will be charged £{EMPLOYER_SUBSCRIPTION_PRICE}/month starting {formattedTrialEnd} *
                 </label>
 
                 <label className={`${styles.checkboxLabel} ${errors.agreeRecurring ? styles.checkboxError : ''}`}>
@@ -974,7 +974,7 @@ export default function SubscribePage() {
               <ul className={styles.trialTermsList}>
                 <li>Your {trialPhraseFormal()} starts today</li>
                 <li>No charge until <strong>{formattedTrialEnd}</strong></li>
-                <li>Then £99/month (inc. VAT where applicable)</li>
+                <li>Then £{EMPLOYER_SUBSCRIPTION_PRICE}/month (inc. VAT where applicable)</li>
                 <li>Cancel during trial with no charges</li>
                 <li>Cancel anytime after trial</li>
               </ul>

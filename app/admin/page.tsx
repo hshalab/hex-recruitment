@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAdminToken } from '@/lib/admin-context'
+import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
 import StatsCard from '@/components/admin/StatsCard'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -128,7 +129,7 @@ export default function AdminOverviewPage() {
         <div className={styles.revenueBreakdown}>
           <div className={styles.revenueItem}>
             <span className={styles.revLabel}>Active ({stats.subscriptions.active})</span>
-            <span>£{(stats.subscriptions.active * 99).toFixed(2)}</span>
+            <span>£{(stats.subscriptions.active * EMPLOYER_SUBSCRIPTION_PRICE).toFixed(2)}</span>
           </div>
           <div className={styles.revenueItem}>
             <span className={styles.revLabel}>Trials</span>

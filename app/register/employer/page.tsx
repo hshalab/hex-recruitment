@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import PostcodeLookup, { type AddressData } from '@/components/PostcodeLookup'
+import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
 import styles from '../../login/page.module.css'
 import registerStyles from './page.module.css'
 
@@ -15,7 +16,7 @@ import registerStyles from './page.module.css'
 // dictionary only matters if the redirect is ever removed — keep it
 // truthful so the form below doesn't render a stale price if that happens.
 const planDetails: Record<string, { name: string; price: number }> = {
-  standard: { name: 'Standard', price: 99 },
+  standard: { name: 'Standard', price: EMPLOYER_SUBSCRIPTION_PRICE },
 }
 
 function RegisterEmployerPageContent() {
