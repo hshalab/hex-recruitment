@@ -7,7 +7,7 @@ import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import PostcodeLookup, { type AddressData } from '@/components/PostcodeLookup'
 import { supabase } from '@/lib/supabase'
-import { calculateTrialExpiry } from '@/lib/trialUtils'
+import { calculateTrialExpiry, TRIAL_MONTHS, trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 interface FormData {
@@ -377,7 +377,7 @@ export default function SubscribePage() {
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>Post Jobs - Free for 3 Months</h1>
+          <h1 className={styles.heroTitle}>Post Jobs - Free for {TRIAL_MONTHS} Months</h1>
           <p className={styles.heroSubtitle}>Then £99/month. Cancel anytime.</p>
           <div className={styles.benefitsList}>
             <div className={styles.benefitItem}>✓ Post unlimited job vacancies</div>
@@ -713,7 +713,7 @@ export default function SubscribePage() {
                 Card Payment Details
               </h2>
 
-              <p className={styles.cardNote}>Card required, but you won't be charged for 3 months</p>
+              <p className={styles.cardNote}>Card required, but you won't be charged for {TRIAL_MONTHS} months</p>
 
               <div className={styles.cardIcons}>
                 <span className={`${styles.cardIcon} ${cardType === 'visa' ? styles.active : ''}`} title="Visa">
@@ -972,7 +972,7 @@ export default function SubscribePage() {
             <div className={styles.trialTermsBox}>
               <h3 className={styles.trialTermsTitle}>FREE TRIAL TERMS</h3>
               <ul className={styles.trialTermsList}>
-                <li>Your 3-month free trial starts today</li>
+                <li>Your {trialPhraseFormal()} starts today</li>
                 <li>No charge until <strong>{formattedTrialEnd}</strong></li>
                 <li>Then £99/month (inc. VAT where applicable)</li>
                 <li>Cancel during trial with no charges</li>
@@ -993,7 +993,7 @@ export default function SubscribePage() {
                     Processing your payment details...
                   </>
                 ) : (
-                  'Start Free 3-Month Trial'
+                  `Start Free ${TRIAL_MONTHS}-Month Trial`
                 )}
               </button>
               <div className={styles.securityBadge}>

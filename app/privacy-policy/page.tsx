@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
 import ThriveMark from '@/components/ThriveMark'
+import { trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 const sections = [
@@ -214,7 +215,7 @@ export default function PrivacyPolicyPage() {
               <li>
                 <strong>Subscribed Employers:</strong> Job seeker profiles (including CV, skills,
                 experience, and contact details) are visible to registered employers with an active
-                paid subscription (&pound;99/month) or during their 3-month free trial. Employers
+                paid subscription (&pound;99/month) or during their {trialPhraseFormal()}. Employers
                 must agree to our Terms of Service and comply with UK GDPR when handling your data.
               </li>
               <li>

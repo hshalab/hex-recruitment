@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Header from '@/components/Header'
+import { trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 export default function SubscriptionCancelPage() {
@@ -24,7 +25,7 @@ export default function SubscriptionCancelPage() {
           <div className={styles.info}>
             <p>Remember, all plans include:</p>
             <ul>
-              <li>3-month free trial</li>
+              <li>{trialPhraseFormal()}</li>
               <li>No upfront payment required</li>
               <li>14 days' cancellation notice</li>
             </ul>

@@ -4,6 +4,24 @@ export const EMPLOYER_SUBSCRIPTION_PRICE = 99
 export const JOB_SEEKER_REACTIVATION_PRICE = 1.00
 export const WARNING_PERIOD_DAYS = 7
 
+// Derived month-count for marketing copy. Previously duplicated as a literal
+// "3" / "3 months" / "3-month" across ~20 surfaces (homepage, waitlist,
+// subscribe, terms, privacy, register, chatbot, emails) — any of which could
+// have drifted if TRIAL_DURATION_DAYS ever changed. Single source of truth.
+export const TRIAL_MONTHS = Math.round(TRIAL_DURATION_DAYS / 30)
+
+// Canonical trial phrasings picked in audit Section 2. Hero/banner contexts
+// use the short form ("3 months free"); body/SEO/CTA contexts use the formal
+// form ("3-month free trial"). Surfaces using a variant (Title Case CTAs,
+// reordered sentence structures, etc.) interpolate ${TRIAL_MONTHS} inline so
+// the duration still centralises even where the phrasing doesn't.
+export function trialPhraseShort(): string {
+  return `${TRIAL_MONTHS} months free`
+}
+export function trialPhraseFormal(): string {
+  return `${TRIAL_MONTHS}-month free trial`
+}
+
 export type UserType = 'employer' | 'employee'
 export type AccountStatus = 'trial' | 'active' | 'expired' | 'locked'
 

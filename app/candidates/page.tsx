@@ -18,6 +18,7 @@ import { Boost } from '@/lib/boostTypes'
 import { scoreAllCandidates } from '@/lib/recommendations'
 import { supabaseJobToJob } from '@/lib/types'
 import { Job } from '@/lib/mockJobs'
+import { trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 type Filters = {
@@ -434,7 +435,7 @@ function CandidatesContent() {
               Subscribe to access thousands of qualified professionals.
             </p>
             <Link href="/subscribe" className="btn btn-primary">
-              Start 3-month free trial
+              Start {trialPhraseFormal()}
             </Link>
           </div>
         </div>

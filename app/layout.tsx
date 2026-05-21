@@ -6,6 +6,7 @@ import { MessagesProvider } from '@/lib/MessagesContext'
 import type { Metadata } from 'next'
 import { Inter, Dancing_Script } from 'next/font/google'
 import { Providers } from './providers'
+import { trialPhraseFormal } from '@/lib/trialUtils'
 import './globals.css'
 
 // Body font. Also does double duty as the display face (see
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
     default: 'Thrive — Hire talent / Find jobs',
     template: '%s | Thrive',
   },
-  description: 'Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations. £99/month, 3-month free trial.',
+  description: `Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations. £99/month, ${trialPhraseFormal()}.`,
   keywords: ['hospitality jobs UK', 'restaurant jobs London', 'hotel jobs UK', 'chef jobs London', 'front of house jobs', 'hospitality hiring platform', 'restaurant hiring software', 'Thrive'],
   authors: [{ name: 'Thrive' }],
   creator: 'Thrive',

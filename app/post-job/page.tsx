@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { useJobs } from '@/lib/JobsContext'
 import { getTagsByCategory, TAG_CATEGORIES, getTagCategory, type TagCategory } from '@/lib/jobTags'
 import { categories } from '@/lib/categories'
+import { trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false })
@@ -646,7 +647,7 @@ function PostJobContent() {
               You need an employer subscription to post jobs on Thrive.
             </p>
             <a href="/subscribe" className="btn btn-primary">
-              Start 3-month free trial
+              Start {trialPhraseFormal()}
             </a>
           </div>
         </div>

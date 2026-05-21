@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
 import { SUBSCRIPTION_TIERS } from '@/lib/subscription-tiers'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
+import { TRIAL_MONTHS, trialPhraseShort, trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 interface SubscriptionData {
@@ -197,7 +198,7 @@ function SubscriptionContent() {
         {cameFromPostJob && !isActive && (
           <div className={styles.contextBanner}>
             <p className={styles.contextBannerTitle}>Start your trial to post your first job</p>
-            <p className={styles.contextBannerBody}>Pick a plan below — first {EMPLOYER_COHORT_CAP} employers get 3 months free.</p>
+            <p className={styles.contextBannerBody}>Pick a plan below — first {EMPLOYER_COHORT_CAP} employers get {trialPhraseShort()}.</p>
           </div>
         )}
 
@@ -293,7 +294,7 @@ function SubscriptionContent() {
               {isCanceled ? 'Resubscribe to continue' : 'Get started'}
             </h2>
             <p className={styles.pricingSubtitle}>
-              3-month free trial. Cancel anytime.
+              {trialPhraseFormal()}. Cancel anytime.
             </p>
 
             <div className={styles.pricingGrid}>
@@ -305,7 +306,7 @@ function SubscriptionContent() {
                   <span className={styles.cardPricePeriod}>/month</span>
                 </div>
                 <ul className={styles.cardFeatures}>
-                  <li><span className={styles.checkMark}>&#10003;</span> 3-month free trial</li>
+                  <li><span className={styles.checkMark}>&#10003;</span> {trialPhraseFormal()}</li>
                   {PLAN_FEATURES.map((f) => (
                     <li key={f}><span className={styles.checkMark}>&#10003;</span> {f}</li>
                   ))}
@@ -318,7 +319,7 @@ function SubscriptionContent() {
                   {checkoutLoading ? (
                     <><span className={styles.btnSpinner} /> Processing...</>
                   ) : (
-                    'Start Free 3-Month Trial'
+                    `Start Free ${TRIAL_MONTHS}-Month Trial`
                   )}
                 </button>
               </div>

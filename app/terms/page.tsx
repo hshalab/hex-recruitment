@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
 import ThriveMark from '@/components/ThriveMark'
+import { trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 const sections = [
@@ -239,7 +240,7 @@ export default function TermsPage() {
             <div className={styles.highlightBox}>
               <h3 className={styles.highlightTitle}>Free Trial</h3>
               <p>
-                New employer accounts receive a <strong>3-month free trial</strong> with full access to
+                New employer accounts receive a <strong>{trialPhraseFormal()}</strong> with full access to
                 all Platform features. No payment details are required during the trial period.
               </p>
             </div>

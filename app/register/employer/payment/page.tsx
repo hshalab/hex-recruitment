@@ -7,14 +7,9 @@ import { loadStripe } from '@stripe/stripe-js'
 import { supabase } from '@/lib/supabase'
 import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 import Header from '@/components/Header'
-import { TRIAL_DURATION_DAYS } from '@/lib/trialUtils'
+import { TRIAL_DURATION_DAYS, TRIAL_MONTHS } from '@/lib/trialUtils'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
-
-// Derive trial-months display from the canonical day count in lib/trialUtils.
-// Previously hardcoded as 6 (=182 days) which drifted from the rest of the
-// site's "3-month" claim. Single source of truth now.
-const TRIAL_MONTHS = Math.round(TRIAL_DURATION_DAYS / 30)
 
 function trialEndDate(): string {
   const d = new Date()

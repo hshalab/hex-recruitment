@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
+import { trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 function SuccessContent() {
@@ -36,7 +37,7 @@ function SuccessContent() {
       </div>
       <h1 className={styles.title}>Welcome to Thrive!</h1>
       <p className={styles.message}>
-        Your subscription is now active. You have a 3-month free trial — no charges until it ends.
+        Your subscription is now active. You have a {trialPhraseFormal()} — no charges until it ends.
       </p>
       <div className={styles.features}>
         <p className={styles.featureLabel}>You can now:</p>
