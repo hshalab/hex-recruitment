@@ -1,6 +1,7 @@
 'use client'
 
 import { Job } from '@/lib/mockJobs'
+import { BRAND_NAME } from '@/lib/constants/brand'
 
 function mapEmploymentType(types: string[]): string[] {
   const map: Record<string, string> = {
@@ -58,7 +59,7 @@ export default function JobPostingSchema({ job }: { job: Job }) {
     url: `${siteUrl}/job/${job.id}`,
     identifier: {
       '@type': 'PropertyValue',
-      name: 'Thrive',
+      name: BRAND_NAME,
       value: job.jobReference || job.id,
     },
     ...(job.skillsRequired?.length && {

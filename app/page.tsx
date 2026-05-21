@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import ThriveMark from '@/components/ThriveMark'
 import { supabase } from '@/lib/supabase'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
+import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/constants/brand'
 import { trialPhraseShort } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
@@ -237,7 +238,7 @@ export default function Home() {
             {
               '@context': 'https://schema.org',
               '@type': 'WebSite',
-              name: 'Thrive',
+              name: BRAND_NAME,
               url: 'https://thrivecareer.co.uk',
               potentialAction: {
                 '@type': 'SearchAction',
@@ -251,7 +252,7 @@ export default function Home() {
             {
               '@context': 'https://schema.org',
               '@type': 'Organization',
-              name: 'Thrive',
+              name: BRAND_NAME,
               url: 'https://thrivecareer.co.uk',
               logo: 'https://thrivecareer.co.uk/icon.svg',
               sameAs: ['https://www.linkedin.com/company/thrivecareers'],
@@ -267,7 +268,7 @@ export default function Home() {
             <ThriveMark size={24} />
             <div className={styles.footerBrandText}>
               <span className={styles.footerLogo}>Thrive</span>
-              <span className={styles.footerTagline}>Hire talent / Find jobs</span>
+              <span className={styles.footerTagline}>{BRAND_TAGLINE}</span>
             </div>
           </div>
           <div className={styles.footerLinks}>

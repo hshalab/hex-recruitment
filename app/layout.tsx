@@ -7,6 +7,7 @@ import type { Metadata } from 'next'
 import { Inter, Dancing_Script } from 'next/font/google'
 import { Providers } from './providers'
 import { EMPLOYER_SUBSCRIPTION_PRICE, trialPhraseFormal } from '@/lib/trialUtils'
+import { BRAND_FULL } from '@/lib/constants/brand'
 import './globals.css'
 
 // Body font. Also does double duty as the display face (see
@@ -38,7 +39,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://thrivecareer.co.uk
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Thrive — Hire talent / Find jobs',
+    default: BRAND_FULL,
     template: '%s | Thrive',
   },
   description: `Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations. £${EMPLOYER_SUBSCRIPTION_PRICE}/month, ${trialPhraseFormal()}.`,
@@ -51,7 +52,7 @@ export const metadata: Metadata = {
     locale: 'en_GB',
     url: SITE_URL,
     siteName: 'Thrive',
-    title: 'Thrive — Hire talent / Find jobs',
+    title: BRAND_FULL,
     description: 'Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations.',
     images: [
       {
@@ -64,7 +65,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Thrive — Hire talent / Find jobs',
+    title: BRAND_FULL,
     description: 'Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations.',
     images: ['/opengraph-image'],
   },

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Sprout } from 'lucide-react'
 import { EMPLOYER_SUBSCRIPTION_PRICE, TRIAL_MONTHS, trialPhraseFormal } from '@/lib/trialUtils'
+import { BRAND_FULL } from '@/lib/constants/brand'
 import styles from './ChatBot.module.css'
 
 const ThriveIcon = ({ size = 20 }: { size?: number }) => (
@@ -31,12 +32,12 @@ const responsePatterns: { keywords: string[]; response: string; links?: { text: 
   // ── GENERAL / ABOUT ──
   {
     keywords: ['what is thrive', 'about thrive', 'how does it work', 'tell me about', 'what does thrive do'],
-    response: `Thrive — Hire talent / Find jobs is the UK's recruitment platform connecting employers across all industries with qualified professionals.\n\n**For Job Seekers:** Completely free! Create your profile, upload your CV, browse jobs, and apply directly.\n\n**For Employers:** Post jobs, browse candidate profiles, schedule interviews, send offers, and track your hiring pipeline. Start with a ${trialPhraseFormal()}, then £${EMPLOYER_SUBSCRIPTION_PRICE}/month.`,
+    response: `${BRAND_FULL} is the UK's recruitment platform connecting employers across all industries with qualified professionals.\n\n**For Job Seekers:** Completely free! Create your profile, upload your CV, browse jobs, and apply directly.\n\n**For Employers:** Post jobs, browse candidate profiles, schedule interviews, send offers, and track your hiring pipeline. Start with a ${trialPhraseFormal()}, then £${EMPLOYER_SUBSCRIPTION_PRICE}/month.`,
     links: [{ text: 'Learn More', href: '/' }]
   },
   {
     keywords: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'],
-    response: "Hello! Welcome to Thrive — Hire talent / Find jobs! I'm here to help you find your next opportunity or hire great talent. What would you like to know?"
+    response: `Hello! Welcome to ${BRAND_FULL}! I'm here to help you find your next opportunity or hire great talent. What would you like to know?`
   },
   {
     keywords: ['thanks', 'thank you', 'cheers', 'appreciate', 'ta'],
