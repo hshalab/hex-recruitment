@@ -427,9 +427,14 @@
 }
 
 /* ── Responsive ──
-   Mobile (≤768px): 3×2 grid layout. Six stage columns wrap into 3 rows ×
-   2 cols at ~half-viewport width each. Vertical scroll handles the long
-   page; no horizontal-snap workaround needed. */
+   Mobile (≤768px): horizontal-scroll board with one column at ~85vw and
+   a peek of the next, scroll-snap-mandatory so each swipe lands a column
+   under thumb. Recipe mirrors the dashboard's .pipelineScroller
+   (app/employer/dashboard/page.module.css:716-737) — same touch-action,
+   same hidden scrollbar, same scroll-snap. Replaces the prior 3×2 grid
+   (which packed 6 columns into too little width and required vertical
+   scroll between stages). The card tap → StagePickerSheet flow takes
+   over from drag-drop on this viewport; drag still works on desktop. */
 @media (max-width: 768px) {
   .topBar {
     flex-direction: column;
@@ -438,18 +443,26 @@
   }
 
   .board {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    overflow-x: hidden;
+    overflow-x: auto;
     overflow-y: visible;
+    flex-wrap: nowrap;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    gap: 0.6rem;
+    padding: 0.75rem;
     min-height: auto;
   }
 
+  .board::-webkit-scrollbar {
+    display: none;
+  }
+
   .column {
-    flex: unset;
+    flex: 0 0 85vw;
     min-width: 0;
     max-height: none;
+    scroll-snap-align: start;
   }
 }

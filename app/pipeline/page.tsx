@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
@@ -10,6 +10,7 @@ import SignedLink from '@/components/SignedLink'
 import DeclineModal from '@/components/DeclineModal'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import BackwardToInterviewModal, { type BackwardToInterviewChoice } from '@/components/BackwardToInterviewModal'
+import StagePickerSheet from '@/components/StagePickerSheet'
 import Toast from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
@@ -140,6 +141,17 @@ export default function PipelinePage() {
   // Backward drag into the Interview column shows BackwardToInterviewModal
   // first so the employer can pick: cancel / move-only / move-and-schedule.
   const [backwardToInterview, setBackwardToInterview] = useState<{ card: PipelineCard; previousStageLabel: string } | null>(null)
+  // Mobile-only tap-to-move surface. The horizontal-scroll board (≤768px)
+  // makes drag-drop impractical on touch, so a tap on a card body opens
+  // StagePickerSheet; row tap inside the sheet feeds the same intentToMove
+  // gating used by drag. Desktop drag is unchanged.
+  const [stagePickerCard, setStagePickerCard] = useState<PipelineCard | null>(null)
+  // Sentinel that swallows the click event @hello-pangea/dnd fires
+  // immediately after a drag-release. 50ms is enough to cover the
+  // browser-emitted click-after-mouseup (most user-agents synthesise it
+  // 0–30ms after pointer-up) without burning a real tap that follows
+  // the previous drag by more than ~80ms.
+  const dragJustHappenedRef = useRef(false)
   const [toast, setToast] = useState<{ message: string; key: number } | null>(null)
 
   const loadData = useCallback(async () => {
@@ -310,32 +322,39 @@ export default function PipelinePage() {
     setToast({ message: summarizeCascade((logRows as CascadeLogRow[]) || [], stageLabel), key: Date.now() })
   }
 
-  // Handle drag and drop
-  const handleDragEnd = async (result: DropResult) => {
-    const { draggableId, destination, source } = result
-    if (!destination || destination.droppableId === source.droppableId) return
+  // Gate-aware status-transition entry point. Both drag (handleDragEnd)
+  // and tap (StagePickerSheet onPick) route through here so every status
+  // change inherits the same three drag-era gates: forward-into-Interview
+  // opens ScheduleInterviewModal; backward-into-Interview opens
+  // BackwardToInterviewModal; other backward moves open the inline
+  // cascade-confirm. Forward non-interview moves call applyMove directly
+  // (no gate needed).
+  //
+  // CONTRACT: applyMove is the no-gate write path. Every NEW transport-
+  // layer caller (drag handler, click handler, kebab item, future mobile
+  // affordance) MUST go through intentToMove first. The two remaining
+  // direct applyMove callers in this file (the backward-move confirm OK
+  // and the BackwardToInterview move-only path) are post-gate writes by
+  // design — the gate fired, the user confirmed, applyMove finishes the
+  // write. e2e/pipeline-mobile.spec.ts enforces this with a static-
+  // analysis guard that fails the suite if applyMove appears inside
+  // handleDragEnd or the StagePickerSheet wiring.
+  const intentToMove = async (card: PipelineCard, newStatus: string, fromStatus: string): Promise<void> => {
+    if (newStatus === fromStatus) return
+    // Decline must always go through the kebab → DeclineModal so the
+    // email gets sent. The DECLINED column is configured isDropDisabled
+    // and its cards isDragDisabled; the StagePickerSheet excludes
+    // 'rejected' from its destination list — this is the defensive guard
+    // if any of those constraints get loosened later.
+    if (newStatus === 'rejected' || fromStatus === 'rejected') return
 
-    // Decline must always go through the modal so the email gets sent.
-    // The DECLINED column is configured isDropDisabled and its cards
-    // isDragDisabled, so this branch shouldn't fire — defensive guard
-    // in case those props get loosened later.
-    if (destination.droppableId === 'rejected' || source.droppableId === 'rejected') return
-
-    const newStatus = destination.droppableId
-    const card = cards.find(c => c.id === draggableId)
-    if (!card) return
-
-    const fromIdx = stageIndex(source.droppableId)
+    const fromIdx = stageIndex(fromStatus)
     const toIdx = stageIndex(newStatus)
     const stageLabel = STAGES.find(s => s.id === newStatus)?.label || newStatus
 
-    // Drag into Interview is gated. Forward (Reviewing/Shortlisted/etc.
-    // → Interview) opens ScheduleInterviewModal; the move only happens if
-    // the schedule succeeds. Backward (Offered/Hired → Interview) opens
-    // BackwardToInterviewModal where the employer picks the right path.
     if (newStatus === 'interview') {
       if (fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx) {
-        const previousStageLabel = STAGES.find(s => s.id === source.droppableId)?.label || source.droppableId
+        const previousStageLabel = STAGES.find(s => s.id === fromStatus)?.label || fromStatus
         setBackwardToInterview({ card, previousStageLabel })
       } else {
         setScheduleCard(card)
@@ -343,15 +362,29 @@ export default function PipelinePage() {
       return
     }
 
-    // Backward drag elsewhere (e.g. Hired → Offered). The DB trigger
-    // doesn't undo past actions; the user gets a confirm explaining
-    // what's preserved before the move commits.
     if (fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx) {
       setBackwardMove({ card, newStatus, stageLabel })
       return
     }
 
-    await applyMove(card, newStatus, source.droppableId, stageLabel)
+    await applyMove(card, newStatus, fromStatus, stageLabel)
+  }
+
+  // Drag transport → intentToMove. The sentinel below swallows the
+  // synthetic click the browser fires immediately after a successful
+  // drag-release so the card-level onClick (tap → StagePickerSheet)
+  // doesn't double-fire on touch devices.
+  const handleDragEnd = async (result: DropResult) => {
+    dragJustHappenedRef.current = true
+    setTimeout(() => { dragJustHappenedRef.current = false }, 50)
+
+    const { draggableId, destination, source } = result
+    if (!destination || destination.droppableId === source.droppableId) return
+
+    const card = cards.find(c => c.id === draggableId)
+    if (!card) return
+
+    await intentToMove(card, destination.droppableId, source.droppableId)
   }
 
   const filteredCards = filterJob === 'all' ? cards : cards.filter(c => c.jobId === filterJob)
@@ -410,6 +443,15 @@ export default function PipelinePage() {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               className={`${styles.card} ${snapshot.isDragging ? styles.cardDragging : ''} ${isDeclined ? styles.cardDeclined : ''}`}
+                              onClick={() => {
+                                // Click-after-drag suppression. Kebab / CTA /
+                                // Details inner buttons stopPropagation on
+                                // their own onClick, so this only fires for
+                                // taps on the card body itself.
+                                if (dragJustHappenedRef.current) return
+                                if (isDeclined) return
+                                setStagePickerCard(card)
+                              }}
                             >
                               <div className={styles.cardHeader}>
                                 <div className={styles.cardAvatar}>
@@ -718,6 +760,28 @@ export default function PipelinePage() {
             // Suppress unused-warning for previousStageLabel — kept in scope
             // for clarity at the call site.
             void previousStageLabel
+          }}
+        />
+      )}
+
+      {/* Mobile-primary tap-to-move surface. A tap on a card body opens
+          this sheet; picking a destination routes through intentToMove
+          so the three drag-era gates (schedule modal, backward-to-
+          interview chooser, cascade-confirm) fire identically to drag.
+          Rendered at every viewport — desktop users who happen to tap
+          a card instead of dragging get the same picker. */}
+      {stagePickerCard && (
+        <StagePickerSheet
+          candidateName={stagePickerCard.candidateName}
+          currentStageLabel={STAGES.find(s => s.id === stagePickerCard.status)?.label || stagePickerCard.status}
+          currentStageId={stagePickerCard.status}
+          stages={STAGES}
+          stageOrder={STAGE_ORDER as readonly string[]}
+          onClose={() => setStagePickerCard(null)}
+          onPick={(newStatusId) => {
+            const card = stagePickerCard
+            setStagePickerCard(null)
+            void intentToMove(card, newStatusId, card.status)
           }}
         />
       )}
