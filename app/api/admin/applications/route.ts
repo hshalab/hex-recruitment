@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { verifyAdmin, createAdminClient } from '@/lib/admin'
 
+// Admin queries live data — must not be statically prerendered.
+export const dynamic = 'force-dynamic'
+
 const PAGE_SIZE = 20
 
 export async function GET(req: Request) {

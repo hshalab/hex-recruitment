@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/admin'
 
+// Admin queries live data — must not be statically prerendered.
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: Request) {
   const { authorized } = await verifyAdmin(req)
   if (!authorized) {

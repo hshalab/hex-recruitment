@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { getValidAccessToken, fetchFreeBusy } from '@/lib/googleCalendar'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 // Convert JS Date.getDay() (0=Sun..6=Sat) to app convention (0=Mon..6=Sun)
 const toAppDow = (jsDay: number) => (jsDay + 6) % 7

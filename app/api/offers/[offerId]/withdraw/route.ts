@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { isOfferConditional } from '@/lib/offerConditional'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 type Action = 'withdrawn' | 'rescinded_for_condition' | 'rescinded_unconditional'
 type ReasonCode = 'failed_rtw' | 'failed_references' | 'failed_dbs' | 'mutual_agreement' | 'other'
