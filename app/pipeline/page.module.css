@@ -459,10 +459,24 @@
     display: none;
   }
 
+  /* Each column becomes its own vertical-scroll container on mobile.
+     The board's `touch-action: pan-x` cascades to children and would
+     otherwise block vertical pan, so we explicitly hand pan-y ownership
+     back to the column. The max-height bound is needed for two reasons:
+     (1) without it the column grows with content and there's nothing to
+     scroll INSIDE it, (2) overflow-y: auto only creates a scroll
+     container when a bounded box is overflowed.
+     220px reservation: ~68px Header + ~140px topBar (stacked on mobile)
+     + 12px board padding. 100dvh handles the iOS Safari URL-bar
+     shrink/expand without clipping; 100vh fallback for older browsers. */
   .column {
     flex: 0 0 85vw;
     min-width: 0;
-    max-height: none;
+    max-height: calc(100vh - 220px);
+    max-height: calc(100dvh - 220px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     scroll-snap-align: start;
   }
 }
