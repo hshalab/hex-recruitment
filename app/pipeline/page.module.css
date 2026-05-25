@@ -476,7 +476,15 @@
     max-height: calc(100dvh - 220px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    /* Both axes must be allowed at the column level. pan-y alone made the
+       column → board touch-action intersection empty for horizontal
+       gestures (board=pan-x ∩ column=pan-y = ∅), so swipes that should
+       have scrolled the horizontal column carousel were silently dropped.
+       pan-x pan-y permits both — vertical pan is consumed by this column's
+       overflow-y, horizontal pan finds no overflow target here (scrollWidth
+       = clientWidth on every column we render) and bubbles to .board's
+       overflow-x for column-to-column carousel scroll. */
+    touch-action: pan-x pan-y;
     scroll-snap-align: start;
   }
 }

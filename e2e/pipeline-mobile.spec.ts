@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, devices, type Page } from '@playwright/test'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import * as dotenv from 'dotenv'
 import * as path from 'path'
@@ -183,6 +183,124 @@ test.describe('Pipeline mobile redesign — horizontal scroll + stage-picker she
     expect(['auto', 'scroll']).toContain(result.overflowX)
   })
 
+  test('5b. Touch-swipe on a column propagates to .board horizontal carousel scroll', async ({ browser }) => {
+    // Why this test exists: test 5 below uses programmatic scrollBy on
+    // the .board element, which bypasses touch-action entirely. That's
+    // why the previous touch-action: pan-y regression on .column slipped
+    // past the green suite but broke instantly on a real phone. This
+    // test exercises real touch events so the column → board pan-x
+    // bubbling path is asserted, not assumed.
+    //
+    // Why a separate iPhone 13 context: the playwright.config.ts
+    // project uses devices['Desktop Chrome'] (hasTouch: false). Real
+    // touch dispatch needs hasTouch: true at context creation, which
+    // can't be retroactively flipped on the existing context. Cheaper
+    // than rewriting the whole spec around iPhone 13 emulation — just
+    // spin a side-context for this one assertion.
+    //
+    // Touch dispatch via CDP Input.dispatchTouchEvent: Playwright's
+    // built-in page.touchscreen only exposes .tap(). Swipes require
+    // either CDP's raw touch dispatcher (highest fidelity, respects
+    // touch-action at the compositor level — same path real device
+    // touches take) or a sequence of touchstart/move/end dispatched
+    // via page.evaluate. CDP is more authoritative.
+
+    const touchCtx = await browser.newContext({
+      ...devices['iPhone 13'],
+      // The 'storageState' from cookie-consent is intentionally omitted;
+      // we explicitly add the cookie below for the same hostname.
+    })
+    // Seed the cookie banner-dismissal cookie on this hostname so the
+    // banner doesn't render and steal the swipe coordinates.
+    const baseHost = new URL(BASE).hostname
+    await touchCtx.addCookies([
+      {
+        name: 'hex_cookie_consent',
+        value: encodeURIComponent(JSON.stringify({ essential: true, functional: true, analytics: false })),
+        domain: baseHost,
+        path: '/',
+        sameSite: 'Lax',
+      },
+    ])
+    const touchPage = await touchCtx.newPage()
+
+    try {
+      // Log in fresh on this context (its cookies are independent from
+      // the main page's context).
+      await touchPage.goto(`${BASE}/login/employer`)
+      await touchPage.waitForLoadState('networkidle')
+      await touchPage.locator('input[type="email"]').first().fill(EMPLOYER_EMAIL)
+      await touchPage.locator('input[type="password"]').first().fill(EMPLOYER_PASS)
+      await touchPage.locator('button[type="submit"]').first().click()
+      await touchPage.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15000 })
+
+      await touchPage.goto(`${BASE}/pipeline`)
+      await touchPage.waitForLoadState('networkidle')
+      await expect(touchPage.locator('h1', { hasText: 'Hiring Pipeline' })).toBeVisible({ timeout: 15000 })
+      await expect(touchPage.locator('option', { hasText: '__e2e_pipeline_mobile__' })).toHaveCount(1, { timeout: 15000 })
+
+      // Board must be a horizontal scroll container before we even try.
+      const board = touchPage.locator('[class*="page_board__"]').first()
+      const beforeScroll = await board.evaluate((el) => el.scrollLeft)
+
+      // Find the first column's centre coordinate — the swipe must
+      // ORIGINATE inside the column, not on the board's padding.
+      // That's the whole point of the regression test: the bug was
+      // about gestures starting inside columns being blocked, not
+      // gestures starting on bare board area.
+      const firstColumn = touchPage.locator('[class*="page_column__"]').first()
+      const colBox = await firstColumn.boundingBox()
+      if (!colBox) throw new Error('First column has no bounding box — page not rendered correctly')
+      const startX = colBox.x + colBox.width * 0.7
+      const endX = colBox.x + colBox.width * 0.1
+      const y = colBox.y + colBox.height / 2
+
+      // Dispatch real touch events via CDP. Mirrors what an iOS Safari
+      // user's finger swipe sends to the renderer; touch-action is
+      // checked against this exact event stream.
+      const cdp = await touchCtx.newCDPSession(touchPage)
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: startX, y, id: 1 }],
+      })
+      const STEPS = 10
+      for (let i = 1; i <= STEPS; i++) {
+        const x = startX + ((endX - startX) * i) / STEPS
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x, y, id: 1 }],
+        })
+        await touchPage.waitForTimeout(15)
+      }
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: [],
+      })
+      // Snap-mandatory needs a beat to settle to the next column.
+      await touchPage.waitForTimeout(600)
+
+      const afterScroll = await board.evaluate((el) => el.scrollLeft)
+      const delta = afterScroll - beforeScroll
+
+      if (delta === 0) {
+        throw new Error(
+          'Touch swipe on column did not propagate to board horizontal scroll — touch-action regression. ' +
+          `beforeScroll=${beforeScroll}, afterScroll=${afterScroll}. ` +
+          'Check .column touch-action — must include pan-x for horizontal pan to bubble to .board.',
+        )
+      }
+      // Load-bearing assertion is the delta !== 0 check above — that's
+      // what catches the touch-action regression. This further bound
+      // is just smoke for "we actually scrolled a meaningful amount,
+      // not 1-2px jitter". Snap-mandatory + synthetic CDP touch (no
+      // velocity hint) doesn't always advance a full column width,
+      // so 100px is a conservative floor well above noise.
+      expect(delta).toBeGreaterThanOrEqual(100)
+    } finally {
+      await touchCtx.close()
+    }
+  })
+
   test('5. Horizontal scroll reveals the next column', async () => {
     const board = page.locator('[class*="page_board__"]').first()
     const { scrollWidth, clientWidth } = await board.evaluate((el) => ({
@@ -245,7 +363,11 @@ test.describe('Pipeline mobile redesign — horizontal scroll + stage-picker she
     }))
     expect(measure.scrollHeight).toBeGreaterThan(measure.clientHeight)
     expect(measure.computedOverflowY).toMatch(/^(auto|scroll)$/)
-    expect(['pan-y', 'manipulation', 'auto']).toContain(measure.computedTouchAction)
+    // touch-action must permit vertical pan. Allow any of pan-y, pan-x
+    // pan-y, manipulation, auto. The 'pan-x pan-y' value lands here
+    // after the horizontal-swipe fix (5b) — pan-y alone caused the
+    // mirror-image regression where horizontal swipe broke.
+    expect(measure.computedTouchAction).toMatch(/(^|\s)pan-y(\s|$)|^manipulation$|^auto$/)
 
     // The bottom-most card in DOM is the one we want — rendering-order-
     // independent. The page sorts apps by created_at DESC, so the
