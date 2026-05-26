@@ -9,7 +9,14 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
-  padding: 1rem;
+  /* Safe-area inset padding: notched devices (iPhone 13+) would otherwise
+     centre the modal under the notch or home indicator. max(1rem, env())
+     keeps the 1rem fallback on non-notched browsers while pushing in to
+     match the device's safe area when present. */
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding-left: max(1rem, env(safe-area-inset-left));
 }
 
 .modal {
@@ -17,7 +24,13 @@
   border-radius: 12px;
   max-width: 520px;
   width: 100%;
-  max-height: 90vh;
+  /* 90dvh, not 90vh: iOS Safari's 100vh resolves to the LARGE viewport
+     (URL bar hidden), so 90vh can be taller than the actually-visible
+     area when the URL bar is showing — the modal then exceeds the
+     fixed-overlay's flex container, align-items: center clips the top
+     above the visible viewport, and the header disappears. 90dvh
+     follows the dynamic viewport so the modal always fits. */
+  max-height: 90dvh;
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
@@ -387,7 +400,11 @@
 
 @media (max-width: 768px) {
   .modal {
-    max-height: 95vh;
+    /* Same dvh swap as the desktop rule above. 95dvh on mobile reserves
+       only 5% for safe-area / overlay padding, since vertical space is
+       tighter and the safe-area-inset envelope on .overlay already
+       reserves the device's notch/home-indicator strip. */
+    max-height: 95dvh;
   }
 
   .header {

@@ -187,11 +187,36 @@ export default function DeclineModal({
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        // Safe-area-inset envelope — same iOS-Safari-clip rationale as
+        // ScheduleInterviewModal.module.css. Decline content includes a
+        // 7-row textarea so this modal is the tallest of the inline
+        // ones; max(1rem, env()) ensures the notch can't clip the
+        // header on a short viewport.
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+      }}
       onClick={() => !rejectSending && onClose()}
     >
       <div
-        style={{ background: '#fff', borderRadius: 12, maxWidth: 480, width: '100%', padding: '1.5rem' }}
+        style={{
+          background: '#fff',
+          borderRadius: 12,
+          maxWidth: 480,
+          width: '100%',
+          maxHeight: 'calc(100dvh - 2rem)',
+          overflowY: 'auto',
+          padding: '1.5rem',
+        }}
         onClick={e => e.stopPropagation()}
       >
         <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700 }}>Decline application</h3>

@@ -72,6 +72,11 @@ test.describe('Pipeline mobile redesign — horizontal scroll + stage-picker she
   let seededApps: string[] = []
   let seededAppA: string | null = null // primary card (tapped in card-tap tests)
   let seededAppB: string | null = null // secondary card (dragged in desktop test)
+  // One additional card seeded directly into 'offered' status so the
+  // modal-clip regression tests can trigger BackwardToInterviewModal
+  // (which only fires when moving BACK from offered/hired into
+  // interview). 8 reviewing seeds + 1 offered seed = 9 total.
+  let seededOfferedApp: string | null = null
 
   test.beforeAll(async ({ browser }) => {
     supabase = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } })
@@ -83,16 +88,18 @@ test.describe('Pipeline mobile redesign — horizontal scroll + stage-picker she
     )
     if (!employer) throw new Error(`Test employer ${EMPLOYER_EMAIL} not found`)
 
-    // Pick eight arbitrary candidate profiles to attach seeded apps to.
+    // Pick nine arbitrary candidate profiles to attach seeded apps to.
     // We don't care WHICH candidates — the test only inspects pipeline
-    // mechanics, not candidate-specific UI. Eight is the minimum that
-    // reliably overflows the iPhone 13 mini column-height budget.
+    // mechanics, not candidate-specific UI. Eight reviewing seeds is
+    // the minimum that reliably overflows the iPhone 13 mini column-
+    // height budget; the ninth is for the offered-status card used by
+    // the BackwardToInterview modal-clip regression test.
     const { data: candidates } = await supabase
       .from('candidate_profiles')
       .select('user_id')
-      .limit(8)
-    if (!candidates || candidates.length < 8) {
-      throw new Error(`Need at least 8 candidate_profiles rows in the DB to seed the test; found ${candidates?.length ?? 0}`)
+      .limit(9)
+    if (!candidates || candidates.length < 9) {
+      throw new Error(`Need at least 9 candidate_profiles rows in the DB to seed the test; found ${candidates?.length ?? 0}`)
     }
 
     // Insert a throwaway job for the test employer.
@@ -129,6 +136,23 @@ test.describe('Pipeline mobile redesign — horizontal scroll + stage-picker she
     seededAppA = seededApps[0]
     seededAppB = seededApps[1]
 
+    // One extra app in 'offered' status — the only way to reach
+    // BackwardToInterviewModal is moving a card from offered or hired
+    // back to interview. Seeding the offered status directly is simpler
+    // than chaining a forward-move-then-back-move through several tests.
+    const { data: offeredApp, error: offeredErr } = await supabase
+      .from('job_applications')
+      .insert({
+        job_id: seededJobId,
+        candidate_id: candidates[8].user_id,
+        job_title: '__e2e_pipeline_mobile__ Test Role',
+        status: 'offered',
+      })
+      .select('id')
+      .single()
+    if (offeredErr || !offeredApp) throw new Error(`Offered app seed failed: ${offeredErr?.message}`)
+    seededOfferedApp = offeredApp.id
+
     page = await browser.newPage({ viewport: MOBILE_VIEWPORT })
     await loginAsEmployer(page)
   })
@@ -140,6 +164,7 @@ test.describe('Pipeline mobile redesign — horizontal scroll + stage-picker she
     for (const id of seededApps) {
       await supabase.from('job_applications').delete().eq('id', id)
     }
+    if (seededOfferedApp) await supabase.from('job_applications').delete().eq('id', seededOfferedApp)
     if (seededJobId) await supabase.from('jobs').delete().eq('id', seededJobId)
     if (page) await page.close()
   })
@@ -447,6 +472,155 @@ test.describe('Pipeline mobile redesign — horizontal scroll + stage-picker she
       await page.keyboard.press('Escape')
     }
     await page.waitForTimeout(500)
+  })
+
+  test('8b. ScheduleInterviewModal header stays in viewport on short mobile (375x568)', async () => {
+    // iPhone SE / older short Androids are 568px tall. iPhone 13 with
+    // URL bar visible drops to ~664px visible — both well under the
+    // 90vh × 844px (= 760px) max-height the modal had pre-fix. At any
+    // viewport short enough that 90% of the LARGE viewport exceeds
+    // the actually-visible area, the modal's bounding box exceeded
+    // the overlay's flex container and align-items: center clipped
+    // the top above the visible viewport, hiding the "Schedule
+    // Interview" header. Switching to 90dvh follows the dynamic
+    // viewport so the modal always fits.
+    //
+    // 375x568 is the smallest realistic mobile size we care about.
+    // If the header is in viewport here, it's in viewport at every
+    // size we ship to.
+    await page.setViewportSize({ width: 375, height: 568 })
+    await page.goto(`${BASE}/pipeline`, { waitUntil: 'domcontentloaded' })
+    await dismissCookieBanner(page)
+    // Higher timeout — repeated nav under suite load makes loadData()
+    // slower to resolve than in test 1-2. h1 is the "loading state
+    // cleared" signal: the page renders a different tree while
+    // `loading` is true.
+    await expect(page.locator('h1', { hasText: 'Hiring Pipeline' })).toBeVisible({ timeout: 30000 })
+
+    // Open the sheet via a reviewing card, then tap Move to Interview
+    // — same flow as test 8, just at a shorter viewport.
+    await page.evaluate((id) => {
+      const el = document.querySelector(`[data-rfd-draggable-id="${id}"]`) as HTMLElement | null
+      el?.click()
+    }, seededAppA)
+    await expect(page.locator('div[role="dialog"][aria-label^="Move "]')).toBeVisible({ timeout: 3000 })
+    await page.locator('button[aria-label="Move to Interview"]').click()
+
+    // Wait for the schedule modal — the header element is the load-
+    // bearing surface. Its bounding rect tells us whether the clip
+    // regression has returned.
+    const scheduleHeader = page.locator('h2', { hasText: /(re)?schedule interview/i }).first()
+    await expect(scheduleHeader).toBeVisible({ timeout: 5000 })
+
+    const rect = await scheduleHeader.boundingBox()
+    if (!rect) throw new Error('Schedule modal header has no bounding box')
+    const viewportHeight = page.viewportSize()?.height ?? 568
+
+    if (rect.y < 0) {
+      throw new Error(
+        `ScheduleInterviewModal header clipped ABOVE viewport — top=${rect.y}. ` +
+        'Check modal max-height: must be 90dvh (dynamic viewport), not 90vh (large viewport).',
+      )
+    }
+    if (rect.y + rect.height > viewportHeight) {
+      throw new Error(
+        `ScheduleInterviewModal header clipped BELOW viewport — top=${rect.y}, height=${rect.height}, viewport=${viewportHeight}.`,
+      )
+    }
+    expect(rect.y).toBeGreaterThanOrEqual(0)
+    expect(rect.y + rect.height).toBeLessThanOrEqual(viewportHeight)
+
+    // Static-source check — load-bearing for the dvh-vs-vh regression
+    // specifically. In headless Chromium, 90vh and 90dvh resolve to
+    // the same px value (there's no browser chrome to create the
+    // visible-vs-layout discrepancy that breaks the modal on real iOS
+    // Safari). The geometric check above is necessary but not
+    // sufficient — it passes with the regression in place. This
+    // source check fails the moment someone reverts dvh → vh.
+    const cssPath = path.resolve(__dirname, '../components/ScheduleInterviewModal.module.css')
+    const cssSrc = fs.readFileSync(cssPath, 'utf8')
+    // Regex matches `max-height: <digits>vh` but NOT `max-height: <digits>dvh`
+    // because `\d+vh` requires "vh" to come directly after the digits,
+    // and "90dvh" has "d" between the digits and "vh".
+    const vhMatches = cssSrc.match(/max-height:\s*\d+vh\b/g) || []
+    if (vhMatches.length > 0) {
+      throw new Error(
+        `ScheduleInterviewModal.module.css uses raw vh for max-height: ${JSON.stringify(vhMatches)}. ` +
+        'iOS Safari resolves vh against the large viewport (URL bar hidden), so 90vh can exceed the actually-visible area when the URL bar is showing. ' +
+        'Replace every "Nvh" with "Ndvh" on .modal max-height rules.',
+      )
+    }
+    expect(cssSrc).toMatch(/max-height:\s*\d+dvh\b/)
+
+    // Close the modal so test 8c starts from a clean page.
+    const closeBtn = page.locator('[aria-label="Close"], button:has-text("Cancel"), button:has-text("✕")').first()
+    if (await closeBtn.isVisible({ timeout: 1500 }).catch(() => false)) {
+      await closeBtn.click()
+    } else {
+      await page.keyboard.press('Escape')
+    }
+    await page.waitForTimeout(500)
+  })
+
+  test('8c. BackwardToInterviewModal header stays in viewport on short mobile (375x568)', async () => {
+    // Same fix class as 8b but a different file (inline-styled .tsx
+    // rather than CSS module). Trigger via the seeded 'offered' card —
+    // backward into Interview opens BackwardToInterviewModal because
+    // toIdx < fromIdx (interview=2, offered=3 in STAGE_ORDER).
+    if (!seededOfferedApp) {
+      test.skip(true, 'Offered card was not seeded')
+      return
+    }
+    // Viewport is already 375x568 from test 8b; re-set defensively in
+    // case Playwright's serial mode ever changes.
+    await page.setViewportSize({ width: 375, height: 568 })
+    await page.goto(`${BASE}/pipeline`, { waitUntil: 'domcontentloaded' })
+    await dismissCookieBanner(page)
+    // Higher timeout — repeated nav under suite load makes loadData()
+    // slower to resolve than in test 1-2. h1 is the "loading state
+    // cleared" signal: the page renders a different tree while
+    // `loading` is true.
+    await expect(page.locator('h1', { hasText: 'Hiring Pipeline' })).toBeVisible({ timeout: 30000 })
+
+    // The offered card lives in the Offered column. Tap it via JS so
+    // we don't have to horizontally scroll through the board.
+    await page.evaluate((id) => {
+      const el = document.querySelector(`[data-rfd-draggable-id="${id}"]`) as HTMLElement | null
+      el?.click()
+    }, seededOfferedApp)
+    await expect(page.locator('div[role="dialog"][aria-label^="Move "]')).toBeVisible({ timeout: 3000 })
+    await page.locator('button[aria-label="Move to Interview"]').click()
+
+    // BackwardToInterviewModal's title text. Inline-styled component
+    // uses an h3 with the candidate name.
+    const backwardHeader = page.locator('h3', { hasText: /back to Interview/i }).first()
+    await expect(backwardHeader).toBeVisible({ timeout: 5000 })
+
+    const rect = await backwardHeader.boundingBox()
+    if (!rect) throw new Error('BackwardToInterview modal header has no bounding box')
+    const viewportHeight = page.viewportSize()?.height ?? 568
+
+    if (rect.y < 0) {
+      throw new Error(
+        `BackwardToInterviewModal header clipped ABOVE viewport — top=${rect.y}. ` +
+        'Check modal maxHeight + dvh — see BackwardToInterviewModal.tsx inline style.',
+      )
+    }
+    if (rect.y + rect.height > viewportHeight) {
+      throw new Error(
+        `BackwardToInterviewModal header clipped BELOW viewport — top=${rect.y}, height=${rect.height}, viewport=${viewportHeight}.`,
+      )
+    }
+    expect(rect.y).toBeGreaterThanOrEqual(0)
+    expect(rect.y + rect.height).toBeLessThanOrEqual(viewportHeight)
+
+    // Close via Cancel button so downstream tests start clean.
+    await page.locator('button:has-text("Cancel")').last().click()
+    await page.waitForTimeout(500)
+
+    // Restore viewport for test 9 — keeps that test's expectations
+    // identical to its pre-existing behaviour.
+    await page.setViewportSize(MOBILE_VIEWPORT)
   })
 
   test('9. Tap Shortlisted row — card moves, status updates in DB', async () => {

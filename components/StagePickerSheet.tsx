@@ -84,6 +84,12 @@ export default function StagePickerSheet({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
+        // Bottom-sheet: only the BOTTOM safe-area-inset matters here
+        // (home-indicator clearance on iOS). The sheet anchors to the
+        // bottom edge so left/right padding would push it inward
+        // without benefit; top is unconstrained because the sheet
+        // grows up from the bottom, not down from the top.
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
       <div
@@ -92,6 +98,12 @@ export default function StagePickerSheet({
           background: '#fff',
           width: '100%',
           maxWidth: 520,
+          // Bound the sheet so a future longer destination list (or a
+          // very tall device-emulated browser) can't push the header
+          // off-screen. 80dvh leaves the top 20% of the visible
+          // viewport for the page-content peek behind the scrim.
+          maxHeight: '80dvh',
+          overflowY: 'auto',
           borderRadius: '16px 16px 0 0',
           padding: '0.875rem 1.25rem 1.5rem',
           boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
