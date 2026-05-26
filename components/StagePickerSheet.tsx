@@ -33,6 +33,15 @@ interface StagePickerSheetProps {
   stageOrder: readonly string[]
   onPick: (newStatusId: string) => void
   onClose: () => void
+  // Destructive actions on the bottom row, separated from the stage
+  // destinations by a hairline. Decline opens DeclineModal (sends a
+  // rejection email + sets status='rejected'); Withdraw opens
+  // WithdrawModal (marks status='withdrawn', candidate dropped out).
+  // Both are optional — the kebab-on-desktop path doesn't render this
+  // sheet so it doesn't need them, but the mobile path does to keep
+  // parity with the desktop kebab.
+  onDecline?: () => void
+  onWithdraw?: () => void
 }
 
 export default function StagePickerSheet({
@@ -43,6 +52,8 @@ export default function StagePickerSheet({
   stageOrder,
   onPick,
   onClose,
+  onDecline,
+  onWithdraw,
 }: StagePickerSheetProps) {
   const currentIdx = stageOrder.indexOf(currentStageId)
 
@@ -170,6 +181,73 @@ export default function StagePickerSheet({
               </button>
             )
           })}
+        </div>
+        {(onDecline || onWithdraw) && (
+          // Destructive actions sit below a divider so they read as a
+          // separate region from the stage destinations. The divider is
+          // a 1px hairline rather than a heading because both rows are
+          // self-labelling — adding a "Remove from pipeline" header
+          // would be redundant.
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+            {onDecline && (
+              <button
+                type="button"
+                data-testid="stage-picker-decline"
+                aria-label={`Decline ${candidateName}`}
+                onClick={onDecline}
+                style={{
+                  padding: '0.75rem 0.875rem',
+                  border: '1px solid #fecaca',
+                  borderRadius: 10,
+                  background: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.625rem',
+                  color: '#b91c1c',
+                  fontWeight: 600,
+                  fontSize: '0.92rem',
+                }}
+              >
+                <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: '#dc2626', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div>Decline</div>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2, fontWeight: 400 }}>Sends rejection email</div>
+                </div>
+              </button>
+            )}
+            {onWithdraw && (
+              <button
+                type="button"
+                data-testid="stage-picker-withdraw"
+                aria-label={`Mark ${candidateName} as withdrawn`}
+                onClick={onWithdraw}
+                style={{
+                  padding: '0.75rem 0.875rem',
+                  border: '1px solid #fde68a',
+                  borderRadius: 10,
+                  background: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.625rem',
+                  color: '#92400e',
+                  fontWeight: 600,
+                  fontSize: '0.92rem',
+                }}
+              >
+                <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: '#d97706', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div>Mark as withdrawn</div>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2, fontWeight: 400 }}>Candidate dropped out</div>
+                </div>
+              </button>
+            )}
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginTop: '0.75rem' }}>
           <button
             type="button"
             data-testid="stage-picker-cancel"
@@ -183,7 +261,6 @@ export default function StagePickerSheet({
               fontWeight: 500,
               fontSize: '0.85rem',
               color: '#64748b',
-              marginTop: '0.25rem',
             }}
           >
             Cancel

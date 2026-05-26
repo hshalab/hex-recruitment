@@ -104,7 +104,7 @@ export default function AppliedPage() {
   const handleReview = async (applicant: Applicant) => {
     setProcessing(prev => new Set(prev).add(applicant.id))
     await supabase.from('job_applications')
-      .update({ status: 'reviewing', status_updated_at: new Date().toISOString() })
+      .update({ status: 'reviewing', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
       .eq('id', applicant.id)
 
     await supabase.from('notifications').insert({
@@ -121,7 +121,7 @@ export default function AppliedPage() {
   const handleReject = async (applicant: Applicant) => {
     setProcessing(prev => new Set(prev).add(applicant.id))
     await supabase.from('job_applications')
-      .update({ status: 'rejected', status_updated_at: new Date().toISOString() })
+      .update({ status: 'rejected', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
       .eq('id', applicant.id)
 
     await supabase.from('notifications').insert({

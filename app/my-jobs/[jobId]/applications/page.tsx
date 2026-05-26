@@ -353,7 +353,7 @@ export default function JobApplicationsPage() {
 
     const { error: updateError } = await supabase
       .from('job_applications')
-      .update({ status: newStatus, status_updated_at: new Date().toISOString() })
+      .update({ status: newStatus, status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
       .eq('id', applicationId)
 
     if (updateError) {
@@ -439,6 +439,7 @@ export default function JobApplicationsPage() {
         status: 'shortlisted',
         shortlisted_at: new Date().toISOString(),
         status_updated_at: new Date().toISOString(),
+        stage_entered_at: new Date().toISOString(),
       })
       .eq('id', application.id)
 
@@ -568,7 +569,7 @@ export default function JobApplicationsPage() {
       // Update application status to 'hired'
       await supabase
         .from('job_applications')
-        .update({ status: 'hired' })
+        .update({ status: 'hired', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
         .eq('id', application.id)
 
       // Update job status to 'filled'

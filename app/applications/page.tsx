@@ -548,7 +548,7 @@ export default function MyJobsPage() {
     try {
       await supabase
         .from('job_applications')
-        .update({ status: 'withdrawn' })
+        .update({ status: 'withdrawn', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
         .eq('id', appId)
 
       setApplications(prev =>

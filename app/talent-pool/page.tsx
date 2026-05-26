@@ -133,7 +133,7 @@ export default function TalentPoolPage() {
     // Reset status back to pending so they re-enter the pipeline
     await supabase
       .from('job_applications')
-      .update({ status: 'pending', status_updated_at: new Date().toISOString() })
+      .update({ status: 'pending', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
       .eq('id', candidate.applicationId)
 
     // Notify the candidate

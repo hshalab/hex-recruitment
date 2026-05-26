@@ -389,10 +389,11 @@ export default function MakeOfferModal({
           .catch(() => { /* summary is best-effort */ })
       }
 
-      // Update application status to 'offered'
+      // Update application status to 'offered'. stage_entered_at
+      // anchors the live "N days in [Stage]" badge.
       await supabase
         .from('job_applications')
-        .update({ status: 'offered' })
+        .update({ status: 'offered', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
         .eq('id', applicationId)
 
       // Send notification to candidate

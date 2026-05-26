@@ -51,6 +51,11 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  /* Wrap when the sort segmented-control + job filter together exceed
+     the topBar width on narrow viewports — the topBar already stacks
+     to column at <=768px so this only matters in the awkward 600-768px
+     range and on landscape phones. */
+  flex-wrap: wrap;
 }
 
 .jobFilter {

@@ -105,11 +105,12 @@ export async function POST(req: NextRequest) {
         .eq('id', interviewId)
     }
 
-    // Update job_applications status → 'interview'
+    // Update job_applications status → 'interview'. stage_entered_at
+    // anchors the live "N days in [Stage]" badge on the pipeline page.
     if (applicationId) {
       await supabaseAdmin
         .from('job_applications')
-        .update({ status: 'interview' })
+        .update({ status: 'interview', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
         .eq('id', applicationId)
     }
 

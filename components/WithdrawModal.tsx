@@ -4,17 +4,16 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-// Default decline copy used when an employer has not saved a custom
-// "rejected" template. {{jobTitle}} and {{companyName}} are substituted
-// before display via applyVars below; whatever the user finally edits in
-// the textarea is sent as the single source of truth (email + in-app
-// conversation message).
-const DEFAULT_REJECTED_BODY = "Thank you for applying for the {{jobTitle}} role at {{companyName}}. Due to a high number of applications, we've decided not to move forward with yours at this time, as we don't feel your experience is quite the right match for what we're looking for. We genuinely appreciate the time you took to apply and wish you all the best in your search."
+// Mirrors components/DeclineModal — same template-aware structure, but
+// fires on the employer marking a candidate as 'withdrawn' (dropped out,
+// stopped responding, accepted another role). Different semantics from
+// Decline (which is the employer's rejection); different default body;
+// different template_type lookup so employers can save distinct copy.
+const DEFAULT_WITHDRAWN_BODY = "Hi {{candidateName}},\n\nWe're marking your application for the {{jobTitle}} role at {{companyName}} as withdrawn. If this is a mistake — or if you'd like to be considered for similar future roles — please reply and let us know. Otherwise, we wish you all the best."
 
-// Local copy of lib/customEmailTemplate.ts:applyVariables — that module
-// instantiates a service-role Supabase client at the top level and is
-// server-only, so we re-implement the regex substitution here for the
-// client component.
+// Local copy of lib/customEmailTemplate.ts:applyVariables — same client-
+// only constraint as DeclineModal (the server helper instantiates a
+// service-role client at module top, so we cannot import it here).
 function applyVars(text: string, vars: Record<string, string>): string {
   let result = text
   for (const [key, value] of Object.entries(vars)) {
@@ -23,7 +22,7 @@ function applyVars(text: string, vars: Record<string, string>): string {
   return result
 }
 
-interface DeclineModalProps {
+interface WithdrawModalProps {
   applicationId: string
   candidateId: string
   candidateEmail: string | null
@@ -32,10 +31,10 @@ interface DeclineModalProps {
   companyName: string
   employerId: string
   onClose: () => void
-  onDeclined?: () => void
+  onWithdrawn?: () => void
 }
 
-export default function DeclineModal({
+export default function WithdrawModal({
   applicationId,
   candidateId,
   candidateEmail,
@@ -44,17 +43,18 @@ export default function DeclineModal({
   companyName,
   employerId,
   onClose,
-  onDeclined,
-}: DeclineModalProps) {
-  const [rejectMessage, setRejectMessage] = useState('')
-  const [rejectInitialMessage, setRejectInitialMessage] = useState('')
-  const [rejectIsCustomTemplate, setRejectIsCustomTemplate] = useState(false)
-  const [rejectTemplateLoading, setRejectTemplateLoading] = useState(true)
-  const [rejectSending, setRejectSending] = useState(false)
+  onWithdrawn,
+}: WithdrawModalProps) {
+  const [message, setMessage] = useState('')
+  const [initialMessage, setInitialMessage] = useState('')
+  const [isCustomTemplate, setIsCustomTemplate] = useState(false)
+  const [templateLoading, setTemplateLoading] = useState(true)
+  const [sending, setSending] = useState(false)
 
-  // Fetch the employer's saved "rejected" template (if any) and pre-fill
-  // the textarea. Falls back to DEFAULT_REJECTED_BODY when no custom
-  // template exists.
+  // Pre-fill the message from the employer's saved 'withdrawn' template
+  // when present; otherwise fall back to DEFAULT_WITHDRAWN_BODY. {{vars}}
+  // are filled in once, then the textarea is the source of truth — what
+  // the employer finally edits is what goes out.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -63,36 +63,42 @@ export default function DeclineModal({
           .from('employer_email_templates')
           .select('body, is_active')
           .eq('employer_id', employerId)
-          .eq('template_type', 'rejected')
+          .eq('template_type', 'withdrawn')
           .maybeSingle()
 
         if (cancelled) return
 
         const useCustom = !!(data && data.is_active && data.body)
-        const rawBody = useCustom ? (data!.body as string) : DEFAULT_REJECTED_BODY
+        const rawBody = useCustom ? (data!.body as string) : DEFAULT_WITHDRAWN_BODY
         const filled = applyVars(rawBody, {
           candidateName,
           jobTitle,
           companyName,
         })
-        setRejectMessage(filled)
-        setRejectInitialMessage(filled)
-        setRejectIsCustomTemplate(useCustom)
+        setMessage(filled)
+        setInitialMessage(filled)
+        setIsCustomTemplate(useCustom)
       } finally {
-        if (!cancelled) setRejectTemplateLoading(false)
+        if (!cancelled) setTemplateLoading(false)
       }
     })()
     return () => { cancelled = true }
   }, [employerId, candidateName, jobTitle, companyName])
 
-  const handleDeclineAndSend = async () => {
-    if (!rejectMessage.trim()) return
-    setRejectSending(true)
+  const handleWithdrawAndSend = async () => {
+    if (!message.trim()) return
+    setSending(true)
     try {
-      // 1. Mark the application as rejected.
+      // 1. Mark the application as withdrawn. stage_entered_at anchors
+      //    the "N days in [Stage]" badge so a withdrawn card shows the
+      //    correct duration if it remains visible in any future view.
       const { error } = await supabase
         .from('job_applications')
-        .update({ status: 'rejected', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
+        .update({
+          status: 'withdrawn',
+          status_updated_at: new Date().toISOString(),
+          stage_entered_at: new Date().toISOString(),
+        })
         .eq('id', applicationId)
       if (error) {
         alert('Failed to update status. Please try again.')
@@ -103,18 +109,17 @@ export default function DeclineModal({
       await supabase.from('notifications').insert({
         user_id: candidateId,
         type: 'application_update',
-        title: 'Application Update',
-        message: `Your application for ${jobTitle} at ${companyName} was not selected to move forward.`,
+        title: 'Application Withdrawn',
+        message: `Your application for ${jobTitle} at ${companyName} has been marked as withdrawn.`,
         read: false,
         related_id: applicationId,
         related_type: 'application',
         link: '/applications',
       })
 
-      // 3. Send the decline email with the user-edited body. bodyOverride
-      //    forces /api/email/send to use this exact text (and HTML-escape
-      //    it server-side) instead of the standard application_status
-      //    template path.
+      // 3. Send the email with the user-edited body. bodyOverride forces
+      //    /api/email/send to use this exact text (HTML-escaped server-
+      //    side) instead of the standard application_status template.
       if (candidateEmail) {
         fetch('/api/email/send', {
           method: 'POST',
@@ -123,19 +128,18 @@ export default function DeclineModal({
             to: candidateEmail,
             type: 'application_status',
             data: {
-              status: 'rejected',
+              status: 'withdrawn',
               companyName,
               jobTitle,
               candidateName,
               employerId,
-              bodyOverride: rejectMessage.trim(),
+              bodyOverride: message.trim(),
             },
           }),
         }).catch(() => {})
       }
 
-      // 4. Mirror the same body to an in-app conversation message so the
-      //    candidate sees identical decline copy in their messages tab.
+      // 4. Mirror to in-app conversation — same body the email shows.
       const { data: existingConv } = await supabase
         .from('conversations')
         .select('id')
@@ -153,7 +157,7 @@ export default function DeclineModal({
           participant_2_name: candidateName,
           participant_2_role: 'candidate',
           related_job_title: jobTitle,
-          last_message: rejectMessage.trim(),
+          last_message: message.trim(),
           last_message_at: new Date().toISOString(),
         }).select('id').single()
         conversationId = newConv?.id
@@ -165,22 +169,22 @@ export default function DeclineModal({
           sender_id: employerId,
           sender_name: companyName,
           sender_role: 'employer',
-          content: rejectMessage.trim(),
+          content: message.trim(),
           is_read: false,
         })
         if (existingConv) {
           await supabase.from('conversations').update({
-            last_message: rejectMessage.trim(),
+            last_message: message.trim(),
             last_message_at: new Date().toISOString(),
           }).eq('id', conversationId)
         }
       }
 
-      onDeclined?.()
+      onWithdrawn?.()
     } catch {
       // Surfaced via the supabase update alert above; swallow downstream.
     } finally {
-      setRejectSending(false)
+      setSending(false)
       onClose()
     }
   }
@@ -195,17 +199,14 @@ export default function DeclineModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        // Safe-area-inset envelope — same iOS-Safari-clip rationale as
-        // ScheduleInterviewModal.module.css. Decline content includes a
-        // 7-row textarea so this modal is the tallest of the inline
-        // ones; max(1rem, env()) ensures the notch can't clip the
-        // header on a short viewport.
+        // Same safe-area-inset envelope as DeclineModal / pipeline modals
+        // — iOS Safari notch + dynamic browser chrome.
         paddingTop: 'max(1rem, env(safe-area-inset-top))',
         paddingRight: 'max(1rem, env(safe-area-inset-right))',
         paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
         paddingLeft: 'max(1rem, env(safe-area-inset-left))',
       }}
-      onClick={() => !rejectSending && onClose()}
+      onClick={() => !sending && onClose()}
     >
       <div
         style={{
@@ -219,34 +220,37 @@ export default function DeclineModal({
         }}
         onClick={e => e.stopPropagation()}
       >
-        <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700 }}>Decline application</h3>
-        <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 1rem' }}>
+        <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700 }}>Mark candidate as withdrawn</h3>
+        <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 0.5rem' }}>
           {candidateName} — {jobTitle}
+        </p>
+        <p style={{ color: '#475569', fontSize: '0.85rem', margin: '0 0 1rem', lineHeight: 1.45 }}>
+          Use this when a candidate has dropped out, stopped responding, or accepted another role. Different from Decline (which is your decision to reject).
         </p>
 
         <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.375rem' }}>
           Message to candidate
         </label>
         <textarea
-          value={rejectMessage}
-          onChange={e => setRejectMessage(e.target.value)}
+          value={message}
+          onChange={e => setMessage(e.target.value)}
           rows={7}
-          disabled={rejectTemplateLoading || rejectSending}
-          placeholder={rejectTemplateLoading ? 'Loading template…' : ''}
-          style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem', resize: 'vertical', lineHeight: 1.5, background: rejectTemplateLoading ? '#f8fafc' : '#fff' }}
+          disabled={templateLoading || sending}
+          placeholder={templateLoading ? 'Loading template…' : ''}
+          style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem', resize: 'vertical', lineHeight: 1.5, background: templateLoading ? '#f8fafc' : '#fff' }}
         />
 
         <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.5rem 0 0' }}>
-          {rejectTemplateLoading
+          {templateLoading
             ? 'Loading your template…'
-            : rejectIsCustomTemplate
-              ? 'Using your saved Declined template. '
-              : 'Using the default decline copy. '}
-          {!rejectTemplateLoading && (
+            : isCustomTemplate
+              ? 'Using your saved Withdrawn template. '
+              : 'Using the default withdrawn copy. '}
+          {!templateLoading && (
             <Link
               href="/settings/email-templates"
               onClick={(e) => {
-                if (rejectMessage !== rejectInitialMessage) {
+                if (message !== initialMessage) {
                   const ok = window.confirm('You have unsaved edits in this message. Leave to edit your saved template?')
                   if (!ok) e.preventDefault()
                 }
@@ -261,17 +265,21 @@ export default function DeclineModal({
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
           <button
             onClick={onClose}
-            disabled={rejectSending}
+            disabled={sending}
             style={{ flex: 1, padding: '0.625rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem' }}
           >
             Cancel
           </button>
           <button
-            onClick={handleDeclineAndSend}
-            disabled={rejectSending || rejectTemplateLoading || !rejectMessage.trim()}
-            style={{ flex: 1, padding: '0.625rem', border: 'none', borderRadius: 8, background: (rejectSending || rejectTemplateLoading) ? '#94a3b8' : '#dc2626', color: '#fff', cursor: (rejectSending || rejectTemplateLoading) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.9rem' }}
+            onClick={handleWithdrawAndSend}
+            disabled={sending || templateLoading || !message.trim()}
+            // Amber (not red) — Withdraw is neutral-destructive: not a
+            // rejection, just a state cleanup. Red is reserved for
+            // Decline so the two adjacent kebab items are visually
+            // distinguishable at a glance.
+            style={{ flex: 1, padding: '0.625rem', border: 'none', borderRadius: 8, background: (sending || templateLoading) ? '#94a3b8' : '#d97706', color: '#fff', cursor: (sending || templateLoading) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.9rem' }}
           >
-            {rejectSending ? 'Sending…' : 'Send & Decline'}
+            {sending ? 'Sending…' : 'Mark as withdrawn'}
           </button>
         </div>
       </div>
