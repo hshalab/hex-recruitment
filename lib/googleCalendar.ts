@@ -5,13 +5,7 @@
 // so callers can decide whether to soft-fail (e.g. a booking should still
 // succeed even if the calendar sync fails).
 
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  { auth: { persistSession: false } }
-)
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const GOOGLE_CAL_BASE = 'https://www.googleapis.com/calendar/v3'

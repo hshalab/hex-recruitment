@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
@@ -8,8 +8,12 @@ import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import SignedLink from '@/components/SignedLink'
 import DeclineModal from '@/components/DeclineModal'
+import WithdrawModal from '@/components/WithdrawModal'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import BackwardToInterviewModal, { type BackwardToInterviewChoice } from '@/components/BackwardToInterviewModal'
+import StagePickerSheet from '@/components/StagePickerSheet'
+import StageDurationBadge from '@/components/StageDurationBadge'
+import SortOrderControl, { type PipelineSortOrder } from '@/components/SortOrderControl'
 import Toast from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
 import styles from './page.module.css'
@@ -79,7 +83,11 @@ interface PipelineCard {
   jobId: string
   status: string
   appliedAt: string
-  daysInStage: number
+  // ISO timestamp the card entered its current status. Drives the live
+  // "N days in [Stage]" badge and the "Oldest in stage" sort. Sourced
+  // directly from job_applications.stage_entered_at — the per-move
+  // anchor populated by every status-write call site post-Phase 2.
+  stageEnteredAt: string
   location: string
   experience: number
   cvUrl: string | null
@@ -91,13 +99,6 @@ interface PipelineCard {
   // backward "move back, no new interview" path can land a card here
   // legitimately without one.
   hasLiveInterview: boolean
-}
-
-function formatDaysAgo(dateStr: string): string {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
-  if (days === 0) return 'Today'
-  if (days === 1) return '1 day'
-  return `${days} days`
 }
 
 // Per-stage primary CTA label and destination. The link goes to the
@@ -118,12 +119,25 @@ export default function PipelinePage() {
   const [cards, setCards] = useState<PipelineCard[]>([])
   const [filterJob, setFilterJob] = useState<string>('all')
   const [jobs, setJobs] = useState<{ id: string; title: string }[]>([])
+  // Per-employer sort preference. Persists on employer_profiles.
+  // pipeline_sort_order — see SortOrderControl for the write path. The
+  // initial value is 'oldest_in_stage' (the column default) until
+  // loadData resolves and overrides with the persisted value; this
+  // beat is invisible because the page renders a spinner during the
+  // first loadData.
+  const [sortOrder, setSortOrder] = useState<PipelineSortOrder>('oldest_in_stage')
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
   // Kebab + decline/restore state. employerId/employerCompany are
   // captured in loadData and passed to the shared DeclineModal so the
   // candidate email + in-app conversation message attribute correctly.
   const [openMenuCardId, setOpenMenuCardId] = useState<string | null>(null)
   const [declineCard, setDeclineCard] = useState<PipelineCard | null>(null)
+  // Withdraw mirrors Decline: same template-aware modal, different
+  // template_type ('withdrawn'), amber-not-red CTA. A successful
+  // withdraw drops the card from local state — withdrawn applications
+  // have no column on the board, unlike rejected which gets the
+  // tombstone Declined column.
+  const [withdrawCard, setWithdrawCard] = useState<PipelineCard | null>(null)
   const [restoreCard, setRestoreCard] = useState<PipelineCard | null>(null)
   const [restoring, setRestoring] = useState(false)
   const [employerId, setEmployerId] = useState<string | null>(null)
@@ -140,6 +154,17 @@ export default function PipelinePage() {
   // Backward drag into the Interview column shows BackwardToInterviewModal
   // first so the employer can pick: cancel / move-only / move-and-schedule.
   const [backwardToInterview, setBackwardToInterview] = useState<{ card: PipelineCard; previousStageLabel: string } | null>(null)
+  // Mobile-only tap-to-move surface. The horizontal-scroll board (≤768px)
+  // makes drag-drop impractical on touch, so a tap on a card body opens
+  // StagePickerSheet; row tap inside the sheet feeds the same intentToMove
+  // gating used by drag. Desktop drag is unchanged.
+  const [stagePickerCard, setStagePickerCard] = useState<PipelineCard | null>(null)
+  // Sentinel that swallows the click event @hello-pangea/dnd fires
+  // immediately after a drag-release. 50ms is enough to cover the
+  // browser-emitted click-after-mouseup (most user-agents synthesise it
+  // 0–30ms after pointer-up) without burning a real tap that follows
+  // the previous drag by more than ~80ms.
+  const dragJustHappenedRef = useRef(false)
   const [toast, setToast] = useState<{ message: string; key: number } | null>(null)
 
   const loadData = useCallback(async () => {
@@ -153,16 +178,38 @@ export default function PipelinePage() {
     setEmployerId(sessionEmployerId)
     setEmployerCompany(session.user.user_metadata?.company_name || '')
 
+    // Fetch the persisted sort preference. employer_profiles is guaranteed
+    // to have a row per signed-in employer (registration creates one),
+    // so a null row means a corrupt account state; fall back to the
+    // column default so the page still renders sensibly.
+    const { data: prefRow } = await supabase
+      .from('employer_profiles')
+      .select('pipeline_sort_order')
+      .eq('user_id', sessionEmployerId)
+      .maybeSingle()
+    if (prefRow?.pipeline_sort_order === 'newest_first' || prefRow?.pipeline_sort_order === 'oldest_in_stage') {
+      setSortOrder(prefRow.pipeline_sort_order)
+    }
+
     // 'pending' lives on the Applicants page; Pipeline tracks the active
     // funnel + the DECLINED end-state. We DO want 'rejected' rows here
     // so they render in the new column.
+    // Withdrawn applications are excluded — they're a terminal state
+    // with no board column (Decline gets the tombstone Declined column;
+    // Withdraw just disappears, since it's "candidate dropped out" not
+    // "employer rejected"). Sort order is applied client-side below
+    // against either stage_entered_at ASC (default) or created_at DESC
+    // depending on the employer's saved pipeline_sort_order pref —
+    // fetching both fields means we don't need to round-trip when the
+    // sort control toggles.
     const { data: appData } = await supabase
       .from('job_applications')
-      .select('id, candidate_id, job_id, job_title, status, cover_letter, created_at, status_updated_at')
+      .select('id, candidate_id, job_id, job_title, status, cover_letter, created_at, status_updated_at, stage_entered_at')
       .in('job_id', (
         await supabase.from('jobs').select('id').eq('employer_id', sessionEmployerId)
       ).data?.map((j: any) => j.id) || [])
       .neq('status', 'pending')
+      .neq('status', 'withdrawn')
       .order('created_at', { ascending: false })
 
     if (!appData) { setLoading(false); return }
@@ -213,10 +260,13 @@ export default function PipelinePage() {
       liveSet = new Set((liveInterviews || []).map(i => i.application_id))
     }
 
-    // Map to pipeline cards
+    // Map to pipeline cards. stage_entered_at is the load-bearing anchor
+    // post-Phase 1 migration — backfilled from pipeline_cascade_log →
+    // status_updated_at → created_at. Falling back to created_at here
+    // only matters for unmigrated rows in a rolled-back database; the
+    // migration guarantees a value otherwise.
     const mapped: PipelineCard[] = appData.map(a => {
       const profile = profileMap[a.candidate_id] || { name: 'Candidate', photo: null, location: '', experience: 0, cvUrl: null, email: null }
-      const stageDate = a.status_updated_at || a.created_at
       return {
         id: a.id,
         candidateId: a.candidate_id,
@@ -227,7 +277,7 @@ export default function PipelinePage() {
         jobId: a.job_id,
         status: a.status === 'interviewing' ? 'interview' : a.status,
         appliedAt: a.created_at,
-        daysInStage: Math.floor((Date.now() - new Date(stageDate).getTime()) / 86400000),
+        stageEnteredAt: a.stage_entered_at || a.status_updated_at || a.created_at,
         location: profile.location,
         experience: profile.experience,
         cvUrl: profile.cvUrl,
@@ -264,14 +314,14 @@ export default function PipelinePage() {
   // notification, and cascade-log read.
   const applyMove = async (card: PipelineCard, newStatus: string, fromStatus: string, stageLabel: string) => {
     // Optimistic update
-    setCards(prev => prev.map(c => c.id === card.id ? { ...c, status: newStatus, daysInStage: 0 } : c))
+    setCards(prev => prev.map(c => c.id === card.id ? { ...c, status: newStatus, stageEnteredAt: new Date().toISOString() } : c))
 
     // Capture cutoff so the cascade-log read only sees rows from this move.
     const requestStartIso = new Date().toISOString()
 
     const { error } = await supabase
       .from('job_applications')
-      .update({ status: newStatus, status_updated_at: new Date().toISOString() })
+      .update({ status: newStatus, status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
       .eq('id', card.id)
 
     if (error) {
@@ -310,32 +360,39 @@ export default function PipelinePage() {
     setToast({ message: summarizeCascade((logRows as CascadeLogRow[]) || [], stageLabel), key: Date.now() })
   }
 
-  // Handle drag and drop
-  const handleDragEnd = async (result: DropResult) => {
-    const { draggableId, destination, source } = result
-    if (!destination || destination.droppableId === source.droppableId) return
+  // Gate-aware status-transition entry point. Both drag (handleDragEnd)
+  // and tap (StagePickerSheet onPick) route through here so every status
+  // change inherits the same three drag-era gates: forward-into-Interview
+  // opens ScheduleInterviewModal; backward-into-Interview opens
+  // BackwardToInterviewModal; other backward moves open the inline
+  // cascade-confirm. Forward non-interview moves call applyMove directly
+  // (no gate needed).
+  //
+  // CONTRACT: applyMove is the no-gate write path. Every NEW transport-
+  // layer caller (drag handler, click handler, kebab item, future mobile
+  // affordance) MUST go through intentToMove first. The two remaining
+  // direct applyMove callers in this file (the backward-move confirm OK
+  // and the BackwardToInterview move-only path) are post-gate writes by
+  // design — the gate fired, the user confirmed, applyMove finishes the
+  // write. e2e/pipeline-mobile.spec.ts enforces this with a static-
+  // analysis guard that fails the suite if applyMove appears inside
+  // handleDragEnd or the StagePickerSheet wiring.
+  const intentToMove = async (card: PipelineCard, newStatus: string, fromStatus: string): Promise<void> => {
+    if (newStatus === fromStatus) return
+    // Decline must always go through the kebab → DeclineModal so the
+    // email gets sent. The DECLINED column is configured isDropDisabled
+    // and its cards isDragDisabled; the StagePickerSheet excludes
+    // 'rejected' from its destination list — this is the defensive guard
+    // if any of those constraints get loosened later.
+    if (newStatus === 'rejected' || fromStatus === 'rejected') return
 
-    // Decline must always go through the modal so the email gets sent.
-    // The DECLINED column is configured isDropDisabled and its cards
-    // isDragDisabled, so this branch shouldn't fire — defensive guard
-    // in case those props get loosened later.
-    if (destination.droppableId === 'rejected' || source.droppableId === 'rejected') return
-
-    const newStatus = destination.droppableId
-    const card = cards.find(c => c.id === draggableId)
-    if (!card) return
-
-    const fromIdx = stageIndex(source.droppableId)
+    const fromIdx = stageIndex(fromStatus)
     const toIdx = stageIndex(newStatus)
     const stageLabel = STAGES.find(s => s.id === newStatus)?.label || newStatus
 
-    // Drag into Interview is gated. Forward (Reviewing/Shortlisted/etc.
-    // → Interview) opens ScheduleInterviewModal; the move only happens if
-    // the schedule succeeds. Backward (Offered/Hired → Interview) opens
-    // BackwardToInterviewModal where the employer picks the right path.
     if (newStatus === 'interview') {
       if (fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx) {
-        const previousStageLabel = STAGES.find(s => s.id === source.droppableId)?.label || source.droppableId
+        const previousStageLabel = STAGES.find(s => s.id === fromStatus)?.label || fromStatus
         setBackwardToInterview({ card, previousStageLabel })
       } else {
         setScheduleCard(card)
@@ -343,18 +400,56 @@ export default function PipelinePage() {
       return
     }
 
-    // Backward drag elsewhere (e.g. Hired → Offered). The DB trigger
-    // doesn't undo past actions; the user gets a confirm explaining
-    // what's preserved before the move commits.
     if (fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx) {
       setBackwardMove({ card, newStatus, stageLabel })
       return
     }
 
-    await applyMove(card, newStatus, source.droppableId, stageLabel)
+    await applyMove(card, newStatus, fromStatus, stageLabel)
   }
 
-  const filteredCards = filterJob === 'all' ? cards : cards.filter(c => c.jobId === filterJob)
+  // Drag transport → intentToMove. The sentinel below swallows the
+  // synthetic click the browser fires immediately after a successful
+  // drag-release so the card-level onClick (tap → StagePickerSheet)
+  // doesn't double-fire on touch devices.
+  const handleDragEnd = async (result: DropResult) => {
+    dragJustHappenedRef.current = true
+    setTimeout(() => { dragJustHappenedRef.current = false }, 50)
+
+    const { draggableId, destination, source } = result
+    if (!destination || destination.droppableId === source.droppableId) return
+
+    const card = cards.find(c => c.id === draggableId)
+    if (!card) return
+
+    await intentToMove(card, destination.droppableId, source.droppableId)
+  }
+
+  // Filter by job, then apply the per-employer sort preference. The
+  // DB query already returned the rows in created_at DESC; we re-sort
+  // client-side so the sort control flips instantly without a refetch.
+  //
+  // Sort semantics:
+  //   - 'oldest_in_stage' → ASC by stage_entered_at. Cards that have
+  //     been sitting longest float to the top of each column. Default,
+  //     and the one that drives employer attention toward stale work.
+  //   - 'newest_first' → DESC by created_at. Original behaviour from
+  //     before the sort control existed. Preserved verbatim for users
+  //     who explicitly toggled to this mode.
+  //
+  // Within each column the sort is over the full filteredCards array,
+  // not per-column, because column membership is derived from status —
+  // sorting the whole list and then partitioning by status gives the
+  // same result as partitioning then sorting, and keeps the code path
+  // straightforward.
+  const filteredCards = (filterJob === 'all' ? cards : cards.filter(c => c.jobId === filterJob))
+    .slice()
+    .sort((a, b) => {
+      if (sortOrder === 'oldest_in_stage') {
+        return new Date(a.stageEnteredAt).getTime() - new Date(b.stageEnteredAt).getTime()
+      }
+      return new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime()
+    })
 
   if (loading) {
     return (
@@ -373,6 +468,11 @@ export default function PipelinePage() {
           <p className={styles.subtitle}>{cards.length} candidate{cards.length !== 1 ? 's' : ''} across {jobs.length} job{jobs.length !== 1 ? 's' : ''}</p>
         </div>
         <div className={styles.controls}>
+          <SortOrderControl
+            value={sortOrder}
+            onChange={setSortOrder}
+            employerId={employerId}
+          />
           <select
             value={filterJob}
             onChange={e => setFilterJob(e.target.value)}
@@ -410,6 +510,15 @@ export default function PipelinePage() {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               className={`${styles.card} ${snapshot.isDragging ? styles.cardDragging : ''} ${isDeclined ? styles.cardDeclined : ''}`}
+                              onClick={() => {
+                                // Click-after-drag suppression. Kebab / CTA /
+                                // Details inner buttons stopPropagation on
+                                // their own onClick, so this only fires for
+                                // taps on the card body itself.
+                                if (dragJustHappenedRef.current) return
+                                if (isDeclined) return
+                                setStagePickerCard(card)
+                              }}
                             >
                               <div className={styles.cardHeader}>
                                 <div className={styles.cardAvatar}>
@@ -451,14 +560,29 @@ export default function PipelinePage() {
                                           Restore to Reviewing
                                         </button>
                                       ) : (
-                                        <button
-                                          type="button"
-                                          role="menuitem"
-                                          className={styles.cardMenuItem}
-                                          onClick={() => { setOpenMenuCardId(null); setDeclineCard(card) }}
-                                        >
-                                          Decline
-                                        </button>
+                                        <>
+                                          <button
+                                            type="button"
+                                            role="menuitem"
+                                            className={styles.cardMenuItem}
+                                            onClick={() => { setOpenMenuCardId(null); setDeclineCard(card) }}
+                                          >
+                                            Decline
+                                          </button>
+                                          {/* Mark as withdrawn — separate from Decline because the
+                                              semantics differ (candidate dropped out vs. employer
+                                              rejected). Amber-leaning, not red. The successful-
+                                              withdraw handler drops the card from local state since
+                                              withdrawn has no column on the board. */}
+                                          <button
+                                            type="button"
+                                            role="menuitem"
+                                            className={styles.cardMenuItem}
+                                            onClick={() => { setOpenMenuCardId(null); setWithdrawCard(card) }}
+                                          >
+                                            Mark as withdrawn
+                                          </button>
+                                        </>
                                       )}
                                     </div>
                                   )}
@@ -518,7 +642,10 @@ export default function PipelinePage() {
                                 </div>
                               )}
                               <div className={styles.cardFooter}>
-                                <span className={styles.cardTime}>{formatDaysAgo(card.appliedAt)} in stage</span>
+                                <StageDurationBadge
+                                  stageEnteredAt={card.stageEnteredAt}
+                                  stageLabel={STAGES.find(s => s.id === card.status)?.label || card.status}
+                                />
                                 <button
                                   type="button"
                                   className={styles.cardDetailsToggle}
@@ -565,7 +692,28 @@ export default function PipelinePage() {
           onClose={() => setDeclineCard(null)}
           onDeclined={() => {
             const cardId = declineCard.id
-            setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'rejected', daysInStage: 0 } : c))
+            setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'rejected', stageEnteredAt: new Date().toISOString() } : c))
+          }}
+        />
+      )}
+
+      {/* Withdraw modal — same shape as Decline but writes status='withdrawn'.
+          On success the card vanishes from the board (no Withdrawn column,
+          unlike Decline which gets the tombstone Declined column). */}
+      {withdrawCard && employerId && (
+        <WithdrawModal
+          applicationId={withdrawCard.id}
+          candidateId={withdrawCard.candidateId}
+          candidateEmail={withdrawCard.candidateEmail}
+          candidateName={withdrawCard.candidateName}
+          jobTitle={withdrawCard.jobTitle}
+          companyName={employerCompany}
+          employerId={employerId}
+          onClose={() => setWithdrawCard(null)}
+          onWithdrawn={() => {
+            const cardId = withdrawCard.id
+            setCards(prev => prev.filter(c => c.id !== cardId))
+            setToast({ message: `${withdrawCard.candidateName.split(' ')[0]} marked as withdrawn.`, key: Date.now() })
           }}
         />
       )}
@@ -601,14 +749,14 @@ export default function PipelinePage() {
                   const cardId = restoreCard.id
                   const { error } = await supabase
                     .from('job_applications')
-                    .update({ status: 'reviewing', status_updated_at: new Date().toISOString() })
+                    .update({ status: 'reviewing', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
                     .eq('id', cardId)
                   setRestoring(false)
                   if (error) {
                     alert('Failed to restore. Please try again.')
                     return
                   }
-                  setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'reviewing', daysInStage: 0 } : c))
+                  setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'reviewing', stageEnteredAt: new Date().toISOString() } : c))
                   setRestoreCard(null)
                 }}
                 disabled={restoring}
@@ -684,7 +832,7 @@ export default function PipelinePage() {
           candidateEmail={scheduleCard.candidateEmail || undefined}
           onSuccess={() => {
             const cardId = scheduleCard.id
-            setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'interview', daysInStage: 0, hasLiveInterview: true } : c))
+            setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'interview', stageEnteredAt: new Date().toISOString(), hasLiveInterview: true } : c))
             setScheduleCard(null)
             setToast({ message: `Moved to Interview. Schedule sent to ${scheduleCard.candidateName.split(' ')[0]}.`, key: Date.now() })
             loadData()
@@ -718,6 +866,38 @@ export default function PipelinePage() {
             // Suppress unused-warning for previousStageLabel — kept in scope
             // for clarity at the call site.
             void previousStageLabel
+          }}
+        />
+      )}
+
+      {/* Mobile-primary tap-to-move surface. A tap on a card body opens
+          this sheet; picking a destination routes through intentToMove
+          so the three drag-era gates (schedule modal, backward-to-
+          interview chooser, cascade-confirm) fire identically to drag.
+          Rendered at every viewport — desktop users who happen to tap
+          a card instead of dragging get the same picker. */}
+      {stagePickerCard && (
+        <StagePickerSheet
+          candidateName={stagePickerCard.candidateName}
+          currentStageLabel={STAGES.find(s => s.id === stagePickerCard.status)?.label || stagePickerCard.status}
+          currentStageId={stagePickerCard.status}
+          stages={STAGES}
+          stageOrder={STAGE_ORDER as readonly string[]}
+          onClose={() => setStagePickerCard(null)}
+          onPick={(newStatusId) => {
+            const card = stagePickerCard
+            setStagePickerCard(null)
+            void intentToMove(card, newStatusId, card.status)
+          }}
+          onDecline={() => {
+            const card = stagePickerCard
+            setStagePickerCard(null)
+            setDeclineCard(card)
+          }}
+          onWithdraw={() => {
+            const card = stagePickerCard
+            setStagePickerCard(null)
+            setWithdrawCard(card)
           }}
         />
       )}

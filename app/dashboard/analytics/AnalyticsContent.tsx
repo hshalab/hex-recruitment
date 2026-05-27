@@ -1786,7 +1786,7 @@ export default function AnalyticsContent() {
   const handleRetentionUpdate = useCallback(async (applicationId: string, newStatus: 'retained' | 'left') => {
     const { error } = await supabase
       .from('job_applications')
-      .update({ status: newStatus, status_updated_at: new Date().toISOString() })
+      .update({ status: newStatus, status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
       .eq('id', applicationId)
 
     if (error) {

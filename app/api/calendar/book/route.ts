@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import {
   getValidAccessToken,
   createCalendarEvent,
@@ -9,10 +8,7 @@ import {
 } from '@/lib/googleCalendar'
 import { sendInterviewMessage } from '@/lib/sendInterviewMessage'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function POST(req: NextRequest) {
   try {
@@ -109,11 +105,12 @@ export async function POST(req: NextRequest) {
         .eq('id', interviewId)
     }
 
-    // Update job_applications status → 'interview'
+    // Update job_applications status → 'interview'. stage_entered_at
+    // anchors the live "N days in [Stage]" badge on the pipeline page.
     if (applicationId) {
       await supabaseAdmin
         .from('job_applications')
-        .update({ status: 'interview' })
+        .update({ status: 'interview', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
         .eq('id', applicationId)
     }
 

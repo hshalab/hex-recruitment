@@ -457,8 +457,9 @@ export default function ScheduleInterviewModal({
         link: `/interview/schedule/${newInterview.scheduling_token}`,
       })
 
-      // Update application status
-      await supabase.from('job_applications').update({ status: 'interview' }).eq('id', applicationId)
+      // Update application status. stage_entered_at anchors the new
+      // "N days in [Stage]" badge and the "Oldest in stage" sort order.
+      await supabase.from('job_applications').update({ status: 'interview', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() }).eq('id', applicationId)
 
       // Send email with scheduling link
       fetch('/api/email/send', {
@@ -528,7 +529,7 @@ export default function ScheduleInterviewModal({
 
       await supabase
         .from('job_applications')
-        .update({ status: 'interview' })
+        .update({ status: 'interview', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
         .eq('id', applicationId)
 
       await supabase.from('interviews').insert({

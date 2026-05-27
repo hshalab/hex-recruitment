@@ -1,0 +1,272 @@
+'use client'
+
+// Bottom-sheet stage picker for the pipeline page. Opens when an
+// employer taps a card body on mobile (the horizontal-scroll board
+// makes drag-drop impractical on touch). Picking a destination calls
+// onPick — the consumer is expected to route that through intentToMove
+// so the same three drag-era gates fire on tap as on drag.
+//
+// The sheet is presentation-only: it does NOT write to the DB, does
+// NOT open the schedule / backward-to-interview / cascade-confirm
+// modals itself, and does NOT carry any business logic about which
+// destinations are legal. The parent owns all of that — this file just
+// renders five rows and reports which one the user picked.
+//
+// Style is inline rather than a CSS Module because the sheet inherits
+// design tokens directly from the inline pattern used by the other
+// pipeline-page modals (BackwardToInterviewModal, the inline restore /
+// backward-move confirms). Keeping all four pipeline-page modals in
+// the same visual style without a fresh .module.css is the lower-
+// surface-area choice.
+
+interface Stage {
+  id: string
+  label: string
+  color: string
+}
+
+interface StagePickerSheetProps {
+  candidateName: string
+  currentStageLabel: string
+  currentStageId: string
+  stages: Stage[]
+  stageOrder: readonly string[]
+  onPick: (newStatusId: string) => void
+  onClose: () => void
+  // Destructive actions on the bottom row, separated from the stage
+  // destinations by a hairline. Decline opens DeclineModal (sends a
+  // rejection email + sets status='rejected'); Withdraw opens
+  // WithdrawModal (marks status='withdrawn', candidate dropped out).
+  // Both are optional — the kebab-on-desktop path doesn't render this
+  // sheet so it doesn't need them, but the mobile path does to keep
+  // parity with the desktop kebab.
+  onDecline?: () => void
+  onWithdraw?: () => void
+}
+
+export default function StagePickerSheet({
+  candidateName,
+  currentStageLabel,
+  currentStageId,
+  stages,
+  stageOrder,
+  onPick,
+  onClose,
+  onDecline,
+  onWithdraw,
+}: StagePickerSheetProps) {
+  const currentIdx = stageOrder.indexOf(currentStageId)
+
+  // Destinations = all stages except the card's current stage AND
+  // except 'rejected' (which is reachable only via kebab → Decline so
+  // the candidate email gets sent). For a card in any of the 5 non-
+  // rejected stages, that leaves 4 destinations.
+  const destinations = stages.filter(
+    (s) => s.id !== currentStageId && s.id !== 'rejected',
+  )
+
+  // Surface the gate-shape per destination so the employer knows what
+  // a tap will trigger. Forward-into-Interview always opens scheduling
+  // (regardless of where the card came from). Backward moves either
+  // preserve audit (from Hired/Offered) or open a plain cascade-confirm
+  // (the rest). Forward-non-interview moves are silent — no sub-label.
+  const subLabelFor = (targetId: string): string | null => {
+    if (targetId === 'interview') return 'Opens scheduling'
+    const targetIdx = stageOrder.indexOf(targetId)
+    const isBackward = currentIdx >= 0 && targetIdx >= 0 && targetIdx < currentIdx
+    if (!isBackward) return null
+    if (currentStageId === 'hired' || currentStageId === 'offered') {
+      return 'Backward move — preserves audit log'
+    }
+    return 'Backward move — opens confirm'
+  }
+
+  return (
+    <div
+      data-testid="stage-picker-sheet"
+      role="dialog"
+      aria-label={`Move ${candidateName}`}
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        // Bottom-sheet: only the BOTTOM safe-area-inset matters here
+        // (home-indicator clearance on iOS). The sheet anchors to the
+        // bottom edge so left/right padding would push it inward
+        // without benefit; top is unconstrained because the sheet
+        // grows up from the bottom, not down from the top.
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#fff',
+          width: '100%',
+          maxWidth: 520,
+          // Bound the sheet so a future longer destination list (or a
+          // very tall device-emulated browser) can't push the header
+          // off-screen. 80dvh leaves the top 20% of the visible
+          // viewport for the page-content peek behind the scrim.
+          maxHeight: '80dvh',
+          overflowY: 'auto',
+          borderRadius: '16px 16px 0 0',
+          padding: '0.875rem 1.25rem 1.5rem',
+          boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
+        }}
+      >
+        <div
+          aria-hidden
+          style={{
+            width: 36,
+            height: 4,
+            background: '#cbd5e1',
+            borderRadius: 2,
+            margin: '0 auto 0.875rem',
+          }}
+        />
+        <h3 style={{ margin: '0 0 0.25rem', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
+          Move {candidateName}
+        </h3>
+        <p style={{ margin: '0 0 1rem', fontSize: '0.8rem', color: '#64748b' }}>
+          Currently in {currentStageLabel}. Pick a destination.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+          {destinations.map((d) => {
+            const sub = subLabelFor(d.id)
+            return (
+              <button
+                key={d.id}
+                type="button"
+                data-testid={`stage-picker-row-${d.id}`}
+                aria-label={`Move to ${d.label}`}
+                onClick={() => onPick(d.id)}
+                style={{
+                  padding: '0.75rem 0.875rem',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 10,
+                  background: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.625rem',
+                }}
+              >
+                <span
+                  aria-hidden
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    background: d.color,
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#0f172a' }}>
+                    {d.label}
+                  </div>
+                  {sub && (
+                    <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2 }}>
+                      {sub}
+                    </div>
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+        {(onDecline || onWithdraw) && (
+          // Destructive actions sit below a divider so they read as a
+          // separate region from the stage destinations. The divider is
+          // a 1px hairline rather than a heading because both rows are
+          // self-labelling — adding a "Remove from pipeline" header
+          // would be redundant.
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+            {onDecline && (
+              <button
+                type="button"
+                data-testid="stage-picker-decline"
+                aria-label={`Decline ${candidateName}`}
+                onClick={onDecline}
+                style={{
+                  padding: '0.75rem 0.875rem',
+                  border: '1px solid #fecaca',
+                  borderRadius: 10,
+                  background: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.625rem',
+                  color: '#b91c1c',
+                  fontWeight: 600,
+                  fontSize: '0.92rem',
+                }}
+              >
+                <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: '#dc2626', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div>Decline</div>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2, fontWeight: 400 }}>Sends rejection email</div>
+                </div>
+              </button>
+            )}
+            {onWithdraw && (
+              <button
+                type="button"
+                data-testid="stage-picker-withdraw"
+                aria-label={`Mark ${candidateName} as withdrawn`}
+                onClick={onWithdraw}
+                style={{
+                  padding: '0.75rem 0.875rem',
+                  border: '1px solid #fde68a',
+                  borderRadius: 10,
+                  background: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.625rem',
+                  color: '#92400e',
+                  fontWeight: 600,
+                  fontSize: '0.92rem',
+                }}
+              >
+                <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: '#d97706', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div>Mark as withdrawn</div>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2, fontWeight: 400 }}>Candidate dropped out</div>
+                </div>
+              </button>
+            )}
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginTop: '0.75rem' }}>
+          <button
+            type="button"
+            data-testid="stage-picker-cancel"
+            onClick={onClose}
+            style={{
+              padding: '0.65rem',
+              border: '1px solid #e2e8f0',
+              borderRadius: 10,
+              background: '#fff',
+              cursor: 'pointer',
+              fontWeight: 500,
+              fontSize: '0.85rem',
+              color: '#64748b',
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

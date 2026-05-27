@@ -15,11 +15,38 @@ export default function BackwardToInterviewModal({
 }: BackwardToInterviewModalProps) {
   return (
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        // Safe-area-inset envelope — same iOS-Safari-clip rationale as
+        // ScheduleInterviewModal.module.css. max(1rem, env()) keeps the
+        // 1rem fallback on browsers without env support.
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+      }}
       onClick={() => onChoose('cancel')}
     >
       <div
-        style={{ background: '#fff', borderRadius: 12, maxWidth: 480, width: '100%', padding: '1.5rem' }}
+        style={{
+          background: '#fff',
+          borderRadius: 12,
+          maxWidth: 480,
+          width: '100%',
+          // Bound the modal to dynamic viewport so it can't exceed the
+          // visible area on iOS Safari with URL bar showing. overflowY
+          // engages internal scroll if content (3 buttons + header)
+          // ever grows past the bound.
+          maxHeight: 'calc(100dvh - 2rem)',
+          overflowY: 'auto',
+          padding: '1.5rem',
+        }}
         onClick={e => e.stopPropagation()}
       >
         <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 700 }}>

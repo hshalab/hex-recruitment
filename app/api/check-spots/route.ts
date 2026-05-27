@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 
+// Live counter — must not be statically prerendered, or the build-time
+// value would be served forever. Without this flag, Next.js attempts
+// prerender, the createClient call runs against an env-less build env,
+// and the build dies. Force-dynamic makes the route always SSR fresh.
+export const dynamic = 'force-dynamic'
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 

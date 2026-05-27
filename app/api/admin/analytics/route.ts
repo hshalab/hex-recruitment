@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { verifyAdmin, createAdminClient } from '@/lib/admin'
 import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
 
+// Admin queries live data — must not be statically prerendered.
+export const dynamic = 'force-dynamic'
+
 // ============================================================
 // Types
 // ============================================================
