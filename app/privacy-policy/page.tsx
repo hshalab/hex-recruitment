@@ -17,6 +17,7 @@ const sections = [
   { id: 'cookies', label: 'Cookies' },
   { id: 'children', label: "Children's Privacy" },
   { id: 'international', label: 'International Transfers' },
+  { id: 'google-calendar', label: 'Google Calendar Integration' },
   { id: 'changes', label: 'Changes to This Policy' },
   { id: 'contact', label: 'Contact Us' },
 ]
@@ -46,7 +47,7 @@ export default function PrivacyPolicyPage() {
             Back to Home
           </Link>
           <h1 className={styles.heroTitle}>Privacy Policy</h1>
-          <p className={styles.heroDate}>Last updated: February 2026</p>
+          <p className={styles.heroDate}>Last updated: May 2026</p>
         </div>
       </section>
 
@@ -516,10 +517,114 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-          {/* 11. Changes to This Policy */}
-          <section id="changes" className={styles.section}>
+          {/* 11. Google Calendar Integration */}
+          <section id="google-calendar" className={styles.section}>
             <h2 className={styles.sectionTitle}>
               <span className={styles.sectionNumber}>11</span>
+              Google Calendar Integration
+            </h2>
+            <p>
+              Employers can choose to connect their Google Calendar to Thrive so that interview
+              scheduling stays in sync with the rest of their working day. This integration is{' '}
+              <strong>optional</strong> — employers who do not connect their calendar can still use
+              every other Thrive feature.
+            </p>
+
+            <h3 className={styles.subTitle}>What we access and why</h3>
+            <p>
+              When an employer connects their Google Calendar, Thrive requests two OAuth scopes from
+              Google:
+            </p>
+            <ul className={styles.list}>
+              <li>
+                <strong>View all your calendars</strong> (the{' '}
+                <em>calendar.readonly</em> scope) — used to read the employer&apos;s primary calendar
+                identifier and to query free/busy windows so Thrive can show open interview slots and
+                avoid double-booking. Thrive does not read the contents of events on the
+                employer&apos;s calendar, only when the employer is busy.
+              </li>
+              <li>
+                <strong>View and edit events on your calendars</strong> (the{' '}
+                <em>calendar.events</em> scope) — used to create, update, and cancel interview events
+                on the employer&apos;s connected calendar in response to interview-scheduling actions
+                taken inside Thrive.
+              </li>
+            </ul>
+            <p>
+              When an interview is scheduled, Thrive creates a single calendar event on the
+              employer&apos;s calendar and adds the candidate as an attendee. This means the
+              candidate&apos;s email address is sent to Google as part of the event&apos;s attendee
+              metadata, and Google sends the candidate a standard event invitation. Updating or
+              cancelling the interview inside Thrive updates or deletes the corresponding event on
+              the employer&apos;s calendar.
+            </p>
+
+            <h3 className={styles.subTitle}>Limited use of Google user data</h3>
+            <div className={styles.highlightBox}>
+              <p>
+                Thrive&apos;s use and transfer of information received from Google APIs to any other
+                app will adhere to the{' '}
+                <a
+                  href="https://developers.google.com/terms/api-services-user-data-policy"
+                  className={styles.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Google API Services User Data Policy
+                </a>
+                , including the Limited Use requirements.
+              </p>
+            </div>
+            <p>
+              In plain terms: data Thrive receives from Google Calendar — the employer&apos;s
+              free/busy windows, the IDs of events Thrive itself created, and the OAuth tokens
+              granted to Thrive — is used <strong>only</strong> to provide the interview-scheduling
+              feature. We never sell it, never transfer it to third parties except as needed to
+              provide the feature (for example, Google itself necessarily receives the event details
+              when Thrive writes an event on the employer&apos;s calendar), and never use it for
+              advertising, profiling, or training AI/ML models.
+            </p>
+
+            <h3 className={styles.subTitle}>Disconnecting and data deletion</h3>
+            <p>
+              Employers can disconnect their Google Calendar at any time from{' '}
+              <Link href="/settings/availability" className={styles.link}>
+                Settings &gt; Availability
+              </Link>
+              . On disconnect, Thrive immediately deletes the stored Google access token, refresh
+              token, and calendar identifier from our database. After disconnection, Thrive can no
+              longer read free/busy information from, or write events to, the employer&apos;s Google
+              Calendar.
+            </p>
+            <p>Two limitations to be transparent about:</p>
+            <ul className={styles.list}>
+              <li>
+                <strong>Existing interview events are not auto-deleted on disconnect.</strong>{' '}
+                Events that Thrive previously created remain on the employer&apos;s Google Calendar;
+                the employer can delete them manually from Google Calendar if they wish.
+              </li>
+              <li>
+                <strong>Token revocation at Google&apos;s end is a separate step.</strong>{' '}
+                Disconnecting in Thrive removes the tokens from our database but does not call
+                Google&apos;s token-revocation endpoint. Employers can additionally revoke
+                Thrive&apos;s access from their Google Account at{' '}
+                <a
+                  href="https://myaccount.google.com/permissions"
+                  className={styles.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  myaccount.google.com/permissions
+                </a>
+                .
+              </li>
+            </ul>
+          </section>
+
+          {/* 12. Changes to This Policy */}
+          <section id="changes" className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              <span className={styles.sectionNumber}>12</span>
               Changes to This Policy
             </h2>
             <p>
@@ -537,10 +642,10 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-          {/* 12. Contact Us */}
+          {/* 13. Contact Us */}
           <section id="contact" className={styles.section}>
             <h2 className={styles.sectionTitle}>
-              <span className={styles.sectionNumber}>12</span>
+              <span className={styles.sectionNumber}>13</span>
               Contact Us
             </h2>
             <p>

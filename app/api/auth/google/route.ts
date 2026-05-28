@@ -45,7 +45,21 @@ function buildAuthUrl(clientId: string, redirectUri: string, state: string): str
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events',
+    // Narrowest scope pair that still covers every Google Calendar API
+    // call this app makes. calendar.readonly: needed for calendars.get
+    // (callback route, primary calendar id discovery), calendarList.list
+    // (lib/googleCalendar.ts liveness ping), and freebusy.query
+    // (app/api/calendar/slots — busy-window check for slot suggestions).
+    // calendar.events: needed for events.insert/update/delete on the
+    // employer's calendar (book / update-event / cancel routes).
+    // The broader auth/calendar scope (full read/write/share/ACL on every
+    // calendar) was previously requested but never exercised — dropping
+    // it narrows the OAuth consent text Google shows to the employer
+    // from "see, edit, share, and permanently delete all your calendars"
+    // to "view all your calendars" + "view and edit events on your
+    // calendars", which is both more honest and easier to justify in
+    // sensitive-scope verification.
+    scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events',
     access_type: 'offline',
     prompt: 'consent',
     state,
