@@ -133,14 +133,22 @@ export async function handleAuthCallback(
     || (user.user_metadata?.name as string | undefined)
     || (user.email?.split('@')[0] || 'User')
 
-  // New user: stamp role + create profile
-  if (!existingRole) {
-    const admin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { persistSession: false } }
-    )
+  // Service-role admin client lifted out of the !existingRole gate so
+  // both the new-user setup block AND the always-on profile-row upsert
+  // below can use it. The profile-row upsert MUST run for every
+  // callback hit, not just first-time signups — email/password signups
+  // stamp role into user_metadata at signUp time, so they reach this
+  // point with existingRole already set, which used to skip the
+  // profile-row creation entirely (the symptom that produced
+  // gcal=error&reason=no_profile downstream).
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false } }
+  )
 
+  // New user: stamp role, bootstrap subscription row, send welcome email
+  if (!existingRole) {
     // Use admin.auth.admin.updateUserById to stamp role directly in the
     // database. The route-handler client's updateUser() updates metadata
     // but the new values aren't reflected in the session cookie that was
@@ -165,16 +173,11 @@ export async function handleAuthCallback(
     }
 
     if (role === 'employer') {
-      const { error: profileErr } = await admin
-        .from('employer_profiles')
-        .upsert(
-          { user_id: user.id, company_name: companyNameFromEmail(user.email), contact_name: displayName, email: user.email || '' },
-          { onConflict: 'user_id', ignoreDuplicates: false }
-        )
-      if (profileErr) console.error('[auth/callback] employer_profiles upsert failed', profileErr)
-
       // Bootstrap an inactive subscription row — the payment page
       // (/register/employer/payment) will upgrade it after card setup.
+      // The employer_profiles upsert that used to live here has been
+      // moved outside this !existingRole gate; see the always-on upsert
+      // below for the rationale.
       const { error: subErr } = await admin
         .from('employer_subscriptions')
         .upsert(
@@ -182,14 +185,6 @@ export async function handleAuthCallback(
           { onConflict: 'user_id', ignoreDuplicates: true }
         )
       if (subErr) console.error('[auth/callback] employer_subscriptions upsert failed', subErr)
-    } else {
-      const { error: profileErr } = await admin
-        .from('candidate_profiles')
-        .upsert(
-          { user_id: user.id, full_name: displayName, email: user.email || '' },
-          { onConflict: 'user_id', ignoreDuplicates: false }
-        )
-      if (profileErr) console.error('[auth/callback] candidate_profiles upsert failed', profileErr)
     }
 
     // Welcome email
@@ -208,6 +203,42 @@ export async function handleAuthCallback(
         body: JSON.stringify({ to: user.email, type: 'candidate_welcome', data: { candidateName: displayName } }),
       }).catch(() => {})
     }
+  }
+
+  // Defensive profile-row upsert — runs on EVERY callback hit, not just
+  // first-time signups. The bug this guards against:
+  // app/register/employer/page.tsx attempts a client-side upsert
+  // immediately after signUp(), but signUp() returns no session when
+  // email confirmation is required, so the upsert runs as anon, RLS
+  // blocks it, and the error is silently dropped (no { error }
+  // destructure). By the time the user clicks the email link and lands
+  // here, role is already stamped in user_metadata, so the
+  // !existingRole branch above is skipped — leaving the account
+  // permanently profile-row-less. Downstream, Google Calendar OAuth
+  // callback's UPDATE WHERE user_id = state returns zero rows and the
+  // callback redirects to gcal=error&reason=no_profile. The defensive
+  // upsert here closes the gap.
+  //
+  // ignoreDuplicates: true so we never clobber a returning user's
+  // edited row — e.g. an employer who edited their company_name in
+  // Settings shouldn't have it reset to the email-derived default on
+  // their next sign-in.
+  if (role === 'employer') {
+    const { error: profileErr } = await admin
+      .from('employer_profiles')
+      .upsert(
+        { user_id: user.id, company_name: companyNameFromEmail(user.email), contact_name: displayName, email: user.email || '' },
+        { onConflict: 'user_id', ignoreDuplicates: true }
+      )
+    if (profileErr) console.error('[auth/callback] employer_profiles defensive upsert failed', profileErr)
+  } else {
+    const { error: profileErr } = await admin
+      .from('candidate_profiles')
+      .upsert(
+        { user_id: user.id, full_name: displayName, email: user.email || '' },
+        { onConflict: 'user_id', ignoreDuplicates: true }
+      )
+    if (profileErr) console.error('[auth/callback] candidate_profiles defensive upsert failed', profileErr)
   }
 
   // Route decision: employers need a Stripe subscription to reach the

@@ -12,10 +12,19 @@ export async function POST(req: NextRequest) {
 
     const token = crypto.randomUUID()
 
+    // UPSERT (not UPDATE): same defensive shape as the Google OAuth
+    // callback — UPDATE silently returns zero rows when the employer
+    // is missing an employer_profiles row (which can happen for email/
+    // password signups; see lib/authCallback.ts). With UPSERT, the row
+    // is created on the fly if missing and the ics_feed_token is set
+    // either way. Idempotent for returning users — running again just
+    // overwrites ics_feed_token, which is exactly the intent.
     const { error } = await supabaseAdmin
       .from('employer_profiles')
-      .update({ ics_feed_token: token })
-      .eq('user_id', userId)
+      .upsert(
+        { user_id: userId, ics_feed_token: token },
+        { onConflict: 'user_id' }
+      )
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

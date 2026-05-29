@@ -101,26 +101,34 @@ export async function GET(req: NextRequest) {
   const calendarId = calJson.id || 'primary'
 
   // 3. Persist on employer profile. `state` is the employer's Supabase user_id.
-  const { data: updated, error: updateErr } = await supabaseAdmin
+  //
+  // UPSERT (not UPDATE): historically this was UPDATE WHERE user_id = state,
+  // which returned 0 rows for any employer who somehow reached OAuth without
+  // an employer_profiles row already existing — the email/password signup
+  // path can leave the row missing (client-side upsert blocked by RLS
+  // pre-confirm, and lib/authCallback.ts's server-side fallback was gated
+  // by !existingRole, which is never true for email/password signups
+  // because role is stamped into user_metadata at signUp time). The UPDATE
+  // would silently return zero rows updated and emit gcal=error&reason=
+  // no_profile. The UPSERT here creates the row on the fly if it's missing
+  // — calendar connect can no longer fail on missing-row. Idempotent:
+  // running on every reconnect just overwrites the three gcal_* token
+  // columns, which is what we want anyway.
+  const { error: upsertErr } = await supabaseAdmin
     .from('employer_profiles')
-    .update({
-      gcal_access_token: accessToken,
-      gcal_refresh_token: refreshToken,
-      gcal_calendar_id: calendarId,
-    })
-    .eq('user_id', state)
-    .select('user_id, gcal_calendar_id')
+    .upsert(
+      {
+        user_id: state,
+        gcal_access_token: accessToken,
+        gcal_refresh_token: refreshToken,
+        gcal_calendar_id: calendarId,
+      },
+      { onConflict: 'user_id' }
+    )
 
-  if (updateErr) {
-    console.error('[gcal callback] profile update failed', updateErr)
+  if (upsertErr) {
+    console.error('[gcal callback] profile upsert failed', upsertErr)
     return redirectTo(origin, `gcal=error&reason=db_update`)
-  }
-  if (!updated || updated.length === 0) {
-    // The state didn't match any employer_profiles row — probably because
-    // the user hasn't completed employer onboarding yet, or state was
-    // tampered with. Log and surface.
-    console.error('[gcal callback] no employer_profiles row for state', { state })
-    return redirectTo(origin, 'gcal=error&reason=no_profile')
   }
 
   console.log('[gcal callback] success', { userId: state, calendarId })
