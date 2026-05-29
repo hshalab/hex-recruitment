@@ -111,11 +111,37 @@ function toGoogleEventBody(event: GCalEventInput) {
   }
 }
 
+/**
+ * Custom error class for Google Calendar API failures. Carries the HTTP
+ * status and the response body excerpt so callers can decide how to
+ * react (retry, surface to user, record on the booking row, etc.) and
+ * so the stored error message in interview_bookings.gcal_sync_error is
+ * diagnostically useful.
+ *
+ * Pre-existing behaviour: createCalendarEvent/updateCalendarEvent
+ * returned null on any !res.ok and only console.error'd. Callers
+ * silently noticed via `if (gEvent?.id)` and left
+ * interview_bookings.gcal_event_id_employer NULL. That's the same
+ * silent-fail shape as the no_profile bug — it produced UI-says-success
+ * but DB-says-NULL with no diagnostic trail. Now: throw with full
+ * context so the catch block at the call site can record what happened.
+ */
+export class GoogleCalendarApiError extends Error {
+  status: number
+  body: string
+  constructor(operation: string, status: number, body: string) {
+    super(`Google Calendar ${operation} failed: ${status} ${body.slice(0, 500)}`)
+    this.name = 'GoogleCalendarApiError'
+    this.status = status
+    this.body = body
+  }
+}
+
 export async function createCalendarEvent(
   accessToken: string,
   calendarId: string,
   event: GCalEventInput
-): Promise<GCalEventResponse | null> {
+): Promise<GCalEventResponse> {
   const res = await fetch(
     `${GOOGLE_CAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events?sendUpdates=all`,
     {
@@ -130,11 +156,23 @@ export async function createCalendarEvent(
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     console.error('[googleCalendar] createCalendarEvent failed', res.status, text)
-    return null
+    throw new GoogleCalendarApiError('events.insert', res.status, text)
   }
   return (await res.json()) as GCalEventResponse
 }
 
+/**
+ * Updates a Google Calendar event by ID.
+ *
+ * Two different failure modes, deliberately distinguished:
+ * - 404/410: the event no longer exists on Google's side (deleted from
+ *   Google Calendar directly, expired, etc.). Returns null so callers
+ *   can fall through to createCalendarEvent and produce a fresh event.
+ *   This is the "expected, recoverable" case.
+ * - Anything else (401/403/5xx/network): throws GoogleCalendarApiError
+ *   so the caller records the failure on interview_bookings.gcal_sync_error
+ *   rather than silently leaving the row in a bad state.
+ */
 export async function updateCalendarEvent(
   accessToken: string,
   calendarId: string,
@@ -152,10 +190,16 @@ export async function updateCalendarEvent(
       body: JSON.stringify(toGoogleEventBody(event)),
     }
   )
+  if (res.status === 404 || res.status === 410) {
+    // Event no longer exists on Google's side — expected fall-through
+    // to createCalendarEvent. Don't throw; the caller's null check
+    // handles this case explicitly.
+    return null
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     console.error('[googleCalendar] updateCalendarEvent failed', res.status, text)
-    return null
+    throw new GoogleCalendarApiError('events.update', res.status, text)
   }
   return (await res.json()) as GCalEventResponse
 }

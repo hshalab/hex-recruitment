@@ -161,10 +161,25 @@ export async function POST(req: NextRequest) {
     ]
     await supabaseAdmin.from('notifications').insert(notifications)
 
-    // Create Google Calendar event only when the interview is already confirmed
-    // (self-scheduled by candidate). For employer-initiated bookings, the gcal
-    // event is created later when the candidate confirms via the update-event API.
-    if (selfScheduled) try {
+    // Create Google Calendar event at book time for BOTH employer-initiated
+    // and candidate-self-scheduled bookings. Previously this block was gated
+    // on the selfScheduled flag and the gcal event was deferred to candidate
+    // confirmation via update-event — but in practice candidates rarely
+    // triggered that path (every historical interview_bookings row had
+    // gcal_event_id_employer = NULL), so employer-side calendars never
+    // received the event. Now: the event is created immediately on booking,
+    // the candidate is added as an attendee, and Google sends them a
+    // native calendar invite with Yes/Maybe/No RSVP buttons. Thrive's
+    // in-app "Accept" flow at /applications still updates the interview's
+    // status from 'scheduled' to 'confirmed' for the employer-side UX, but
+    // it's now DECOUPLED from gcal event existence.
+    //
+    // gcal sync failures DO NOT fail the booking. The interview is real
+    // and important; the calendar sync is supporting infra. On failure we
+    // record the error to interview_bookings.gcal_sync_error (added by
+    // migration 20260529160000) so it's queryable for retry/diagnosis,
+    // and the booking row still returns success.
+    try {
       const { data: profile } = await supabaseAdmin
         .from('employer_profiles')
         .select('gcal_calendar_id')
@@ -203,10 +218,11 @@ export async function POST(req: NextRequest) {
           }
 
           // Reschedule path: update the existing event. Initial booking path:
-          // create a new event. If the update fails (e.g. the event was
-          // deleted directly in Google Calendar) fall through and create
-          // a fresh one.
-          let gEvent = null as Awaited<ReturnType<typeof createCalendarEvent>>
+          // create a new event. updateCalendarEvent returns null only for the
+          // expected 404/410 "event no longer exists" case — in that case we
+          // fall through to create. Other failures throw and land in the
+          // outer catch block below.
+          let gEvent: Awaited<ReturnType<typeof createCalendarEvent>> | null = null
           if (priorGcalEventId) {
             gEvent = await updateCalendarEvent(accessToken, calendarId, priorGcalEventId, eventPayload)
           }
@@ -217,14 +233,21 @@ export async function POST(req: NextRequest) {
           if (gEvent?.id) {
             await supabaseAdmin
               .from('interview_bookings')
-              .update({ gcal_event_id_employer: gEvent.id })
+              .update({ gcal_event_id_employer: gEvent.id, gcal_sync_error: null })
               .eq('id', booking.id)
           }
         }
       }
-    } catch (err) {
-      // Never block the booking on a calendar sync failure
+    } catch (err: any) {
+      // Calendar sync failed — record on the booking row and continue.
+      // Booking is still considered successful from the caller's view;
+      // the error column is the "needs retry / attention" signal.
+      const errMessage = err?.message || String(err)
       console.error('[calendar/book] gcal sync failed', err)
+      await supabaseAdmin
+        .from('interview_bookings')
+        .update({ gcal_sync_error: errMessage })
+        .eq('id', booking.id)
     }
 
     // Fire-and-forget email to candidate
