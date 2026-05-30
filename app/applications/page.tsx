@@ -367,10 +367,17 @@ export default function MyJobsPage() {
         const interviewTime = interviewRow?.interview_time || ''
         const interviewType = interviewRow?.interview_type || 'in-person'
 
-        // Format date for display
+        // Format date for display. Upgraded fallbacks from '' to explicit
+        // "awaiting scheduling" / "TBC" so any user-visible notification
+        // + email text shows honest copy when called against a row with
+        // NULL date/time (the confirm-without-real-date path is parked
+        // for fix #1c; this fix ensures it never produces blank strings
+        // or "Invalid Date" in the interim). See audit fix #1b
+        // hardening pass.
         const friendlyDate = interviewDate
           ? new Date(interviewDate + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-          : ''
+          : 'awaiting scheduling'
+        const displayTime = interviewTime || 'TBC'
 
         // Send notification to employer
         await supabase
@@ -378,7 +385,7 @@ export default function MyJobsPage() {
           .insert({
             user_id: employerId,
             title: 'Interview Confirmed',
-            message: `${candidateName} has confirmed their interview for ${jobTitle || 'the role'} on ${friendlyDate} at ${interviewTime}`,
+            message: `${candidateName} has confirmed their interview for ${jobTitle || 'the role'} on ${friendlyDate} at ${displayTime}`,
             type: 'application_status_change',
             read: false,
             related_id: interviewRow?.application_id || null,
@@ -398,7 +405,7 @@ export default function MyJobsPage() {
               jobTitle,
               companyName,
               date: friendlyDate,
-              time: interviewTime,
+              time: displayTime,
               interviewType,
             },
           }),
@@ -416,7 +423,7 @@ export default function MyJobsPage() {
               jobTitle,
               companyName,
               date: friendlyDate,
-              time: interviewTime,
+              time: displayTime,
               interviewType,
             },
           }),
