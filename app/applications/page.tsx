@@ -367,10 +367,17 @@ export default function MyJobsPage() {
         const interviewTime = interviewRow?.interview_time || ''
         const interviewType = interviewRow?.interview_type || 'in-person'
 
-        // Format date for display
+        // Format date for display. Upgraded fallbacks from '' to explicit
+        // "awaiting scheduling" / "TBC" so any user-visible notification
+        // + email text shows honest copy when called against a row with
+        // NULL date/time (the confirm-without-real-date path is parked
+        // for fix #1c; this fix ensures it never produces blank strings
+        // or "Invalid Date" in the interim). See audit fix #1b
+        // hardening pass.
         const friendlyDate = interviewDate
           ? new Date(interviewDate + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-          : ''
+          : 'awaiting scheduling'
+        const displayTime = interviewTime || 'TBC'
 
         // Send notification to employer
         await supabase
@@ -378,7 +385,7 @@ export default function MyJobsPage() {
           .insert({
             user_id: employerId,
             title: 'Interview Confirmed',
-            message: `${candidateName} has confirmed their interview for ${jobTitle || 'the role'} on ${friendlyDate} at ${interviewTime}`,
+            message: `${candidateName} has confirmed their interview for ${jobTitle || 'the role'} on ${friendlyDate} at ${displayTime}`,
             type: 'application_status_change',
             read: false,
             related_id: interviewRow?.application_id || null,
@@ -398,7 +405,7 @@ export default function MyJobsPage() {
               jobTitle,
               companyName,
               date: friendlyDate,
-              time: interviewTime,
+              time: displayTime,
               interviewType,
             },
           }),
@@ -416,7 +423,7 @@ export default function MyJobsPage() {
               jobTitle,
               companyName,
               date: friendlyDate,
-              time: interviewTime,
+              time: displayTime,
               interviewType,
             },
           }),
@@ -711,6 +718,17 @@ export default function MyJobsPage() {
                             <div className={styles.interviewCardBody}>
                               {application.interview && application.interview.status !== 'cancelled' ? (
                                 (() => {
+                                  // Gate: pending_selection or NULL date means
+                                  // the candidate hasn't picked a slot yet —
+                                  // render an honest "Awaiting scheduling"
+                                  // line rather than splitting null and
+                                  // crashing (or formatting today's date as
+                                  // a fake "scheduled" interview, the old
+                                  // phantom-placeholder bug). See audit
+                                  // fix #1b.
+                                  if (application.interview.status === 'pending_selection' || !application.interview.interviewDate) {
+                                    return <span className={styles.interviewCardDate}>Awaiting scheduling</span>
+                                  }
                                   const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
                                   const interviewDateObj = new Date(y, m - 1, d)
                                   return <>
@@ -858,21 +876,29 @@ export default function MyJobsPage() {
                             </div>
                           )}
 
-                          {/* Standard interview details (shown when not pending_selection) */}
+                          {/* Standard interview details (shown when not pending_selection).
+                             Defense-in-depth on NULL date: if the row got
+                             this far with a missing date (e.g. an older
+                             phantom that fix #1b doesn't backfill), render
+                             "Awaiting scheduling" rather than splitting
+                             null and crashing. */}
                           {application.interview.status !== 'pending_selection' && (
                             <div className={styles.interviewDetails}>
                               <p className={styles.interviewDate}>
                                 <strong>Date:</strong>{' '}
-                                {(() => {
-                                  const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
-                                  return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
-                                    weekday: 'long',
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric',
-                                  })
-                                })()}{' '}
-                                at {application.interview.interviewTime}
+                                {!application.interview.interviewDate
+                                  ? 'Awaiting scheduling'
+                                  : (() => {
+                                      const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
+                                      return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
+                                        weekday: 'long',
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric',
+                                      })
+                                    })()}{application.interview.interviewDate && application.interview.interviewTime ? (
+                                  <>{' '}at {application.interview.interviewTime}</>
+                                ) : null}
                               </p>
                               <p className={styles.interviewType}>
                                 <strong>Type:</strong>{' '}

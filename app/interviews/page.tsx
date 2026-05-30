@@ -196,15 +196,22 @@ export default function InterviewsPage() {
       }
     })
 
+    // Defence-in-depth: even within the active statuses, exclude rows
+    // with NULL date/time. After fix #1b, those should only exist on
+    // 'pending_selection' rows (excluded by the status filter anyway),
+    // but if a phantom row slipped through with status='scheduled' /
+    // 'confirmed' / 'completed' / 'cancelled' and NULL date/time, the
+    // formatters and sort below would crash. Filtering by status is
+    // the canonical gate; this NULL filter is the safety net.
     const upcomingItems = mapped
-      .filter(i => ['scheduled', 'confirmed'].includes(i.status))
+      .filter(i => ['scheduled', 'confirmed'].includes(i.status) && i.interviewDate && i.interviewTime)
       .sort((a, b) => {
         const dtA = new Date(`${a.interviewDate}T${a.interviewTime}`).getTime()
         const dtB = new Date(`${b.interviewDate}T${b.interviewTime}`).getTime()
         return dtA - dtB
       })
     const pastItems = mapped
-      .filter(i => ['completed', 'cancelled', 'rescheduled'].includes(i.status))
+      .filter(i => ['completed', 'cancelled', 'rescheduled'].includes(i.status) && i.interviewDate)
       .sort((a, b) => b.interviewDate.localeCompare(a.interviewDate))
 
     const initialNotes: Record<string, string> = {}

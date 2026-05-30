@@ -481,9 +481,16 @@ export default function CalendarPage() {
       }
     })
 
-    // Merge interviews that DON'T have a booking row yet
+    // Merge interviews that DON'T have a booking row yet. Skip rows
+    // whose interview_date or interview_time is NULL — those are
+    // pending_selection invitations awaiting candidate scheduling and
+    // have no time-slot to render on the calendar (see audit fix #1b).
+    // The .gte('interview_date', fromStr) filter above also excludes
+    // NULL rows from the SELECT itself, so this is defence-in-depth
+    // against the filter being relaxed in future.
     for (const iv of interviews || []) {
       if (bookedInterviewIds.has(iv.id)) continue
+      if (!iv.interview_date || !iv.interview_time) continue
       const job = iv.jobs ? (Array.isArray(iv.jobs) ? iv.jobs[0] : iv.jobs) : null
       mapped.push({
         id: iv.id,

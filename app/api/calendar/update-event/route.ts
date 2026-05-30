@@ -51,18 +51,34 @@ export async function POST(req: NextRequest) {
 
     const companyName = empProfile?.company_name || 'The employer'
 
-    // Format friendly date for notifications
-    const [y, m, d] = date.split('-').map(Number)
-    const friendlyDate = new Date(y, (m || 1) - 1, d || 1).toLocaleDateString('en-GB', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    })
+    // Format friendly date for notifications. The previous version
+    // unconditionally called `new Date(y, m, d)` even when `date` was
+    // empty / missing — producing the literal string "Invalid Date" in
+    // every downstream notification + email. After fix #1b, an interview
+    // row in pending_selection has NULL date/time on purpose; if a
+    // caller (handleAcceptInterview or NotificationBell) hits this route
+    // for an interview that hasn't been scheduled yet, we now render
+    // honest "awaiting scheduling" / "TBC" copy and skip the gcal sync
+    // block at the bottom. The confirm-without-real-date path itself
+    // is parked for fix #1c; this guard only ensures #1b doesn't
+    // produce Invalid Date anywhere.
+    const hasDate = typeof date === 'string' && date.length > 0
+    const hasTime = typeof time === 'string' && time.length > 0
+    let friendlyDate = 'awaiting scheduling'
+    if (hasDate) {
+      const [y, m, d] = date.split('-').map(Number)
+      friendlyDate = new Date(y, (m || 1) - 1, d || 1).toLocaleDateString('en-GB', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      })
+    }
+    const displayTime = hasTime ? time : 'TBC'
 
     // 1. Notify the candidate about the change
     if (candidateId) {
       await supabaseAdmin.from('notifications').insert({
         user_id: candidateId,
         title: 'Interview Updated',
-        message: `${companyName} has updated your interview for ${jobTitle || 'the role'} to ${friendlyDate} at ${time}. Type: ${typeLabel}.`,
+        message: `${companyName} has updated your interview for ${jobTitle || 'the role'} to ${friendlyDate} at ${displayTime}. Type: ${typeLabel}.`,
         type: 'application_update',
         read: false,
         related_id: applicationId || null,
@@ -84,7 +100,7 @@ export async function POST(req: NextRequest) {
             companyName,
             jobTitle: jobTitle || '',
             date: friendlyDate,
-            time,
+            time: displayTime,
             interviewType: typeLabel,
           },
         }),
@@ -100,7 +116,7 @@ export async function POST(req: NextRequest) {
         candidateName: candidateName || 'Candidate',
         jobId: interview?.job_id || null,
         jobTitle: jobTitle || 'the role',
-        content: `Hi ${candidateName || 'there'}, your interview for ${jobTitle || 'the role'} has been updated to ${friendlyDate} at ${time}. Type: ${typeLabel}.${meetingLink ? ` Meeting link: ${meetingLink}` : ''} Check your email for the updated calendar invite.`,
+        content: `Hi ${candidateName || 'there'}, your interview for ${jobTitle || 'the role'} has been updated to ${friendlyDate} at ${displayTime}. Type: ${typeLabel}.${meetingLink ? ` Meeting link: ${meetingLink}` : ''} Check your email for the updated calendar invite.`,
       }).catch(() => {})
     }
 
@@ -116,7 +132,12 @@ export async function POST(req: NextRequest) {
       .eq('interview_id', interviewId)
       .maybeSingle()
 
-    if (empProfile?.gcal_calendar_id) {
+    if (empProfile?.gcal_calendar_id && hasDate && hasTime) {
+      // Skip the gcal sync entirely if we don't have real date+time —
+      // buildLondonIso('', '') NaNs out and any downstream events.insert
+      // would emit garbage. The candidate-facing notification + email
+      // above already rendered "awaiting scheduling" / "TBC", which is
+      // the right user-visible state when this branch doesn't run.
       try {
         const accessToken = await getValidAccessToken(employerId)
         if (accessToken) {

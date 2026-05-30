@@ -965,6 +965,14 @@ export default function JobApplicationsPage() {
                               return <p key={i} style={{ fontSize: '0.85rem', color: '#334155', margin: '0 0 0.25rem 0' }}>Option {i + 1}: {fd} at {slot.time}</p>
                             })}
                           </div>
+                        ) : (application.interview.status === 'pending_selection' || !application.interview.interviewDate) ? (
+                          // Self-schedule pending case (no proposed_slots, NULL
+                          // date/time until candidate picks via token link)
+                          // OR any defensive NULL-date case. Render an honest
+                          // "Awaiting scheduling" line — see audit fix #1b.
+                          <p className={styles.interviewDate}>
+                            <strong>Status:</strong> Awaiting candidate to pick a time.
+                          </p>
                         ) : (
                           <p className={styles.interviewDate}>
                             <strong>Date:</strong>{' '}

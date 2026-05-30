@@ -1088,9 +1088,16 @@ export default function DashboardPage() {
                 <div className={styles.cardBody}>
                   {upcomingInterviews.map((iv: any) => {
                     const job = Array.isArray(iv.jobs) ? iv.jobs[0] : iv.jobs
-                    const dateStr = new Date(iv.interview_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+                    // The SELECT above filters via .gte('interview_date', todayStr)
+                    // which excludes NULL rows, so iv.interview_date should be
+                    // present here. Defensive in case the query changes — render
+                    // "Awaiting scheduling" rather than "Invalid Date".
+                    // See audit fix #1b.
+                    const dateStr = iv.interview_date
+                      ? new Date(iv.interview_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+                      : 'Awaiting scheduling'
                     const [h, m] = (iv.interview_time || '').split(':').map(Number)
-                    const timeStr = !isNaN(h) ? `${h % 12 || 12}:${String(m || 0).padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}` : iv.interview_time
+                    const timeStr = !isNaN(h) ? `${h % 12 || 12}:${String(m || 0).padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}` : (iv.interview_time || '')
                     const needsAction = iv.status === 'scheduled'
                     return (
                       <div key={iv.id} style={{ padding: '0.625rem 0', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

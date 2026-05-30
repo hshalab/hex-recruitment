@@ -134,9 +134,16 @@ export default function NotificationBell({ className }: NotificationBellProps) {
       const interviewDate = interview?.interview_date || ''
       const interviewTime = interview?.interview_time || ''
       const interviewType = interview?.interview_type || 'in-person'
+      // Honest "awaiting scheduling" / "TBC" fallbacks rather than
+      // empty strings, so any email/notification fired against a
+      // pending_selection or NULL-date interview reads clearly to the
+      // recipient. The confirm-without-real-date path is parked for
+      // fix #1c; this just ensures it doesn't produce blank or
+      // "Invalid Date" strings in the interim.
       const friendlyDate = interviewDate
         ? new Date(interviewDate + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-        : ''
+        : 'awaiting scheduling'
+      const displayTime = interviewTime || 'TBC'
 
       if (interview) {
         await supabase
@@ -175,7 +182,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
             jobTitle,
             companyName,
             date: friendlyDate,
-            time: interviewTime,
+            time: displayTime,
             interviewType,
           },
         }),
