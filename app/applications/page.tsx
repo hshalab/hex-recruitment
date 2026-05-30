@@ -84,23 +84,53 @@ export default function MyJobsPage() {
           .eq('candidate_id', session.user.id)
           .in('status', ['pending_selection', 'scheduled', 'confirmed', 'cancelled'])
 
+        // Deterministic current-interview selection per application.
+        // Previous behaviour: two .forEach() passes with no ordering meant
+        // "last iteration wins" — when more than one interview row exists
+        // for a single application (a phantom-row hygiene problem that
+        // pre-dates this commit; see audit INTERVIEW_AUDIT_2026-05-30.md
+        // bug (b)), the picked row was non-deterministic and frequently
+        // resolved to a stale row with interview_time='00:00:00'. That
+        // stale data then fed both the "Interview Updated" notification
+        // and the employer "Interview Confirmed" email, producing
+        // user-visible date/time corruption.
+        //
+        // New behaviour: explicitly pick the most-recently-created
+        // interview that is NOT cancelled, per application. Falls back
+        // to the most-recently-created cancelled row only if no active
+        // row exists (so the UI can still surface a "Cancelled
+        // Interview" badge for terminal states). Does not depend on
+        // Supabase return order or forEach iteration order.
+        const pickBetter = (existing: any, incoming: any): any => {
+          if (!existing) return incoming
+          const existingCancelled = existing.status === 'cancelled'
+          const incomingCancelled = incoming.status === 'cancelled'
+          // Prefer non-cancelled over cancelled.
+          if (existingCancelled && !incomingCancelled) return incoming
+          if (!existingCancelled && incomingCancelled) return existing
+          // Same cancellation tier — newer created_at wins.
+          return new Date(incoming.created_at) > new Date(existing.created_at)
+            ? incoming
+            : existing
+        }
+
         const interviewMap: Record<string, any> = {}
         if (interviews) {
-          // Map by application_id first
-          interviews.forEach((i: any) => {
+          // Pass 1: match by application_id (the strong link).
+          for (const i of interviews) {
             if (i.application_id && applicationIds.includes(i.application_id)) {
-              interviewMap[i.application_id] = i
+              interviewMap[i.application_id] = pickBetter(interviewMap[i.application_id], i)
             }
-          })
-          // Fallback: map by job_id for any unmatched interviews
-          interviews.forEach((i: any) => {
-            if (!interviewMap[i.application_id]) {
-              const matchingApp = data.find((row: any) => row.job_id === i.job_id)
-              if (matchingApp) {
-                interviewMap[matchingApp.id] = i
-              }
+          }
+          // Pass 2: job_id fallback for interviews not joined to a known
+          // application_id. Uses the same most-recent-non-cancelled rule.
+          for (const i of interviews) {
+            if (i.application_id && applicationIds.includes(i.application_id)) continue
+            const matchingApp = data.find((row: any) => row.job_id === i.job_id)
+            if (matchingApp) {
+              interviewMap[matchingApp.id] = pickBetter(interviewMap[matchingApp.id], i)
             }
-          })
+          }
         }
 
         // Fetch offers for these applications
@@ -293,6 +323,27 @@ export default function MyJobsPage() {
 
   const handleAcceptInterview = async (interviewId: string, employerId: string) => {
     try {
+      // Idempotency guard: if this interview is already 'confirmed' (or
+      // 'cancelled', for that matter), bail without firing the
+      // notification + email + gcal-sync side-effect block. Without
+      // this, a candidate who self-scheduled via the token link AND
+      // then visited /applications and clicked Accept on the same
+      // interview card would re-trigger the entire downstream chain,
+      // producing duplicate "Interview Confirmed" notifications +
+      // emails (audit bug a.2 — see INTERVIEW_AUDIT_2026-05-30.md).
+      // The render guard at the Accept button already gates on
+      // status === 'scheduled', but this server-checked fence catches
+      // any stale-render race (e.g. button-click after a background
+      // status-change but before re-render).
+      const { data: current } = await supabase
+        .from('interviews')
+        .select('status')
+        .eq('id', interviewId)
+        .maybeSingle()
+      if (current?.status === 'confirmed' || current?.status === 'cancelled') {
+        return
+      }
+
       const { error } = await supabase
         .from('interviews')
         .update({ status: 'confirmed' })
