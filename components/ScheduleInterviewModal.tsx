@@ -12,6 +12,48 @@ const INTERVIEW_TYPES = [
 
 type Slot = { date: string; time: string; duration: number }
 
+// Active-interview lookup result. The "one active interview per
+// application" invariant is enforced in every creation path below by
+// branching on this. Active = status IN ('pending_selection',
+// 'scheduled', 'confirmed'). See audit INTERVIEW_AUDIT_2026-05-30.md
+// fix #1c.
+//
+// - 'none': safe to INSERT a fresh interview row.
+// - 'reuse': there is an active row in pending_selection / scheduled.
+//   Caller UPDATEs that row in place to the new desired state — never
+//   INSERTs alongside it. Reuse-in-place is preferred because it can
+//   never momentarily produce two active rows (matters once the
+//   partial UNIQUE index lands in fix #1c-ii).
+// - 'confirmed_blocks': there is an active CONFIRMED row. Confirmed
+//   interviews may have live Google Calendar events + sent emails;
+//   overwriting silently destroys that. Caller surfaces an explicit
+//   error to the employer and bails. Behaviour for confirmed-collision
+//   (block vs. cancel-with-cleanup vs. force-reschedule prompt) is
+//   parked for product decision; this code only ensures no crash and
+//   no duplicate row.
+type ActiveInterviewSlot =
+  | { kind: 'none' }
+  | { kind: 'reuse'; interviewId: string; schedulingToken: string | null }
+  | { kind: 'confirmed_blocks'; interviewId: string }
+
+async function findActiveInterviewSlot(applicationId: string): Promise<ActiveInterviewSlot> {
+  const { data, error } = await supabase
+    .from('interviews')
+    .select('id, status, scheduling_token')
+    .eq('application_id', applicationId)
+    .in('status', ['pending_selection', 'scheduled', 'confirmed'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return { kind: 'none' }
+  if (data.status === 'confirmed') return { kind: 'confirmed_blocks', interviewId: data.id }
+  return { kind: 'reuse', interviewId: data.id, schedulingToken: data.scheduling_token as string | null }
+}
+
+const CONFIRMED_COLLISION_ERROR =
+  'This candidate already has a confirmed interview for this role. Cancel that interview first (from the interview list or the calendar) before scheduling a new one.'
+
 interface ScheduleInterviewModalProps {
   isOpen: boolean
   onClose: () => void
@@ -315,9 +357,39 @@ export default function ScheduleInterviewModal({
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { setError('You must be logged in'); setSubmitting(false); return }
 
-      // First create (or reuse) the interview row so we have an interview_id
-      let interviewId = existingInterviewId || ''
-      if (!interviewId) {
+      // Enforce "one active interview per application" via the shared
+      // helper rather than relying on the caller-passed existingInterviewId
+      // prop alone. The prop is retained for prop-API compat (callers
+      // still pass it when explicitly clicking Reschedule on a known
+      // interview) but the DB lookup is now the source of truth — if
+      // ANY active row exists for this application, we reuse it.
+      const lookup = await findActiveInterviewSlot(applicationId)
+      if (lookup.kind === 'confirmed_blocks') {
+        setError(CONFIRMED_COLLISION_ERROR)
+        setSubmitting(false)
+        return
+      }
+
+      const calendarRowState = {
+        interview_date: selectedSlotObj.date,
+        interview_time: selectedSlotObj.time,
+        duration_minutes: selectedSlotObj.duration,
+        interview_type: interviewType,
+        location_or_link: interviewType === 'video' ? (meetingLink.trim() || interviewTypeLabel) : interviewTypeLabel,
+        notes: notes.trim() || null,
+        status: 'scheduled',
+      }
+
+      let interviewId: string
+      if (lookup.kind === 'reuse') {
+        // Reuse-in-place: UPDATE the active row, do not INSERT alongside.
+        const { error: updErr } = await supabase
+          .from('interviews')
+          .update(calendarRowState)
+          .eq('id', lookup.interviewId)
+        if (updErr) throw updErr
+        interviewId = lookup.interviewId
+      } else {
         const { data: newInterview, error: intErr } = await supabase
           .from('interviews')
           .insert({
@@ -325,32 +397,12 @@ export default function ScheduleInterviewModal({
             job_id: jobId,
             employer_id: session.user.id,
             candidate_id: candidateId,
-            interview_date: selectedSlotObj.date,
-            interview_time: selectedSlotObj.time,
-            duration_minutes: selectedSlotObj.duration,
-            interview_type: interviewType,
-            location_or_link: interviewType === 'video' ? (meetingLink.trim() || interviewTypeLabel) : interviewTypeLabel,
-            notes: notes.trim() || null,
-            status: 'scheduled',
+            ...calendarRowState,
           })
           .select()
           .single()
         if (intErr || !newInterview) throw intErr || new Error('Interview creation failed')
         interviewId = newInterview.id
-      } else {
-        // Reschedule path
-        await supabase
-          .from('interviews')
-          .update({
-            interview_date: selectedSlotObj.date,
-            interview_time: selectedSlotObj.time,
-            duration_minutes: selectedSlotObj.duration,
-            interview_type: interviewType,
-            location_or_link: interviewType === 'video' ? (meetingLink.trim() || interviewTypeLabel) : interviewTypeLabel,
-            notes: notes.trim() || null,
-            status: 'scheduled',
-          })
-          .eq('id', interviewId)
       }
 
       // Book via API
@@ -421,32 +473,64 @@ export default function ScheduleInterviewModal({
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Not authenticated')
 
-      // Create interview row with self-schedule status. date/time stay
-      // NULL because the candidate hasn't picked yet — they're set when
-      // /api/calendar/book runs after the candidate uses the schedule
-      // token. See migration 20260530120000 and audit fix #1b.
-      const { data: newInterview, error: intErr } = await supabase
-        .from('interviews')
-        .insert({
-          application_id: applicationId,
-          job_id: jobId,
-          employer_id: session.user.id,
-          candidate_id: candidateId,
-          interview_date: null,
-          interview_time: null,
-          duration_minutes: availableSlots[0]?.duration || 45,
-          interview_type: interviewType,
-          location_or_link: interviewType === 'video' ? (meetingLink.trim() || 'Video Call') : interviewType === 'in-person' ? 'In-Person' : 'Phone Call',
-          notes: notes.trim() || null,
-          status: 'pending_selection',
-        })
-        .select('id, scheduling_token')
-        .single()
+      // Reuse-in-place pattern (fix #1c): never create a second active
+      // interview for the same application. If one already exists in
+      // pending_selection / scheduled, UPDATE it; if confirmed, surface
+      // a clear error rather than overwrite. The scheduling_token of an
+      // existing pending row is preserved on reuse so any prior invite
+      // link the candidate has remains valid.
+      const lookup = await findActiveInterviewSlot(applicationId)
+      if (lookup.kind === 'confirmed_blocks') {
+        setError(CONFIRMED_COLLISION_ERROR)
+        setSubmitting(false)
+        return
+      }
 
-      if (intErr || !newInterview) throw intErr || new Error('Failed to create interview')
+      // The "fresh self-schedule invite" desired state. interview_date/
+      // time are NULL because the candidate hasn't picked yet (see fix
+      // #1b). proposed_slots is empty by design — self-schedule mode
+      // uses the schedule-token link, not pre-proposed slots.
+      const selfScheduleRowState = {
+        interview_date: null,
+        interview_time: null,
+        duration_minutes: availableSlots[0]?.duration || 45,
+        interview_type: interviewType,
+        location_or_link: interviewType === 'video' ? (meetingLink.trim() || 'Video Call') : interviewType === 'in-person' ? 'In-Person' : 'Phone Call',
+        notes: notes.trim() || null,
+        status: 'pending_selection',
+        proposed_slots: [],
+      }
+
+      let interviewIdForLink: string
+      let schedulingToken: string | null
+
+      if (lookup.kind === 'reuse') {
+        const { error: updErr } = await supabase
+          .from('interviews')
+          .update(selfScheduleRowState)
+          .eq('id', lookup.interviewId)
+        if (updErr) throw updErr
+        interviewIdForLink = lookup.interviewId
+        schedulingToken = lookup.schedulingToken
+      } else {
+        const { data: newInterview, error: intErr } = await supabase
+          .from('interviews')
+          .insert({
+            application_id: applicationId,
+            job_id: jobId,
+            employer_id: session.user.id,
+            candidate_id: candidateId,
+            ...selfScheduleRowState,
+          })
+          .select('id, scheduling_token')
+          .single()
+        if (intErr || !newInterview) throw intErr || new Error('Failed to create interview')
+        interviewIdForLink = newInterview.id
+        schedulingToken = newInterview.scheduling_token as string | null
+      }
 
       const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
-      const scheduleLink = `${siteUrl}/interview/schedule/${newInterview.scheduling_token}`
+      const scheduleLink = `${siteUrl}/interview/schedule/${schedulingToken}`
 
       // Notify candidate with scheduling link
       await supabase.from('notifications').insert({
@@ -457,7 +541,7 @@ export default function ScheduleInterviewModal({
         read: false,
         related_id: applicationId,
         related_type: 'application',
-        link: `/interview/schedule/${newInterview.scheduling_token}`,
+        link: `/interview/schedule/${schedulingToken}`,
       })
 
       // Update application status. stage_entered_at anchors the new
@@ -520,14 +604,22 @@ export default function ScheduleInterviewModal({
         return
       }
 
+      // Reuse-in-place pattern (fix #1c). The previous isReschedule
+      // branch (mark old row 'rescheduled', then INSERT new) had a
+      // momentary two-active-row window if the UPDATE failed silently
+      // — and it relied on the caller passing the right
+      // existingInterviewId. The active-row lookup makes this
+      // automatic: if any active row exists, we UPDATE it in place;
+      // we never INSERT a second active row. isReschedule is still
+      // useful downstream as a UX signal (different copy in the
+      // candidate notification/message), so we keep it derived from
+      // the explicit caller-passed prop.
       const isReschedule = !!existingInterviewId
-
-      if (isReschedule) {
-        const { error: rescheduleError } = await supabase
-          .from('interviews')
-          .update({ status: 'rescheduled' })
-          .eq('id', existingInterviewId)
-        if (rescheduleError) console.error('Error marking old interview as rescheduled:', rescheduleError)
+      const lookup = await findActiveInterviewSlot(applicationId)
+      if (lookup.kind === 'confirmed_blocks') {
+        setError(CONFIRMED_COLLISION_ERROR)
+        setSubmitting(false)
+        return
       }
 
       await supabase
@@ -541,11 +633,7 @@ export default function ScheduleInterviewModal({
       // interview time so we store it directly. See audit fix #1b: storing
       // proposedSlots[0] on a pending_selection row was a softer phantom that
       // would still surface as a "real" date in emails/notifications.
-      await supabase.from('interviews').insert({
-        application_id: applicationId,
-        job_id: jobId,
-        employer_id: session.user.id,
-        candidate_id: candidateId,
+      const manualRowState = {
         interview_date: isMultiSlot ? null : proposedSlots[0].date,
         interview_time: isMultiSlot ? null : proposedSlots[0].time,
         interview_type: interviewType,
@@ -553,7 +641,24 @@ export default function ScheduleInterviewModal({
         notes: notes.trim() || null,
         status: isMultiSlot ? 'pending_selection' : 'scheduled',
         proposed_slots: proposedSlots,
-      })
+      }
+
+      if (lookup.kind === 'reuse') {
+        const { error: updErr } = await supabase
+          .from('interviews')
+          .update(manualRowState)
+          .eq('id', lookup.interviewId)
+        if (updErr) throw updErr
+      } else {
+        const { error: insErr } = await supabase.from('interviews').insert({
+          application_id: applicationId,
+          job_id: jobId,
+          employer_id: session.user.id,
+          candidate_id: candidateId,
+          ...manualRowState,
+        })
+        if (insErr) throw insErr
+      }
 
       const interviewDate = proposedSlots[0].date
       const interviewTime = proposedSlots[0].time
