@@ -421,7 +421,10 @@ export default function ScheduleInterviewModal({
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Not authenticated')
 
-      // Create interview row with self-schedule status
+      // Create interview row with self-schedule status. date/time stay
+      // NULL because the candidate hasn't picked yet — they're set when
+      // /api/calendar/book runs after the candidate uses the schedule
+      // token. See migration 20260530120000 and audit fix #1b.
       const { data: newInterview, error: intErr } = await supabase
         .from('interviews')
         .insert({
@@ -429,8 +432,8 @@ export default function ScheduleInterviewModal({
           job_id: jobId,
           employer_id: session.user.id,
           candidate_id: candidateId,
-          interview_date: new Date().toISOString().slice(0, 10), // placeholder
-          interview_time: '00:00',
+          interview_date: null,
+          interview_time: null,
           duration_minutes: availableSlots[0]?.duration || 45,
           interview_type: interviewType,
           location_or_link: interviewType === 'video' ? (meetingLink.trim() || 'Video Call') : interviewType === 'in-person' ? 'In-Person' : 'Phone Call',
@@ -532,13 +535,19 @@ export default function ScheduleInterviewModal({
         .update({ status: 'interview', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
         .eq('id', applicationId)
 
+      // For multi-slot invitations (status 'pending_selection'), interview_date/
+      // time stay NULL — the candidate hasn't picked yet. proposed_slots holds
+      // the real options. For single-slot ('scheduled'), the slot IS the
+      // interview time so we store it directly. See audit fix #1b: storing
+      // proposedSlots[0] on a pending_selection row was a softer phantom that
+      // would still surface as a "real" date in emails/notifications.
       await supabase.from('interviews').insert({
         application_id: applicationId,
         job_id: jobId,
         employer_id: session.user.id,
         candidate_id: candidateId,
-        interview_date: proposedSlots[0].date,
-        interview_time: proposedSlots[0].time,
+        interview_date: isMultiSlot ? null : proposedSlots[0].date,
+        interview_time: isMultiSlot ? null : proposedSlots[0].time,
         interview_type: interviewType,
         location_or_link: interviewType === 'video' ? (meetingLink.trim() || interviewTypeLabel) : interviewTypeLabel,
         notes: notes.trim() || null,

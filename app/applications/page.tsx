@@ -711,6 +711,17 @@ export default function MyJobsPage() {
                             <div className={styles.interviewCardBody}>
                               {application.interview && application.interview.status !== 'cancelled' ? (
                                 (() => {
+                                  // Gate: pending_selection or NULL date means
+                                  // the candidate hasn't picked a slot yet —
+                                  // render an honest "Awaiting scheduling"
+                                  // line rather than splitting null and
+                                  // crashing (or formatting today's date as
+                                  // a fake "scheduled" interview, the old
+                                  // phantom-placeholder bug). See audit
+                                  // fix #1b.
+                                  if (application.interview.status === 'pending_selection' || !application.interview.interviewDate) {
+                                    return <span className={styles.interviewCardDate}>Awaiting scheduling</span>
+                                  }
                                   const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
                                   const interviewDateObj = new Date(y, m - 1, d)
                                   return <>
@@ -858,21 +869,29 @@ export default function MyJobsPage() {
                             </div>
                           )}
 
-                          {/* Standard interview details (shown when not pending_selection) */}
+                          {/* Standard interview details (shown when not pending_selection).
+                             Defense-in-depth on NULL date: if the row got
+                             this far with a missing date (e.g. an older
+                             phantom that fix #1b doesn't backfill), render
+                             "Awaiting scheduling" rather than splitting
+                             null and crashing. */}
                           {application.interview.status !== 'pending_selection' && (
                             <div className={styles.interviewDetails}>
                               <p className={styles.interviewDate}>
                                 <strong>Date:</strong>{' '}
-                                {(() => {
-                                  const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
-                                  return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
-                                    weekday: 'long',
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric',
-                                  })
-                                })()}{' '}
-                                at {application.interview.interviewTime}
+                                {!application.interview.interviewDate
+                                  ? 'Awaiting scheduling'
+                                  : (() => {
+                                      const [y, m, d] = application.interview.interviewDate.split('-').map(Number)
+                                      return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
+                                        weekday: 'long',
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric',
+                                      })
+                                    })()}{application.interview.interviewDate && application.interview.interviewTime ? (
+                                  <>{' '}at {application.interview.interviewTime}</>
+                                ) : null}
                               </p>
                               <p className={styles.interviewType}>
                                 <strong>Type:</strong>{' '}
