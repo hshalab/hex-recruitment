@@ -104,7 +104,12 @@ export async function POST(req: NextRequest) {
       }).catch(() => {})
     }
 
-    // 4. Sync to Google Calendar — update existing event or create new one
+    // 4. Sync to Google Calendar — update existing event or create new one.
+    // Failures are recorded on interview_bookings.gcal_sync_error (added by
+    // migration 20260529160000) rather than silently swallowed. The route
+    // still returns 200 — this is a sync operation that runs after the
+    // interview's in-DB state has already been updated above, so calendar
+    // failure isn't a blocker for the user-visible change.
     const { data: booking } = await supabaseAdmin
       .from('interview_bookings')
       .select('id, gcal_event_id_employer')
@@ -112,38 +117,57 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (empProfile?.gcal_calendar_id) {
-      const accessToken = await getValidAccessToken(employerId)
-      if (accessToken) {
-        const startIso = buildLondonIso(date, time)
-        const endIso = addMinutesToLondonIso(startIso, dur)
+      try {
+        const accessToken = await getValidAccessToken(employerId)
+        if (accessToken) {
+          const startIso = buildLondonIso(date, time)
+          const endIso = addMinutesToLondonIso(startIso, dur)
 
-        const eventPayload = {
-            summary: `Interview: ${candidateName || 'Candidate'} — ${jobTitle || 'Interview'}`,
-            description: [
-              `Type: ${typeLabel}`,
-              `Candidate: ${candidateName || 'Candidate'}`,
-              ...(meetingLink ? [`Join: ${meetingLink}`] : []),
-              'Managed via Thrive — thrivecareer.co.uk',
-            ].join('\n'),
-            startIso,
-            endIso,
-            attendees: candidateEmail ? [candidateEmail] : [],
+          const eventPayload = {
+              summary: `Interview: ${candidateName || 'Candidate'} — ${jobTitle || 'Interview'}`,
+              description: [
+                `Type: ${typeLabel}`,
+                `Candidate: ${candidateName || 'Candidate'}`,
+                ...(meetingLink ? [`Join: ${meetingLink}`] : []),
+                'Managed via Thrive — thrivecareer.co.uk',
+              ].join('\n'),
+              startIso,
+              endIso,
+              attendees: candidateEmail ? [candidateEmail] : [],
+            }
+
+          // updateCalendarEvent returns null on 404/410 ("event no longer
+          // exists" — expected fall-through to create); throws on other
+          // failures (caught below).
+          let gEvent: Awaited<ReturnType<typeof createCalendarEvent>> | null = null
+          if (booking?.gcal_event_id_employer) {
+            gEvent = await updateCalendarEvent(accessToken, empProfile.gcal_calendar_id, booking.gcal_event_id_employer, eventPayload)
+          }
+          if (!gEvent) {
+            gEvent = await createCalendarEvent(accessToken, empProfile.gcal_calendar_id, eventPayload)
           }
 
-        // Update existing gcal event or create a new one
-        let gEvent = null as any
-        if (booking?.gcal_event_id_employer) {
-          gEvent = await updateCalendarEvent(accessToken, empProfile.gcal_calendar_id, booking.gcal_event_id_employer, eventPayload)
+          if (gEvent?.id && booking?.id && (!booking.gcal_event_id_employer || booking.gcal_event_id_employer !== gEvent.id)) {
+            await supabaseAdmin
+              .from('interview_bookings')
+              .update({ gcal_event_id_employer: gEvent.id, gcal_sync_error: null })
+              .eq('id', booking.id)
+          } else if (gEvent?.id && booking?.id) {
+            // Clear any previously recorded error if the update succeeded
+            // on a row that already had the correct gcal_event_id_employer.
+            await supabaseAdmin
+              .from('interview_bookings')
+              .update({ gcal_sync_error: null })
+              .eq('id', booking.id)
+          }
         }
-        if (!gEvent) {
-          gEvent = await createCalendarEvent(accessToken, empProfile.gcal_calendar_id, eventPayload)
-        }
-
-        // Store the gcal event ID if we created a new one
-        if (gEvent?.id && booking?.id && (!booking.gcal_event_id_employer || booking.gcal_event_id_employer !== gEvent.id)) {
+      } catch (err: any) {
+        const errMessage = err?.message || String(err)
+        console.error('[calendar/update-event] gcal sync failed', err)
+        if (booking?.id) {
           await supabaseAdmin
             .from('interview_bookings')
-            .update({ gcal_event_id_employer: gEvent.id })
+            .update({ gcal_sync_error: errMessage })
             .eq('id', booking.id)
         }
       }

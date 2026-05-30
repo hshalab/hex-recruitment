@@ -1,54 +1,34 @@
 import { emailLayout, ctaButton, BASE_URL } from './layout'
 
+// Signature preserved (notes? + meetingLink? still accepted) so call
+// sites in app/api/email/send/route.ts don't need to change, but the
+// rendered email no longer duplicates the meeting link / notes / dial-in
+// details — those now live in the native Google Calendar invite the
+// candidate also receives. This email is a complementary heads-up:
+// brand presence + confirmation + a pointer to the Google invite to RSVP.
 export function interviewScheduledEmail(
   companyName: string,
   jobTitle: string,
   date: string,
   time: string,
-  notes?: string,
-  meetingLink?: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _notes?: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _meetingLink?: string,
 ): { subject: string; html: string } {
-  const subject = `Interview scheduled with ${companyName}`
+  const subject = `Your ${jobTitle} interview is confirmed`
 
   const html = emailLayout(subject, `
-    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Interview Scheduled</h1>
+    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Interview confirmed</h1>
     <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
-      You have an upcoming interview for the <strong>${jobTitle}</strong> position at <strong>${companyName}</strong>.
+      Your interview for the <strong>${jobTitle}</strong> role at <strong>${companyName}</strong> is confirmed for <strong>${date} at ${time}</strong>.
     </p>
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;background:#f8fafc;border-radius:8px;">
-      <tr>
-        <td style="padding:16px;">
-          <p style="margin:0 0 8px;font-size:14px;color:#64748b;">Company</p>
-          <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#1e293b;">${companyName}</p>
-          <p style="margin:0 0 8px;font-size:14px;color:#64748b;">Position</p>
-          <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#1e293b;">${jobTitle}</p>
-          <p style="margin:0 0 8px;font-size:14px;color:#64748b;">Date</p>
-          <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#1e293b;">${date}</p>
-          <p style="margin:0 0 8px;font-size:14px;color:#64748b;">Time</p>
-          <p style="margin:0;font-size:16px;font-weight:600;color:#1e293b;">${time}</p>
-        </td>
-      </tr>
-    </table>
-    ${meetingLink ? `
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
-      <tr>
-        <td style="text-align:center;">
-          <a href="${meetingLink}" target="_blank" style="display:inline-block;padding:12px 28px;background:#1a73e8;color:white;font-size:15px;font-weight:700;border-radius:8px;text-decoration:none;">
-            🎥 Join Video Call
-          </a>
-        </td>
-      </tr>
-    </table>
-    ` : ''}
-    ${notes ? `
-    <p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#334155;">Notes from the employer</p>
-    <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;background:#f8fafc;padding:12px 16px;border-radius:8px;border-left:3px solid #FFE500;">
-      ${notes}
+    <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+      You'll receive a separate calendar invite from Google with the meeting details and an RSVP option. Please respond to that invite so ${companyName} knows you're attending.
     </p>
-    ` : ''}
-    ${ctaButton('View Messages', `${BASE_URL}/messages`)}
-    <p style="margin:0;font-size:14px;color:#94a3b8;">
-      Good luck with your interview!
+    ${ctaButton('View on Thrive', `${BASE_URL}/applications`)}
+    <p style="margin:24px 0 0;font-size:14px;color:#94a3b8;line-height:1.6;">
+      Good luck — and if anything changes, you can manage your interviews and messages from your Thrive dashboard.
     </p>
   `)
 
