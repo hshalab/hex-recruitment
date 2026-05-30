@@ -99,14 +99,66 @@ export async function getValidAccessToken(employerId: string): Promise<string | 
   return refreshAccessToken(employerId, data.gcal_refresh_token)
 }
 
-function toGoogleEventBody(event: GCalEventInput) {
+function toGoogleEventBody(event: GCalEventInput, calendarId: string) {
   const timeZone = event.timeZone || 'Europe/London'
+
+  // Build the attendees list. Callers pass the candidate (and any other
+  // real guests) in event.attendees. The organizer — the user whose
+  // calendar this event is being inserted into — must ALSO be in the
+  // attendees array, with responseStatus 'accepted'.
+  //
+  // Why: Google's events.insert auto-adds the calendar owner to the
+  // attendees list server-side whenever the request includes any
+  // attendees + sendUpdates=all. The auto-added entry's
+  // responseStatus defaults to 'needsAction', which makes the owner's
+  // own copy of the event show a Yes/Maybe/No RSVP bar — which is
+  // wrong, the organizer can't RSVP to their own event. Explicitly
+  // sending them in the attendees array with responseStatus 'accepted'
+  // overrides the auto-add and suppresses the RSVP prompt.
+  //
+  // Note on `organizer` / `self` fields: per Google's API reference
+  // (https://developers.google.com/workspace/calendar/api/v3/reference/events)
+  // those fields are READ-ONLY on writes — Google sets them server-side
+  // based on which calendar the event is inserted into. The only field
+  // we can usefully set for the organizer is responseStatus.
+  //
+  // calendarId is the employer's Google calendar identifier. In
+  // production it's always the employer's email address (the OAuth
+  // callback at app/api/auth/google/callback fetches /calendars/primary
+  // and stores the returned `id`, which is the user's email). We only
+  // append it as an attendee when it looks like an email — defensive
+  // against the edge case of calendarId being the literal string
+  // "primary", which Google accepts as a calendar reference but would
+  // be rejected as an attendee email.
+  const attendees: Array<{ email: string; responseStatus?: string }> =
+    (event.attendees || []).filter(Boolean).map(email => ({ email }))
+
+  if (calendarId && calendarId.includes('@')) {
+    const alreadyPresent = attendees.some(
+      a => a.email.toLowerCase() === calendarId.toLowerCase(),
+    )
+    if (!alreadyPresent) {
+      attendees.push({ email: calendarId, responseStatus: 'accepted' })
+    } else {
+      // Defensive: if the candidate email canonical-matches the
+      // organizer (rare in production, possible in dev with the same
+      // Google account on both sides of a test schedule), make sure
+      // that entry is marked accepted so the user doesn't see an RSVP
+      // bar on their own calendar.
+      for (const a of attendees) {
+        if (a.email.toLowerCase() === calendarId.toLowerCase()) {
+          a.responseStatus = 'accepted'
+        }
+      }
+    }
+  }
+
   return {
     summary: event.summary,
     description: event.description,
     start: { dateTime: event.startIso, timeZone },
     end: { dateTime: event.endIso, timeZone },
-    attendees: (event.attendees || []).filter(Boolean).map(email => ({ email })),
+    attendees,
     reminders: { useDefault: true },
   }
 }
@@ -150,7 +202,7 @@ export async function createCalendarEvent(
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(toGoogleEventBody(event)),
+      body: JSON.stringify(toGoogleEventBody(event, calendarId)),
     }
   )
   if (!res.ok) {
@@ -187,7 +239,7 @@ export async function updateCalendarEvent(
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(toGoogleEventBody(event)),
+      body: JSON.stringify(toGoogleEventBody(event, calendarId)),
     }
   )
   if (res.status === 404 || res.status === 410) {

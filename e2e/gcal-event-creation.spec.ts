@@ -114,6 +114,23 @@ test.describe('gcal event creation — regression coverage', () => {
       /res\.status\s*===\s*404\s*\|\|\s*res\.status\s*===\s*410/,
     )
 
+    // Organizer must be marked responseStatus 'accepted' so they don't
+    // see a Yes/Maybe/No RSVP bar on their own event. Google auto-adds
+    // the calendar owner to attendees server-side when sendUpdates=all
+    // is set, and the auto-added entry defaults to 'needsAction'. We
+    // override by including the organizer ourselves with 'accepted'.
+    // The implementation lives inside toGoogleEventBody — it injects
+    // the organizer entry when calendarId looks like an email.
+    expect(
+      src,
+      'toGoogleEventBody must inject organizer as responseStatus: accepted',
+    ).toMatch(/responseStatus:\s*['"]accepted['"]/)
+
+    expect(
+      src,
+      'toGoogleEventBody must check calendarId for "@" before treating as email',
+    ).toMatch(/calendarId\.includes\(\s*['"]@['"]\s*\)/)
+
     // The OLD silent-fail pattern: `console.error(...)\n  return null`
     // inside createCalendarEvent on `!res.ok`. We can't easily slice
     // the function body across line-ending variants, but the literal
