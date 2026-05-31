@@ -21,7 +21,7 @@ export async function sendEmail(
   }
 
   try {
-    const { error } = await resend.emails.send({
+    const result = await resend.emails.send({
       from: FROM_ADDRESS,
       to,
       subject,
@@ -29,14 +29,22 @@ export async function sendEmail(
       replyTo,
     })
 
-    if (error) {
-      console.error('[Email] Send failed:', error.message)
-      return { success: false, error: error.message }
+    if (result.error) {
+      // Resend's error has more than just .message — capture name + statusCode
+      // so callers (and the foundingSignup error-surfacing logging in particular)
+      // can tell apart validation errors, domain-unverified, rate limits, etc.
+      const detail = {
+        name: (result.error as any).name,
+        message: result.error.message,
+        statusCode: (result.error as any).statusCode,
+      }
+      console.error('[Email] Send failed:', JSON.stringify(detail))
+      return { success: false, error: JSON.stringify(detail) }
     }
 
     return { success: true }
   } catch (err: any) {
-    console.error('[Email] Unexpected error:', err.message)
-    return { success: false, error: err.message }
+    console.error('[Email] Unexpected error:', err?.message, err?.stack?.slice(0, 300))
+    return { success: false, error: err?.message || 'unknown error' }
   }
 }

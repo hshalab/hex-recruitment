@@ -31,11 +31,30 @@ import { sendEmail } from '@/lib/email'
  *               silently bouncing.
  */
 
-export const FOUNDING_APPROVAL_REVIEWER_EMAIL = 'pauldavies.gbr@gmail.com'
+// Recipient of the founding-cohort approval email. Configurable via
+// env var FOUNDING_ADMIN_EMAIL — defaults to paul@thrivecareer.co.uk
+// (the verified mailbox Paul confirmed receives reliably). Previously
+// hardcoded to pauldavies.gbr@gmail.com; the change unblocks Resend
+// deliverability if the gmail-recipient combo was triggering bounces
+// and lets us swap the reviewer without redeploying.
+function getFoundingAdminEmail(): string {
+  return (process.env.FOUNDING_ADMIN_EMAIL || 'paul@thrivecareer.co.uk').trim()
+}
 
 export type ProvisionResult = {
   status: 'approved' | 'pending' | 'noop_legacy_mode'
   classification: EmailClass | 'unknown'
+  /**
+   * For 'pending' provisions, records what happened when we tried to
+   * email Paul. 'sent' = Resend accepted the send; 'failed' includes
+   * the (stringified) error. Absent on 'approved'/'noop' paths.
+   *
+   * The founding-row write is never blocked by an email failure — the
+   * user is genuinely pending, Paul can still flip them via direct DB
+   * if the email path is broken. But the result is now visible to the
+   * caller so we can surface it.
+   */
+  approvalEmail?: { recipient: string; result: 'sent' | 'failed'; error?: string }
 }
 
 export async function provisionFoundingEmployer({
@@ -108,10 +127,18 @@ export async function provisionFoundingEmployer({
       { onConflict: 'user_id' },
     )
 
-  // Fire-and-forget approval email. If FOUNDING_APPROVAL_SECRET isn't
-  // set, the token helper throws — log it but don't fail the signup
-  // (the user is in pending state; Paul can flip them manually via DB
-  // if the email path is broken).
+  // Approval email — result captured and returned. Email failure does
+  // NOT block the founding-row/profile write: the user is genuinely
+  // pending, Paul can still flip them via direct DB if the email path
+  // is broken. But the result is surfaced (logged + returned) so we
+  // can diagnose Resend issues without Vercel runtime logs.
+  const recipient = getFoundingAdminEmail()
+  let approvalEmail: { recipient: string; result: 'sent' | 'failed'; error?: string } = {
+    recipient,
+    result: 'failed',
+    error: 'unstarted',
+  }
+
   try {
     const approveToken = generateApprovalToken(userId, 'approve')
     const rejectToken = generateApprovalToken(userId, 'reject')
@@ -137,12 +164,22 @@ export async function provisionFoundingEmployer({
         <p style="color:#64748b;font-size:13px">Approve consumes one of the 100 founding spots. Reject locks the account out of founding entitlement. Links are signed with HMAC and expire in 7 days; single-use enforced by approval_status.</p>
       </div>
     `
-    await sendEmail(FOUNDING_APPROVAL_REVIEWER_EMAIL, subject, html, 'noreply@thrivecareer.co.uk')
+    const sendResult = await sendEmail(recipient, subject, html, 'noreply@thrivecareer.co.uk')
+    if (sendResult.success) {
+      approvalEmail = { recipient, result: 'sent' }
+      console.log('[foundingSignup] approval email sent', { recipient, userId })
+    } else {
+      approvalEmail = { recipient, result: 'failed', error: sendResult.error }
+      console.error('[foundingSignup] approval email FAILED', { recipient, userId, error: sendResult.error })
+    }
   } catch (err: any) {
-    console.error('[foundingSignup] approval email send failed', err?.message)
+    // Thrown errors here are typically generateApprovalToken (missing/short
+    // FOUNDING_APPROVAL_SECRET) — log with full detail.
+    approvalEmail = { recipient, result: 'failed', error: err?.message || 'unknown error' }
+    console.error('[foundingSignup] approval email threw', { recipient, userId, error: err?.message, stack: err?.stack?.slice(0, 300) })
   }
 
-  return { status: 'pending', classification }
+  return { status: 'pending', classification, approvalEmail }
 }
 
 function escapeHtml(s: string): string {
