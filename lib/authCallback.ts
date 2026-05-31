@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { FREE_FOUNDING_MODE } from '@/lib/constants/cohort'
-import { calculateFoundingPeriodEnd } from '@/lib/foundingEntitlement'
+import { provisionFoundingEmployer } from '@/lib/foundingSignup'
+import type { EmailClass } from '@/lib/emailDomains'
 
 // Shared OAuth callback logic. Used by:
 // - /auth/callback (email flow — reads role from ?role= query param)
@@ -174,29 +175,6 @@ export async function handleAuthCallback(
       console.log('[auth/callback] step:refreshSession OK')
     }
 
-    if (role === 'employer') {
-      // Bootstrap an employer_subscriptions row. Under FREE_FOUNDING_MODE
-      // the row is stamped tier='free' with a 12-month founding_period
-      // window — no Stripe subscription is created, so subscription_status
-      // stays 'inactive' (honest) and the gate sites consult
-      // isEmployerEntitled() to admit founding rows.
-      // The employer_profiles upsert that used to live here has been
-      // moved outside this !existingRole gate; see the always-on upsert
-      // below for the rationale.
-      const subRow = FREE_FOUNDING_MODE
-        ? {
-            user_id: user.id,
-            subscription_status: 'inactive',
-            subscription_tier: 'free',
-            founding_period_ends_at: calculateFoundingPeriodEnd().toISOString(),
-          }
-        : { user_id: user.id, subscription_status: 'inactive', subscription_tier: 'standard' }
-      const { error: subErr } = await admin
-        .from('employer_subscriptions')
-        .upsert(subRow, { onConflict: 'user_id', ignoreDuplicates: true })
-      if (subErr) console.error('[auth/callback] employer_subscriptions upsert failed', subErr)
-    }
-
     // Welcome email
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
     if (role === 'employer') {
@@ -234,13 +212,51 @@ export async function handleAuthCallback(
   // Settings shouldn't have it reset to the email-derived default on
   // their next sign-in.
   if (role === 'employer') {
-    const { error: profileErr } = await admin
-      .from('employer_profiles')
-      .upsert(
-        { user_id: user.id, company_name: companyNameFromEmail(user.email), contact_name: displayName, email: user.email || '' },
-        { onConflict: 'user_id', ignoreDuplicates: true }
-      )
-    if (profileErr) console.error('[auth/callback] employer_profiles defensive upsert failed', profileErr)
+    // Confirmation-time founding-row provisioning. Runs on EVERY callback
+    // hit (not just !existingRole) because email signups stamp the role
+    // into user_metadata at signUp time, so the user reaches /auth/confirm
+    // with existingRole already set and the new-user gate skips. The
+    // provisioning function is idempotent (upsert with ignoreDuplicates
+    // on the subscription, onConflict on the profile), so re-runs on a
+    // returning user are no-ops.
+    // Under FREE_FOUNDING_MODE this is the FIRST and ONLY place a founding
+    // row is written — form submit no longer creates one. The
+    // classification stamped in user_metadata by /api/auth/employer-signup
+    // decides whether the signup goes straight to approved + founding row,
+    // or sits at approval_status='pending' awaiting manual review. See
+    // lib/foundingSignup.ts for the full branching logic.
+    const companyName = (user.user_metadata?.company_name as string | undefined) || companyNameFromEmail(user.email)
+    const metadataClass = user.user_metadata?.email_domain_class as EmailClass | undefined
+    const siteUrlForProvision = process.env.NEXT_PUBLIC_SITE_URL || origin
+
+    if (FREE_FOUNDING_MODE) {
+      await provisionFoundingEmployer({
+        admin,
+        userId: user.id,
+        email: user.email,
+        companyName,
+        contactName: displayName,
+        metadataClass,
+        siteUrl: siteUrlForProvision,
+      })
+    } else {
+      // Pre-pivot path preserved for the flag-off future.
+      await admin
+        .from('employer_subscriptions')
+        .upsert(
+          { user_id: user.id, subscription_status: 'inactive', subscription_tier: 'standard' },
+          { onConflict: 'user_id', ignoreDuplicates: true },
+        )
+      // Defensive profile upsert (kept for parity with pre-pivot behaviour
+      // that the original code at this site provided).
+      const { error: profileErr } = await admin
+        .from('employer_profiles')
+        .upsert(
+          { user_id: user.id, company_name: companyNameFromEmail(user.email), contact_name: displayName, email: user.email || '' },
+          { onConflict: 'user_id', ignoreDuplicates: true }
+        )
+      if (profileErr) console.error('[auth/callback] employer_profiles defensive upsert failed', profileErr)
+    }
   } else {
     const { error: profileErr } = await admin
       .from('candidate_profiles')
@@ -252,7 +268,9 @@ export async function handleAuthCallback(
   }
 
   // Route decision: under FREE_FOUNDING_MODE the founding cohort gets
-  // dashboard access immediately — no card collection, no Stripe step.
+  // dashboard access immediately — no card collection, no Stripe step —
+  // UNLESS they're sitting at approval_status='pending'/'rejected'/
+  // 'waitlisted', in which case they belong on the under-review page.
   // Pre-pivot behaviour (Stripe required before dashboard) is preserved
   // for when the flag is flipped off.
   // Honor ?next= only for returning users with an existing role —
@@ -262,7 +280,17 @@ export async function handleAuthCallback(
     destination = nextParam
   } else if (role === 'employer') {
     if (FREE_FOUNDING_MODE) {
-      destination = '/employer/dashboard'
+      const { data: profile } = await admin
+        .from('employer_profiles')
+        .select('approval_status')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      const status = profile?.approval_status
+      if (status === 'pending' || status === 'rejected' || status === 'waitlisted') {
+        destination = '/account-under-review'
+      } else {
+        destination = '/employer/dashboard'
+      }
     } else if (!existingRole) {
       destination = '/register/employer/payment'
     } else {

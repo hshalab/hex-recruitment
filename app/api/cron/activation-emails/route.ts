@@ -32,13 +32,16 @@ export async function GET(req: NextRequest) {
   let totalSent = 0
 
   for (const targetDay of ACTIVATION_DAYS) {
-    // Find employers who signed up exactly targetDay days ago
+    // Find employers who signed up exactly targetDay days ago. Filter to
+    // approved + confirmed rows only so an unconfirmed / pending /
+    // rejected signup doesn't get drip emails (Resend-side reputation
+    // risk if those land in spam from abandoned signups).
     const { data: employers, error } = await supabase
       .from('employer_subscriptions')
       .select(`
         user_id,
         created_at,
-        employer_profiles!inner(email, company_name)
+        employer_profiles!inner(email, company_name, approval_status)
       `)
       .eq('subscription_tier', 'free')
 
@@ -48,10 +51,26 @@ export async function GET(req: NextRequest) {
     const matches = employers.filter(emp => {
       const created = new Date(emp.created_at).getTime()
       const daysSince = Math.floor((now - created) / (1000 * 60 * 60 * 24))
-      return daysSince === targetDay
+      if (daysSince !== targetDay) return false
+      const profile = (emp as any).employer_profiles as any
+      // Only send to actually-approved rows (NULL approval_status is the
+      // pre-pivot legacy case which we also accept).
+      const status = profile?.approval_status
+      if (status && status !== 'approved') return false
+      return true
     })
 
+    // Resolve user IDs to confirmed-email status in one batch so an
+    // unconfirmed account never receives activation drip mail.
+    const confirmedIds = new Set<string>()
     for (const emp of matches) {
+      const { data } = await supabase.auth.admin.getUserById((emp as any).user_id)
+      if (data?.user?.email_confirmed_at) confirmedIds.add((emp as any).user_id)
+    }
+
+    for (const emp of matches) {
+      const userId = (emp as any).user_id
+      if (!confirmedIds.has(userId)) continue
       const profile = emp.employer_profiles as any
       const email = profile?.email
       const companyName = profile?.company_name || 'there'

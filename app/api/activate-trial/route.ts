@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { FREE_FOUNDING_MODE } from '@/lib/constants/cohort'
 
 export async function POST(req: NextRequest) {
+  // Under free-founding-mode this endpoint is the entitlement-leak path
+  // the audit flagged: a direct POST would mint a tier='standard',
+  // status='trialing' row that opens the gate without going through the
+  // domain-classification / approval flow. Neuter it with a 410 Gone so
+  // it's auditable and reversible (delete this guard if Stripe is revived).
+  if (FREE_FOUNDING_MODE) {
+    return NextResponse.json(
+      { error: 'This endpoint is disabled under free-founding-mode. Use /register/employer-free.' },
+      { status: 410 },
+    )
+  }
+
   try {
     // Auth check: verify the caller is authenticated
     const authHeader = req.headers.get('authorization')

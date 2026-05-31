@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/job-expiry",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/reap-unconfirmed",
+      "schedule": "0 3 * * *"
     }
   ]
 }

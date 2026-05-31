@@ -1,6 +1,9 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { FREE_FOUNDING_MODE } from '@/lib/constants/cohort'
+import { provisionFoundingEmployer } from '@/lib/foundingSignup'
+import type { EmailClass } from '@/lib/emailDomains'
 
 function getOrigin(req: NextRequest): string {
   const proto = req.headers.get('x-forwarded-proto') || 'https'
@@ -18,6 +21,13 @@ function companyNameFromEmail(email: string | undefined): string {
   return stem.charAt(0).toUpperCase() + stem.slice(1)
 }
 
+// Google OAuth callback for the employer flow. Under free-founding-mode
+// this now mirrors the email-confirmation callback in lib/authCallback.ts:
+//   - business-domain Google account → provision tier='free', land on dashboard
+//   - freemail-domain Google account → approval_status='pending', land on
+//     /account-under-review, approval email sent to Paul
+// Pre-pivot behaviour (force /register/employer/payment) is preserved
+// for when FREE_FOUNDING_MODE flips off.
 export async function GET(request: NextRequest) {
   const origin = getOrigin(request)
   const { searchParams } = new URL(request.url)
@@ -33,11 +43,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login/employer?error=no-code`)
   }
 
-  // Prepare the redirect response FIRST — we'll set cookies on it
-  // so they're included in the 307 redirect. cookies().set() in
-  // Next.js 14 route handlers doesn't propagate to redirect responses.
-  const redirectTo = `${origin}/employer/dashboard`
-  const response = NextResponse.redirect(redirectTo)
+  // Placeholder redirect — final destination is decided below after we
+  // know the approval status.
+  const response = NextResponse.redirect(`${origin}/employer/dashboard`)
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,15 +75,14 @@ export async function GET(request: NextRequest) {
   const user = data.session.user
   const existingRole = user.user_metadata?.role as string | undefined
 
-  console.log('[employer-callback] session ok', { userId: user.id, existingRole })
-
-  // Wrong role
+  // Wrong role on this Google account — bounce to login/employer
   if (existingRole && existingRole !== 'employer') {
     return NextResponse.redirect(`${origin}/login/employer?error=wrong-role&have=${existingRole}`)
   }
 
   const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
   const companyName = companyNameFromEmail(user.email)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
 
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -90,41 +97,74 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  // Always ensure profile + subscription rows exist (handles deleted-and-recreated accounts)
-  await admin.from('employer_profiles').upsert(
-    { user_id: user.id, company_name: companyName, contact_name: displayName, email: user.email || '' },
-    { onConflict: 'user_id', ignoreDuplicates: true }
-  )
-
-  // Check if they've completed payment setup
-  const { data: sub } = await admin
-    .from('employer_subscriptions')
-    .select('stripe_subscription_id')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (sub?.stripe_subscription_id) {
-    // Active subscription — go to dashboard
-    return response
+  // Provision the founding signup under FREE_FOUNDING_MODE. For OAuth
+  // there's no metadataClass stamp (the user didn't go through our
+  // signup route), so provisionFoundingEmployer re-classifies the email.
+  // Returns 'approved' / 'pending' / 'noop_legacy_mode'.
+  let provision: Awaited<ReturnType<typeof provisionFoundingEmployer>> | null = null
+  if (FREE_FOUNDING_MODE) {
+    if (!existingRole) {
+      provision = await provisionFoundingEmployer({
+        admin,
+        userId: user.id,
+        email: user.email,
+        companyName,
+        contactName: displayName,
+        metadataClass: user.user_metadata?.email_domain_class as EmailClass | undefined,
+        siteUrl,
+      })
+    } else {
+      // Returning user — read current approval status to route correctly.
+      const { data: profile } = await admin
+        .from('employer_profiles')
+        .select('approval_status')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      const status = profile?.approval_status
+      if (status === 'pending' || status === 'rejected' || status === 'waitlisted') {
+        const pendingRedirect = NextResponse.redirect(`${origin}/account-under-review`)
+        response.cookies.getAll().forEach(c => pendingRedirect.cookies.set(c))
+        return pendingRedirect
+      }
+    }
+  } else {
+    // Pre-pivot: bootstrap a placeholder subscription row, send to
+    // /register/employer/payment for card collection.
+    if (!existingRole) {
+      await admin.from('employer_profiles').upsert(
+        { user_id: user.id, company_name: companyName, contact_name: displayName, email: user.email || '' },
+        { onConflict: 'user_id', ignoreDuplicates: true },
+      )
+      const { data: sub } = await admin
+        .from('employer_subscriptions')
+        .select('stripe_subscription_id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (!sub?.stripe_subscription_id) {
+        const paymentRedirect = NextResponse.redirect(`${origin}/register/employer/payment`)
+        response.cookies.getAll().forEach(c => paymentRedirect.cookies.set(c))
+        return paymentRedirect
+      }
+    }
   }
 
-  // Only send welcome email for genuinely new employers (not returning unpaid ones)
-  if (!existingRole) {
-    fetch(`${origin}/api/email/send`, {
+  // Welcome email for genuinely new employers
+  if (!existingRole && provision?.status === 'approved') {
+    fetch(`${siteUrl}/api/email/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to: user.email, type: 'welcome', data: { contactName: displayName, companyName } }),
     }).catch(() => {})
   }
 
-  // Employer without subscription → payment page
-  // Copy session cookies from the exchange response so the payment page
-  // can read the authenticated session.
-  const paymentRedirect = NextResponse.redirect(`${origin}/register/employer/payment`)
-  response.cookies.getAll().forEach(cookie => {
-    paymentRedirect.cookies.set(cookie)
-  })
+  // Final destination
+  if (provision?.status === 'pending') {
+    const pendingRedirect = NextResponse.redirect(`${origin}/account-under-review`)
+    response.cookies.getAll().forEach(c => pendingRedirect.cookies.set(c))
+    console.log('[employer-callback] new pending employer → under-review', { userId: user.id })
+    return pendingRedirect
+  }
 
-  console.log('[employer-callback] new employer → payment', { userId: user.id })
-  return paymentRedirect
+  console.log('[employer-callback] employer → dashboard', { userId: user.id, isNew: !existingRole, status: provision?.status })
+  return response
 }

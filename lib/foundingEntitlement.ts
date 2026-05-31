@@ -4,6 +4,13 @@ export type EmployerSubscriptionRow = {
   subscription_status?: string | null
   subscription_tier?: string | null
   founding_period_ends_at?: string | null
+  /**
+   * Optional employer_profiles.approval_status carried via a JOIN. If the
+   * gate caller didn't fetch it, the field is undefined and we treat it
+   * as approved (back-compat with pre-pivot callers). The new gate sites
+   * fetch it via `employer_profiles(approval_status)` relationship.
+   */
+  approval_status?: string | null
 }
 
 /**
@@ -31,7 +38,13 @@ export function isFoundingEntitled(sub: EmployerSubscriptionRow | null | undefin
   if (!sub) return false
   if (sub.subscription_tier !== 'free') return false
   if (!sub.founding_period_ends_at) return false
-  return new Date(sub.founding_period_ends_at).getTime() > Date.now()
+  if (new Date(sub.founding_period_ends_at).getTime() <= Date.now()) return false
+  // approval_status is optional — undefined means the caller didn't fetch
+  // it (pre-pivot callers) and we trust the tier='free' row. When it IS
+  // present, only NULL (legacy) or 'approved' should open the gate.
+  const status = sub.approval_status
+  if (status === 'pending' || status === 'rejected' || status === 'waitlisted') return false
+  return true
 }
 
 /**

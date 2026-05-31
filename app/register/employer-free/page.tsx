@@ -79,66 +79,26 @@ export default function RegisterEmployerFreePage() {
     }
 
     try {
-      // Create auth user
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: contactName,
-            company_name: companyName,
-            role: 'employer',
-          },
-          emailRedirectTo: `${siteUrl}/auth/confirm?role=employer`,
-        },
+      // Server-side signup wrapper enforces the disposable-domain block
+      // and stamps the freemail/business classification into user_metadata
+      // before Supabase creates the auth.users row. See app/api/auth/
+      // employer-signup/route.ts.
+      // Profile + subscription bootstrap rows are NOT written here — they
+      // land in lib/authCallback.ts once email confirmation completes, so
+      // an abandoned signup doesn't consume a founding spot.
+      const res = await fetch('/api/auth/employer-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, companyName, contactName }),
       })
+      const data = await res.json().catch(() => ({}))
 
-      if (authError) {
-        if (authError.message.toLowerCase().includes('already')) {
-          setError('This email is already in use. Try logging in instead.')
-        } else {
-          setError(authError.message)
-        }
+      if (!res.ok) {
+        setError(data?.error || 'Something went wrong. Please try again.')
         return
       }
 
-      // Supabase returns a user with empty identities[] when the email
-      // is already registered (anti-enumeration). Detect this and show
-      // a clear error instead of the misleading "check your email".
-      if (authData.user && (!authData.user.identities || authData.user.identities.length === 0)) {
-        setError('This email is already registered. Try logging in instead, or use "Continue with Google" if you signed up with Google.')
-        return
-      }
-
-      if (authData.user) {
-        // Use server endpoints (service-role client) to bypass RLS —
-        // with email confirmation enabled, the anon client has no session
-        // at this point so direct upserts are silently blocked.
-        await fetch('/api/profile/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: authData.user.id,
-            profile: {
-              company_name: companyName,
-              contact_name: contactName,
-              email,
-            },
-            table: 'employer_profiles',
-          }),
-        }).catch(() => {})
-
-        await fetch('/api/subscription/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: authData.user.id }),
-        }).catch(() => {})
-
-        // After email confirmation, /auth/confirm redirects to
-        // /register/employer/payment for card collection + trial setup.
-        setEmailSent(true)
-      }
+      setEmailSent(true)
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.')
     } finally {
