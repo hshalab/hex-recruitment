@@ -24,6 +24,8 @@ export default function robots(): MetadataRoute.Robots {
           '/saved-jobs',
           '/reactivate-account',
           '/renew-subscription',
+          '/subscribe',
+          '/register/employer/payment',
         ],
       },
     ],
