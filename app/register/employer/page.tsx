@@ -361,12 +361,6 @@ function RegisterEmployerPageContent() {
               Log in here
             </Link>
           </div>
-
-          <div className={styles.links}>
-            <Link href="/subscribe" className={styles.link}>
-              Change subscription plan
-            </Link>
-          </div>
         </div>
       </div>
     </main>
