@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
+import { FREE_FOUNDING_MODE } from '@/lib/constants/cohort'
+import { calculateFoundingPeriodEnd } from '@/lib/foundingEntitlement'
 
 // Shared OAuth callback logic. Used by:
 // - /auth/callback (email flow — reads role from ?role= query param)
@@ -173,17 +175,25 @@ export async function handleAuthCallback(
     }
 
     if (role === 'employer') {
-      // Bootstrap an inactive subscription row — the payment page
-      // (/register/employer/payment) will upgrade it after card setup.
+      // Bootstrap an employer_subscriptions row. Under FREE_FOUNDING_MODE
+      // the row is stamped tier='free' with a 12-month founding_period
+      // window — no Stripe subscription is created, so subscription_status
+      // stays 'inactive' (honest) and the gate sites consult
+      // isEmployerEntitled() to admit founding rows.
       // The employer_profiles upsert that used to live here has been
       // moved outside this !existingRole gate; see the always-on upsert
       // below for the rationale.
+      const subRow = FREE_FOUNDING_MODE
+        ? {
+            user_id: user.id,
+            subscription_status: 'inactive',
+            subscription_tier: 'free',
+            founding_period_ends_at: calculateFoundingPeriodEnd().toISOString(),
+          }
+        : { user_id: user.id, subscription_status: 'inactive', subscription_tier: 'standard' }
       const { error: subErr } = await admin
         .from('employer_subscriptions')
-        .upsert(
-          { user_id: user.id, subscription_status: 'inactive', subscription_tier: 'standard' },
-          { onConflict: 'user_id', ignoreDuplicates: true }
-        )
+        .upsert(subRow, { onConflict: 'user_id', ignoreDuplicates: true })
       if (subErr) console.error('[auth/callback] employer_subscriptions upsert failed', subErr)
     }
 
@@ -241,17 +251,19 @@ export async function handleAuthCallback(
     if (profileErr) console.error('[auth/callback] candidate_profiles defensive upsert failed', profileErr)
   }
 
-  // Route decision: employers need a Stripe subscription to reach the
-  // dashboard. New employers always go to payment; returning employers go
-  // to payment only if they haven't completed card setup.
-  // Honor ?next= only for returning users with an existing role — for
-  // brand-new employers we keep the payment-gate route so they can't
-  // skip Stripe setup via a crafted next= value. Same-origin paths only.
+  // Route decision: under FREE_FOUNDING_MODE the founding cohort gets
+  // dashboard access immediately — no card collection, no Stripe step.
+  // Pre-pivot behaviour (Stripe required before dashboard) is preserved
+  // for when the flag is flipped off.
+  // Honor ?next= only for returning users with an existing role —
+  // same-origin paths only.
   let destination = '/dashboard'
   if (existingRole && nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')) {
     destination = nextParam
   } else if (role === 'employer') {
-    if (!existingRole) {
+    if (FREE_FOUNDING_MODE) {
+      destination = '/employer/dashboard'
+    } else if (!existingRole) {
       destination = '/register/employer/payment'
     } else {
       const checkAdmin = createClient(

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import { supabase } from '@/lib/supabase'
+import { isEmployerEntitled } from '@/lib/foundingEntitlement'
 import styles from './page.module.css'
 import {
   formatRelativeTime,
@@ -227,20 +228,17 @@ export default function MessagesPage() {
         const userId = session.user.id
         if (isMounted.current) setCurrentUserId(userId)
 
-        // Check subscription status for employers
+        // Check subscription status for employers — entitlement is
+        // paying-sub OR in-window founding cohort (lib/foundingEntitlement).
         if (session.user.user_metadata?.role === 'employer') {
           try {
             const { data: subData } = await supabase
               .from('employer_subscriptions')
-              .select('subscription_status')
+              .select('subscription_status, subscription_tier, founding_period_ends_at')
               .eq('user_id', userId)
               .single()
 
-            if (subData && (subData.subscription_status === 'active' || subData.subscription_status === 'trialing')) {
-              if (isMounted.current) setHasSubscription(true)
-            } else {
-              if (isMounted.current) setHasSubscription(false)
-            }
+            if (isMounted.current) setHasSubscription(isEmployerEntitled(subData))
           } catch {
             if (isMounted.current) setHasSubscription(false)
           }

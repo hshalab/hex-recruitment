@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { useJobs } from '@/lib/JobsContext'
 import { getTagsByCategory, TAG_CATEGORIES, getTagCategory, type TagCategory } from '@/lib/jobTags'
 import { categories } from '@/lib/categories'
-import { trialPhraseFormal } from '@/lib/trialUtils'
+import { isEmployerEntitled } from '@/lib/foundingEntitlement'
 import styles from './page.module.css'
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false })
@@ -111,14 +111,16 @@ function PostJobContent() {
       // Check subscription status — do this BEFORE the role check so we
       // can use the subscription record to confirm employer status even if
       // the session metadata is stale (common after Google OAuth).
+      // Entitlement is paying-sub OR in-window founding cohort —
+      // see lib/foundingEntitlement.ts.
       const { data: subData } = await supabase
         .from('employer_subscriptions')
-        .select('subscription_status, subscription_tier')
+        .select('subscription_status, subscription_tier, founding_period_ends_at')
         .eq('user_id', session.user.id)
         .maybeSingle()
 
       const userRole = session.user.user_metadata?.role
-      const hasActiveSub = subData && (subData.subscription_status === 'active' || subData.subscription_status === 'trialing')
+      const hasActiveSub = isEmployerEntitled(subData)
 
       // Accept as employer if: metadata says employer, OR they have an
       // active employer subscription (covers stale session metadata)
@@ -644,10 +646,10 @@ function PostJobContent() {
             <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔒</div>
             <h2 style={{ marginBottom: '1rem' }}>Employer Account Required</h2>
             <p style={{ color: '#666', marginBottom: '2rem' }}>
-              You need an employer subscription to post jobs on Thrive.
+              You need an employer account to post jobs on Thrive.
             </p>
-            <a href="/subscribe" className="btn btn-primary">
-              Start {trialPhraseFormal()}
+            <a href="/register/employer-free" className="btn btn-primary">
+              Sign up for free
             </a>
           </div>
         </div>

@@ -1,4 +1,10 @@
 // Trial pricing configuration
+//
+// These constants describe the dormant 3-month Stripe-backed trial. The
+// active launch model is free-founding-mode (12 months for first 100
+// employers); see lib/constants/cohort.ts and foundingPhraseShort()
+// below. Keep these untouched so the Stripe trial path still reads
+// correctly if FREE_FOUNDING_MODE is ever flipped off.
 export const TRIAL_DURATION_DAYS = 91 // 3-month free trial
 export const EMPLOYER_SUBSCRIPTION_PRICE = 99
 export const JOB_SEEKER_REACTIVATION_PRICE = 1.00
@@ -20,6 +26,18 @@ export function trialPhraseShort(): string {
 }
 export function trialPhraseFormal(): string {
   return `${TRIAL_MONTHS}-month free trial`
+}
+
+// Founding-cohort phrasings. Used by the free-founding-mode surfaces
+// (homepage hero, employer-free signup, waitlist) so they aren't tied to
+// the Stripe-trial constants above. Single source of truth for the 12-month
+// period lives in lib/constants/cohort.ts.
+import { FOUNDING_PERIOD_MONTHS } from '@/lib/constants/cohort'
+export function foundingPhraseShort(): string {
+  return `${FOUNDING_PERIOD_MONTHS} months free`
+}
+export function foundingPhraseFormal(): string {
+  return `${FOUNDING_PERIOD_MONTHS} months free, no card needed`
 }
 
 export type UserType = 'employer' | 'employee'

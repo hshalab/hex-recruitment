@@ -15,10 +15,10 @@ import {
   Award, Heart, Globe, MessageSquare, FileDown, Sliders
 } from 'lucide-react'
 import { Boost } from '@/lib/boostTypes'
+import { isEmployerEntitled } from '@/lib/foundingEntitlement'
 import { scoreAllCandidates } from '@/lib/recommendations'
 import { supabaseJobToJob } from '@/lib/types'
 import { Job } from '@/lib/mockJobs'
-import { trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 type Filters = {
@@ -249,14 +249,16 @@ function CandidatesContent() {
 
       setIsEmployer(true)
 
-      // Check subscription status from employer_subscriptions table
+      // Check subscription status from employer_subscriptions table —
+      // entitlement is paying-sub OR in-window founding cohort
+      // (lib/foundingEntitlement).
       const { data: subData } = await supabase
         .from('employer_subscriptions')
-        .select('subscription_status')
+        .select('subscription_status, subscription_tier, founding_period_ends_at')
         .eq('user_id', session.user.id)
         .single()
 
-      if (subData && (subData.subscription_status === 'active' || subData.subscription_status === 'trialing')) {
+      if (isEmployerEntitled(subData)) {
         setHasSubscription(true)
       } else {
         setHasSubscription(false)
@@ -431,11 +433,11 @@ function CandidatesContent() {
             <div className={styles.accessIcon}>🔒</div>
             <h2>Employer Access Only</h2>
             <p>
-              Only employers with a subscription can browse candidate profiles.
-              Subscribe to access thousands of qualified professionals.
+              Only employers can browse candidate profiles. Sign up free to
+              access thousands of qualified professionals.
             </p>
-            <Link href="/subscribe" className="btn btn-primary">
-              Start {trialPhraseFormal()}
+            <Link href="/register/employer-free" className="btn btn-primary">
+              Sign up for free
             </Link>
           </div>
         </div>

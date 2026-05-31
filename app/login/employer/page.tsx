@@ -8,7 +8,7 @@ import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
-import { trialPhraseShort } from '@/lib/trialUtils'
+import { foundingPhraseShort } from '@/lib/trialUtils'
 import styles from '../page.module.css'
 
 function EmployerLoginPageContent() {
@@ -163,7 +163,7 @@ function EmployerLoginPageContent() {
           <div className={styles.benefits}>
             <h3 className={styles.benefitsTitle}>Employer Benefits</h3>
             <ul className={styles.benefitsList}>
-              <li>{trialPhraseShort()} for first {EMPLOYER_COHORT_CAP} employers</li>
+              <li>{foundingPhraseShort()} for first {EMPLOYER_COHORT_CAP} employers</li>
               <li>Post unlimited jobs</li>
               <li>Search &amp; message candidates</li>
               <li>Full hiring pipeline</li>

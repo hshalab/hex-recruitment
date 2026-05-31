@@ -7,8 +7,7 @@ import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
 import { SUBSCRIPTION_TIERS } from '@/lib/subscription-tiers'
-import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
-import { TRIAL_MONTHS, trialPhraseShort, trialPhraseFormal } from '@/lib/trialUtils'
+import { TRIAL_MONTHS, trialPhraseFormal } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 interface SubscriptionData {
@@ -197,8 +196,8 @@ function SubscriptionContent() {
             from /post-job. Hidden once they're on an active plan. */}
         {cameFromPostJob && !isActive && (
           <div className={styles.contextBanner}>
-            <p className={styles.contextBannerTitle}>Start your trial to post your first job</p>
-            <p className={styles.contextBannerBody}>Pick a plan below — first {EMPLOYER_COHORT_CAP} employers get {trialPhraseShort()}.</p>
+            <p className={styles.contextBannerTitle}>Activate your account to post your first job</p>
+            <p className={styles.contextBannerBody}>Pick a plan below to get started.</p>
           </div>
         )}
 

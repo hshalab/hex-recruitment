@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ThriveMark from '@/components/ThriveMark'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
-import { TRIAL_MONTHS, trialPhraseShort } from '@/lib/trialUtils'
+import { TRIAL_MONTHS, foundingPhraseShort } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 export default function WaitlistPage() {
@@ -85,11 +85,11 @@ function WaitlistContent() {
         )}
 
         {/* Headline */}
-        <h1 className={styles.headline}>{isFull ? 'Join the waitlist' : `Get ${trialPhraseShort()} — before we launch`}</h1>
+        <h1 className={styles.headline}>{isFull ? 'Join the waitlist' : `Get ${foundingPhraseShort()} — before we launch`}</h1>
 
         {/* Subheadline */}
         <p className={styles.subheadline}>
-          Join the waitlist. The first {EMPLOYER_COHORT_CAP} employers on Thrive get {trialPhraseShort()}. No card needed.
+          Join the waitlist. The first {EMPLOYER_COHORT_CAP} employers on Thrive get {foundingPhraseShort()}. No card needed.
         </p>
 
         {/* Spots counter */}

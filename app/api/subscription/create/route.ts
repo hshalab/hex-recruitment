@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Creates a placeholder employer subscription row. The actual Stripe
-// subscription is created by /api/stripe/confirm-trial after the employer
-// saves their card on the payment page. This route is still called by
-// the email-registration flow to bootstrap the row before payment.
+// Bootstraps an employer_subscriptions row at signup. Under
+// FREE_FOUNDING_MODE the row is stamped as tier='free' with a 12-month
+// founding_period_ends_at — no Stripe subscription is created, so
+// subscription_status honestly stays 'inactive'. The gate sites consult
+// founding-cohort signals via isEmployerEntitled().
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { FREE_FOUNDING_MODE } from '@/lib/constants/cohort'
+import { calculateFoundingPeriodEnd } from '@/lib/foundingEntitlement'
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,16 +19,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 })
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('employer_subscriptions')
-      .upsert(
-        {
+    const row = FREE_FOUNDING_MODE
+      ? {
+          user_id: userId,
+          subscription_status: 'inactive',
+          subscription_tier: 'free',
+          founding_period_ends_at: calculateFoundingPeriodEnd().toISOString(),
+        }
+      : {
           user_id: userId,
           subscription_status: 'inactive',
           subscription_tier: 'standard',
-        },
-        { onConflict: 'user_id', ignoreDuplicates: true }
-      )
+        }
+
+    const { data, error } = await supabaseAdmin
+      .from('employer_subscriptions')
+      .upsert(row, { onConflict: 'user_id', ignoreDuplicates: true })
       .select('user_id')
 
     if (error) {

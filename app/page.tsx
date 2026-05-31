@@ -8,12 +8,13 @@ import ThriveMark from '@/components/ThriveMark'
 import { supabase } from '@/lib/supabase'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/constants/brand'
-import { trialPhraseShort } from '@/lib/trialUtils'
+import { foundingPhraseShort } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 export default function Home() {
   const router = useRouter()
   const [authRedirecting, setAuthRedirecting] = useState(false)
+  const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null)
 
   // Redirect logged-in users to their dashboard (non-blocking — page renders immediately)
   useEffect(() => {
@@ -27,6 +28,19 @@ export default function Home() {
       // Supabase unreachable — just show landing page
     })
   }, [router])
+
+  // Live founding-cohort counter. /api/check-spots counts rows with
+  // subscription_tier='free' (the founding marker) and returns
+  // spotsRemaining = EMPLOYER_COHORT_CAP - claimed. Fail-soft: on error
+  // the hero falls back to the static "First N employers" copy.
+  useEffect(() => {
+    fetch('/api/check-spots')
+      .then(r => r.json())
+      .then(d => {
+        if (typeof d?.spotsRemaining === 'number') setSpotsRemaining(d.spotsRemaining)
+      })
+      .catch(() => {})
+  }, [])
 
   // If a logged-in session was found, show minimal UI while redirecting
   if (authRedirecting) {
@@ -104,7 +118,9 @@ export default function Home() {
           </div>
 
           <p className={styles.heroBottomStrip}>
-            First {EMPLOYER_COHORT_CAP} employers get {trialPhraseShort()} · no card needed · always free for candidates
+            {spotsRemaining !== null
+              ? `${spotsRemaining} of ${EMPLOYER_COHORT_CAP} founding spots left · ${foundingPhraseShort()} · no card needed`
+              : `First ${EMPLOYER_COHORT_CAP} employers get ${foundingPhraseShort()} · no card needed · free for candidates to apply`}
           </p>
         </div>
       </section>
@@ -139,7 +155,7 @@ export default function Home() {
       <section className={`${styles.benefits}`}>
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>Everything you need to hire — completely free</h2>
-          <p className={styles.sectionSubtitle}>The first {EMPLOYER_COHORT_CAP} employers get {trialPhraseShort()}. No card. No catch.</p>
+          <p className={styles.sectionSubtitle}>The first {EMPLOYER_COHORT_CAP} employers get {foundingPhraseShort()}. No card. No catch.</p>
           <div className={`${styles.benefitsGrid}`}>
             <div className={styles.benefitCard}>
               <div className={styles.benefitIcon}>
@@ -276,7 +292,6 @@ export default function Home() {
             <Link href="/privacy-policy" className={styles.footerLink}>Privacy Policy</Link>
             <button onClick={() => (window as any).__openCookiePreferences?.()} className={styles.footerLink} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>Cookie Settings</button>
             <Link href="/jobs" className={styles.footerLink}>Browse Jobs</Link>
-            <Link href="/subscribe" className={styles.footerLink}>Employer Plans</Link>
             <a href="mailto:contact@thrivecareer.co.uk" className={styles.footerLink}>Contact Us</a>
           </div>
           <p className={styles.footerCopy}>&copy; 2026 Thrive. All rights reserved.</p>
