@@ -18,6 +18,14 @@ const STRONGER_EMPHASIS_DAYS = 14
 interface StageDurationBadgeProps {
   stageEnteredAt: string
   stageLabel: string
+  /**
+   * Stage accent colour (e.g. '#3b82f6' for Reviewing). When supplied,
+   * the default tier renders as a quiet stage-tinted pill — soft
+   * background, full-saturation text, thin matching border. Without
+   * it (or in the >=7d / >=14d tiers) the original grey/amber visuals
+   * still apply so the urgency cue is preserved.
+   */
+  stageColor?: string
 }
 
 // Date-only days between (UTC midnight semantics) so a card moved at
@@ -37,7 +45,7 @@ function dayDifference(fromIso: string, now: Date = new Date()): number {
   return Math.max(0, days)
 }
 
-export default function StageDurationBadge({ stageEnteredAt, stageLabel }: StageDurationBadgeProps) {
+export default function StageDurationBadge({ stageEnteredAt, stageLabel, stageColor }: StageDurationBadgeProps) {
   const days = dayDifference(stageEnteredAt)
 
   let label: string
@@ -45,10 +53,10 @@ export default function StageDurationBadge({ stageEnteredAt, stageLabel }: Stage
   else if (days === 1) label = `1 day in ${stageLabel}`
   else label = `${days} days in ${stageLabel}`
 
-  // Three tiers. Default → grey neutral. 7+ → soft amber tint, slight
-  // border darkening, label stays the same. 14+ → fuller amber bg,
-  // saturated border, slightly heavier text weight. The progression
-  // is informational; no warning copy, no badge change.
+  // Three tiers. Default → quiet stage-tinted (or neutral grey if no
+  // stage colour supplied). 7+ → soft amber tint. 14+ → fuller amber.
+  // The urgency tiers intentionally override the stage colour so a
+  // stale card still reads stale at a glance across all columns.
   let style: React.CSSProperties
   if (days >= STRONGER_EMPHASIS_DAYS) {
     style = {
@@ -63,6 +71,16 @@ export default function StageDurationBadge({ stageEnteredAt, stageLabel }: Stage
       border: '1px solid #fde68a',
       color: '#854d0e',
       fontWeight: 500,
+    }
+  } else if (stageColor) {
+    // Quiet stage-tinted pill — matches the new design language for
+    // the pipeline. Uses CSS color-mix so the tint stays accessible
+    // against the stage colour regardless of which one it is.
+    style = {
+      background: `color-mix(in srgb, ${stageColor} 12%, transparent)`,
+      border: `1px solid color-mix(in srgb, ${stageColor} 30%, transparent)`,
+      color: stageColor,
+      fontWeight: 600,
     }
   } else {
     style = {

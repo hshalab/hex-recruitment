@@ -490,10 +490,18 @@ export default function PipelinePage() {
             const stageCards = filteredCards.filter(c => c.status === stage.id)
             const isDeclined = stage.id === 'rejected'
             return (
-              <div key={stage.id} className={`${styles.column} ${isDeclined ? styles.columnDeclined : ''}`}>
+              <div
+                key={stage.id}
+                className={`${styles.column} ${isDeclined ? styles.columnDeclined : ''}`}
+                // --rs-accent cascades into the count badge, stage CTA,
+                // and any other quiet stage-tinted element in the column.
+                // Stops us from threading inline colour through every
+                // descendant ref.
+                style={{ ['--rs-accent' as any]: stage.color }}
+              >
                 <div className={styles.columnHeader} style={{ borderTopColor: stage.color }}>
                   <span className={styles.columnTitle}>{stage.label}</span>
-                  <span className={styles.columnCount} style={{ background: stage.color }}>{stageCards.length}</span>
+                  <span className={styles.columnCount}>{stageCards.length}</span>
                 </div>
                 <Droppable droppableId={stage.id} isDropDisabled={isDeclined}>
                   {(provided, snapshot) => (
@@ -645,6 +653,7 @@ export default function PipelinePage() {
                                 <StageDurationBadge
                                   stageEnteredAt={card.stageEnteredAt}
                                   stageLabel={STAGES.find(s => s.id === card.status)?.label || card.status}
+                                  stageColor={STAGES.find(s => s.id === card.status)?.color}
                                 />
                                 <button
                                   type="button"

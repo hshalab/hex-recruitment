@@ -1,27 +1,26 @@
-/* Chat Button */
+/* Chat Button — toned down: smaller, no pulse, subtler shadow.
+   Reads as a quiet assistant entry point, not a brand-band CTA. */
 .chatButton {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background: var(--dark-gray);
+  background: var(--rs-brand-navy, #0f172a);
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
   z-index: var(--z-chatbot);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  animation: pulse 2s infinite;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .chatButton:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
-  animation: none;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.24);
 }
 
 .chatButton.hidden {
@@ -30,30 +29,25 @@
   pointer-events: none;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  }
-  50% {
-    box-shadow: 0 4px 30px rgba(30, 41, 59, 0.6);
-  }
-}
-
 .chatIcon {
-  font-size: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .chatBadge {
   position: absolute;
-  top: -28px;
-  right: -10px;
-  background: var(--dark-gray);
-  color: #FFE500;
+  top: -24px;
+  right: -8px;
+  background: var(--rs-bg-surface, #fff);
+  color: var(--rs-text, #0f172a);
   font-size: 0.7rem;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 12px;
   white-space: nowrap;
+  border: 1px solid var(--rs-border, #e2e8f0);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
   animation: fadeIn 0.3s ease;
 }
 
