@@ -7,12 +7,12 @@
   top: 0;
   left: 0;
   bottom: 0;
-  background: var(--dark-gray);
+  background: var(--rs-nav-bg, #f1f5f9);
   display: flex;
   flex-direction: column;
   z-index: 1100;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid var(--rs-nav-border, #e2e8f0);
 }
 
 /* Spacer pushes content below the navbar */
@@ -33,13 +33,13 @@
   height: 46px;
   padding: 0 14px;
   flex-shrink: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--rs-nav-border, #e2e8f0);
 }
 
 .menuLabel {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--rs-nav-text, #0f172a);
   white-space: nowrap;
   opacity: 1;
   transition: opacity 0.15s;
@@ -68,7 +68,7 @@
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--rs-nav-text-muted, #64748b);
   cursor: pointer;
   flex-shrink: 0;
   transition: color 0.15s, background 0.15s;
@@ -76,8 +76,8 @@
 }
 
 .toggle:hover {
-  color: var(--primary-yellow);
-  background: rgba(255, 255, 255, 0.07);
+  color: var(--rs-nav-text, #0f172a);
+  background: var(--rs-nav-hover-bg, #e2e8f0);
 }
 
 .toggle svg {
@@ -110,7 +110,7 @@
   gap: 12px;
   height: 38px;
   padding: 0 18px;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--rs-nav-text-muted, #64748b);
   text-decoration: none;
   font-size: 0.825rem;
   font-weight: 500;
@@ -120,17 +120,20 @@
 }
 
 .item:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+  background: var(--rs-nav-hover-bg, #e2e8f0);
+  color: var(--rs-nav-text, #0f172a);
 }
 
+/* Active item: brand-yellow tint behind navy text/icon — the yellow
+   reads on the light slate bg without putting yellow on the text. */
 .item.active {
-  background: rgba(255, 229, 0, 0.1);
-  color: var(--primary-yellow);
+  background: var(--rs-nav-active-bg, rgba(255, 229, 0, 0.22));
+  color: var(--rs-nav-text, #0f172a);
+  font-weight: 600;
 }
 
 .item.active .icon svg {
-  stroke: var(--primary-yellow);
+  stroke: var(--rs-nav-text, #0f172a);
 }
 
 /* ---------- Icon ---------- */
@@ -179,8 +182,8 @@
   height: 16px;
   padding: 0 4px;
   border-radius: 8px;
-  background: var(--primary-yellow);
-  color: var(--dark-gray);
+  background: var(--rs-brand-navy, #0f172a);
+  color: #fff;
   font-size: 0.6rem;
   font-weight: 700;
   margin-left: auto;
@@ -228,7 +231,7 @@
 
 .navDivider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--rs-nav-border, #e2e8f0);
   margin: 4px 0;
   flex-shrink: 0;
 }
@@ -247,7 +250,7 @@ button.item {
 .bottom {
   flex-shrink: 0;
   margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--rs-nav-border, #e2e8f0);
   padding: 4px 0;
 }
 

@@ -1,8 +1,12 @@
 :root {
-  /* Brand colour palette — single yellow across the app */
-  --primary-yellow: #FFD700;
-  --hover-yellow: #f5c800;
-  --accent-yellow: #FFF8CC;
+  /* Brand colour palette — single yellow across the app.
+     Source of truth is the email layout (emails/layout.ts) which uses
+     #FFE500. Aligning the website to match — earlier the logo SVG used
+     a duller #FFD23F and the global token was #FFD700, producing three
+     visibly different yellows side by side. */
+  --primary-yellow: #FFE500;
+  --hover-yellow: #e8d100;
+  --accent-yellow: #FFFACD;
   --black: #1a1a1a;
   --dark-gray: #0f172a;
   --text-gray: #6b7280;
@@ -63,7 +67,21 @@
   --rs-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.05);
   --rs-shadow-card-hover: 0 4px 12px rgba(15, 23, 42, 0.08);
   --rs-brand-navy: #0f172a;
-  --rs-brand-yellow: #FFD700;
+  --rs-brand-yellow: #FFE500;
+
+  /* Nav surface tokens (pass 3 — light nav). The top header and the
+     left sidebar both render against these. Previously dark navy fills;
+     flipping to a light slate distinct from white content with navy ink
+     so the nav still reads as a region but stops dominating the page.
+     Apply once at the token level so Header + EmployerSidebar +
+     CandidateSidebar all stay in sync. */
+  --rs-nav-bg: #f1f5f9;          /* slate-100 — clearly distinct from #fff content */
+  --rs-nav-text: #0f172a;        /* slate-900 — primary nav ink */
+  --rs-nav-text-muted: #64748b;  /* slate-500 — inactive icons / dividers */
+  --rs-nav-border: #e2e8f0;      /* slate-200 — hairline between nav and content */
+  --rs-nav-hover-bg: #e2e8f0;    /* slate-200 — hover fill on nav items */
+  --rs-nav-active-bg: rgba(255, 229, 0, 0.22); /* brand-yellow tint for active item — visible on light bg */
+
   /* Stage accents — preserved values from STAGES in app/pipeline/page.tsx
      so the source of truth stays in TS for behaviour and CSS only mirrors. */
   --rs-stage-reviewing:   #3b82f6;
