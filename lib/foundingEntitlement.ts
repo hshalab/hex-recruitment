@@ -39,12 +39,28 @@ export function isFoundingEntitled(sub: EmployerSubscriptionRow | null | undefin
   if (sub.subscription_tier !== 'free') return false
   if (!sub.founding_period_ends_at) return false
   if (new Date(sub.founding_period_ends_at).getTime() <= Date.now()) return false
-  // approval_status is optional — undefined means the caller didn't fetch
-  // it (pre-pivot callers) and we trust the tier='free' row. When it IS
-  // present, only NULL (legacy) or 'approved' should open the gate.
+  // approval_status MUST be present on the row. Earlier code treated
+  // `undefined` (caller didn't include it in the SELECT) as approved —
+  // that let pending freemail users silently pass the gate on
+  // /post-job, /messages, /candidates. Fail closed on undefined so a
+  // missed SELECT can never masquerade as approved again. In dev we
+  // throw so the omission is loud during local development.
+  //
+  // Explicit NULL is preserved as legacy pre-pivot back-compat (9 rows
+  // in prod at the time of writing, all subscription_tier='standard'
+  // so they pass via the active/trialing branch in isEmployerEntitled,
+  // not this one — but the NULL handling stays for any future row that
+  // genuinely sits on the legacy path).
   const status = sub.approval_status
-  if (status === 'pending' || status === 'rejected' || status === 'waitlisted') return false
-  return true
+  if (status === undefined) {
+    if (process.env.NODE_ENV !== 'production') {
+      throw new Error('[isFoundingEntitled] approval_status missing from sub row — caller must SELECT employer_profiles.approval_status and pass it in. Fail-closed in prod.')
+    }
+    return false
+  }
+  if (status === null) return true
+  if (status === 'approved') return true
+  return false
 }
 
 /**
