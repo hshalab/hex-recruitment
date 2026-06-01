@@ -18,18 +18,18 @@
 }
 
 .bellButton:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--rs-nav-hover-bg, #cbd5e1);
 }
 
 .bellIcon {
-  color: var(--white);
+  color: var(--rs-nav-text, #0f172a);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .bellButton:hover .bellIcon {
-  color: var(--primary-yellow);
+  color: var(--rs-nav-text, #0f172a);
 }
 
 /* Tooltip */

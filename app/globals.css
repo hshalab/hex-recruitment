@@ -74,13 +74,16 @@
      flipping to a light slate distinct from white content with navy ink
      so the nav still reads as a region but stops dominating the page.
      Apply once at the token level so Header + EmployerSidebar +
-     CandidateSidebar all stay in sync. */
-  --rs-nav-bg: #f1f5f9;          /* slate-100 — clearly distinct from #fff content */
-  --rs-nav-text: #0f172a;        /* slate-900 — primary nav ink */
-  --rs-nav-text-muted: #64748b;  /* slate-500 — inactive icons / dividers */
-  --rs-nav-border: #e2e8f0;      /* slate-200 — hairline between nav and content */
-  --rs-nav-hover-bg: #e2e8f0;    /* slate-200 — hover fill on nav items */
-  --rs-nav-active-bg: rgba(255, 229, 0, 0.22); /* brand-yellow tint for active item — visible on light bg */
+     CandidateSidebar all stay in sync.
+     First take used slate-100 (#f1f5f9) and read as "still too light,
+     icons wash out" — bumped to slate-200 so the nav has more presence
+     and dark icons stand against it more confidently. */
+  --rs-nav-bg: #e2e8f0;          /* slate-200 — distinct nav region against #fff content */
+  --rs-nav-text: #0f172a;        /* slate-900 — primary nav ink (icons + labels) */
+  --rs-nav-text-muted: #475569;  /* slate-600 — inactive icons / dividers (deeper than slate-500 for icon weight) */
+  --rs-nav-border: #cbd5e1;      /* slate-300 — hairline border, visible against slate-200 bg */
+  --rs-nav-hover-bg: #cbd5e1;    /* slate-300 — hover fill, one step deeper than bg */
+  --rs-nav-active-bg: rgba(255, 229, 0, 0.30); /* brand-yellow tint for active item — slightly stronger on darker bg */
 
   /* Stage accents — preserved values from STAGES in app/pipeline/page.tsx
      so the source of truth stays in TS for behaviour and CSS only mirrors. */
