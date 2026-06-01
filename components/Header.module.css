@@ -1,14 +1,10 @@
 .header {
-  /* Restyle pass 1: light surface with hairline border instead of a
-     heavy dark fill. The whole nav now reads as a thin chrome strip
-     rather than a brand band. Text colour flips to navy as ink. */
-  background: var(--rs-bg-surface, #fff);
+  background: var(--dark-gray);
   padding: 0.625rem 0;
   position: sticky;
   top: 0;
   z-index: var(--z-header);
-  border-bottom: 1px solid var(--rs-border, #e2e8f0);
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+  box-shadow: 0 4px 12px rgba(45, 55, 72, 0.15);
 }
 
 .headerContent {
@@ -20,13 +16,10 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  color: var(--rs-text, #0f172a);
+  gap: 0.9375rem;
+  color: var(--white);
   text-decoration: none;
   transition: opacity 0.2s;
-  /* Headroom for the SVG mark — fixes the wordmark clip when the mark
-     renders at its full 42px height. */
-  line-height: 1.2;
 }
 
 .logo:hover {
@@ -40,13 +33,11 @@
 }
 
 .logoText {
-  /* Drop from 1.625rem to 1.375rem so the wordmark sits comfortably
-     beside the mark inside a 66px nav without clipping descenders. */
-  font-size: 1.375rem;
-  font-weight: 600;
-  letter-spacing: -0.4px;
-  color: var(--rs-text, #0f172a);
-  line-height: 1.1;
+  font-size: 1.625rem;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  color: var(--white);
+  line-height: 1;
 }
 
 .nav {
@@ -56,7 +47,7 @@
 }
 
 .navLink {
-  color: var(--rs-text, #0f172a);
+  color: var(--white);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
@@ -64,19 +55,19 @@
 }
 
 .navLink:hover {
-  color: var(--rs-text-muted, #64748b);
+  color: var(--primary-yellow);
 }
 
-/* Feedback text pill (employer) — outlined navy, not gold-fill. */
+/* Feedback text pill (employer) */
 .feedbackPill {
   display: inline-flex;
   align-items: center;
   padding: 0.3rem 0.875rem;
-  border: 1px solid var(--rs-border-strong, #cbd5e1);
+  border: 1.5px solid #FFE500;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--rs-text, #0f172a);
+  color: #FFE500;
   text-decoration: none;
   white-space: nowrap;
   background: transparent;
@@ -84,8 +75,8 @@
   margin-right: 0.25rem;
 }
 .feedbackPill:hover {
-  background: var(--rs-bg-subtle, #f1f5f9);
-  border-color: var(--rs-text, #0f172a);
+  background: #FFE500;
+  color: #0f172a;
 }
 @media (max-width: 767px) {
   .feedbackPill { display: none; }
@@ -100,7 +91,7 @@
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  color: var(--rs-text, #0f172a);
+  color: var(--white);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -111,14 +102,14 @@
 /* Only apply hover on pointer devices — prevents :hover sticking on mobile after a tap */
 @media (hover: hover) {
   .navIconLink:hover {
-    background: var(--rs-bg-subtle, #f1f5f9);
-    color: var(--rs-text, #0f172a);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--primary-yellow);
   }
 }
 
 .navIconLinkActive {
-  color: var(--rs-text, #0f172a);
-  background: var(--rs-bg-subtle, #f1f5f9);
+  color: var(--primary-yellow);
+  background: rgba(255, 229, 0, 0.12);
 }
 
 .navIcon {
@@ -163,7 +154,7 @@
   }
 }
 
-/* Badge on icon (Messages) — quiet navy dot, not gold fill. */
+/* Badge on icon (Messages) */
 .iconBadge {
   position: absolute;
   top: 2px;
@@ -174,12 +165,12 @@
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  background: var(--rs-text, #0f172a);
-  color: #fff;
+  background: var(--primary-yellow);
+  color: var(--text-dark);
   font-size: 0.65rem;
   font-weight: 700;
   border-radius: 9px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 2px 4px rgba(255, 229, 0, 0.3);
 }
 
 .navLinkWithBadge {
@@ -229,15 +220,15 @@
   margin-right: 8px;
 }
 
-/* Employer Login Button - Outlined navy */
+/* Employer Login Button - Outlined style */
 .employerLoginBtn {
   display: inline-flex;
   align-items: center;
-  padding: 0.55rem 1rem;
-  border: 1px solid var(--rs-border-strong, #cbd5e1);
+  padding: 0.6rem 1rem;
+  border: 2px solid var(--white);
   border-radius: 8px;
   background: transparent;
-  color: var(--rs-text, #0f172a);
+  color: var(--white);
   font-weight: 600;
   font-size: 0.9rem;
   text-decoration: none;
@@ -245,28 +236,30 @@
 }
 
 .employerLoginBtn:hover {
-  background: var(--rs-bg-subtle, #f1f5f9);
-  border-color: var(--rs-text, #0f172a);
+  background: var(--white);
+  color: var(--black);
 }
 
-/* Employee Login Button - one solid primary per view (navy) */
+/* Employee Login Button - Primary yellow style */
 .employeeLoginBtn {
   display: inline-flex;
   align-items: center;
-  padding: 0.55rem 1rem;
-  border: 1px solid var(--rs-brand-navy, #0f172a);
+  padding: 0.6rem 1rem;
+  border: 2px solid var(--primary-yellow);
   border-radius: 8px;
-  background: var(--rs-brand-navy, #0f172a);
-  color: #fff;
+  background: var(--primary-yellow);
+  color: var(--text-dark);
   font-weight: 600;
   font-size: 0.9rem;
   text-decoration: none;
   transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(255, 229, 0, 0.2);
 }
 
 .employeeLoginBtn:hover {
-  background: #1e293b;
-  border-color: #1e293b;
+  background: var(--hover-yellow);
+  border-color: var(--hover-yellow);
+  box-shadow: 0 4px 8px rgba(255, 229, 0, 0.3);
 }
 
 /* Profile Avatar Container */
@@ -287,7 +280,7 @@
 }
 
 .avatarButton:hover {
-  background: var(--rs-bg-subtle, #f1f5f9);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .avatarImage {
@@ -295,31 +288,32 @@
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid var(--rs-border, #e2e8f0);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   transition: border-color 0.2s;
 }
 
 .avatarButton:hover .avatarImage {
-  border-color: var(--rs-text, #0f172a);
+  border-color: var(--primary-yellow);
 }
 
 .avatarFallback {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--rs-bg-subtle, #f1f5f9);
-  color: var(--rs-text, #0f172a);
+  background: var(--white);
+  color: #FFE500;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.85rem;
   font-weight: 700;
-  border: 1.5px solid var(--rs-border, #e2e8f0);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   transition: all 0.2s;
 }
 
 .avatarButton:hover .avatarFallback {
-  border-color: var(--rs-text, #0f172a);
+  border-color: var(--primary-yellow);
+  box-shadow: 0 2px 8px rgba(255, 229, 0, 0.3);
 }
 
 /* Square avatar for employer company logos */
@@ -328,14 +322,14 @@
 }
 
 .avatarDropdownIcon {
-  color: var(--rs-text-muted, #64748b);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.7rem;
   margin-left: -0.125rem;
   transition: transform 0.2s;
 }
 
 .avatarButton:hover .avatarDropdownIcon {
-  color: var(--rs-text, #0f172a);
+  color: var(--primary-yellow);
 }
 
 /* Profile Dropdown Menu */
