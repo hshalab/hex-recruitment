@@ -80,6 +80,35 @@ function EmployerLoginPageContent() {
       localStorage.removeItem('hex_prev_volatile')
     }
 
+    // Bridge the just-minted session into the @supabase/ssr cookies so
+    // the server-side employer-layout guard sees the session on the
+    // next navigation. signInWithPassword only writes localStorage —
+    // without this POST the layout's getUser() returns null and bounces
+    // back to /login/employer, causing an infinite client↔server loop.
+    // AWAIT before navigating: the dashboard request must not fire
+    // before the cookies are set on the response.
+    try {
+      const bridgeRes = await fetch('/api/auth/set-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_token: data.session?.access_token,
+          refresh_token: data.session?.refresh_token,
+        }),
+      })
+      if (!bridgeRes.ok) {
+        setError('Could not establish session. Please try again.')
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
+      }
+    } catch {
+      setError('Could not establish session. Please try again.')
+      await supabase.auth.signOut()
+      setLoading(false)
+      return
+    }
+
     router.push('/employer/dashboard')
   }
 
