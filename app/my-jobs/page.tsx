@@ -960,57 +960,75 @@ function MyJobsContent() {
                           }
                         }}
                       >
-                        {/* Logo column: recruiter accounts manage multiple
-                            companies and need the brand glyph to scan the
-                            list; single-company employers don't. */}
-                        {isRecruiter && (
-                          <CompanyLogo
-                            src={job.companyLogo}
-                            alt={job.company}
-                            className={styles.rowLogo}
-                          />
-                        )}
-                        <h3 className={styles.rowTitle}>{job.title}</h3>
-                        {job.venue && (
-                          <>
-                            <span className={styles.fieldSep} aria-hidden="true">—</span>
-                            <span className={styles.rowVenue}>{job.venue}</span>
-                          </>
-                        )}
-                        <span className={styles.fieldSep} aria-hidden="true">—</span>
-                        <span className={styles.rowLocation}>{job.location}</span>
-                        {interviewMeta && (
-                          <>
-                            <span className={styles.fieldSep} aria-hidden="true">—</span>
-                            <span className={styles.rowInterview}>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span>
-                          </>
-                        )}
-                        {job.hiredCandidate && (
-                          <>
-                            <span className={styles.fieldSep} aria-hidden="true">—</span>
-                            <span className={styles.rowHired}>✓ Hired {job.hiredCandidate.name}</span>
-                          </>
-                        )}
-                        <span className={`${styles.statusPill} ${statusClass}`}>{status.label}</span>
-                        {/* Applications: emphasised clickable pill — the
-                            primary scan/act target on this page. Phase 1
-                            stub: keeps the existing row goToApps target,
-                            no new handler wired. */}
-                        <button
-                          type="button"
-                          className={styles.applicationsPill}
-                          onClick={(e) => { e.stopPropagation(); goToApps() }}
-                          aria-label={`${job.applicationCount} ${job.applicationCount === 1 ? 'application' : 'applications'}`}
-                        >
-                          <strong>{job.applicationCount}</strong>
-                          {' '}
-                          <span className={styles.appCountWord}>
-                            {job.applicationCount === 1 ? 'application' : 'applications'}
-                          </span>
-                          <span className={styles.appCountWordShort}>apps</span>
-                          <span className={styles.applicationsPillArrow} aria-hidden="true">→</span>
-                        </button>
-                        {renderKebab(job, isBoosted)}
+                        {/* Left cluster — content fields pack tightly with
+                            the em-dash separators sitting between them. No
+                            justify-content slack distribution at row level,
+                            so an absent logo doesn't leave an empty gap. */}
+                        <div className={styles.rowMain}>
+                          {/* Logo column: recruiter accounts manage multiple
+                              companies and need the brand glyph to scan the
+                              list; single-company employers don't. When
+                              hidden, NO space is reserved and no separator
+                              dangles. */}
+                          {isRecruiter && (
+                            <CompanyLogo
+                              src={job.companyLogo}
+                              alt={job.company}
+                              className={styles.rowLogo}
+                            />
+                          )}
+                          <h3 className={styles.rowTitle}>{job.title}</h3>
+                          {job.venue && (
+                            <>
+                              <span className={styles.fieldSep} aria-hidden="true">—</span>
+                              <span className={styles.rowVenue}>{job.venue}</span>
+                            </>
+                          )}
+                          {job.location && (
+                            <>
+                              <span className={styles.fieldSep} aria-hidden="true">—</span>
+                              <span className={styles.rowLocation}>{job.location}</span>
+                            </>
+                          )}
+                          {interviewMeta && (
+                            <>
+                              <span className={styles.fieldSep} aria-hidden="true">—</span>
+                              <span className={styles.rowInterview}>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span>
+                            </>
+                          )}
+                          {job.hiredCandidate && (
+                            <>
+                              <span className={styles.fieldSep} aria-hidden="true">—</span>
+                              <span className={styles.rowHired}>✓ Hired {job.hiredCandidate.name}</span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Right cluster — status, applications pill, kebab.
+                            Fixed-width side of the row so every row's right
+                            edge lines up regardless of left-side content. */}
+                        <div className={styles.rowAside}>
+                          <span className={`${styles.statusPill} ${statusClass}`}>{status.label}</span>
+                          {/* Applications pill: emphasised clickable
+                              secondary action — quiet blue accent (not
+                              yellow), keeping the single solid-yellow
+                              primary CTA (+ Post New Job) uncompeted-with. */}
+                          <button
+                            type="button"
+                            className={styles.applicationsPill}
+                            onClick={(e) => { e.stopPropagation(); goToApps() }}
+                            aria-label={`${job.applicationCount} ${job.applicationCount === 1 ? 'application' : 'applications'}`}
+                          >
+                            <strong>{job.applicationCount}</strong>
+                            {' '}
+                            <span className={styles.appCountWord}>
+                              {job.applicationCount === 1 ? 'application' : 'applications'}
+                            </span>
+                            <span className={styles.appCountWordShort}>apps</span>
+                            <span className={styles.applicationsPillArrow} aria-hidden="true">→</span>
+                          </button>
+                          {renderKebab(job, isBoosted)}
+                        </div>
                       </div>
                     )
                   })}
