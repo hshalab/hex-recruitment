@@ -353,7 +353,7 @@ export default function Header() {
               window.dispatchEvent(new CustomEvent('open-thrive-chatbot'))
             }}
           >
-            <Bot className={styles.dropdownIcon} size={20} strokeWidth={2} />
+            <Bot className={styles.dropdownIcon} size={20} color="#FFE500" strokeWidth={2} />
             Ask Thrive
           </button>
           <div className={styles.dropdownDivider} />

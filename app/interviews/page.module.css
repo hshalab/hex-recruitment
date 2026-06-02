@@ -29,50 +29,53 @@
 
 /* ─── Filter Tabs ──────────────────────────────────────────────────────── */
 /* Stats bar removed — these tabs already carry the same counts and we
-   no longer want to duplicate them above. */
+   no longer want to duplicate them above.
+   v2: shrunk + lightened so the row recedes. Inactive tabs are
+   borderless muted text; active is a quiet light-grey chip with a
+   hairline border — not the dark-navy filled tile from v1. */
 .filterTabs {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.875rem;
+  gap: 0.35rem;
+  margin-bottom: 0.875rem;
+  padding-bottom: 0.625rem;
   border-bottom: 1px solid var(--rs-border, var(--border-gray));
 }
 
 .filterTab {
-  padding: 0.35rem 0.8rem;
+  padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 500;
   cursor: pointer;
-  border: 1px solid var(--rs-border-strong, var(--border-gray));
+  border: 1px solid transparent;
   background: transparent;
   color: var(--rs-text-muted, var(--text-gray));
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .filterTab:hover {
-  border-color: var(--rs-text, var(--text-dark));
   color: var(--rs-text, var(--text-dark));
   background: var(--rs-bg-subtle, #f8fafc);
 }
 
 .filterTabActive {
-  background: var(--rs-brand-navy, var(--dark-gray));
-  color: #fff;
-  border-color: var(--rs-brand-navy, var(--dark-gray));
+  background: var(--rs-bg-subtle, #f1f5f9);
+  color: var(--rs-text, var(--text-dark));
+  border-color: var(--rs-border, #e2e8f0);
+  font-weight: 600;
 }
 
 .filterTabActive:hover {
-  background: var(--rs-brand-navy, var(--dark-gray));
-  color: #fff;
-  border-color: var(--rs-brand-navy, var(--dark-gray));
+  background: var(--rs-bg-subtle, #f1f5f9);
+  color: var(--rs-text, var(--text-dark));
+  border-color: var(--rs-border-strong, #cbd5e1);
 }
 
 .filterTabCount {
-  font-size: 0.72rem;
-  font-weight: 700;
-  margin-left: 0.25rem;
-  opacity: 0.7;
+  font-size: 0.68rem;
+  font-weight: 500;
+  margin-left: 0.2rem;
+  opacity: 0.65;
 }
 
 /* ─── Empty State ──────────────────────────────────────────────────────── */
@@ -180,9 +183,28 @@
   color: var(--rs-text-muted, #64748b);
 }
 
+/* Field separator between name / role / date. Em-dash with breathing
+   room reads as three distinct chunks; the v1 faint middot blurred
+   them together. Slightly darker than --rs-border-strong so the
+   separator sits visually but doesn't shout. */
+.fieldSep {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0.4rem;
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: var(--rs-text-soft, #94a3b8);
+  user-select: none;
+}
+
+/* Legacy alias — some inline content still uses metaDot. Map it to
+   the new separator look. */
 .metaDot {
-  font-size: 0.7rem;
-  color: var(--rs-border-strong, #cbd5e1);
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0.4rem;
+  font-size: 0.88rem;
+  color: var(--rs-text-soft, #94a3b8);
 }
 
 /* Right cluster — status pill, modality icon, overflow control. */

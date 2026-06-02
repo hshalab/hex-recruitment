@@ -1,12 +1,8 @@
 :root {
-  /* Brand colour palette — single yellow across the app.
-     Source of truth is the email layout (emails/layout.ts) which uses
-     #FFE500. Aligning the website to match — earlier the logo SVG used
-     a duller #FFD23F and the global token was #FFD700, producing three
-     visibly different yellows side by side. */
-  --primary-yellow: #FFE500;
-  --hover-yellow: #e8d100;
-  --accent-yellow: #FFFACD;
+  /* Brand colour palette — single yellow across the app */
+  --primary-yellow: #FFD700;
+  --hover-yellow: #f5c800;
+  --accent-yellow: #FFF8CC;
   --black: #1a1a1a;
   --dark-gray: #0f172a;
   --text-gray: #6b7280;
@@ -55,6 +51,9 @@
      stage colour as the semantic accent.
      Token names use --rs-* so existing --ds- and --primary-
      tokens can be migrated incrementally without churn.
+     Nav-surface tokens deliberately omitted from this commit —
+     the nav bar is being kept on its current treatment until
+     the design direction is decided.
      ───────────────────────────────────────────── */
   --rs-bg-page: #f8fafc;
   --rs-bg-surface: #ffffff;
@@ -68,22 +67,6 @@
   --rs-shadow-card-hover: 0 4px 12px rgba(15, 23, 42, 0.08);
   --rs-brand-navy: #0f172a;
   --rs-brand-yellow: #FFE500;
-
-  /* Nav surface tokens (pass 3 — light nav). The top header and the
-     left sidebar both render against these. Previously dark navy fills;
-     flipping to a light slate distinct from white content with navy ink
-     so the nav still reads as a region but stops dominating the page.
-     Apply once at the token level so Header + EmployerSidebar +
-     CandidateSidebar all stay in sync.
-     First take used slate-100 (#f1f5f9) and read as "still too light,
-     icons wash out" — bumped to slate-200 so the nav has more presence
-     and dark icons stand against it more confidently. */
-  --rs-nav-bg: #e2e8f0;          /* slate-200 — distinct nav region against #fff content */
-  --rs-nav-text: #0f172a;        /* slate-900 — primary nav ink (icons + labels) */
-  --rs-nav-text-muted: #475569;  /* slate-600 — inactive icons / dividers (deeper than slate-500 for icon weight) */
-  --rs-nav-border: #cbd5e1;      /* slate-300 — hairline border, visible against slate-200 bg */
-  --rs-nav-hover-bg: #cbd5e1;    /* slate-300 — hover fill, one step deeper than bg */
-  --rs-nav-active-bg: rgba(255, 229, 0, 0.30); /* brand-yellow tint for active item — slightly stronger on darker bg */
 
   /* Stage accents — preserved values from STAGES in app/pipeline/page.tsx
      so the source of truth stays in TS for behaviour and CSS only mirrors. */

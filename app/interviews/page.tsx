@@ -520,9 +520,9 @@ export default function InterviewsPage() {
                       >
                         <div className={styles.rowMain}>
                           <span className={styles.candidateName}>{interview.candidateName}</span>
-                          <span className={styles.metaDot}>·</span>
+                          <span className={styles.fieldSep} aria-hidden="true">—</span>
                           <span className={styles.jobTitle}>{interview.jobTitle}</span>
-                          <span className={styles.metaDot}>·</span>
+                          <span className={styles.fieldSep} aria-hidden="true">—</span>
                           <span className={styles.dateTime}>{formatRowDateTime(interview.interviewDate, interview.interviewTime)}</span>
                         </div>
 
