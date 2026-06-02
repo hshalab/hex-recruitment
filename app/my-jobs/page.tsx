@@ -76,6 +76,11 @@ function MyJobsContent() {
   const [myJobsSearch, setMyJobsSearch] = useState('')
   const [myJobsLocationSearch, setMyJobsLocationSearch] = useState('')
   const [openMenuJobId, setOpenMenuJobId] = useState<string | null>(null)
+  // Phase 1: recruiter vs single-company employer drives whether the
+  // per-row company logo shows. Fetched from employer_profiles.is_recruiter
+  // alongside the auth check. Default false (single-company employer →
+  // logo hidden).
+  const [isRecruiter, setIsRecruiter] = useState(false)
 
   // Read filter from URL query param (e.g. /my-jobs?filter=interviewing)
   const filterParam = searchParams.get('filter')
@@ -98,6 +103,16 @@ function MyJobsContent() {
         const company = session.user.user_metadata?.company_name || 'Your Company'
         const employerId = session.user.id
         setCompanyName(company)
+
+        // Recruiter flag — drives the conditional company-logo column on
+        // each row. Multi-client recruiters need to see whose ad is whose;
+        // single-company employers don't.
+        const { data: empProfile } = await supabase
+          .from('employer_profiles')
+          .select('is_recruiter')
+          .eq('user_id', employerId)
+          .maybeSingle()
+        setIsRecruiter(!!empProfile?.is_recruiter)
 
         // Fetch ALL jobs for this employer directly from Supabase (consistent with dashboard)
         const { data: allJobsData } = await supabase
@@ -683,17 +698,24 @@ function MyJobsContent() {
         </button>
         {isOpen && (
           <div className={styles.kebabMenu} role="menu">
+            {/* Every kebab item renders a fixed-width icon slot at the
+                left so labels line up across the menu. The Boost item
+                puts the ⚡ in its slot; everyone else gets an empty
+                slot so their text starts at the same x. */}
             <button type="button" role="menuitem" className={styles.kebabItem}
               onClick={(e) => choose(e, () => router.push(`/post-job?edit=${job.id}`))}>
-              Manage job
+              <span className={styles.kebabItemIcon} aria-hidden="true"></span>
+              <span>Manage job</span>
             </button>
             <button type="button" role="menuitem" className={styles.kebabItem}
               onClick={(e) => choose(e, () => router.push(`/job/${job.id}?from=my-jobs`))}>
-              View public job
+              <span className={styles.kebabItemIcon} aria-hidden="true"></span>
+              <span>View public job</span>
             </button>
             <button type="button" role="menuitem" className={styles.kebabItem}
               onClick={(e) => choose(e, () => router.push(`/employer/analytics/${job.id}`))}>
-              View analytics
+              <span className={styles.kebabItemIcon} aria-hidden="true"></span>
+              <span>View analytics</span>
             </button>
             {/* "Find candidates" kebab item removed: feature pending
                 post-launch GDPR + pricing decision on full-database search.
@@ -701,19 +723,22 @@ function MyJobsContent() {
             {job.status !== 'archived' && job.status !== 'filled' && (
               <button type="button" role="menuitem" className={styles.kebabItem}
                 onClick={(e) => choose(e, () => { setBoostTargetJob(job); setBoostModalOpen(true) })}>
-                ⚡ {isBoosted ? 'Boosted (manage)' : 'Boost this job'}
+                <span className={styles.kebabItemIcon} aria-hidden="true">⚡</span>
+                <span>{isBoosted ? 'Boosted (manage)' : 'Boost this job'}</span>
               </button>
             )}
             {(job.status === 'archived' || job.status === 'filled') && (
               <button type="button" role="menuitem" className={styles.kebabItem}
                 onClick={(e) => choose(e, () => handleReactivateJob(job.id))}>
-                Reactivate
+                <span className={styles.kebabItemIcon} aria-hidden="true"></span>
+                <span>Reactivate</span>
               </button>
             )}
             {job.status === 'archived' && (
               <button type="button" role="menuitem" className={styles.kebabItem}
                 onClick={(e) => choose(e, () => handleRepostJob(job))}>
-                Repost job
+                <span className={styles.kebabItemIcon} aria-hidden="true"></span>
+                <span>Repost job</span>
               </button>
             )}
           </div>
@@ -835,70 +860,9 @@ function MyJobsContent() {
             </div>
           ) : (
             <>
-              {activeTab === 'interviewing' ? (
-                <div className={styles.stats}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.todayInterviews}</span>
-                    <span className={styles.statLabel}>Today</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.thisWeekInterviews}</span>
-                    <span className={styles.statLabel}>This Week</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.pendingConfirmation}</span>
-                    <span className={styles.statLabel}>Pending Confirmation</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.completedInterviews}</span>
-                    <span className={styles.statLabel}>Completed</span>
-                  </div>
-                </div>
-              ) : activeTab === 'hired' ? (
-                <div className={styles.stats}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.hiredCandidates}</span>
-                    <span className={styles.statLabel}>Candidates Hired</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.filtered.length}</span>
-                    <span className={styles.statLabel}>Jobs Filled</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.acceptedOffers}</span>
-                    <span className={styles.statLabel}>Offers Accepted</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.stillHiring}</span>
-                    <span className={styles.statLabel}>Still Hiring</span>
-                  </div>
-                </div>
-              ) : activeTab === 'archived' ? null : (
-                <div className={styles.stats}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.filtered.length}</span>
-                    <span className={styles.statLabel}>Total Jobs</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>
-                      {viewData.filtered.filter(j => j.status === 'active').length}
-                    </span>
-                    <span className={styles.statLabel}>Active</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>
-                      {viewData.filtered.reduce((sum, j) => sum + j.applicationCount, 0)}
-                    </span>
-                    <span className={styles.statLabel}>Applications</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>
-                      {viewData.filtered.reduce((sum, j) => sum + j.viewCount, 0)}
-                    </span>
-                    <span className={styles.statLabel}>Views</span>
-                  </div>
-                </div>
-              )}
+              {/* Stat tiles removed — filter tabs above already carry the
+                  same counts. Kept the page glanceable; the rows below are
+                  the real content. */}
 
               {/* Offers tab — show offer records instead of job cards */}
               {activeTab === 'offers' && detailedOffers.filter(o => o.status === 'pending' || o.status === 'declined').length > 0 && (
@@ -1006,44 +970,75 @@ function MyJobsContent() {
                           }
                         }}
                       >
-                        <CompanyLogo
-                          src={job.companyLogo}
-                          alt={job.company}
-                          className={styles.rowLogo}
-                        />
-                        <h3 className={styles.rowTitle}>{job.title}</h3>
-                        {job.venue && (
-                          <>
-                            <span className={styles.rowSep} aria-hidden="true">·</span>
-                            <span className={styles.rowVenue}>{job.venue}</span>
-                          </>
-                        )}
-                        <span className={styles.rowSep} aria-hidden="true">·</span>
-                        <span className={styles.rowSalary}>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
-                        <span className={styles.rowSep} aria-hidden="true">·</span>
-                        <span className={styles.rowLocation}>{job.location}</span>
-                        {interviewMeta && (
-                          <>
-                            <span className={styles.rowSep} aria-hidden="true">·</span>
-                            <span className={styles.rowInterview}>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span>
-                          </>
-                        )}
-                        {job.hiredCandidate && (
-                          <>
-                            <span className={styles.rowSep} aria-hidden="true">·</span>
-                            <span className={styles.rowHired}>✓ Hired {job.hiredCandidate.name}</span>
-                          </>
-                        )}
-                        <span className={`${styles.statusBadge} ${statusClass}`}>{status.label}</span>
-                        <span className={styles.appCountBadge}>
-                          <strong>{job.applicationCount}</strong>
-                          {' '}
-                          <span className={styles.appCountWord}>
-                            {job.applicationCount === 1 ? 'application' : 'applications'}
-                          </span>
-                          <span className={styles.appCountWordShort}>apps</span>
-                        </span>
-                        {renderKebab(job, isBoosted)}
+                        {/* Left cluster — content fields pack tightly with
+                            the em-dash separators sitting between them. No
+                            justify-content slack distribution at row level,
+                            so an absent logo doesn't leave an empty gap. */}
+                        <div className={styles.rowMain}>
+                          {/* Logo column: recruiter accounts manage multiple
+                              companies and need the brand glyph to scan the
+                              list; single-company employers don't. When
+                              hidden, NO space is reserved and no separator
+                              dangles. */}
+                          {isRecruiter && (
+                            <CompanyLogo
+                              src={job.companyLogo}
+                              alt={job.company}
+                              className={styles.rowLogo}
+                            />
+                          )}
+                          <h3 className={styles.rowTitle}>{job.title}</h3>
+                          {job.venue && (
+                            <>
+                              <span className={styles.fieldSep} aria-hidden="true">—</span>
+                              <span className={styles.rowVenue}>{job.venue}</span>
+                            </>
+                          )}
+                          {job.location && (
+                            <>
+                              <span className={styles.fieldSep} aria-hidden="true">—</span>
+                              <span className={styles.rowLocation}>{job.location}</span>
+                            </>
+                          )}
+                          {interviewMeta && (
+                            <>
+                              <span className={styles.fieldSep} aria-hidden="true">—</span>
+                              <span className={styles.rowInterview}>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span>
+                            </>
+                          )}
+                          {job.hiredCandidate && (
+                            <>
+                              <span className={styles.fieldSep} aria-hidden="true">—</span>
+                              <span className={styles.rowHired}>✓ Hired {job.hiredCandidate.name}</span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Right cluster — status, applications pill, kebab.
+                            Fixed-width side of the row so every row's right
+                            edge lines up regardless of left-side content. */}
+                        <div className={styles.rowAside}>
+                          <span className={`${styles.statusPill} ${statusClass}`}>{status.label}</span>
+                          {/* Applications pill: emphasised clickable
+                              secondary action — quiet blue accent (not
+                              yellow), keeping the single solid-yellow
+                              primary CTA (+ Post New Job) uncompeted-with. */}
+                          <button
+                            type="button"
+                            className={styles.applicationsPill}
+                            onClick={(e) => { e.stopPropagation(); goToApps() }}
+                            aria-label={`${job.applicationCount} ${job.applicationCount === 1 ? 'application' : 'applications'}`}
+                          >
+                            <strong>{job.applicationCount}</strong>
+                            {' '}
+                            <span className={styles.appCountWord}>
+                              {job.applicationCount === 1 ? 'application' : 'applications'}
+                            </span>
+                            <span className={styles.appCountWordShort}>apps</span>
+                            <span className={styles.applicationsPillArrow} aria-hidden="true">→</span>
+                          </button>
+                          {renderKebab(job, isBoosted)}
+                        </div>
                       </div>
                     )
                   })}
