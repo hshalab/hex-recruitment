@@ -108,19 +108,36 @@ function PostJobContent() {
         return
       }
 
-      // Check subscription status — do this BEFORE the role check so we
-      // can use the subscription record to confirm employer status even if
-      // the session metadata is stale (common after Google OAuth).
       // Entitlement is paying-sub OR in-window founding cohort —
-      // see lib/foundingEntitlement.ts.
-      const { data: subData } = await supabase
-        .from('employer_subscriptions')
-        .select('subscription_status, subscription_tier, founding_period_ends_at')
-        .eq('user_id', session.user.id)
-        .maybeSingle()
+      // see lib/foundingEntitlement.ts. approval_status MUST be fetched
+      // alongside the subscription fields so isEmployerEntitled can see
+      // it; without it the helper fails closed (was previously a
+      // silent-pass back-compat hole — pending freemail users wrongly
+      // reached this page).
+      const [subRes, profileRes] = await Promise.all([
+        supabase
+          .from('employer_subscriptions')
+          .select('subscription_status, subscription_tier, founding_period_ends_at')
+          .eq('user_id', session.user.id)
+          .maybeSingle(),
+        supabase
+          .from('employer_profiles')
+          .select('approval_status')
+          .eq('user_id', session.user.id)
+          .maybeSingle(),
+      ])
+      const approvalStatus: string | null | undefined = (profileRes.data as { approval_status?: string | null } | null)?.approval_status ?? null
+      const subWithApproval = subRes.data ? { ...subRes.data, approval_status: approvalStatus } : null
+
+      // Pending / rejected / waitlisted employers belong on the
+      // under-review screen, not on /post-job.
+      if (approvalStatus === 'pending' || approvalStatus === 'rejected' || approvalStatus === 'waitlisted') {
+        router.push('/account-under-review')
+        return
+      }
 
       const userRole = session.user.user_metadata?.role
-      const hasActiveSub = isEmployerEntitled(subData)
+      const hasActiveSub = isEmployerEntitled(subWithApproval)
 
       // Accept as employer if: metadata says employer, OR they have an
       // active employer subscription (covers stale session metadata)

@@ -228,17 +228,33 @@ export default function MessagesPage() {
         const userId = session.user.id
         if (isMounted.current) setCurrentUserId(userId)
 
-        // Check subscription status for employers — entitlement is
-        // paying-sub OR in-window founding cohort (lib/foundingEntitlement).
+        // Entitlement is paying-sub OR in-window founding cohort —
+        // see lib/foundingEntitlement.ts. approval_status MUST be
+        // fetched alongside the subscription fields so isEmployerEntitled
+        // can see it; without it the helper fails closed (was previously
+        // a silent-pass back-compat hole — pending freemail users
+        // wrongly reached this page).
         if (session.user.user_metadata?.role === 'employer') {
           try {
-            const { data: subData } = await supabase
-              .from('employer_subscriptions')
-              .select('subscription_status, subscription_tier, founding_period_ends_at')
-              .eq('user_id', userId)
-              .single()
-
-            if (isMounted.current) setHasSubscription(isEmployerEntitled(subData))
+            const [subRes, profileRes] = await Promise.all([
+              supabase
+                .from('employer_subscriptions')
+                .select('subscription_status, subscription_tier, founding_period_ends_at')
+                .eq('user_id', userId)
+                .maybeSingle(),
+              supabase
+                .from('employer_profiles')
+                .select('approval_status')
+                .eq('user_id', userId)
+                .maybeSingle(),
+            ])
+            const approvalStatus: string | null | undefined = (profileRes.data as { approval_status?: string | null } | null)?.approval_status ?? null
+            if (approvalStatus === 'pending' || approvalStatus === 'rejected' || approvalStatus === 'waitlisted') {
+              router.push('/account-under-review')
+              return
+            }
+            const subWithApproval = subRes.data ? { ...subRes.data, approval_status: approvalStatus } : null
+            if (isMounted.current) setHasSubscription(isEmployerEntitled(subWithApproval))
           } catch {
             if (isMounted.current) setHasSubscription(false)
           }

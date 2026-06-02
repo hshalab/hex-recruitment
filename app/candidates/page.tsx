@@ -249,16 +249,32 @@ function CandidatesContent() {
 
       setIsEmployer(true)
 
-      // Check subscription status from employer_subscriptions table —
-      // entitlement is paying-sub OR in-window founding cohort
-      // (lib/foundingEntitlement).
-      const { data: subData } = await supabase
-        .from('employer_subscriptions')
-        .select('subscription_status, subscription_tier, founding_period_ends_at')
-        .eq('user_id', session.user.id)
-        .single()
+      // Entitlement is paying-sub OR in-window founding cohort
+      // (lib/foundingEntitlement). approval_status MUST be fetched
+      // alongside the subscription fields so isEmployerEntitled can see
+      // it; without it the helper fails closed (was previously a
+      // silent-pass back-compat hole — pending freemail users wrongly
+      // reached this page).
+      const [subRes, profileRes] = await Promise.all([
+        supabase
+          .from('employer_subscriptions')
+          .select('subscription_status, subscription_tier, founding_period_ends_at')
+          .eq('user_id', session.user.id)
+          .maybeSingle(),
+        supabase
+          .from('employer_profiles')
+          .select('approval_status')
+          .eq('user_id', session.user.id)
+          .maybeSingle(),
+      ])
+      const approvalStatus: string | null | undefined = (profileRes.data as { approval_status?: string | null } | null)?.approval_status ?? null
+      if (approvalStatus === 'pending' || approvalStatus === 'rejected' || approvalStatus === 'waitlisted') {
+        router.push('/account-under-review')
+        return
+      }
+      const subWithApproval = subRes.data ? { ...subRes.data, approval_status: approvalStatus } : null
 
-      if (isEmployerEntitled(subData)) {
+      if (isEmployerEntitled(subWithApproval)) {
         setHasSubscription(true)
       } else {
         setHasSubscription(false)

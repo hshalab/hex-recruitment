@@ -77,6 +77,33 @@ function EmployeeLoginPageContent() {
       localStorage.removeItem('hex_prev_volatile')
     }
 
+    // Bridge the session into SSR cookies before navigating. Candidate
+    // routes don't currently have a server-side guard, but the same
+    // disagreement (client localStorage vs server cookie) would bite
+    // the day one is added; mirror the employer flow now so the fix
+    // is uniform. See app/api/auth/set-session/route.ts.
+    try {
+      const bridgeRes = await fetch('/api/auth/set-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_token: data.session?.access_token,
+          refresh_token: data.session?.refresh_token,
+        }),
+      })
+      if (!bridgeRes.ok) {
+        setError('Could not establish session. Please try again.')
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
+      }
+    } catch {
+      setError('Could not establish session. Please try again.')
+      await supabase.auth.signOut()
+      setLoading(false)
+      return
+    }
+
     router.push(postLoginRedirect)
   }
 

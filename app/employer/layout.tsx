@@ -42,9 +42,25 @@ export default async function EmployerLayout({ children }: { children: React.Rea
         get(name: string) {
           return cookieStore.get(name)?.value
         },
-        // No-ops: this layout doesn't mutate session, just reads it.
-        set(_name: string, _value: string, _options: CookieOptions) {},
-        remove(_name: string, _options: CookieOptions) {},
+        // Write through to the Next 14 cookie store. @supabase/ssr calls
+        // set/remove when it silently rotates a near-expiry access_token
+        // server-side; if we no-op these, the rotated tokens never persist,
+        // the next request keeps presenting the stale cookies, and a
+        // returning user gets stuck in the same client↔server disagreement
+        // loop that fix-password-login-cookies is closing on the password
+        // path.
+        // cookies().set() in a server component is technically a Next 14
+        // edge case (the docs note it's only fully supported in route
+        // handlers + server actions). Wrapping in try/catch keeps the
+        // read path working when the runtime forbids the write — we still
+        // get a correct getUser() result, we just can't persist the
+        // rotation that pass.
+        set(name: string, value: string, options: CookieOptions) {
+          try { cookieStore.set({ name, value, ...options }) } catch {}
+        },
+        remove(name: string, options: CookieOptions) {
+          try { cookieStore.set({ name, value: '', ...options }) } catch {}
+        },
       },
     },
   )
