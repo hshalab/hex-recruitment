@@ -384,13 +384,37 @@
   }
 }
 .kebabItem {
-  width: 100%; text-align: left;
+  width: 100%;
+  text-align: left;
   padding: 0.5rem 0.75rem;
-  background: transparent; border: none; border-radius: 5px;
-  font-size: 0.85rem; color: var(--text-dark);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  color: var(--text-dark);
   cursor: pointer;
+  /* Flex so the leading icon slot + label sit side-by-side. Items
+     without icons still render an empty slot of the same width, so
+     every label across the menu starts at the same x. */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .kebabItem:hover { background: var(--light-gray); }
+
+/* Fixed-width icon slot at the left of every menu item. Items with an
+   icon (e.g. ⚡ on "Boost this job") fill it; items without leave it
+   empty as a visual spacer so the labels line up. */
+.kebabItemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  line-height: 1;
+}
 
 /* ─── Mobile (<768px): row wraps naturally ────────────────────────────
    With the flat structure, mobile just lets the flex children wrap.

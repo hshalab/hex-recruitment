@@ -698,17 +698,24 @@ function MyJobsContent() {
         </button>
         {isOpen && (
           <div className={styles.kebabMenu} role="menu">
+            {/* Every kebab item renders a fixed-width icon slot at the
+                left so labels line up across the menu. The Boost item
+                puts the ⚡ in its slot; everyone else gets an empty
+                slot so their text starts at the same x. */}
             <button type="button" role="menuitem" className={styles.kebabItem}
               onClick={(e) => choose(e, () => router.push(`/post-job?edit=${job.id}`))}>
-              Manage job
+              <span className={styles.kebabItemIcon} aria-hidden="true"></span>
+              <span>Manage job</span>
             </button>
             <button type="button" role="menuitem" className={styles.kebabItem}
               onClick={(e) => choose(e, () => router.push(`/job/${job.id}?from=my-jobs`))}>
-              View public job
+              <span className={styles.kebabItemIcon} aria-hidden="true"></span>
+              <span>View public job</span>
             </button>
             <button type="button" role="menuitem" className={styles.kebabItem}
               onClick={(e) => choose(e, () => router.push(`/employer/analytics/${job.id}`))}>
-              View analytics
+              <span className={styles.kebabItemIcon} aria-hidden="true"></span>
+              <span>View analytics</span>
             </button>
             {/* "Find candidates" kebab item removed: feature pending
                 post-launch GDPR + pricing decision on full-database search.
@@ -716,19 +723,22 @@ function MyJobsContent() {
             {job.status !== 'archived' && job.status !== 'filled' && (
               <button type="button" role="menuitem" className={styles.kebabItem}
                 onClick={(e) => choose(e, () => { setBoostTargetJob(job); setBoostModalOpen(true) })}>
-                ⚡ {isBoosted ? 'Boosted (manage)' : 'Boost this job'}
+                <span className={styles.kebabItemIcon} aria-hidden="true">⚡</span>
+                <span>{isBoosted ? 'Boosted (manage)' : 'Boost this job'}</span>
               </button>
             )}
             {(job.status === 'archived' || job.status === 'filled') && (
               <button type="button" role="menuitem" className={styles.kebabItem}
                 onClick={(e) => choose(e, () => handleReactivateJob(job.id))}>
-                Reactivate
+                <span className={styles.kebabItemIcon} aria-hidden="true"></span>
+                <span>Reactivate</span>
               </button>
             )}
             {job.status === 'archived' && (
               <button type="button" role="menuitem" className={styles.kebabItem}
                 onClick={(e) => choose(e, () => handleRepostJob(job))}>
-                Repost job
+                <span className={styles.kebabItemIcon} aria-hidden="true"></span>
+                <span>Repost job</span>
               </button>
             )}
           </div>
