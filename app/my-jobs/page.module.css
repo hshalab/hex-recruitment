@@ -356,12 +356,32 @@
 .kebabBtn:hover, .kebabBtn[aria-expanded="true"] {
   background: var(--light-gray); border-color: var(--border-gray); color: var(--text-dark);
 }
+/* Dropdown menu — centred under the ⋯ button so it looks visually
+   anchored to the trigger rather than free-floating against the row's
+   right edge. translateX(-50%) horizontally centres the menu on the
+   trigger's centre line. Last-row overflow is unlikely at 200px min-
+   width on a 1440px-wide layout, but the @media block below shifts to
+   right-anchored on narrow viewports to avoid clipping. */
 .kebabMenu {
-  position: absolute; top: calc(100% + 4px); right: 0;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
   min-width: 200px;
   background: var(--white); border: 1px solid var(--border-gray); border-radius: 8px;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
   padding: 0.25rem; z-index: 100;
+}
+
+@media (max-width: 768px) {
+  /* On narrow screens the centred menu would clip on the right edge.
+     Fall back to right-anchored so the menu opens leftward from the
+     trigger. */
+  .kebabMenu {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
 }
 .kebabItem {
   width: 100%; text-align: left;
