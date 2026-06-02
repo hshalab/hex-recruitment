@@ -67,8 +67,8 @@
 /* ── react-day-picker overrides ── */
 
 .rdp {
-  --rdp-accent-color: #FFEA00;
-  --rdp-accent-background-color: #FFEA00;
+  --rdp-accent-color: #FFE500;
+  --rdp-accent-background-color: #FFE500;
   margin: 0;
   font-family: inherit;
 }
@@ -275,14 +275,14 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #FFEA00;
+  background: #FFE500;
 }
 
 /* Selected (single mode) + range endpoints */
 .rdpDaySelected .rdpDayButton,
 .rdpDayRangeStart .rdpDayButton,
 .rdpDayRangeEnd .rdpDayButton {
-  background: #FFEA00 !important;
+  background: #FFE500 !important;
   color: var(--black) !important;
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(255, 234, 0, 0.4);

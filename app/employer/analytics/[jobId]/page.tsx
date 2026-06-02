@@ -15,7 +15,7 @@ import styles from './page.module.css'
 
 const SOURCE_COLORS: Record<string, string> = {
   search: '#3b82f6',
-  direct: '#FFD700',
+  direct: '#FFE500',
   recommendation: '#16a34a',
   saved: '#8b5cf6',
   external: '#f59e0b',
@@ -33,7 +33,7 @@ const CLICK_LABELS: Record<string, string> = {
   share_click: 'Share Clicks',
 }
 
-const FUNNEL_COLORS = ['#64748b', '#3b82f6', '#FFD700', '#16a34a']
+const FUNNEL_COLORS = ['#64748b', '#3b82f6', '#FFE500', '#16a34a']
 
 export default function JobAnalyticsPage() {
   return (
@@ -374,7 +374,7 @@ function JobAnalyticsContent() {
                   labelStyle={{ color: '#1e293b', fontWeight: 600 }}
                 />
                 <Line type="monotone" dataKey="views" stroke="#3b82f6" strokeWidth={2} dot={false} name="Views" />
-                <Line type="monotone" dataKey="applications" stroke="#FFD700" strokeWidth={2} dot={false} name="Applications" />
+                <Line type="monotone" dataKey="applications" stroke="#FFE500" strokeWidth={2} dot={false} name="Applications" />
               </LineChart>
             </ResponsiveContainer>
           ) : (

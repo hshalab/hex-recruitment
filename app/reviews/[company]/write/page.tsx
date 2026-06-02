@@ -369,8 +369,8 @@ export default function WriteReviewPage() {
                         width="36"
                         height="36"
                         viewBox="0 0 24 24"
-                        fill={star <= displayRating ? '#FFD700' : 'none'}
-                        stroke={star <= displayRating ? '#FFD700' : '#cbd5e1'}
+                        fill={star <= displayRating ? '#FFE500' : 'none'}
+                        stroke={star <= displayRating ? '#FFE500' : '#cbd5e1'}
                         strokeWidth="2"
                       >
                         <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
@@ -555,8 +555,8 @@ export default function WriteReviewPage() {
                             width="22"
                             height="22"
                             viewBox="0 0 24 24"
-                            fill={star <= displayVal ? '#FFD700' : 'none'}
-                            stroke={star <= displayVal ? '#FFD700' : '#e2e8f0'}
+                            fill={star <= displayVal ? '#FFE500' : 'none'}
+                            stroke={star <= displayVal ? '#FFE500' : '#e2e8f0'}
                             strokeWidth="2"
                           >
                             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />

@@ -290,7 +290,7 @@ export default function CompanyReviewsPage() {
                 return (
                   <div key={star} className={styles.distributionRow}>
                     <span className={styles.distributionLabel}>{star}
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#FFD700" stroke="#FFD700" strokeWidth="1" style={{ marginLeft: 2, verticalAlign: -1 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#FFE500" stroke="#FFE500" strokeWidth="1" style={{ marginLeft: 2, verticalAlign: -1 }}>
                         <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                       </svg>
                     </span>
@@ -342,8 +342,8 @@ export default function CompanyReviewsPage() {
                               width="16"
                               height="16"
                               viewBox="0 0 24 24"
-                              fill={s <= review.overall_rating ? '#FFD700' : 'none'}
-                              stroke={s <= review.overall_rating ? '#FFD700' : '#e2e8f0'}
+                              fill={s <= review.overall_rating ? '#FFE500' : 'none'}
+                              stroke={s <= review.overall_rating ? '#FFE500' : '#e2e8f0'}
                               strokeWidth="2"
                             >
                               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
@@ -487,8 +487,8 @@ function renderStars(rating: number, size: number) {
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill={star <= Math.round(rating) ? '#FFD700' : 'none'}
-      stroke={star <= Math.round(rating) ? '#FFD700' : '#475569'}
+      fill={star <= Math.round(rating) ? '#FFE500' : 'none'}
+      stroke={star <= Math.round(rating) ? '#FFE500' : '#475569'}
       strokeWidth="2"
     >
       <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />

@@ -18,7 +18,7 @@ const SIZE_CONFIG = {
   lg: { px: 32, gap: 'gapLg' as const },
 }
 
-const FILLED_COLOR = '#FFD700'
+const FILLED_COLOR = '#FFE500'
 const EMPTY_STROKE = '#cbd5e1'
 
 export default function StarRating({

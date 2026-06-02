@@ -176,7 +176,7 @@ export default function ReviewsLandingPage() {
                         {c.reviewCount > 0 ? (
                           <>
                             <span className={styles.resultRating}>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700" stroke="#FFD700" strokeWidth="1" style={{ verticalAlign: -2, marginRight: 3 }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFE500" stroke="#FFE500" strokeWidth="1" style={{ verticalAlign: -2, marginRight: 3 }}>
                                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                               </svg>
                               {c.avgRating.toFixed(1)}
@@ -255,8 +255,8 @@ export default function ReviewsLandingPage() {
                               width="16"
                               height="16"
                               viewBox="0 0 24 24"
-                              fill={star <= Math.round(company.avgRating) ? '#FFD700' : 'none'}
-                              stroke={star <= Math.round(company.avgRating) ? '#FFD700' : '#cbd5e1'}
+                              fill={star <= Math.round(company.avgRating) ? '#FFE500' : 'none'}
+                              stroke={star <= Math.round(company.avgRating) ? '#FFE500' : '#cbd5e1'}
                               strokeWidth="1.5"
                             >
                               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />

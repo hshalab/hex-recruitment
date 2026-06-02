@@ -1,8 +1,13 @@
 :root {
-  /* Brand colour palette — single yellow across the app */
-  --primary-yellow: #FFD700;
-  --hover-yellow: #f5c800;
-  --accent-yellow: #FFF8CC;
+  /* Brand colour palette — single yellow across the app.
+     Source of truth is the email template (emails/layout.ts) which
+     renders the brand mark at #FFE500. Aligning the website to the
+     same value so logo + accents read identically across surfaces.
+     --hover-yellow is a slightly deeper shade of #FFE500 for hover
+     states; --accent-yellow is a pale wash for soft backgrounds. */
+  --primary-yellow: #FFE500;
+  --hover-yellow: #e8d100;
+  --accent-yellow: #FFFACD;
   --black: #1a1a1a;
   --dark-gray: #0f172a;
   --text-gray: #6b7280;
@@ -18,8 +23,8 @@
      Design system tokens (anchor: candidate profile)
      Use these in new/refactored page CSS.
      ───────────────────────────────────────────── */
-  --ds-yellow: #FFD700;
-  --ds-yellow-hover: #f5c800;
+  --ds-yellow: #FFE500;
+  --ds-yellow-hover: #e8d100;
   --ds-text-primary: #0f172a;
   --ds-text-muted: #64748b;
   --ds-bg-page: #f8fafc;
@@ -200,7 +205,7 @@ body {
 .ds-select:focus,
 .ds-textarea:focus {
   border-color: var(--ds-text-primary);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.25);
+  box-shadow: 0 0 0 3px rgba(255, 229, 0, 0.25);
 }
 
 .ds-input:disabled,
@@ -250,7 +255,7 @@ body {
    element that opts in via .ds-focus-ring. Keyboard only.
    ────────────────────────────────────────────────────────── */
 .ds-focus-ring:focus-visible {
-  outline: 3px solid rgba(255, 215, 0, 0.35);
+  outline: 3px solid rgba(255, 229, 0, 0.35);
   outline-offset: 2px;
 }
 

@@ -18,7 +18,7 @@
 }
 
 .interactive:focus-visible {
-  outline: 2px solid #FFD700;
+  outline: 2px solid #FFE500;
   outline-offset: 4px;
   border-radius: 4px;
 }
@@ -39,7 +39,7 @@
 }
 
 .starBtn:focus-visible {
-  outline: 2px solid #FFD700;
+  outline: 2px solid #FFE500;
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -90,5 +90,5 @@
 
 .valueLg {
   font-size: 1.35rem;
-  color: #FFD700;
+  color: #FFE500;
 }

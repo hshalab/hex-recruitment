@@ -589,12 +589,12 @@
 
 /* Boosted Candidate Card */
 .listCardBoosted {
-  border-left: 3px solid #FFD700;
-  background: rgba(255, 215, 0, 0.03);
+  border-left: 3px solid #FFE500;
+  background: rgba(255, 229, 0, 0.03);
 }
 
 .listCardBoosted:hover {
-  background: rgba(255, 215, 0, 0.07);
+  background: rgba(255, 229, 0, 0.07);
 }
 
 .listCardFeaturedBadge {
@@ -602,7 +602,7 @@
   bottom: 0.4rem;
   right: 0.4rem;
   padding: 0.15rem 0.5rem;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: linear-gradient(135deg, #FFE500, #FFA500);
   color: #1a1a2e;
   border-radius: 4px;
   font-size: 0.6rem;
@@ -663,9 +663,9 @@
   border-radius: 8px;
   flex-shrink: 0;
   overflow: hidden;
-  border: 3px solid rgba(255, 215, 0, 0.4);
+  border: 3px solid rgba(255, 229, 0, 0.4);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  background: #FFD700;
+  background: #FFE500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -699,7 +699,7 @@
 
 .detailTitle {
   font-size: 0.95rem;
-  color: #FFD700;
+  color: #FFE500;
   font-weight: 600;
   margin: 0 0 0.5rem;
 }
@@ -742,8 +742,8 @@
 }
 
 .detailAvail_yellow {
-  background: rgba(255, 215, 0, 0.2);
-  color: #FFD700;
+  background: rgba(255, 229, 0, 0.2);
+  color: #FFE500;
 }
 
 .detailAvail_grey {
@@ -763,7 +763,7 @@
 }
 
 .detailAvail_yellow .detailAvailDot {
-  background: #FFD700;
+  background: #FFE500;
 }
 
 .detailAvail_grey .detailAvailDot {
@@ -868,13 +868,13 @@
   gap: 0.5rem;
   margin-bottom: 0.875rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #FFD700;
+  border-bottom: 2px solid #FFE500;
 }
 
 .detailSectionIcon {
   width: 18px;
   height: 18px;
-  color: #FFD700;
+  color: #FFE500;
   flex-shrink: 0;
 }
 
@@ -914,7 +914,7 @@
 .detailTimelineDot {
   width: 10px;
   height: 10px;
-  background: #FFD700;
+  background: #FFE500;
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 4px;
@@ -968,7 +968,7 @@
 
 .detailSkillPill {
   padding: 0.375rem 0.75rem;
-  background: #FFD700;
+  background: #FFE500;
   color: #0f172a;
   border-radius: 20px;
   font-size: 0.8rem;

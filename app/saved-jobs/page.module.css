@@ -30,11 +30,11 @@
 }
 
 .pageTitle svg {
-  color: #FFD700;
+  color: #FFE500;
 }
 
 .countBadge {
-  background: #FFD700;
+  background: #FFE500;
   color: #1e293b;
   font-size: 0.85rem;
   font-weight: 700;
@@ -82,14 +82,14 @@
 }
 
 .listCard:hover {
-  border-color: #FFD700;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+  border-color: #FFE500;
+  box-shadow: 0 2px 8px rgba(255, 229, 0, 0.15);
 }
 
 .listCardActive {
-  border-color: #FFD700;
+  border-color: #FFE500;
   background: #fffbeb;
-  box-shadow: 0 2px 12px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 2px 12px rgba(255, 229, 0, 0.2);
 }
 
 .listCardLogo {
@@ -328,7 +328,7 @@
 .detailApplyBtn {
   flex: 1;
   padding: 0.625rem;
-  background: #FFD700;
+  background: #FFE500;
   color: #1e293b;
   border: none;
   border-radius: 6px;
@@ -339,7 +339,7 @@
 }
 
 .detailApplyBtn:hover:not(:disabled) {
-  background: #ffe033;
+  background: #FFE500;
 }
 
 .detailAppliedBtn {
@@ -515,7 +515,7 @@
 
 .browseBtn {
   padding: 0.75rem 2rem;
-  background: #FFD700;
+  background: #FFE500;
   color: #1e293b;
   border: none;
   border-radius: 8px;
@@ -527,9 +527,9 @@
 }
 
 .browseBtn:hover {
-  background: #ffe033;
+  background: #FFE500;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 229, 0, 0.3);
 }
 
 /* Loading */
@@ -547,7 +547,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid var(--border-gray);
-  border-top-color: #FFD700;
+  border-top-color: #FFE500;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

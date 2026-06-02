@@ -1,6 +1,6 @@
 /* ─── Container ─────────────────────────────────────────────────────────── */
 .container {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 1.5rem 1.5rem 4rem;
 }
@@ -8,7 +8,7 @@
 .loading {
   text-align: center;
   padding: 4rem;
-  color: var(--text-gray);
+  color: var(--rs-text-muted, var(--text-gray));
 }
 
 /* ─── Page Header ──────────────────────────────────────────────────────── */
@@ -17,100 +17,74 @@
 .pageTitle {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-dark);
+  color: var(--rs-text, var(--text-dark));
   margin: 0 0 0.2rem 0;
 }
 
 .pageSubtitle {
   font-size: 0.9rem;
-  color: var(--text-gray);
+  color: var(--rs-text-muted, var(--text-gray));
   margin: 0;
 }
 
-/* ─── Stats Bar ────────────────────────────────────────────────────────── */
-.statsBar {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-
-.statCard {
-  background: var(--white);
-  border: 1px solid var(--border-gray);
-  border-top: 3px solid var(--primary-yellow);
-  border-radius: 10px;
-  padding: 0.75rem 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: var(--card-shadow);
-}
-
-.statNum {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-dark);
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.statLabel {
-  font-size: 0.78rem;
-  color: var(--text-gray);
-}
-
 /* ─── Filter Tabs ──────────────────────────────────────────────────────── */
+/* Stats bar removed — these tabs already carry the same counts and we
+   no longer want to duplicate them above.
+   v2: shrunk + lightened so the row recedes. Inactive tabs are
+   borderless muted text; active is a quiet light-grey chip with a
+   hairline border — not the dark-navy filled tile from v1. */
 .filterTabs {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-gray);
+  gap: 0.35rem;
+  margin-bottom: 0.875rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--rs-border, var(--border-gray));
 }
 
 .filterTab {
-  padding: 0.35rem 0.75rem;
+  padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 500;
   cursor: pointer;
-  border: 1px solid var(--border-gray);
+  border: 1px solid transparent;
   background: transparent;
-  color: var(--text-gray);
-  transition: all 0.15s;
+  color: var(--rs-text-muted, var(--text-gray));
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .filterTab:hover {
-  border-color: var(--text-gray);
-  color: var(--text-dark);
+  color: var(--rs-text, var(--text-dark));
+  background: var(--rs-bg-subtle, #f8fafc);
 }
 
 .filterTabActive {
-  background: var(--dark-gray);
-  color: var(--white);
-  border-color: var(--dark-gray);
+  background: var(--rs-bg-subtle, #f1f5f9);
+  color: var(--rs-text, var(--text-dark));
+  border-color: var(--rs-border, #e2e8f0);
+  font-weight: 600;
 }
 
 .filterTabActive:hover {
-  background: var(--dark-gray);
-  color: var(--white);
-  border-color: var(--dark-gray);
+  background: var(--rs-bg-subtle, #f1f5f9);
+  color: var(--rs-text, var(--text-dark));
+  border-color: var(--rs-border-strong, #cbd5e1);
 }
 
 .filterTabCount {
-  font-size: 0.72rem;
-  font-weight: 700;
-  margin-left: 0.25rem;
-  opacity: 0.7;
+  font-size: 0.68rem;
+  font-weight: 500;
+  margin-left: 0.2rem;
+  opacity: 0.65;
 }
 
 /* ─── Empty State ──────────────────────────────────────────────────────── */
 .emptyState {
   text-align: center;
   padding: 4rem 2rem;
-  background: var(--light-gray);
+  background: var(--rs-bg-subtle, var(--light-gray));
   border-radius: 12px;
+  border: 1px solid var(--rs-border, var(--border-gray));
 }
 
 .emptyIcon { font-size: 3rem; display: block; margin-bottom: 0.75rem; }
@@ -118,200 +92,235 @@
 .emptyTitle {
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--text-dark);
+  color: var(--rs-text, var(--text-dark));
   margin: 0 0 0.5rem 0;
 }
 
 .emptyText {
   font-size: 0.9rem;
-  color: var(--text-gray);
+  color: var(--rs-text-muted, var(--text-gray));
   margin: 0 0 1.25rem 0;
 }
 
 .emptyLink {
   display: inline-block;
-  padding: 0.5rem 1.25rem;
-  background: var(--dark-gray);
-  color: var(--white);
+  padding: 0.55rem 1.25rem;
+  background: var(--rs-brand-navy, var(--dark-gray));
+  color: #fff;
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.875rem;
   text-decoration: none;
   transition: background 0.15s;
+  border: 1px solid var(--rs-brand-navy, var(--dark-gray));
+  cursor: pointer;
 }
 
 .emptyLink:hover { background: #1e293b; }
 
-/* ─── Interview Card Grid ──────────────────────────────────────────────── */
+/* ─── Interview List ───────────────────────────────────────────────────── */
+/* Single surface card holding all rows. Each row is just bottom-bordered
+   — no per-card chrome — so the page reads as a calm list, not a wall
+   of boxes. Restyle pass: --rs-* tokens, hairline separators. */
 .interviewCards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.interviewCard {
-  background: var(--white);
-  border: 1px solid var(--border-gray);
-  border-radius: 10px;
-  padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
-  transition: box-shadow 0.15s, border-color 0.15s;
-  overflow: hidden;
+  gap: 0;
+  background: var(--rs-bg-surface, #fff);
+  border: 1px solid var(--rs-border, var(--border-gray));
+  border-radius: 12px;
+  overflow: visible; /* allow overflow menu to escape the surface */
 }
 
-.interviewCard:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border-color: #d1d5db;
-}
-
-/* ─── Card Header ──────────────────────────────────────────────────────── */
-.cardHeader {
+/* ─── Interview Row ───────────────────────────────────────────────────── */
+.interviewRow {
   display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.125rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rs-border, var(--border-gray));
+  border-radius: 0;
+  cursor: pointer;
+  transition: background 0.12s;
+  position: relative;
 }
 
-.cardHeaderInfo { flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
-.cardHeaderInfoLeft { min-width: 0; flex: 1; }
+.interviewRow:last-child { border-bottom: 0; }
+.interviewRow:hover { background: var(--rs-bg-subtle, #f8fafc); }
+.interviewRow:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--rs-text, #0f172a) 30%, transparent);
+  outline-offset: -2px;
+}
+
+/* Main inline content — name, role, date+time, separated by quiet dots. */
+.rowMain {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
 
 .candidateName {
-  display: block;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: var(--text-dark);
-  margin-bottom: 0.1rem;
+  color: var(--rs-text, var(--text-dark));
 }
 
-.cardJobTitle {
-  font-size: 0.78rem;
-  color: var(--text-gray);
-  margin: 0 0 0.35rem 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.jobTitle {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--rs-text-muted, #64748b);
 }
 
-.badgeRow {
-  display: flex;
+.dateTime {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--rs-text-muted, #64748b);
+}
+
+/* Field separator between name / role / date. Em-dash with breathing
+   room reads as three distinct chunks; the v1 faint middot blurred
+   them together. Slightly darker than --rs-border-strong so the
+   separator sits visually but doesn't shout. */
+.fieldSep {
+  display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  flex-wrap: wrap;
+  margin: 0 0.4rem;
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: var(--rs-text-soft, #94a3b8);
+  user-select: none;
 }
 
-/* ─── Badges ───────────────────────────────────────────────────────────── */
-.typeBadge {
-  font-size: 0.7rem;
+/* Legacy alias — some inline content still uses metaDot. Map it to
+   the new separator look. */
+.metaDot {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0.4rem;
+  font-size: 0.88rem;
+  color: var(--rs-text-soft, #94a3b8);
+}
+
+/* Right cluster — status pill, modality icon, overflow control. */
+.rowAside {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* ─── Status pill (Pending=amber, Confirmed=green) ────────────────────── */
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.6rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  padding: 3px 9px;
   border-radius: 999px;
   white-space: nowrap;
-  flex-shrink: 0;
-  align-self: flex-start;
-  margin-top: 2px;
+  letter-spacing: 0.01em;
 }
 
-.typeInPerson { background: var(--ds-status-blue-bg); color: var(--ds-status-blue-fg); }
-.typeVideo { background: var(--ds-status-blue-bg); color: var(--ds-status-blue-fg); }
-.typePhone { background: var(--ds-status-blue-bg); color: var(--ds-status-blue-fg); }
-
-.statusBadge {
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
-  white-space: nowrap;
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e5e7eb;
+.statusPending {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: #b45309;
+  border: 1px solid color-mix(in srgb, #f59e0b 35%, transparent);
 }
 
-.statusScheduled { }
-.statusConfirmed { }
-
-/* ─── Card Photo ───────────────────────────────────────────────────────── */
-.cardPhoto {
-  width: 52px;
-  height: 52px;
-  border-radius: 8px;
-  overflow: hidden;
-  flex-shrink: 0;
-  background: var(--dark-gray);
+.statusConfirmed {
+  background: color-mix(in srgb, var(--rs-stage-hired, #16a34a) 12%, transparent);
+  color: var(--rs-stage-hired, #16a34a);
+  border: 1px solid color-mix(in srgb, var(--rs-stage-hired, #16a34a) 30%, transparent);
 }
 
-.cardPhotoImg { width: 100%; height: 100%; object-fit: cover; }
-
-.cardPhotoPlaceholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--dark-gray);
-  color: var(--white);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-/* ─── Card Bottom (mirrors jobCardBottom) ─────────────────────────────── */
-.cardBottom { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
-.cardTags { display: flex; flex-wrap: wrap; gap: 0.3rem; flex: 1; }
-.cardTag { font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569; white-space: nowrap; }
-.cardTagLink { font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569; white-space: nowrap; text-decoration: none; }
-.cardTagLink:hover { background: #e2e8f0; }
-
-/* ─── Card Meta (action links row) ────────────────────────────────────── */
-.cardMeta { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
-.cardLinks { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; }
-.metaLink { font-size: 0.72rem; color: #9ca3af; background: none; border: none; cursor: pointer; padding: 0; text-decoration: none; transition: color 0.15s; font-weight: 500; }
-.metaLink:hover { color: var(--text-dark); text-decoration: underline; }
-.metaDot { font-size: 0.6rem; color: #d1d5db; }
-.cardActions { display: flex; gap: 0.5rem; flex-shrink: 0; }
-.dangerLink { font-size: 0.72rem; color: #dc2626; background: none; border: none; cursor: pointer; padding: 0; font-weight: 500; transition: color 0.15s; }
-.dangerLink:hover:not(:disabled) { text-decoration: underline; }
-.dangerLink:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* ─── Expandable Notes ────────────────────────────────────────────────── */
-.notesInput {
-  width: 100%;
-  padding: 0.35rem 0.625rem;
-  border: 1px solid var(--border-gray);
-  border-radius: 6px;
-  font-size: 0.78rem;
-  font-family: inherit;
-  color: #374151;
-  background: var(--light-gray);
-  transition: border-color 0.15s;
-  box-sizing: border-box;
-  outline: none;
-}
-.notesInput:focus { border-color: #9ca3af; background: var(--white); }
-.notesInput::placeholder { color: #9ca3af; }
-
-/* ─── Past card button ────────────────────────────────────────────────── */
-.btnSm {
+/* ─── Modality icon (text-free; tooltip-only label) ───────────────────── */
+.modalityIcon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  white-space: nowrap;
-  border: 1px solid var(--border-gray);
-  background: var(--white);
-  color: var(--text-dark);
-  transition: background 0.15s;
+  width: 26px;
+  height: 26px;
+  color: var(--rs-text-muted, #64748b);
 }
-.btnSm:hover { background: var(--light-gray); }
 
-/* ─── Past Interviews ──────────────────────────────────────────────────── */
+.modalityInPerson { color: var(--rs-stage-reviewing, #3b82f6); }
+.modalityVideo    { color: var(--rs-stage-interview, #06b6d4); }
+.modalityPhone    { color: var(--rs-stage-shortlisted, #8b5cf6); }
+
+/* ─── Overflow control + menu ─────────────────────────────────────────── */
+.overflowBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--rs-text-muted, #64748b);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.overflowBtn:hover {
+  background: var(--rs-bg-subtle, #f1f5f9);
+  color: var(--rs-text, #0f172a);
+  border-color: var(--rs-border-strong, #cbd5e1);
+}
+
+.overflowMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 200;
+  min-width: 180px;
+  background: var(--rs-bg-surface, #fff);
+  border: 1px solid var(--rs-border, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: var(--rs-shadow-card-hover, 0 4px 12px rgba(15, 23, 42, 0.08));
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.625rem;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: var(--rs-text, #0f172a);
+  cursor: pointer;
+  text-align: left;
+  font-weight: 500;
+  transition: background 0.12s;
+}
+
+.menuItem:hover { background: var(--rs-bg-subtle, #f1f5f9); }
+
+.menuItemDanger { color: #dc2626; }
+.menuItemDanger:hover { background: color-mix(in srgb, #dc2626 8%, transparent); }
+
+.menuDivider {
+  height: 1px;
+  background: var(--rs-border, #e2e8f0);
+  margin: 0.25rem 0;
+}
+
+/* ─── Past Interviews (unchanged for Phase 1) ─────────────────────────── */
 .pastSection {
   margin-top: 2rem;
-  border-top: 1px solid var(--border-gray);
+  border-top: 1px solid var(--rs-border, var(--border-gray));
   padding-top: 1.25rem;
 }
 
@@ -326,10 +335,10 @@
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-gray);
+  color: var(--rs-text-muted, var(--text-gray));
 }
 
-.pastToggle:hover { color: var(--text-dark); }
+.pastToggle:hover { color: var(--rs-text, var(--text-dark)); }
 
 .chevron {
   font-size: 1rem;
@@ -351,8 +360,8 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: var(--light-gray);
-  border: 1px solid var(--border-gray);
+  background: var(--rs-bg-subtle, var(--light-gray));
+  border: 1px solid var(--rs-border, var(--border-gray));
   border-radius: 10px;
 }
 
@@ -384,35 +393,66 @@
 .pastCompleted { background: var(--ds-status-green-bg); color: var(--ds-status-green-fg); }
 .pastCancelled { background: var(--ds-status-red-bg); color: var(--ds-status-red-fg); }
 
+/* Helpers re-used by past section */
+.cardPhotoImg { width: 100%; height: 100%; object-fit: cover; }
+.cardPhotoPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rs-brand-navy, var(--dark-gray));
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.cardTag {
+  font-size: 0.68rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: var(--rs-bg-subtle, #f1f5f9);
+  color: var(--rs-text-muted, #475569);
+  white-space: nowrap;
+}
+.btnSm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.625rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  border: 1px solid var(--rs-border-strong, var(--border-gray));
+  background: var(--rs-bg-surface, #fff);
+  color: var(--rs-text, var(--text-dark));
+  transition: background 0.15s, border-color 0.15s;
+}
+.btnSm:hover {
+  background: var(--rs-bg-subtle, var(--light-gray));
+  border-color: var(--rs-text, var(--text-dark));
+}
+
 /* ─── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .interviewCards { grid-template-columns: 1fr; }
-  .statsBar { grid-template-columns: repeat(2, 1fr); }
-
   .container { padding: 1rem 1rem 3rem; }
-
   .filterTabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-  .cardPhoto { width: 44px; height: 44px; }
-
-  .cardLinks { gap: 0.15rem; }
-  .cardMeta { flex-wrap: wrap; }
-
+  .interviewRow { padding: 0.625rem 0.875rem; gap: 0.5rem; }
   .pastMeta { flex-direction: column; align-items: flex-end; gap: 0.35rem; }
   .pastCard { flex-wrap: wrap; }
 }
 
 @media (max-width: 480px) {
-  .statsBar { grid-template-columns: repeat(2, 1fr); }
-  .interviewCard { padding: 1rem; }
-  .cardActions { flex-wrap: wrap; }
-  .cardMeta { flex-direction: column; align-items: flex-start; gap: 0.35rem; }
+  .rowAside { gap: 0.4rem; }
+  .candidateName { font-size: 0.88rem; }
+  .jobTitle, .dateTime { font-size: 0.8rem; }
+  .statusPill { font-size: 0.65rem; padding: 0.12rem 0.5rem; }
 }
 
 @media (max-width: 375px) {
-  .cardHeader { gap: 0.5rem; }
   .container { padding: 1rem; }
-  .typeBadge { font-size: 0.62rem; padding: 2px 7px; }
-  .candidateName { font-size: 0.82rem; }
-  .cardJobTitle { font-size: 0.72rem; }
+  .interviewRow { flex-wrap: wrap; }
+  .rowMain { width: 100%; }
 }

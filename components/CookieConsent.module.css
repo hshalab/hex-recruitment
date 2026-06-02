@@ -61,7 +61,7 @@
   font-size: 0.875rem;
   font-weight: 700;
   color: #1e293b;
-  background: #FFD700;
+  background: #FFE500;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -212,7 +212,7 @@
 }
 
 .toggle input:checked + .toggleSlider {
-  background: #FFD700;
+  background: #FFE500;
 }
 
 .toggle input:checked + .toggleSlider::after {
@@ -260,7 +260,7 @@
   font-size: 0.875rem;
   font-weight: 700;
   color: #1e293b;
-  background: #FFD700;
+  background: #FFE500;
   border: none;
   border-radius: 8px;
   cursor: pointer;

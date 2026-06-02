@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -8,6 +8,7 @@ import SignedImage from '@/components/SignedImage'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
+import { MapPin, Video, Phone, MoreHorizontal } from 'lucide-react'
 import styles from './page.module.css'
 
 interface InterviewItem {
@@ -119,6 +120,23 @@ export default function InterviewsPage() {
   const [notesMap, setNotesMap] = useState<Record<string, string>>({})
   const [activeFilter, setActiveFilter] = useState<'today' | 'week' | 'all'>('all')
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
+  // Phase 1: the per-row "⋯" overflow menu is presented but its items
+  // do not yet wire to real handlers — see the click handlers below.
+  // Phase 2 will hook them up after Paul approves the look.
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+
+  // Outside-click closes the open overflow menu.
+  useEffect(() => {
+    if (!openMenuId) return
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null)
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [openMenuId])
 
   useEffect(() => { loadInterviews() }, [])
 
@@ -251,6 +269,16 @@ export default function InterviewsPage() {
     const date = new Date(year, month - 1, day)
     const dayStr = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
     return `${dayStr} at ${formatTime(timeStr)} · ${durationMinutes} min`
+  }
+
+  // Compact row date — drops "at" and duration, e.g. "Tue 12 May, 3:30 PM".
+  // Duration is hidden in the row but still in the row's overflow menu /
+  // detail screen (Phase 2).
+  const formatRowDateTime = (dateStr: string, timeStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    const dayStr = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+    return `${dayStr}, ${formatTime(timeStr)}`
   }
 
   const formatLongDate = (dateStr: string) => {
@@ -409,25 +437,8 @@ export default function InterviewsPage() {
           <p className={styles.pageSubtitle}>Your upcoming interview schedule</p>
         </div>
 
-        {/* Stats Bar */}
-        <div className={styles.statsBar}>
-          <div className={styles.statCard}>
-            <span className={styles.statNum}>{countToday}</span>
-            <span className={styles.statLabel}>Today</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statNum}>{countThisWeek}</span>
-            <span className={styles.statLabel}>This Week</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statNum}>{countConfirmed}</span>
-            <span className={styles.statLabel}>Confirmed</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statNum}>{countCompleted}</span>
-            <span className={styles.statLabel}>Completed</span>
-          </div>
-        </div>
+        {/* Stats bar removed — the filter tabs below carry the same counts,
+            keeping the page glanceable instead of doubling the top region. */}
 
         {/* Filter Tabs */}
         {upcoming.length > 0 && (
@@ -470,76 +481,98 @@ export default function InterviewsPage() {
         ) : (
           <div className={styles.interviewCards}>
             {filteredUpcoming.map(interview => {
-                    const isCancelling = cancellingId === interview.interviewId
-                    const calendarHref = interview.calendarLink || buildCalendarUrl(interview)
+                    // Phase 1: visual-only. Row click + every overflow menu
+                    // item logs and closes the menu but does NOT navigate or
+                    // call the existing modal handlers. Phase 2 (separate
+                    // approval) wires real behaviour.
+                    const menuOpen = openMenuId === interview.interviewId
+                    const isConfirmed = interview.status === 'confirmed'
+                    const modalityIcon =
+                      interview.interviewType === 'video'
+                        ? <Video size={16} aria-label="Video call" />
+                        : interview.interviewType === 'phone'
+                          ? <Phone size={16} aria-label="Phone call" />
+                          : <MapPin size={16} aria-label="In-person" />
+                    const modalityClass =
+                      interview.interviewType === 'video'
+                        ? styles.modalityVideo
+                        : interview.interviewType === 'phone'
+                          ? styles.modalityPhone
+                          : styles.modalityInPerson
+                    const stubLog = (label: string) => () => {
+                      console.log(`[Phase 1 stub] ${label} on interview ${interview.interviewId}`)
+                      setOpenMenuId(null)
+                    }
 
                     return (
-                      <div key={interview.interviewId} className={styles.interviewCard}>
+                      <div
+                        key={interview.interviewId}
+                        className={styles.interviewRow}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => console.log(`[Phase 1 stub] row-click → interview ${interview.interviewId} (${interview.candidateName})`)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            console.log(`[Phase 1 stub] row-key → interview ${interview.interviewId}`)
+                          }
+                        }}
+                      >
+                        <div className={styles.rowMain}>
+                          <span className={styles.candidateName}>{interview.candidateName}</span>
+                          <span className={styles.fieldSep} aria-hidden="true">—</span>
+                          <span className={styles.jobTitle}>{interview.jobTitle}</span>
+                          <span className={styles.fieldSep} aria-hidden="true">—</span>
+                          <span className={styles.dateTime}>{formatRowDateTime(interview.interviewDate, interview.interviewTime)}</span>
+                        </div>
 
-                        {/* Card Header: photo LEFT, info RIGHT */}
-                        <div className={styles.cardHeader}>
-                          <div className={styles.cardPhoto}>
-                            {interview.candidatePhoto ? (
-                              <SignedImage src={interview.candidatePhoto} alt={interview.candidateName} className={styles.cardPhotoImg} />
-                            ) : (
-                              <div className={styles.cardPhotoPlaceholder}>{getInitials(interview.candidateName)}</div>
-                            )}
-                          </div>
-                          <div className={styles.cardHeaderInfo}>
-                            <div className={styles.cardHeaderInfoLeft}>
-                              <span className={styles.candidateName}>{interview.candidateName}</span>
-                              <p className={styles.cardJobTitle}>{interview.jobTitle} · {interview.company}</p>
+                        <div className={styles.rowAside}>
+                          <span
+                            className={`${styles.statusPill} ${isConfirmed ? styles.statusConfirmed : styles.statusPending}`}
+                            aria-label={isConfirmed ? 'Confirmed' : 'Pending'}
+                          >
+                            {isConfirmed ? 'Confirmed' : 'Pending'}
+                          </span>
+
+                          <span
+                            className={`${styles.modalityIcon} ${modalityClass}`}
+                            title={TYPE_LABELS[interview.interviewType] || interview.interviewType}
+                          >
+                            {modalityIcon}
+                          </span>
+
+                          <button
+                            type="button"
+                            className={styles.overflowBtn}
+                            aria-label="More actions"
+                            aria-haspopup="menu"
+                            aria-expanded={menuOpen}
+                            onClick={e => {
+                              e.stopPropagation()
+                              setOpenMenuId(prev => prev === interview.interviewId ? null : interview.interviewId)
+                            }}
+                          >
+                            <MoreHorizontal size={18} />
+                          </button>
+
+                          {menuOpen && (
+                            <div
+                              ref={menuRef}
+                              className={styles.overflowMenu}
+                              role="menu"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Message')}>Message</button>
+                              <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Email')}>Email</button>
+                              <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Applications')}>Applications</button>
+                              <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Calendar')}>Calendar</button>
+                              <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Notes')}>Notes</button>
+                              <div className={styles.menuDivider} />
+                              <button type="button" className={`${styles.menuItem} ${styles.menuItemDanger}`} role="menuitem" onClick={stubLog('Reschedule')}>Reschedule</button>
+                              <button type="button" className={`${styles.menuItem} ${styles.menuItemDanger}`} role="menuitem" onClick={stubLog('Cancel')}>Cancel</button>
                             </div>
-                            <span className={`${styles.typeBadge} ${TYPE_BADGE_CLASS[interview.interviewType] || ''}`}>
-                              {TYPE_LABELS[interview.interviewType] || interview.interviewType}
-                            </span>
-                          </div>
+                          )}
                         </div>
-
-                        {/* Bottom row: tags + actions — mirrors jobCardBottom */}
-                        <div className={styles.cardBottom}>
-                          <div className={styles.cardTags}>
-                            <span className={styles.cardTag}>{formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}</span>
-                            <span className={`${styles.statusBadge} ${interview.status === 'confirmed' ? styles.statusConfirmed : styles.statusScheduled}`}>
-                              {interview.status === 'confirmed' ? '✓ Confirmed' : 'Pending'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Action links row — compact, single line */}
-                        <div className={styles.cardMeta}>
-                          <div className={styles.cardLinks}>
-                            <button className={styles.metaLink} onClick={() => router.push(`/messages?candidate=${interview.candidateId}`)}>Message</button>
-                            <span className={styles.metaDot}>·</span>
-                            <a href={`mailto:${interview.candidateEmail}`} className={styles.metaLink}>Email</a>
-                            <span className={styles.metaDot}>·</span>
-                            <Link href={`/my-jobs/${interview.jobId}/applications`} className={styles.metaLink}>Applications</Link>
-                            <span className={styles.metaDot}>·</span>
-                            <a href={calendarHref} target="_blank" rel="noopener noreferrer" className={styles.metaLink}>Calendar</a>
-                            <span className={styles.metaDot}>·</span>
-                            <button className={styles.metaLink} onClick={() => setExpandedNotes(prev => { const s = new Set(prev); s.has(interview.interviewId) ? s.delete(interview.interviewId) : s.add(interview.interviewId); return s })}>Notes</button>
-                          </div>
-                          <div className={styles.cardActions}>
-                            <button className={styles.dangerLink} onClick={() => setRescheduleTarget(interview)}>Reschedule</button>
-                            <button className={styles.dangerLink} onClick={() => handleCancelInterview(interview)} disabled={isCancelling}>
-                              {isCancelling ? '...' : 'Cancel'}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Expandable notes */}
-                        {expandedNotes.has(interview.interviewId) && (
-                          <input
-                            type="text"
-                            className={styles.notesInput}
-                            placeholder="Add notes..."
-                            autoFocus
-                            value={notesMap[interview.interviewId] ?? ''}
-                            onChange={e => setNotesMap(prev => ({ ...prev, [interview.interviewId]: e.target.value }))}
-                            onBlur={e => handleNoteBlur(interview.interviewId, e.target.value)}
-                          />
-                        )}
-
                       </div>
                     )
                   })}

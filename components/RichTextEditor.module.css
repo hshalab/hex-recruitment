@@ -7,7 +7,7 @@
 }
 
 .wrapper:focus-within {
-  border-color: #FFD700;
+  border-color: #FFE500;
 }
 
 /* Toolbar */
@@ -61,12 +61,12 @@
 }
 
 .toolbarBtnActive {
-  background: #FFD700;
+  background: #FFE500;
   color: #1e293b;
 }
 
 .toolbarBtnActive:hover {
-  background: #ffe033;
+  background: #FFE500;
   color: #1e293b;
 }
 
@@ -169,7 +169,7 @@
 }
 
 .linkInput input:focus {
-  border-color: #FFD700;
+  border-color: #FFE500;
 }
 
 .linkInputBtn {
@@ -188,6 +188,6 @@
 }
 
 .linkInputBtn:hover {
-  background: #FFD700;
+  background: #FFE500;
   color: #1e293b;
 }

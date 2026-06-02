@@ -1,5 +1,5 @@
 .freeBanner {
-  background: #FFD700;
+  background: #FFE500;
   color: #0f0f0f;
   font-weight: 600;
   font-size: 0.875rem;
@@ -27,7 +27,7 @@
 
 .checkboxLabel input[type="checkbox"] {
   margin-top: 2px;
-  accent-color: #FFD700;
+  accent-color: #FFE500;
 }
 
 .legalLink {
@@ -39,7 +39,7 @@
 .submitBtn {
   width: 100%;
   height: 48px;
-  background: #FFD700;
+  background: #FFE500;
   color: #0f0f0f;
   border: none;
   border-radius: 8px;

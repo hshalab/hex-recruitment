@@ -331,8 +331,8 @@ export default function CompanyPage() {
                       width="18"
                       height="18"
                       viewBox="0 0 24 24"
-                      fill={star <= review.overallRating ? '#FFD700' : 'none'}
-                      stroke={star <= review.overallRating ? '#FFD700' : '#e2e8f0'}
+                      fill={star <= review.overallRating ? '#FFE500' : 'none'}
+                      stroke={star <= review.overallRating ? '#FFE500' : '#e2e8f0'}
                       strokeWidth="2"
                       className={star <= review.overallRating ? styles.reviewStarFilled : styles.reviewStarEmpty}
                     >
@@ -587,8 +587,8 @@ function renderStars(rating: number, size: number = 18) {
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill={star <= Math.round(rating) ? '#FFD700' : 'none'}
-      stroke={star <= Math.round(rating) ? '#FFD700' : '#475569'}
+      fill={star <= Math.round(rating) ? '#FFE500' : 'none'}
+      stroke={star <= Math.round(rating) ? '#FFE500' : '#475569'}
       strokeWidth="2"
     >
       <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
@@ -696,8 +696,8 @@ function ReviewModal({ companyName, employerId, reviewerId, onClose, onSubmit }:
                   width="32"
                   height="32"
                   viewBox="0 0 24 24"
-                  fill={star <= displayRating ? '#FFD700' : 'none'}
-                  stroke={star <= displayRating ? '#FFD700' : '#e2e8f0'}
+                  fill={star <= displayRating ? '#FFE500' : 'none'}
+                  stroke={star <= displayRating ? '#FFE500' : '#e2e8f0'}
                   strokeWidth="2"
                   className={`${styles.ratingStar} ${star <= displayRating ? styles.ratingStarActive : ''}`}
                   onClick={() => setRating(star)}
