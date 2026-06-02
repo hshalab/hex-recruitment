@@ -5,12 +5,17 @@
 // label is always current relative to the user's clock rather than
 // the moment the card was loaded.
 //
-// Thresholds are global, not per-stage. 7+ days bumps the visual
-// emphasis (subtle amber tint); 14+ days strengthens it (full amber
-// border + bolder text). The two breakpoints are deliberately small
-// and small — the badge is informational, not alarming. Per-stage
-// thresholds (e.g. "1 day in Offered is stale, 7 days in Reviewing
-// is fine") are post-launch tuning, intentionally out of scope.
+// The pill takes the column's stage colour when supplied, for visual
+// consistency with the rest of the restyled pipeline (count badge +
+// card CTA both follow the same accent). The 7d / 14d thresholds
+// remain on the element as data-emphasis attributes so tests / sorts /
+// future styling tweaks can still detect a stale card without
+// inspecting computed styles, but they no longer override the colour
+// — earlier passes used amber for that, which made staleness visible
+// at the cost of leaving Interview / Offered / Hired pills the wrong
+// colour for their column. If we want staleness signalling back,
+// prefer a small ⏱ glyph / weight bump / pulse rather than swapping
+// the colour.
 
 const SUBTLE_EMPHASIS_DAYS = 7
 const STRONGER_EMPHASIS_DAYS = 14
@@ -18,6 +23,13 @@ const STRONGER_EMPHASIS_DAYS = 14
 interface StageDurationBadgeProps {
   stageEnteredAt: string
   stageLabel: string
+  /**
+   * Stage accent colour (e.g. '#3b82f6' for Reviewing). When supplied,
+   * the pill renders as a quiet stage-tinted chip — soft background,
+   * full-saturation text, thin matching border. Without it (legacy
+   * callers) the original grey neutral applies so nothing regresses.
+   */
+  stageColor?: string
 }
 
 // Date-only days between (UTC midnight semantics) so a card moved at
@@ -37,7 +49,7 @@ function dayDifference(fromIso: string, now: Date = new Date()): number {
   return Math.max(0, days)
 }
 
-export default function StageDurationBadge({ stageEnteredAt, stageLabel }: StageDurationBadgeProps) {
+export default function StageDurationBadge({ stageEnteredAt, stageLabel, stageColor }: StageDurationBadgeProps) {
   const days = dayDifference(stageEnteredAt)
 
   let label: string
@@ -45,33 +57,25 @@ export default function StageDurationBadge({ stageEnteredAt, stageLabel }: Stage
   else if (days === 1) label = `1 day in ${stageLabel}`
   else label = `${days} days in ${stageLabel}`
 
-  // Three tiers. Default → grey neutral. 7+ → soft amber tint, slight
-  // border darkening, label stays the same. 14+ → fuller amber bg,
-  // saturated border, slightly heavier text weight. The progression
-  // is informational; no warning copy, no badge change.
-  let style: React.CSSProperties
-  if (days >= STRONGER_EMPHASIS_DAYS) {
-    style = {
-      background: '#fef3c7',
-      border: '1px solid #f59e0b',
-      color: '#78350f',
-      fontWeight: 600,
-    }
-  } else if (days >= SUBTLE_EMPHASIS_DAYS) {
-    style = {
-      background: '#fefce8',
-      border: '1px solid #fde68a',
-      color: '#854d0e',
-      fontWeight: 500,
-    }
-  } else {
-    style = {
-      background: '#f1f5f9',
-      border: '1px solid #e2e8f0',
-      color: '#64748b',
-      fontWeight: 500,
-    }
-  }
+  // Quiet stage-tinted pill — every column renders identically:
+  // 12 % tinted bg, 30 % matching border, full-saturation text. If no
+  // stageColor is supplied (legacy callers), fall back to the neutral
+  // grey that pre-dates the restyle. The 7d / 14d thresholds still
+  // drive data-emphasis below for tests, but no longer change the
+  // colour.
+  const style: React.CSSProperties = stageColor
+    ? {
+        background: `color-mix(in srgb, ${stageColor} 12%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${stageColor} 30%, transparent)`,
+        color: stageColor,
+        fontWeight: 600,
+      }
+    : {
+        background: '#f1f5f9',
+        border: '1px solid #e2e8f0',
+        color: '#64748b',
+        fontWeight: 500,
+      }
 
   return (
     <span

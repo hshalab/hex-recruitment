@@ -43,6 +43,40 @@
   --ds-status-neutral-bg: #f1f5f9;
   --ds-status-neutral-fg: #334155;
 
+  /* ─────────────────────────────────────────────
+     Restyle design tokens (pass 1 — pipeline reference)
+     New visual language: dark navy as TEXT not FILL,
+     mostly white surfaces, hairline borders + soft
+     shadows, one solid primary reserved per view,
+     stage colour as the semantic accent.
+     Token names use --rs-* so existing --ds- and --primary-
+     tokens can be migrated incrementally without churn.
+     Nav-surface tokens deliberately omitted from this commit —
+     the nav bar is being kept on its current treatment until
+     the design direction is decided.
+     ───────────────────────────────────────────── */
+  --rs-bg-page: #f8fafc;
+  --rs-bg-surface: #ffffff;
+  --rs-bg-subtle: #f1f5f9;
+  --rs-text: #0f172a;
+  --rs-text-muted: #64748b;
+  --rs-text-soft: #94a3b8;
+  --rs-border: #e2e8f0;
+  --rs-border-strong: #cbd5e1;
+  --rs-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.05);
+  --rs-shadow-card-hover: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --rs-brand-navy: #0f172a;
+  --rs-brand-yellow: #FFE500;
+
+  /* Stage accents — preserved values from STAGES in app/pipeline/page.tsx
+     so the source of truth stays in TS for behaviour and CSS only mirrors. */
+  --rs-stage-reviewing:   #3b82f6;
+  --rs-stage-shortlisted: #8b5cf6;
+  --rs-stage-interview:   #06b6d4;
+  --rs-stage-offered:     #10b981;
+  --rs-stage-hired:       #16a34a;
+  --rs-stage-declined:    #6b7280;
+
   /* Nav height — used for body padding + sticky sub-header top */
   --nav-height: 66px;
 
@@ -333,6 +367,109 @@ body {
 }
 
 .btn-danger:hover { background: #fef2f2; }
+
+/* ──────────────────────────────────────────────────────────
+   Restyle button primitives (pass 1).
+   - .rs-btn          → outlined / ghost default
+   - .rs-btn-stage    → stage-coloured outlined CTA. Set
+                        `--rs-accent: <stage colour>` inline
+                        per card so colour follows the column.
+   - .rs-btn-primary  → ONE solid primary per view (navy fill,
+                        white text). Reserved for the single
+                        most important action.
+   No dark-fill/gold-text variant — that pattern is gone.
+   ────────────────────────────────────────────────────────── */
+.rs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  background: transparent;
+  color: var(--rs-text);
+  border: 1px solid var(--rs-border-strong);
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.rs-btn:hover {
+  background: var(--rs-bg-subtle);
+  border-color: var(--rs-text);
+}
+
+.rs-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--rs-text) 30%, transparent);
+  outline-offset: 2px;
+}
+
+.rs-btn-stage {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+  background: transparent;
+  color: var(--rs-accent, var(--rs-text));
+  border: 1px solid var(--rs-accent, var(--rs-border-strong));
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.rs-btn-stage:hover {
+  /* Soft tint of the stage accent on hover, no full fill. */
+  background: color-mix(in srgb, var(--rs-accent, var(--rs-text)) 10%, transparent);
+}
+
+.rs-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  background: var(--rs-brand-navy);
+  color: #fff;
+  border: 1px solid var(--rs-brand-navy);
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.rs-btn-primary:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+}
+
+/* Quiet pill — used for stage count badges + "N days in {Stage}"
+   pills + similar low-saturation accents. Set --rs-accent inline. */
+.rs-pill-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rs-accent, var(--rs-text-muted)) 12%, transparent);
+  color: var(--rs-accent, var(--rs-text-muted));
+  border: 1px solid color-mix(in srgb, var(--rs-accent, var(--rs-border)) 30%, transparent);
+  white-space: nowrap;
+}
 
 /* ==========================
    EMPLOYER SIDEBAR OFFSET

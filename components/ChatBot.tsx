@@ -3,13 +3,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Sprout } from 'lucide-react'
+import { Bot } from 'lucide-react'
 import { getKeywordResponse } from '@/lib/chatbot/keywordFallback'
 import { detectHighStakes, interceptsEnabled } from '@/lib/chatbot/intercepts'
 import styles from './ChatBot.module.css'
 
+// Robot chatbot head — reads as "assistant" without the gardening
+// metaphor. Earlier passes used <Sprout/>; the brand mark stays
+// elsewhere (header, login pages, marketing surfaces).
 const ThriveIcon = ({ size = 20 }: { size?: number }) => (
-  <Sprout size={size} color="#FFE500" strokeWidth={2} />
+  <Bot size={size} color="#FFE500" strokeWidth={2} />
 )
 
 interface Message {

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useLayoutEffect, useRef } from 'react'
-import { Sprout } from 'lucide-react'
+import { Bot } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import styles from './CandidateSidebar.module.css'
 
@@ -241,7 +241,7 @@ export default function CandidateSidebar() {
             }}
           >
             <span className={styles.icon}>
-              <Sprout size={20} color="#FFE500" strokeWidth={2} />
+              <Bot size={20} color="#FFE500" strokeWidth={2} />
             </span>
             <span className={styles.label}>Ask Thrive</span>
           </button>

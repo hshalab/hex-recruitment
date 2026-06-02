@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { ukCities } from '@/lib/ukCities'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
 import { useSavedJobs } from '@/lib/useSavedJobs'
-import { Sprout } from 'lucide-react'
+import { Bot } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const NotificationBell = dynamic(() => import('./NotificationBell'), { ssr: false })
 import ThriveMark from './ThriveMark'
@@ -353,7 +353,7 @@ export default function Header() {
               window.dispatchEvent(new CustomEvent('open-thrive-chatbot'))
             }}
           >
-            <Sprout className={styles.dropdownIcon} size={20} color="#FFE500" strokeWidth={2} />
+            <Bot className={styles.dropdownIcon} size={20} color="#FFE500" strokeWidth={2} />
             Ask Thrive
           </button>
           <div className={styles.dropdownDivider} />

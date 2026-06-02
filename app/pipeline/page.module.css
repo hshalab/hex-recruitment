@@ -121,17 +121,23 @@
   letter-spacing: 0.04em;
 }
 
+/* Quiet stage-count badge: low-saturation tint of the stage colour
+   (via --rs-accent set on the column wrapper), thin matching border,
+   full-saturation text. Replaces the loud full-fill colour chip with
+   a calmer brand-aligned chip that still reads at a glance. */
 .columnCount {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--rs-accent, var(--rs-text-muted));
   min-width: 22px;
   height: 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 99px;
-  padding: 0 6px;
+  border-radius: 999px;
+  padding: 0 8px;
+  background: color-mix(in srgb, var(--rs-accent, var(--rs-border-strong)) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rs-accent, var(--rs-border)) 30%, transparent);
 }
 
 .columnBody {
@@ -319,22 +325,26 @@
   text-overflow: ellipsis;
 }
 
+/* Stage-coloured outlined CTA on the card. The dark-navy-fill + gold-
+   text button is gone; this now picks up the stage accent passed via
+   `--rs-accent` (inline style on the column wrapper). */
 .cardPrimaryCta {
   display: block;
   margin-top: 0.625rem;
   padding: 0.4rem 0.6rem;
-  background: #0f172a;
-  color: #FFE500;
+  background: transparent;
+  color: var(--rs-accent, var(--rs-text));
+  border: 1px solid var(--rs-accent, var(--rs-border-strong));
   font-size: 0.75rem;
   font-weight: 600;
   text-align: center;
   text-decoration: none;
   border-radius: 6px;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .cardPrimaryCta:hover {
-  background: #1e293b;
+  background: color-mix(in srgb, var(--rs-accent, var(--rs-text)) 10%, transparent);
 }
 
 .cardDetails {
