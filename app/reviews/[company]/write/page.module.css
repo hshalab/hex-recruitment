@@ -511,7 +511,7 @@
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: #ffe033;
+  background: #FFE500;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 229, 0, 0.3);
 }
@@ -610,7 +610,7 @@
 }
 
 .notOnPlatformLink:hover {
-  background: #ffe033;
+  background: #FFE500;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 229, 0, 0.3);
 }

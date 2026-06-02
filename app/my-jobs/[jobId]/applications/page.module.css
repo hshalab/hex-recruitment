@@ -85,7 +85,7 @@
 
 .searchRow { position: relative; margin: 0.75rem 0 0; }
 .candidateSearch { width: 100%; padding: 0.625rem 2.5rem 0.625rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.9rem; outline: none; }
-.candidateSearch:focus { border-color: #FFCC00; }
+.candidateSearch:focus { border-color: #FFE500; }
 .searchClear { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 0.9rem; padding: 0; }
 
 .tab {
@@ -112,7 +112,7 @@
 .tabActive {
   color: #1a1a1a;
   font-weight: 600;
-  border-bottom-color: #FFCC00;
+  border-bottom-color: #FFE500;
 }
 
 .tabCount {
@@ -130,7 +130,7 @@
 }
 
 .tabCountActive {
-  background: #FFCC00;
+  background: #FFE500;
   color: #1a1a1a;
 }
 

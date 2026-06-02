@@ -80,7 +80,7 @@
 }
 
 .createBtn:hover {
-  background: #ffe033;
+  background: #FFE500;
 }
 
 .createBtn svg {
@@ -340,7 +340,7 @@
 }
 
 .saveBtn:hover {
-  background: #ffe033;
+  background: #FFE500;
 }
 
 .saveBtn:disabled {
@@ -556,7 +556,7 @@
 }
 
 .emptyBtn:hover {
-  background: #ffe033;
+  background: #FFE500;
 }
 
 /* Loading */
