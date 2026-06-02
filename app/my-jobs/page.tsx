@@ -76,6 +76,11 @@ function MyJobsContent() {
   const [myJobsSearch, setMyJobsSearch] = useState('')
   const [myJobsLocationSearch, setMyJobsLocationSearch] = useState('')
   const [openMenuJobId, setOpenMenuJobId] = useState<string | null>(null)
+  // Phase 1: recruiter vs single-company employer drives whether the
+  // per-row company logo shows. Fetched from employer_profiles.is_recruiter
+  // alongside the auth check. Default false (single-company employer →
+  // logo hidden).
+  const [isRecruiter, setIsRecruiter] = useState(false)
 
   // Read filter from URL query param (e.g. /my-jobs?filter=interviewing)
   const filterParam = searchParams.get('filter')
@@ -98,6 +103,16 @@ function MyJobsContent() {
         const company = session.user.user_metadata?.company_name || 'Your Company'
         const employerId = session.user.id
         setCompanyName(company)
+
+        // Recruiter flag — drives the conditional company-logo column on
+        // each row. Multi-client recruiters need to see whose ad is whose;
+        // single-company employers don't.
+        const { data: empProfile } = await supabase
+          .from('employer_profiles')
+          .select('is_recruiter')
+          .eq('user_id', employerId)
+          .maybeSingle()
+        setIsRecruiter(!!empProfile?.is_recruiter)
 
         // Fetch ALL jobs for this employer directly from Supabase (consistent with dashboard)
         const { data: allJobsData } = await supabase
@@ -835,70 +850,9 @@ function MyJobsContent() {
             </div>
           ) : (
             <>
-              {activeTab === 'interviewing' ? (
-                <div className={styles.stats}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.todayInterviews}</span>
-                    <span className={styles.statLabel}>Today</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.thisWeekInterviews}</span>
-                    <span className={styles.statLabel}>This Week</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.pendingConfirmation}</span>
-                    <span className={styles.statLabel}>Pending Confirmation</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.completedInterviews}</span>
-                    <span className={styles.statLabel}>Completed</span>
-                  </div>
-                </div>
-              ) : activeTab === 'hired' ? (
-                <div className={styles.stats}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.hiredCandidates}</span>
-                    <span className={styles.statLabel}>Candidates Hired</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.filtered.length}</span>
-                    <span className={styles.statLabel}>Jobs Filled</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.acceptedOffers}</span>
-                    <span className={styles.statLabel}>Offers Accepted</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.stillHiring}</span>
-                    <span className={styles.statLabel}>Still Hiring</span>
-                  </div>
-                </div>
-              ) : activeTab === 'archived' ? null : (
-                <div className={styles.stats}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>{viewData.filtered.length}</span>
-                    <span className={styles.statLabel}>Total Jobs</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>
-                      {viewData.filtered.filter(j => j.status === 'active').length}
-                    </span>
-                    <span className={styles.statLabel}>Active</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>
-                      {viewData.filtered.reduce((sum, j) => sum + j.applicationCount, 0)}
-                    </span>
-                    <span className={styles.statLabel}>Applications</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNumber}>
-                      {viewData.filtered.reduce((sum, j) => sum + j.viewCount, 0)}
-                    </span>
-                    <span className={styles.statLabel}>Views</span>
-                  </div>
-                </div>
-              )}
+              {/* Stat tiles removed — filter tabs above already carry the
+                  same counts. Kept the page glanceable; the rows below are
+                  the real content. */}
 
               {/* Offers tab — show offer records instead of job cards */}
               {activeTab === 'offers' && detailedOffers.filter(o => o.status === 'pending' || o.status === 'declined').length > 0 && (
@@ -1006,43 +960,56 @@ function MyJobsContent() {
                           }
                         }}
                       >
-                        <CompanyLogo
-                          src={job.companyLogo}
-                          alt={job.company}
-                          className={styles.rowLogo}
-                        />
+                        {/* Logo column: recruiter accounts manage multiple
+                            companies and need the brand glyph to scan the
+                            list; single-company employers don't. */}
+                        {isRecruiter && (
+                          <CompanyLogo
+                            src={job.companyLogo}
+                            alt={job.company}
+                            className={styles.rowLogo}
+                          />
+                        )}
                         <h3 className={styles.rowTitle}>{job.title}</h3>
                         {job.venue && (
                           <>
-                            <span className={styles.rowSep} aria-hidden="true">·</span>
+                            <span className={styles.fieldSep} aria-hidden="true">—</span>
                             <span className={styles.rowVenue}>{job.venue}</span>
                           </>
                         )}
-                        <span className={styles.rowSep} aria-hidden="true">·</span>
-                        <span className={styles.rowSalary}>{formatSalary(job.salaryMin, job.salaryMax, job.salaryPeriod)}</span>
-                        <span className={styles.rowSep} aria-hidden="true">·</span>
+                        <span className={styles.fieldSep} aria-hidden="true">—</span>
                         <span className={styles.rowLocation}>{job.location}</span>
                         {interviewMeta && (
                           <>
-                            <span className={styles.rowSep} aria-hidden="true">·</span>
+                            <span className={styles.fieldSep} aria-hidden="true">—</span>
                             <span className={styles.rowInterview}>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span>
                           </>
                         )}
                         {job.hiredCandidate && (
                           <>
-                            <span className={styles.rowSep} aria-hidden="true">·</span>
+                            <span className={styles.fieldSep} aria-hidden="true">—</span>
                             <span className={styles.rowHired}>✓ Hired {job.hiredCandidate.name}</span>
                           </>
                         )}
-                        <span className={`${styles.statusBadge} ${statusClass}`}>{status.label}</span>
-                        <span className={styles.appCountBadge}>
+                        <span className={`${styles.statusPill} ${statusClass}`}>{status.label}</span>
+                        {/* Applications: emphasised clickable pill — the
+                            primary scan/act target on this page. Phase 1
+                            stub: keeps the existing row goToApps target,
+                            no new handler wired. */}
+                        <button
+                          type="button"
+                          className={styles.applicationsPill}
+                          onClick={(e) => { e.stopPropagation(); goToApps() }}
+                          aria-label={`${job.applicationCount} ${job.applicationCount === 1 ? 'application' : 'applications'}`}
+                        >
                           <strong>{job.applicationCount}</strong>
                           {' '}
                           <span className={styles.appCountWord}>
                             {job.applicationCount === 1 ? 'application' : 'applications'}
                           </span>
                           <span className={styles.appCountWordShort}>apps</span>
-                        </span>
+                          <span className={styles.applicationsPillArrow} aria-hidden="true">→</span>
+                        </button>
                         {renderKebab(job, isBoosted)}
                       </div>
                     )
