@@ -86,13 +86,13 @@
 
 .tierCard:hover {
   border-color: #e0c65e;
-  background: rgba(255, 215, 0, 0.03);
+  background: rgba(255, 229, 0, 0.03);
 }
 
 .tierCardSelected {
-  border-color: #FFD700;
-  background: rgba(255, 215, 0, 0.06);
-  box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.3);
+  border-color: #FFE500;
+  background: rgba(255, 229, 0, 0.06);
+  box-shadow: 0 0 0 1px rgba(255, 229, 0, 0.3);
 }
 
 .tierLeft {
@@ -126,7 +126,7 @@
 
 .tierBestValue {
   padding: 0.15rem 0.5rem;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: linear-gradient(135deg, #FFE500, #FFA500);
   color: #1a1a2e;
   border-radius: 4px;
   font-size: 0.6rem;

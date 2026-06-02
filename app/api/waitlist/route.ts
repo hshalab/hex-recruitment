@@ -20,7 +20,7 @@ function buildConfirmationEmail(name: string): string {
     <tr><td align="center">
       <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;">
         <tr><td style="padding-bottom:32px;text-align:center;">
-          <span style="font-size:28px;font-weight:800;color:#FFD700;letter-spacing:0.02em;">THRIVE</span>
+          <span style="font-size:28px;font-weight:800;color:#FFE500;letter-spacing:0.02em;">THRIVE</span>
         </td></tr>
         <tr><td style="background:#1a1a1a;border-radius:16px;padding:36px 32px;">
           <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#ffffff;">Hi ${firstName}, you're on the list!</h1>
@@ -28,7 +28,7 @@ function buildConfirmationEmail(name: string): string {
             We're giving the first ${EMPLOYER_COHORT_CAP} employers on Thrive ${foundingPhraseShort()}. We'll email you the moment we go live.
           </p>
           <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
-            <tr><td style="background:#FFD700;border-radius:8px;">
+            <tr><td style="background:#FFE500;border-radius:8px;">
               <a href="https://thrivecareer.co.uk" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#0f0f0f;text-decoration:none;">
                 Explore Thrive
               </a>

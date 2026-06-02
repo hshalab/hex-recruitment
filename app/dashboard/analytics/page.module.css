@@ -58,7 +58,7 @@
   border-radius: 8px;
   border: 1px solid #1e293b;
   background: #1e293b;
-  color: #FFD700;
+  color: #FFE500;
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 600;
@@ -79,8 +79,8 @@
 .exportSpinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 215, 0, 0.3);
-  border-top-color: #FFD700;
+  border: 2px solid rgba(255, 229, 0, 0.3);
+  border-top-color: #FFE500;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -199,9 +199,9 @@
 
 .dateFilterBtnActive {
   background: #1e293b;
-  color: #FFD700;
+  color: #FFE500;
   border-color: #1e293b;
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 0 0 3px rgba(255, 229, 0, 0.15);
 }
 
 /* Overview Cards */
@@ -643,7 +643,7 @@
 .topJobRank {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #FFD700;
+  color: #FFE500;
   min-width: 24px;
   text-align: center;
 }
@@ -678,7 +678,7 @@
 
 .topJobBar {
   height: 100%;
-  background: #FFD700;
+  background: #FFE500;
   border-radius: 3px;
   transition: width 0.5s ease;
 }
@@ -929,7 +929,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #FFD700;
+  background: #FFE500;
   color: #1e293b;
   font-size: 0.7rem;
   font-weight: 700;
@@ -956,7 +956,7 @@
   color: #1e293b;
   margin: 0.25rem 0;
   display: inline-block;
-  background: linear-gradient(135deg, #FFD700, #f59e0b);
+  background: linear-gradient(135deg, #FFE500, #f59e0b);
   color: #1e293b;
   padding: 0.25rem 1rem;
   border-radius: 8px;
@@ -1191,7 +1191,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #FFD700;
+  background: #FFE500;
   color: #1e293b;
   font-size: 0.7rem;
   font-weight: 700;
@@ -1309,7 +1309,7 @@
 .cphBigNumber {
   font-size: 2.5rem;
   font-weight: 800;
-  color: #FFD700;
+  color: #FFE500;
   line-height: 1.1;
 }
 
@@ -1780,7 +1780,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid #e2e8f0;
-  border-top-color: #FFD700;
+  border-top-color: #FFE500;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -1801,7 +1801,7 @@
 .aiInsightsCard {
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-left: 4px solid #FFD700;
+  border-left: 4px solid #FFE500;
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.5rem;
@@ -1844,7 +1844,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #FFD700;
+  background: #FFE500;
 }
 
 /* Custom Date Picker */
@@ -1885,8 +1885,8 @@
 
 .customDateInput:focus {
   outline: none;
-  border-color: #FFD700;
-  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.15);
+  border-color: #FFE500;
+  box-shadow: 0 0 0 2px rgba(255, 229, 0, 0.15);
 }
 
 .customDateApply {
@@ -1894,7 +1894,7 @@
   border-radius: 6px;
   border: none;
   background: #1e293b;
-  color: #FFD700;
+  color: #FFE500;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -2134,7 +2134,7 @@
 
 .upgradeBtnLink {
   display: inline-block;
-  background: linear-gradient(135deg, #FFD700, #FFC000);
+  background: linear-gradient(135deg, #FFE500, #FFC000);
   color: #1e293b;
   font-weight: 600;
   font-size: 1rem;
@@ -2142,12 +2142,12 @@
   border-radius: 10px;
   text-decoration: none;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 229, 0, 0.3);
 }
 
 .upgradeBtnLink:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(255, 229, 0, 0.4);
 }
 
 .blurredContent {

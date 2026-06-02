@@ -13,17 +13,17 @@ import {
 } from 'recharts'
 import styles from './page.module.css'
 
-const PIE_COLORS = ['#FFD700', '#1e293b', '#3b82f6', '#16a34a', '#f59e0b', '#8b5cf6', '#dc2626', '#64748b']
+const PIE_COLORS = ['#FFE500', '#1e293b', '#3b82f6', '#16a34a', '#f59e0b', '#8b5cf6', '#dc2626', '#64748b']
 
 const DEVICE_COLORS: Record<string, string> = {
   desktop: '#3b82f6',
-  tablet: '#FFD700',
+  tablet: '#FFE500',
   mobile: '#16a34a',
 }
 
 const SOURCE_COLORS: Record<string, string> = {
   search: '#3b82f6',
-  direct: '#FFD700',
+  direct: '#FFE500',
   recommendation: '#16a34a',
   saved: '#8b5cf6',
   external: '#f59e0b',
@@ -32,7 +32,7 @@ const SOURCE_COLORS: Record<string, string> = {
 const FUNNEL_COLORS = [
   '#3b82f6', // Applied
   '#8b5cf6', // Viewed
-  '#FFD700', // Shortlisted
+  '#FFE500', // Shortlisted
   '#f59e0b', // Interviewed
   '#16a34a', // Offered
   '#059669', // Hired
@@ -42,7 +42,7 @@ const EXTENDED_FUNNEL_COLORS = [
   '#64748b', // Impressions
   '#3b82f6', // Views
   '#16a34a', // Apply Clicks
-  '#FFD700', // Applications
+  '#FFE500', // Applications
   '#f59e0b', // Shortlisted
   '#8b5cf6', // Interviews
   '#059669', // Offers
@@ -914,7 +914,7 @@ export default function AnalyticsContent() {
       }
     })
 
-    const expColors = ['#3b82f6', '#FFD700', '#16a34a', '#8b5cf6', '#f59e0b']
+    const expColors = ['#3b82f6', '#FFE500', '#16a34a', '#8b5cf6', '#f59e0b']
     const experienceData = hasExpData
       ? EXP_LEVELS.map((lvl, i) => ({
           name: lvl.label,
@@ -2021,7 +2021,7 @@ export default function AnalyticsContent() {
       let y = MARGIN
 
       const NAVY = '#1e293b'
-      const YELLOW = '#FFD700'
+      const YELLOW = '#FFE500'
       const GREY = '#64748b'
       const LIGHT_GREY = '#f1f5f9'
 
@@ -2247,7 +2247,7 @@ export default function AnalyticsContent() {
           pdf.text(bracket.name, MARGIN, y + 3)
           const maxViews = Math.max(...salaryInsights.bracketData.map((b: any) => b.views), 1)
           const barW = (bracket.views / maxViews) * (CONTENT_W - 45)
-          pdf.setFillColor(255, 215, 0)
+          pdf.setFillColor(255, 229, 0)
           pdf.roundedRect(MARGIN + 22, y, Math.max(barW, 1), 4, 1, 1, 'F')
           pdf.setTextColor(NAVY)
           pdf.text(`${bracket.views}v / ${bracket.applications}a`, MARGIN + 24 + barW, y + 3)
@@ -2947,7 +2947,7 @@ export default function AnalyticsContent() {
           </div>
           <div className={styles.overviewCard}>
             <div className={styles.cardIcon}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFE500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                 <polyline points="17 6 23 6 23 12" />
               </svg>
@@ -2961,11 +2961,11 @@ export default function AnalyticsContent() {
                   <AreaChart data={sparklineData}>
                     <defs>
                       <linearGradient id="sparkConv" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#FFD700" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#FFD700" stopOpacity={0.05} />
+                        <stop offset="0%" stopColor="#FFE500" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#FFE500" stopOpacity={0.05} />
                       </linearGradient>
                     </defs>
-                    <Area type="monotone" dataKey="conv" stroke="#FFD700" strokeWidth={1.5} fill="url(#sparkConv)" isAnimationActive={true} animationDuration={600} />
+                    <Area type="monotone" dataKey="conv" stroke="#FFE500" strokeWidth={1.5} fill="url(#sparkConv)" isAnimationActive={true} animationDuration={600} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -3034,7 +3034,7 @@ export default function AnalyticsContent() {
         {aiInsightsSummary && (
           <div className={styles.aiInsightsCard}>
             <div className={styles.aiInsightsHeader}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFE500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
               <span>AI Insights</span>
@@ -3145,14 +3145,14 @@ export default function AnalyticsContent() {
                           contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#1e293b', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                           labelStyle={{ color: '#1e293b', fontWeight: 600 }}
                         />
-                        <Line type="monotone" dataKey="applications" stroke="#FFD700" strokeWidth={2} dot={false} name="Applications" hide={hiddenActivitySeries.has('applications')} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
+                        <Line type="monotone" dataKey="applications" stroke="#FFE500" strokeWidth={2} dot={false} name="Applications" hide={hiddenActivitySeries.has('applications')} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
                         <Line type="monotone" dataKey="applyClicks" stroke="#16a34a" strokeWidth={2} dot={false} name="Apply Clicks" hide={hiddenActivitySeries.has('applyClicks')} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" animationBegin={200} />
                         <Line type="monotone" dataKey="saveClicks" stroke="#8b5cf6" strokeWidth={2} dot={false} name="Save Clicks" hide={hiddenActivitySeries.has('saveClicks')} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" animationBegin={400} />
                       </LineChart>
                     </ResponsiveContainer>
                     <div className={styles.chartLegend}>
                       {([
-                        { key: 'applications', label: 'Applications', color: '#FFD700' },
+                        { key: 'applications', label: 'Applications', color: '#FFE500' },
                         { key: 'applyClicks', label: 'Apply Clicks', color: '#16a34a' },
                         { key: 'saveClicks', label: 'Save Clicks', color: '#8b5cf6' },
                       ]).map(s => (
@@ -3231,7 +3231,7 @@ export default function AnalyticsContent() {
                   labelStyle={{ color: '#1e293b', fontWeight: 600 }}
                   formatter={(value: any) => [`${value}%`, 'Conversion Rate']}
                 />
-                <Line type="monotone" dataKey="rate" stroke="#FFD700" strokeWidth={2.5} dot={{ fill: '#FFD700', r: 3 }} name="Conversion Rate" isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
+                <Line type="monotone" dataKey="rate" stroke="#FFE500" strokeWidth={2.5} dot={{ fill: '#FFE500', r: 3 }} name="Conversion Rate" isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -3543,7 +3543,7 @@ export default function AnalyticsContent() {
                     contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#1e293b', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                   />
                   <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
-                  <Bar dataKey="views" fill="#FFD700" name="Views" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="views" fill="#FFE500" name="Views" radius={[0, 4, 4, 0]} />
                   <Bar dataKey="applications" fill="#3b82f6" name="Applications" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -3608,7 +3608,7 @@ export default function AnalyticsContent() {
                         contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#1e293b', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                         formatter={(value: any) => [`${value} applicant${value !== 1 ? 's' : ''}`]}
                       />
-                      <Bar dataKey="value" fill="#FFD700" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="value" fill="#FFE500" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -3677,7 +3677,7 @@ export default function AnalyticsContent() {
                         contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#1e293b', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                         formatter={(value: any) => [`${value} applicant${value !== 1 ? 's' : ''}`]}
                       />
-                      <Bar dataKey="value" fill="#FFD700" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="value" fill="#FFE500" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -3832,7 +3832,7 @@ export default function AnalyticsContent() {
                       {row.cells.map(cell => {
                         const bg = cell.count === 0
                           ? '#f8fafc'
-                          : `color-mix(in srgb, #FFD700 ${Math.round((1 - cell.intensity) * 100)}%, #1e293b ${Math.round(cell.intensity * 100)}%)`
+                          : `color-mix(in srgb, #FFE500 ${Math.round((1 - cell.intensity) * 100)}%, #1e293b ${Math.round(cell.intensity * 100)}%)`
                         const textColor = cell.intensity > 0.5 ? '#fff' : '#64748b'
                         return (
                           <div
@@ -3858,7 +3858,7 @@ export default function AnalyticsContent() {
                         style={{
                           background: intensity === 0
                             ? '#f8fafc'
-                            : `color-mix(in srgb, #FFD700 ${Math.round((1 - intensity) * 100)}%, #1e293b ${Math.round(intensity * 100)}%)`,
+                            : `color-mix(in srgb, #FFE500 ${Math.round((1 - intensity) * 100)}%, #1e293b ${Math.round(intensity * 100)}%)`,
                         }}
                       />
                     ))}
@@ -3923,7 +3923,7 @@ export default function AnalyticsContent() {
                           contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#1e293b', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                         />
                         <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
-                        <Bar dataKey="yours" fill="#FFD700" name="Your Average" radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
+                        <Bar dataKey="yours" fill="#FFE500" name="Your Average" radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
                         <Bar dataKey="platform" fill="#94a3b8" name="Platform Average" radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" animationBegin={200} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -3936,7 +3936,7 @@ export default function AnalyticsContent() {
                   <div className={styles.mbTtfGrid}>
                     <div className={styles.mbTtfCard}>
                       <div className={styles.mbTtfLabel}>Your Average</div>
-                      <div className={styles.mbTtfValue} style={{ color: '#FFD700' }}>
+                      <div className={styles.mbTtfValue} style={{ color: '#FFE500' }}>
                         {formatTimeToHire(marketBenchmark.myAvgTimeToFirst)}
                       </div>
                     </div>
@@ -4238,7 +4238,7 @@ export default function AnalyticsContent() {
                       ]}
                     />
                     <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
-                    <Line yAxisId="cost" type="monotone" dataKey="cost" stroke="#FFD700" strokeWidth={2} dot={false} name="Total Cost" isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
+                    <Line yAxisId="cost" type="monotone" dataKey="cost" stroke="#FFE500" strokeWidth={2} dot={false} name="Total Cost" isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
                     <Line yAxisId="hires" type="stepAfter" dataKey="hires" stroke="#16a34a" strokeWidth={2} dot={false} name="Total Hires" isAnimationActive={true} animationDuration={800} animationEasing="ease-out" animationBegin={200} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -4259,7 +4259,7 @@ export default function AnalyticsContent() {
               {/* Tip card */}
               <div className={styles.jdpTipCard}>
                 <div className={styles.jdpTipIcon}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFE500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="16" x2="12" y2="12" />
                     <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -4283,7 +4283,7 @@ export default function AnalyticsContent() {
                             contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#1e293b', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                           />
                           <Legend wrapperStyle={{ fontSize: '0.7rem' }} />
-                          <Bar dataKey="avgViews" fill="#FFD700" name="Avg Views" radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
+                          <Bar dataKey="avgViews" fill="#FFE500" name="Avg Views" radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
                           <Bar dataKey="avgApps" fill="#3b82f6" name="Avg Applications" radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" animationBegin={200} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -4604,7 +4604,7 @@ export default function AnalyticsContent() {
                 </svg>
               </div>
               <p>No jobs posted yet.</p>
-              <Link href="/post-job" style={{ color: '#FFD700', fontWeight: 600, textDecoration: 'none' }}>Post your first job</Link>
+              <Link href="/post-job" style={{ color: '#FFE500', fontWeight: 600, textDecoration: 'none' }}>Post your first job</Link>
             </div>
           )}
         </div>

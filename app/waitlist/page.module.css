@@ -16,12 +16,12 @@
 }
 
 .fullBanner {
-  background: rgba(255, 215, 0, 0.15);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: rgba(255, 229, 0, 0.15);
+  border: 1px solid rgba(255, 229, 0, 0.3);
   border-radius: 10px;
   padding: 0.875rem 1.25rem;
   font-size: 0.875rem;
-  color: #FFD700;
+  color: #FFE500;
   text-align: center;
   line-height: 1.5;
   margin-bottom: 1rem;
@@ -62,7 +62,7 @@
 .spotsText {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #FFD700;
+  color: #FFE500;
   margin: 0 0 8px;
   text-align: center;
 }
@@ -77,7 +77,7 @@
 
 .spotsBarFill {
   height: 100%;
-  background: #FFD700;
+  background: #FFE500;
   border-radius: 999px;
   transition: width 0.8s ease;
   min-width: 4px;
@@ -116,13 +116,13 @@
 }
 
 .input:focus {
-  border-color: #FFD700;
+  border-color: #FFE500;
 }
 
 .submitBtn {
   width: 100%;
   height: 48px;
-  background: #FFD700;
+  background: #FFE500;
   color: #0f0f0f;
   border: none;
   border-radius: 8px;

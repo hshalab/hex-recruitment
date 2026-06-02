@@ -88,7 +88,7 @@
 .heroAvg {
   font-size: 2.25rem;
   font-weight: 800;
-  color: #FFD700;
+  color: #FFE500;
   line-height: 1;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
@@ -122,7 +122,7 @@
 
 .writeReviewBtn {
   padding: 0.75rem 1.75rem;
-  background: #FFD700;
+  background: #FFE500;
   color: #0f172a;
   border: none;
   border-radius: 8px;
@@ -141,7 +141,7 @@
 .writeReviewBtn:hover {
   background: #ffe033;
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.35);
+  box-shadow: 0 4px 16px rgba(255, 229, 0, 0.35);
 }
 
 /* Sub-Ratings Grid */
@@ -177,7 +177,7 @@
 
 .subRatingBar {
   height: 100%;
-  background: #FFD700;
+  background: #FFE500;
   border-radius: 3px;
   transition: width 0.5s ease;
 }
@@ -250,7 +250,7 @@
 
 .distributionBar {
   height: 100%;
-  background: #FFD700;
+  background: #FFE500;
   border-radius: 6px;
   transition: width 0.4s ease;
 }
@@ -295,7 +295,7 @@
 }
 
 .sortSelect:focus {
-  border-color: #FFD700;
+  border-color: #FFE500;
 }
 
 /* Review Card */
@@ -370,7 +370,7 @@
 }
 
 .editReviewBtn:hover {
-  border-color: #FFD700;
+  border-color: #FFE500;
   color: #0f172a;
   background: #fffbeb;
 }
@@ -525,13 +525,13 @@
 }
 
 .helpfulBtn:hover {
-  border-color: #FFD700;
+  border-color: #FFE500;
   color: #0f172a;
   background: #fffbeb;
 }
 
 .helpfulBtnActive {
-  border-color: #FFD700;
+  border-color: #FFE500;
   background: #fffbeb;
   color: #b8960a;
 }
@@ -582,7 +582,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid #e2e8f0;
-  border-top-color: #FFD700;
+  border-top-color: #FFE500;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

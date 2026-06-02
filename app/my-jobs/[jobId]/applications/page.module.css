@@ -252,7 +252,7 @@
   overflow: hidden;
   flex-shrink: 0;
   background: #fff;
-  border: 2px solid rgba(255, 215, 0, 0.4);
+  border: 2px solid rgba(255, 229, 0, 0.4);
 }
 
 .photoImage {
@@ -328,7 +328,7 @@
 
 .viewProfileLink:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 215, 0, 0.5);
+  border-color: rgba(255, 229, 0, 0.5);
 }
 
 /* Screening answers — dark panel so the Q&A pops out of the body */
@@ -466,7 +466,7 @@
 
 /* Primary action — yellow (matches profile page primary CTA) */
 .barBtnPrimary {
-  background: #FFD700;
+  background: #FFE500;
   color: #0f172a;
 }
 .barBtnPrimary:hover {
@@ -475,7 +475,7 @@
 
 /* Shortlist — yellow primary */
 .barBtnShortlist {
-  background: #FFD700;
+  background: #FFE500;
   color: #0f172a;
 }
 .barBtnShortlist:hover {
@@ -484,7 +484,7 @@
 
 /* Make Offer — yellow primary */
 .barBtnOffer {
-  background: #FFD700;
+  background: #FFE500;
   color: #0f172a;
 }
 .barBtnOffer:hover {
@@ -720,7 +720,7 @@
   justify-content: center;
   white-space: nowrap;
   border: none;
-  background: #FFD700;
+  background: #FFE500;
   color: #0f172a;
 }
 
