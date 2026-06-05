@@ -9,6 +9,7 @@ import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { MapPin, Video, Phone, MoreHorizontal } from 'lucide-react'
+import { RowInlineFields } from '@/components/RowInlineFields'
 import styles from './page.module.css'
 
 interface InterviewItem {
@@ -264,13 +265,6 @@ export default function InterviewsPage() {
     return `${h}:${String(minutes).padStart(2, '0')} ${ampm}`
   }
 
-  const formatCardDate = (dateStr: string, timeStr: string, durationMinutes: number) => {
-    const [year, month, day] = dateStr.split('-').map(Number)
-    const date = new Date(year, month - 1, day)
-    const dayStr = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-    return `${dayStr} at ${formatTime(timeStr)} · ${durationMinutes} min`
-  }
-
   // Compact row date — drops "at" and duration, e.g. "Tue 12 May, 3:30 PM".
   // Duration is hidden in the row but still in the row's overflow menu /
   // detail screen (Phase 2).
@@ -519,11 +513,14 @@ export default function InterviewsPage() {
                         }}
                       >
                         <div className={styles.rowMain}>
-                          <span className={styles.candidateName}>{interview.candidateName}</span>
-                          <span className={styles.fieldSep} aria-hidden="true">—</span>
-                          <span className={styles.jobTitle}>{interview.jobTitle}</span>
-                          <span className={styles.fieldSep} aria-hidden="true">—</span>
-                          <span className={styles.dateTime}>{formatRowDateTime(interview.interviewDate, interview.interviewTime)}</span>
+                          <RowInlineFields
+                            sepClassName={styles.fieldSep}
+                            fields={[
+                              <span key="n" className={styles.candidateName}>{interview.candidateName}</span>,
+                              <span key="r" className={styles.jobTitle}>{interview.jobTitle}</span>,
+                              <span key="d" className={styles.dateTime}>{formatRowDateTime(interview.interviewDate, interview.interviewTime)}</span>,
+                            ]}
+                          />
                         </div>
 
                         <div className={styles.rowAside}>
@@ -588,25 +585,32 @@ export default function InterviewsPage() {
             </button>
 
             {pastExpanded && (
-              <div className={styles.pastList}>
+              /* Reskinned to the canonical compact-row standard, just DIMMED
+                 (.pastRow) so history reads as de-emphasised — same anatomy
+                 as the upcoming rows, not a different tile layout. Avatar +
+                 "View Application" action are preserved. */
+              <div className={`${styles.interviewCards} ${styles.pastList}`}>
                 {past.map(interview => (
-                  <div key={interview.interviewId} className={styles.pastCard}>
-                    <div className={styles.pastPhoto}>
-                      {interview.candidatePhoto ? (
-                        <SignedImage src={interview.candidatePhoto} alt={interview.candidateName} className={styles.cardPhotoImg} />
-                      ) : (
-                        <div className={styles.cardPhotoPlaceholder}>{getInitials(interview.candidateName)}</div>
-                      )}
-                    </div>
-                    <div className={styles.pastBody}>
-                      <span className={styles.candidateName}>{interview.candidateName}</span>
-                      <p className={styles.cardJobTitle}>{interview.jobTitle}</p>
-                      <span className={styles.cardTag} style={{ display: 'inline-block', marginTop: '0.2rem' }}>
-                        {formatCardDate(interview.interviewDate, interview.interviewTime, interview.durationMinutes)}
+                  <div key={interview.interviewId} className={`${styles.interviewRow} ${styles.pastRow}`}>
+                    <div className={styles.rowMain}>
+                      <span className={styles.rowAvatar} aria-hidden="true">
+                        {interview.candidatePhoto ? (
+                          <SignedImage src={interview.candidatePhoto} alt="" className={styles.cardPhotoImg} />
+                        ) : (
+                          <span className={styles.cardPhotoPlaceholder}>{getInitials(interview.candidateName)}</span>
+                        )}
                       </span>
+                      <RowInlineFields
+                        sepClassName={styles.fieldSep}
+                        fields={[
+                          <span key="n" className={styles.candidateName}>{interview.candidateName}</span>,
+                          <span key="r" className={styles.jobTitle}>{interview.jobTitle}</span>,
+                          <span key="d" className={styles.dateTime}>{formatRowDateTime(interview.interviewDate, interview.interviewTime)}</span>,
+                        ]}
+                      />
                     </div>
-                    <div className={styles.pastMeta}>
-                      <span className={`${styles.pastStatusBadge} ${interview.status === 'completed' ? styles.pastCompleted : styles.pastCancelled}`}>
+                    <div className={styles.rowAside}>
+                      <span className={`${styles.statusPill} ${interview.status === 'completed' ? styles.statusCompleted : styles.statusCancelled}`}>
                         {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
                       </span>
                       <Link href={`/my-jobs/${interview.jobId}/applications`} className={styles.btnSm}>

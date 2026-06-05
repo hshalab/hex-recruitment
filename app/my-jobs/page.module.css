@@ -346,15 +346,17 @@
 
 /* ─── Kebab popover ───────────────────────────────────────────────────── */
 .kebabWrap { position: relative; flex-shrink: 0; }
+/* Overflow ⋯ — converged with the Interviews page's .overflowBtn: a 28px
+   square ghost button holding the lucide MoreHorizontal icon, same hover. */
 .kebabBtn {
-  width: 32px; height: 32px;
+  width: 28px; height: 28px;
   display: inline-flex; align-items: center; justify-content: center;
   background: transparent; border: 1px solid transparent; border-radius: 6px;
-  color: var(--text-gray); font-size: 1.1rem; line-height: 1; cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  color: var(--rs-text-muted, var(--text-gray)); line-height: 1; cursor: pointer; padding: 0;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 .kebabBtn:hover, .kebabBtn[aria-expanded="true"] {
-  background: var(--light-gray); border-color: var(--border-gray); color: var(--text-dark);
+  background: var(--rs-bg-subtle, var(--light-gray)); border-color: var(--rs-border-strong, var(--border-gray)); color: var(--rs-text, var(--text-dark));
 }
 /* Dropdown menu — centred under the ⋯ button so it looks visually
    anchored to the trigger rather than free-floating against the row's
