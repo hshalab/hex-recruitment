@@ -268,15 +268,17 @@ export default function JobApplicationsPage() {
         interviews.forEach((i: any) => { interviewMap[i.application_id] = i })
       }
 
-      // Fetch offers for these applications
+      // Fetch offers for these applications. Newest-first + keep the FIRST per
+      // application, so a fresh re-offer supersedes an earlier withdrawn one.
       const { data: offers } = await supabase
         .from('job_offers')
         .select('*')
         .in('application_id', applicationIds)
+        .order('created_at', { ascending: false })
 
       const offerMap: Record<string, any> = {}
       if (offers) {
-        offers.forEach((o: any) => { offerMap[o.application_id] = o })
+        offers.forEach((o: any) => { if (!offerMap[o.application_id]) offerMap[o.application_id] = o })
       }
 
       const mapped: Application[] = data.map((row: any) => {
@@ -1048,8 +1050,10 @@ export default function JobApplicationsPage() {
                     </div>
                   )}
 
-                  {/* Offer Details */}
-                  {application.offer && (
+                  {/* Offer Details — a withdrawn offer is hidden entirely
+                      (the application has been reverted to a re-offerable
+                      stage), so no stale "Job Offer Sent" card lingers. */}
+                  {application.offer && application.offer.status !== 'withdrawn' && (
                     <div className={styles.offerSection}>
                       <h4 className={styles.offerTitle}>
                         {application.status === 'hired'
@@ -1241,8 +1245,11 @@ export default function JobApplicationsPage() {
                       </>
                     )}
 
-                    {/* ── INTERVIEWING: Send Offer Letter (Reschedule/Reject live in the interview panel; Message/Email live on the candidate profile) ── */}
-                    {(application.status === 'interviewing' || application.status === 'interview') && !application.offer && (
+                    {/* ── INTERVIEWING: Send Offer Letter (Reschedule/Reject live in the interview panel; Message/Email live on the candidate profile).
+                        Also re-shown after a withdrawn offer (the app was reverted
+                        to interviewing and the withdrawn offer is treated as gone),
+                        so the employer can send a fresh offer. ── */}
+                    {(application.status === 'interviewing' || application.status === 'interview') && (!application.offer || application.offer.status === 'withdrawn') && (
                       <button className={styles.barBtnPrimary} onClick={() => { setOfferApplication(application); setOfferModalOpen(true) }}>
                         Send Offer Letter →
                       </button>

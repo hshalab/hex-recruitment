@@ -133,15 +133,18 @@ export default function MyJobsPage() {
           }
         }
 
-        // Fetch offers for these applications
+        // Fetch offers for these applications. Order newest-first and keep the
+        // FIRST per application so a fresh re-offer supersedes an earlier
+        // withdrawn/declined offer for the same application.
         const { data: offers } = await supabase
           .from('job_offers')
           .select('*')
           .in('application_id', applicationIds)
+          .order('created_at', { ascending: false })
 
         const offerMap: Record<string, any> = {}
         if (offers) {
-          offers.forEach((o: any) => { offerMap[o.application_id] = o })
+          offers.forEach((o: any) => { if (!offerMap[o.application_id]) offerMap[o.application_id] = o })
         }
 
         setApplications(data.map((row: any) => {
@@ -256,6 +259,34 @@ export default function MyJobsPage() {
       reached: i <= currentIndex,
       active: i === currentIndex,
     }))
+  }
+
+  // Plain-accept for letter-less offers (no document to counter-sign). Flips
+  // the offer to 'accepted'; the employer still confirms the hire, exactly as
+  // for a counter-signed offer.
+  const handleAcceptOffer = async (application: JobApplication) => {
+    if (!application.offer) return
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { router.push('/login/employee'); return }
+    try {
+      const res = await fetch(`/api/offers/${application.offer.id}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      })
+      if (res.ok || res.status === 409) {
+        await loadApplications()
+        return
+      }
+      const body = await res.json().catch(() => ({}))
+      if (res.status === 410) {
+        alert('This offer has been withdrawn by the employer.')
+        await loadApplications()
+        return
+      }
+      alert(body.error || 'Could not accept the offer. Please try again.')
+    } catch {
+      alert('Could not reach the server. Check your connection and try again.')
+    }
   }
 
   const handleAcceptInterest = async (application: JobApplication) => {
@@ -1021,13 +1052,23 @@ export default function MyJobsPage() {
                           </div>
                           {application.offer.status === 'pending' && (
                             <div className={styles.offerActions}>
-                              <Link
-                                href={`/applications/${application.id}/review`}
-                                className={styles.acceptOfferBtn}
-                                style={{ display: 'inline-block', textAlign: 'center', textDecoration: 'none' }}
-                              >
-                                Review &amp; Counter-sign
-                              </Link>
+                              {(application.offer.offerLetterText || application.offer.offerLetterUrl) ? (
+                                <Link
+                                  href={`/applications/${application.id}/review`}
+                                  className={styles.acceptOfferBtn}
+                                  style={{ display: 'inline-block', textAlign: 'center', textDecoration: 'none' }}
+                                >
+                                  Review &amp; Counter-sign
+                                </Link>
+                              ) : (
+                                /* No letter to sign — plain Accept. */
+                                <button
+                                  className={styles.acceptOfferBtn}
+                                  onClick={() => handleAcceptOffer(application)}
+                                >
+                                  Accept Offer
+                                </button>
+                              )}
                               <button
                                 className={styles.declineOfferBtn}
                                 onClick={() => {

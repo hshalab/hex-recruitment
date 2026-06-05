@@ -169,6 +169,34 @@ export async function POST(
     )
   }
 
+  // ── 2b. Revert the application to a re-offerable stage (withdraw only) ──
+  // Withdrawing a PENDING offer leaves the application at status='offered'
+  // with no way to send a fresh offer (the Send Offer action is gated on the
+  // interviewing stage). Revert it: back to 'interviewing' if an interview
+  // exists for the application, else 'shortlisted'. This is a backward stage
+  // move, so cascade_application_status logs it as 'backward_move' only — no
+  // side effects, live interviews preserved. Best-effort: a failure here
+  // doesn't undo the withdrawal (the candidate has already been told); we log
+  // and continue. Rescinds act on an already-accepted offer and are NOT
+  // reverted.
+  if (action === 'withdrawn') {
+    const { data: liveInterviews } = await supabaseAdmin
+      .from('interviews')
+      .select('id')
+      .eq('application_id', offer.application_id)
+      .in('status', ['pending_selection', 'scheduled', 'confirmed', 'completed'])
+      .limit(1)
+    const revertStage = liveInterviews && liveInterviews.length > 0 ? 'interviewing' : 'shortlisted'
+    const nowIso = new Date().toISOString()
+    const { error: revertErr } = await supabaseAdmin
+      .from('job_applications')
+      .update({ status: revertStage, status_updated_at: nowIso, stage_entered_at: nowIso })
+      .eq('id', offer.application_id)
+    if (revertErr) {
+      console.error('[withdraw] application stage revert failed (non-fatal):', revertErr)
+    }
+  }
+
   // ── 3. Notify candidate (best-effort; doesn't fail the call) ──
   const jobTitle = (Array.isArray(offer.jobs) ? offer.jobs[0]?.title : (offer.jobs as { title?: string } | null)?.title) || 'the role'
   const company = (Array.isArray(offer.jobs) ? offer.jobs[0]?.company : (offer.jobs as { company?: string } | null)?.company) || 'the employer'
