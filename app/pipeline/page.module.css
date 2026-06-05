@@ -122,9 +122,12 @@
 }
 
 /* Quiet stage-count badge: low-saturation tint of the stage colour
-   (via --rs-accent set on the column wrapper), thin matching border,
-   full-saturation text. Replaces the loud full-fill colour chip with
-   a calmer brand-aligned chip that still reads at a glance. */
+   (passed via inline `background-color` from the page), thin matching
+   border, full-saturation text. Replaces the loud full-fill colour
+   chip with a calmer brand-aligned chip that still reads at a glance.
+   The inline `background: stage.color` from page.tsx is overridden to
+   the colour-mix variant; the text colour is inherited via
+   `--rs-accent` set in the same inline style. */
 .columnCount {
   font-size: 0.72rem;
   font-weight: 700;
@@ -136,7 +139,7 @@
   justify-content: center;
   border-radius: 999px;
   padding: 0 8px;
-  background: color-mix(in srgb, var(--rs-accent, var(--rs-border-strong)) 12%, transparent);
+  background: color-mix(in srgb, var(--rs-accent, var(--rs-border-strong)) 12%, transparent) !important;
   border: 1px solid color-mix(in srgb, var(--rs-accent, var(--rs-border)) 30%, transparent);
 }
 

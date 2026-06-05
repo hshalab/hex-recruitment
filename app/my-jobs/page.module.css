@@ -346,15 +346,17 @@
 
 /* ─── Kebab popover ───────────────────────────────────────────────────── */
 .kebabWrap { position: relative; flex-shrink: 0; }
+/* Overflow ⋯ — converged with the Interviews page's .overflowBtn: a 28px
+   square ghost button holding the lucide MoreHorizontal icon, same hover. */
 .kebabBtn {
-  width: 32px; height: 32px;
+  width: 28px; height: 28px;
   display: inline-flex; align-items: center; justify-content: center;
   background: transparent; border: 1px solid transparent; border-radius: 6px;
-  color: var(--text-gray); font-size: 1.1rem; line-height: 1; cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  color: var(--rs-text-muted, var(--text-gray)); line-height: 1; cursor: pointer; padding: 0;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 .kebabBtn:hover, .kebabBtn[aria-expanded="true"] {
-  background: var(--light-gray); border-color: var(--border-gray); color: var(--text-dark);
+  background: var(--rs-bg-subtle, var(--light-gray)); border-color: var(--rs-border-strong, var(--border-gray)); color: var(--rs-text, var(--text-dark));
 }
 /* Dropdown menu — centred under the ⋯ button so it looks visually
    anchored to the trigger rather than free-floating against the row's
@@ -416,38 +418,65 @@
   line-height: 1;
 }
 
-/* ─── Mobile (<768px): row wraps naturally ────────────────────────────
-   With the flat structure, mobile just lets the flex children wrap.
-   Logo, title (with 2-line clamp), and any inline meta wrap to lines;
-   status/app-count badges and kebab end up on a final wrap line.
-   .rowSep is hidden — line breaks become the visual separator. */
+/* ─── Mobile (≤768px): reflow the one-line row into a stacked card ─────
+   Desktop (≥768px, the base rules above) keeps the inline dash-separated
+   one-line row EXACTLY as approved. On mobile the row reflows, same DOM
+   and same handlers — purely CSS:
+     Line 1  → job title (with the optional recruiter logo)
+     Line 2+ → each meta field (location, venue, interview, hired) on its
+               own full-width line, clean-left with NO leading em-dash
+     Last    → status pill · applications pill · ⋯ on a full-width line,
+               the ⋯ pushed to the right edge so it's never cramped.
+   Bug fix: the previous rule hid the unused `.rowSep`, but the live
+   markup separators are `.fieldSep` — so on mobile a wrapped field used
+   to drag its dash with it ("— London"). We hide `.fieldSep` now, so the
+   line break itself is the only separator and no dash is ever orphaned. */
 @media (max-width: 768px) {
   .jobRow {
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-start;
-    padding: 0.75rem 0.875rem;
-    gap: 0.5rem 0.75rem;
+    padding: 0.875rem;
+    gap: 0.35rem 0.5rem;
   }
-  .rowLogo {
-    width: 40px; min-width: 40px; max-width: 40px; height: 40px;
+  /* Left cluster spans the full row and wraps: logo + title share line 1,
+     each meta field breaks onto its own full-width line below. */
+  .rowMain {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 0.15rem;
   }
+  /* Kill the inline em-dashes on mobile — line breaks are the separator. */
+  .fieldSep { display: none; }
+  /* Title wraps to up to 2 lines instead of ellipsis-truncating. */
   .rowTitle {
     white-space: normal;
     overflow: hidden;
+    text-overflow: clip;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     flex: 1 1 auto;
   }
+  /* Each meta field claims its own full-width line, starting clean-left. */
   .rowVenue,
-  .rowSalary,
   .rowLocation,
   .rowInterview,
   .rowHired {
+    flex: 0 0 100%;
     white-space: normal;
   }
-  .rowSep { display: none; }
+  /* Right cluster drops to its own full-width line; the ⋯ hugs the right
+     edge (margin-left:auto) so it's never cramped against the apps pill. */
+  .rowAside {
+    flex: 1 1 100%;
+    width: 100%;
+    gap: 0.5rem;
+    margin-top: 0.1rem;
+  }
+  .rowAside .kebabWrap { margin-left: auto; }
+  /* Compact "applications" → "apps" to keep the action line tidy. */
   .appCountWord { display: none; }
   .appCountWordShort { display: inline; }
 }

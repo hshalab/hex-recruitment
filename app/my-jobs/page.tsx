@@ -9,6 +9,8 @@ import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { useJobs } from '@/lib/JobsContext' // refreshJobs only — data fetched directly from Supabase
 import CompanyLogo from '@/components/CompanyLogo'
 import BoostModal from '@/components/BoostModal'
+import { RowInlineFields } from '@/components/RowInlineFields'
+import { MoreHorizontal } from 'lucide-react'
 import { Boost, JOB_BOOST_TIERS, getDaysRemaining, isBoostActive } from '@/lib/boostTypes'
 import styles from './page.module.css'
 
@@ -694,7 +696,7 @@ function MyJobsContent() {
           className={styles.kebabBtn}
           onClick={(e) => { stop(e); setOpenMenuJobId(isOpen ? null : job.id) }}
         >
-          ⋯
+          <MoreHorizontal size={18} aria-hidden="true" />
         </button>
         {isOpen && (
           <div className={styles.kebabMenu} role="menu">
@@ -977,9 +979,9 @@ function MyJobsContent() {
                         <div className={styles.rowMain}>
                           {/* Logo column: recruiter accounts manage multiple
                               companies and need the brand glyph to scan the
-                              list; single-company employers don't. When
-                              hidden, NO space is reserved and no separator
-                              dangles. */}
+                              list; single-company employers don't. It's a
+                              leading avatar slot (outside the field-join), so
+                              when hidden NO space is reserved. */}
                           {isRecruiter && (
                             <CompanyLogo
                               src={job.companyLogo}
@@ -987,31 +989,20 @@ function MyJobsContent() {
                               className={styles.rowLogo}
                             />
                           )}
-                          <h3 className={styles.rowTitle}>{job.title}</h3>
-                          {job.venue && (
-                            <>
-                              <span className={styles.fieldSep} aria-hidden="true">—</span>
-                              <span className={styles.rowVenue}>{job.venue}</span>
-                            </>
-                          )}
-                          {job.location && (
-                            <>
-                              <span className={styles.fieldSep} aria-hidden="true">—</span>
-                              <span className={styles.rowLocation}>{job.location}</span>
-                            </>
-                          )}
-                          {interviewMeta && (
-                            <>
-                              <span className={styles.fieldSep} aria-hidden="true">—</span>
-                              <span className={styles.rowInterview}>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span>
-                            </>
-                          )}
-                          {job.hiredCandidate && (
-                            <>
-                              <span className={styles.fieldSep} aria-hidden="true">—</span>
-                              <span className={styles.rowHired}>✓ Hired {job.hiredCandidate.name}</span>
-                            </>
-                          )}
+                          {/* Inline text built STRUCTURALLY from the present
+                              fields — a separator only ever sits between two
+                              present fields, so an absent venue/location/etc.
+                              can never strand an orphan dash. */}
+                          <RowInlineFields
+                            sepClassName={styles.fieldSep}
+                            fields={[
+                              <h3 key="t" className={styles.rowTitle}>{job.title}</h3>,
+                              job.venue ? <span key="v" className={styles.rowVenue}>{job.venue}</span> : null,
+                              job.location ? <span key="l" className={styles.rowLocation}>{job.location}</span> : null,
+                              interviewMeta ? <span key="i" className={styles.rowInterview}>📅 Interview {formatInterviewDate(interviewMeta.date, interviewMeta.time)}</span> : null,
+                              job.hiredCandidate ? <span key="h" className={styles.rowHired}>✓ Hired {job.hiredCandidate.name}</span> : null,
+                            ]}
+                          />
                         </div>
 
                         {/* Right cluster — status, applications pill, kebab.

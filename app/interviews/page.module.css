@@ -190,11 +190,26 @@
 .fieldSep {
   display: inline-flex;
   align-items: center;
-  margin: 0 0.4rem;
+  margin: 0 0.45rem;
   font-size: 0.88rem;
   font-weight: 400;
   color: var(--rs-text-soft, #94a3b8);
   user-select: none;
+}
+
+/* Leading avatar slot — a conditional 32px square at the start of a row
+   (used by the Past Interviews rows). No space reserved when absent. */
+.rowAvatar {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f0f0;
 }
 
 /* Legacy alias — some inline content still uses metaDot. Map it to
@@ -238,6 +253,20 @@
   background: color-mix(in srgb, var(--rs-stage-hired, #16a34a) 12%, transparent);
   color: var(--rs-stage-hired, #16a34a);
   border: 1px solid color-mix(in srgb, var(--rs-stage-hired, #16a34a) 30%, transparent);
+}
+
+/* Past-interview status pills — same pill geometry as above, muted history
+   tones (green completed / red cancelled). */
+.statusCompleted {
+  background: color-mix(in srgb, var(--rs-stage-hired, #16a34a) 12%, transparent);
+  color: var(--rs-stage-hired, #16a34a);
+  border: 1px solid color-mix(in srgb, var(--rs-stage-hired, #16a34a) 30%, transparent);
+}
+
+.statusCancelled {
+  background: color-mix(in srgb, #dc2626 10%, transparent);
+  color: #dc2626;
+  border: 1px solid color-mix(in srgb, #dc2626 30%, transparent);
 }
 
 /* ─── Modality icon (text-free; tooltip-only label) ───────────────────── */
@@ -348,12 +377,21 @@
 
 .chevronUp { transform: rotate(180deg); }
 
-.pastList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
+/* Past list now reuses the .interviewCards surface (single rounded card,
+   hairline rows) — this only adds the top spacing under the toggle. */
+.pastList { margin-top: 0.75rem; }
+
+/* Past rows: same compact-row anatomy as upcoming, DIMMED so history reads
+   as de-emphasised. We mute the text + soften the avatar rather than drop
+   the whole row's opacity, so the status pill and "View Application" action
+   stay crisp and usable. The row isn't a single click target, so the
+   pointer cursor + hover-fill are removed. */
+.pastRow { cursor: default; }
+.pastRow:hover { background: transparent; }
+.pastRow .candidateName { color: var(--rs-text-muted, #64748b); font-weight: 600; }
+.pastRow .jobTitle,
+.pastRow .dateTime { color: var(--rs-text-soft, #94a3b8); }
+.pastRow .rowAvatar { filter: grayscale(0.4); opacity: 0.85; }
 
 .pastCard {
   display: flex;
@@ -436,12 +474,34 @@
 }
 
 /* ─── Responsive ───────────────────────────────────────────────────────── */
+/* Mobile (≤768px): reflow each row into a stacked card — same pattern as
+   the Manage Job Ads page, so the two pages match on phones too.
+   Primary field (+ optional leading avatar) on line 1; each secondary
+   field on its own clean-left line (the field-join means no orphan dash);
+   the status / modality / ⋯ aside drops to its own full-width line with
+   the ⋯ pushed to the right edge. */
 @media (max-width: 768px) {
   .container { padding: 1rem 1rem 3rem; }
   .filterTabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .interviewRow { padding: 0.625rem 0.875rem; gap: 0.5rem; }
-  .pastMeta { flex-direction: column; align-items: flex-end; gap: 0.35rem; }
-  .pastCard { flex-wrap: wrap; }
+  .interviewRow {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding: 0.875rem;
+    gap: 0.35rem 0.5rem;
+  }
+  .rowMain { flex: 1 1 100%; row-gap: 0.15rem; }
+  .fieldSep { display: none; }
+  .candidateName { flex: 1 1 auto; }
+  .jobTitle,
+  .dateTime { flex: 0 0 100%; }
+  .rowAside {
+    flex: 1 1 100%;
+    width: 100%;
+    gap: 0.5rem;
+    margin-top: 0.1rem;
+  }
+  .rowAside .overflowBtn { margin-left: auto; }
+  .pastRow .btnSm { margin-left: auto; }
 }
 
 @media (max-width: 480px) {

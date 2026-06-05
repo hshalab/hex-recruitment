@@ -5,17 +5,16 @@
 // label is always current relative to the user's clock rather than
 // the moment the card was loaded.
 //
-// The pill takes the column's stage colour when supplied, for visual
-// consistency with the rest of the restyled pipeline (count badge +
-// card CTA both follow the same accent). The 7d / 14d thresholds
-// remain on the element as data-emphasis attributes so tests / sorts /
-// future styling tweaks can still detect a stale card without
-// inspecting computed styles, but they no longer override the colour
-// — earlier passes used amber for that, which made staleness visible
-// at the cost of leaving Interview / Offered / Hired pills the wrong
-// colour for their column. If we want staleness signalling back,
-// prefer a small ⏱ glyph / weight bump / pulse rather than swapping
-// the colour.
+// The pill always takes the column's stage colour for visual
+// consistency across the board (every column reads the same regardless
+// of how long the card has sat). The 7d / 14d thresholds remain on the
+// element as data-emphasis attributes so tests / sorts / future
+// styling tweaks can still detect a stale card without inspecting
+// computed styles, but they no longer override the colour — earlier
+// passes used amber for that, which made staleness visible at the cost
+// of leaving Interview / Offered / Hired pills the wrong colour for
+// their column. If we want staleness signalling back, prefer a small
+// ⏱ glyph / weight bump / pulse rather than swapping the colour.
 
 const SUBTLE_EMPHASIS_DAYS = 7
 const STRONGER_EMPHASIS_DAYS = 14
@@ -25,9 +24,10 @@ interface StageDurationBadgeProps {
   stageLabel: string
   /**
    * Stage accent colour (e.g. '#3b82f6' for Reviewing). When supplied,
-   * the pill renders as a quiet stage-tinted chip — soft background,
-   * full-saturation text, thin matching border. Without it (legacy
-   * callers) the original grey neutral applies so nothing regresses.
+   * the default tier renders as a quiet stage-tinted pill — soft
+   * background, full-saturation text, thin matching border. Without
+   * it (or in the >=7d / >=14d tiers) the original grey/amber visuals
+   * still apply so the urgency cue is preserved.
    */
   stageColor?: string
 }
@@ -60,9 +60,8 @@ export default function StageDurationBadge({ stageEnteredAt, stageLabel, stageCo
   // Quiet stage-tinted pill — every column renders identically:
   // 12 % tinted bg, 30 % matching border, full-saturation text. If no
   // stageColor is supplied (legacy callers), fall back to the neutral
-  // grey that pre-dates the restyle. The 7d / 14d thresholds still
-  // drive data-emphasis below for tests, but no longer change the
-  // colour.
+  // grey that pre-dates the restyle. The 7d/14d thresholds still drive
+  // data-emphasis below for tests, but no longer change the colour.
   const style: React.CSSProperties = stageColor
     ? {
         background: `color-mix(in srgb, ${stageColor} 12%, transparent)`,
