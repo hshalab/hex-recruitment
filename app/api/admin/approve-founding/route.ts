@@ -4,6 +4,7 @@ import { verifyApprovalToken } from '@/lib/foundingApprovalToken'
 import { calculateFoundingPeriodEnd } from '@/lib/foundingEntitlement'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { sendEmail } from '@/lib/email'
+import { emailLayout, ctaButton } from '@/emails/layout'
 
 // Tamper-proof approve/reject endpoint hit from the email Paul receives
 // when a freemail founding signup needs review. The token in `?t=...`
@@ -128,18 +129,21 @@ async function handle(req: NextRequest) {
   if (profile.email) {
     const companyName = profile.company_name || 'there'
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin
+    const firstName = escapeHtml(((profile.contact_name as string) || '').split(' ')[0] || '')
+    const approvedSubject = "You're in — your Thrive account is approved"
     sendEmail(
       profile.email,
-      'Your Thrive founding-cohort account is approved',
-      `
-        <div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.5;color:#0f172a">
-          <h2 style="margin:0 0 12px">You're in — welcome to Thrive</h2>
-          <p>Hi ${escapeHtml((profile.contact_name as string) || '')},</p>
-          <p>Your account for <strong>${escapeHtml(companyName)}</strong> has been approved for the founding cohort. You can now post jobs, browse candidates, and use the full hiring pipeline — free for 12 months.</p>
-          <p style="margin:20px 0"><a href="${siteUrl}/employer/dashboard" style="display:inline-block;padding:10px 18px;background:#16a34a;color:#fff;border-radius:6px;text-decoration:none">Go to your dashboard</a></p>
-          <p style="color:#64748b;font-size:13px">Reply to this email if anything looks off.</p>
-        </div>
-      `,
+      approvedSubject,
+      emailLayout(approvedSubject, `
+        <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#0f172a;">You're in${firstName ? `, ${firstName}` : ''} &#127881;</h1>
+        <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+          Your account for <strong style="color:#0f172a;">${escapeHtml(companyName)}</strong> has been approved for the Thrive founding cohort. You now have the full hiring pipeline &mdash; post jobs, browse candidates, schedule interviews and make offers &mdash; <strong>free for 12 months</strong>.
+        </p>
+        ${ctaButton('Go to your dashboard', `${siteUrl}/employer/dashboard`)}
+        <p style="margin:0;font-size:14px;color:#94a3b8;line-height:1.6;">
+          Questions, or something looks off? Just reply to this email &mdash; we'd love to help you get hiring.
+        </p>
+      `),
     ).catch(err => console.error('[approve-founding] employer email failed', err))
   }
 

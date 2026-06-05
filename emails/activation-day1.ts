@@ -12,19 +12,19 @@ export function activationDay1Email(companyName: string): { subject: string; htm
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
-          <span style="display:inline-block;width:24px;height:24px;background:#FFE500;border-radius:50%;text-align:center;line-height:24px;font-weight:700;color:#1e293b;font-size:13px;margin-right:10px;vertical-align:middle;">1</span>
+          <span style="display:inline-block;width:24px;height:24px;background:#0f172a;border-radius:50%;text-align:center;line-height:24px;font-weight:700;color:#ffffff;font-size:13px;margin-right:10px;vertical-align:middle;">1</span>
           <span style="font-size:15px;color:#334155;vertical-align:middle;">Write the job title and salary</span>
         </td>
       </tr>
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
-          <span style="display:inline-block;width:24px;height:24px;background:#FFE500;border-radius:50%;text-align:center;line-height:24px;font-weight:700;color:#1e293b;font-size:13px;margin-right:10px;vertical-align:middle;">2</span>
+          <span style="display:inline-block;width:24px;height:24px;background:#0f172a;border-radius:50%;text-align:center;line-height:24px;font-weight:700;color:#ffffff;font-size:13px;margin-right:10px;vertical-align:middle;">2</span>
           <span style="font-size:15px;color:#334155;vertical-align:middle;">Describe what you need</span>
         </td>
       </tr>
       <tr>
         <td style="padding:10px 0;">
-          <span style="display:inline-block;width:24px;height:24px;background:#FFE500;border-radius:50%;text-align:center;line-height:24px;font-weight:700;color:#1e293b;font-size:13px;margin-right:10px;vertical-align:middle;">3</span>
+          <span style="display:inline-block;width:24px;height:24px;background:#0f172a;border-radius:50%;text-align:center;line-height:24px;font-weight:700;color:#ffffff;font-size:13px;margin-right:10px;vertical-align:middle;">3</span>
           <span style="font-size:15px;color:#334155;vertical-align:middle;">Hit publish</span>
         </td>
       </tr>

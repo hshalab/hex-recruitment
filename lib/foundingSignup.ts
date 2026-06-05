@@ -5,6 +5,7 @@ import { calculateFoundingPeriodEnd } from '@/lib/foundingEntitlement'
 import { classifyEmail, type EmailClass } from '@/lib/emailDomains'
 import { generateApprovalToken } from '@/lib/foundingApprovalToken'
 import { sendEmail } from '@/lib/email'
+import { emailLayout, ctaButton } from '@/emails/layout'
 
 /**
  * Single source of truth for what happens at email-confirmation time
@@ -146,24 +147,26 @@ export async function provisionFoundingEmployer({
     const rejectUrl = `${siteUrl}/api/admin/approve-founding?t=${rejectToken}`
 
     const subject = `[Thrive] Founding-cohort review: ${companyName}`
-    const html = `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.5;color:#0f172a">
-        <h2 style="margin:0 0 12px">New founding-cohort signup awaiting review</h2>
-        <p>A new signup arrived from a free-mail address (${classification}). Decide whether to admit them to the founding cohort.</p>
-        <table style="border-collapse:collapse;margin:16px 0">
-          <tr><td style="padding:4px 12px 4px 0;color:#64748b">Company:</td><td><strong>${escapeHtml(companyName)}</strong></td></tr>
-          <tr><td style="padding:4px 12px 4px 0;color:#64748b">Contact:</td><td>${escapeHtml(contactName)}</td></tr>
-          <tr><td style="padding:4px 12px 4px 0;color:#64748b">Email:</td><td>${escapeHtml(email || '')}</td></tr>
-          <tr><td style="padding:4px 12px 4px 0;color:#64748b">Classification:</td><td>${classification}</td></tr>
-          <tr><td style="padding:4px 12px 4px 0;color:#64748b">User ID:</td><td><code>${userId}</code></td></tr>
-        </table>
-        <p style="margin:20px 0">
-          <a href="${approveUrl}" style="display:inline-block;padding:10px 18px;background:#16a34a;color:#fff;border-radius:6px;text-decoration:none;margin-right:8px">Approve</a>
-          <a href="${rejectUrl}" style="display:inline-block;padding:10px 18px;background:#dc2626;color:#fff;border-radius:6px;text-decoration:none">Reject</a>
+    const html = emailLayout(subject, `
+        <h1 style="margin:0 0 8px;font-size:21px;font-weight:700;color:#0f172a;">New founding-cohort signup to review</h1>
+        <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+          A new signup arrived from a free-mail address (<strong style="color:#0f172a;">${classification}</strong>). Decide whether to admit them to the founding cohort.
         </p>
-        <p style="color:#64748b;font-size:13px">Approve consumes one of the 100 founding spots. Reject locks the account out of founding entitlement. Links are signed with HMAC and expire in 7 days; single-use enforced by approval_status.</p>
-      </div>
-    `
+        <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:0 0 4px;font-size:14px;">
+          <tr><td style="padding:7px 12px 7px 0;color:#94a3b8;white-space:nowrap;">Company</td><td style="padding:7px 0;color:#0f172a;font-weight:600;">${escapeHtml(companyName)}</td></tr>
+          <tr><td style="padding:7px 12px 7px 0;color:#94a3b8;white-space:nowrap;">Contact</td><td style="padding:7px 0;color:#334155;">${escapeHtml(contactName)}</td></tr>
+          <tr><td style="padding:7px 12px 7px 0;color:#94a3b8;white-space:nowrap;">Email</td><td style="padding:7px 0;color:#334155;">${escapeHtml(email || '')}</td></tr>
+          <tr><td style="padding:7px 12px 7px 0;color:#94a3b8;white-space:nowrap;">Classification</td><td style="padding:7px 0;color:#334155;">${classification}</td></tr>
+          <tr><td style="padding:7px 12px 7px 0;color:#94a3b8;white-space:nowrap;vertical-align:top;">User ID</td><td style="padding:7px 0;color:#334155;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;word-break:break-all;">${userId}</td></tr>
+        </table>
+        ${ctaButton('Approve &amp; admit to cohort', approveUrl)}
+        <p style="margin:0 0 24px;font-size:14px;">
+          <a href="${rejectUrl}" style="display:inline-block;padding:11px 22px;border:1px solid #e2e8f0;border-radius:9px;color:#b91c1c;font-weight:600;text-decoration:none;">Reject this signup</a>
+        </p>
+        <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.6;">
+          Approve consumes one of the founding spots. Reject locks the account out of founding entitlement. Both links are signed with HMAC, expire in 7&nbsp;days, and are single-use (enforced by approval_status).
+        </p>
+    `)
     const sendResult = await sendEmail(recipient, subject, html, 'noreply@thrivecareer.co.uk')
     if (sendResult.success) {
       approvalEmail = { recipient, result: 'sent' }
