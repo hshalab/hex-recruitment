@@ -84,13 +84,27 @@ function authShell(opts: {
 </html>`
 }
 
-/** Confirm signup — the minimum required template. */
+/**
+ * Confirm signup — the minimum required template.
+ *
+ * IMPORTANT: this CTA uses the app's VERIFIED token_hash link pattern, NOT the
+ * generic {{ .ConfirmationURL }}. The app's confirmation handler
+ * (app/auth/confirm/route.ts → lib/authCallback.ts) consumes the OTP via
+ * verifyOtp({ token_hash, type }), reading ?token_hash, ?type and ?next. The
+ * &next=/dashboard landing self-routes by role (app/dashboard/page.tsx redirects
+ * employers → /employer/dashboard → the server gate → dashboard or
+ * /account-under-review). This exact pattern was driven end-to-end on prod and
+ * confirms + lands correctly — do NOT swap it for {{ .ConfirmationURL }}.
+ */
+export const CONFIRM_SIGNUP_LINK =
+  '{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next=/dashboard'
+
 export const confirmSignupTemplate = authShell({
   preheader: 'Confirm your email to finish setting up your Thrive account.',
   heading: 'Confirm your email',
   bodyHtml: `<p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">Welcome to Thrive! Confirm this email address to activate your account and start hiring.</p>`,
   ctaText: 'Confirm email address',
-  ctaVar: '{{ .ConfirmationURL }}',
+  ctaVar: CONFIRM_SIGNUP_LINK,
   footnoteHtml: 'This link expires in 24 hours. If you didn\'t create a Thrive account, you can safely ignore this email.',
 })
 
