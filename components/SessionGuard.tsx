@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 
@@ -31,7 +32,19 @@ function isAuthPage(): boolean {
  * bounce through an auth page.
  */
 export default function SessionGuard() {
+  const router = useRouter()
   const handled = useRef(false)
+  // Once a redirect is initiated we must not start another. With soft
+  // navigation (router.push) SessionGuard stays mounted across the route
+  // change, so handled/redirecting persist and the effect cannot re-enter
+  // — the failure mode that bounced founding employers between /login,
+  // /register/employer/payment and /register/employer-free in an infinite
+  // hard-navigation loop.
+  const redirecting = useRef(false)
+  // Set by the volatile-cleanup effect when it signs a Remember-me-off
+  // session out on a new browser session, so the detection effect doesn't
+  // redirect a session we're in the middle of clearing.
+  const volatileSignOut = useRef(false)
 
   // Volatile session cleanup
   useEffect(() => {
@@ -39,6 +52,7 @@ export default function SessionGuard() {
     if (!sessionStarted) {
       const prevVolatile = localStorage.getItem('hex_prev_volatile')
       if (prevVolatile === '1') {
+        volatileSignOut.current = true
         supabase.auth.signOut()
         localStorage.removeItem('hex_prev_volatile')
       }
@@ -48,30 +62,39 @@ export default function SessionGuard() {
 
   // Session detection + redirect
   useEffect(() => {
-    if (handled.current) return
+    if (handled.current || redirecting.current) return
     if (!isAuthPage()) return
 
+    // Single-fire, soft redirect. router.push keeps SessionGuard mounted
+    // across the navigation so handled/redirecting survive — it cannot
+    // re-enter into a loop even if another decider disagrees.
+    const go = (path: string) => {
+      handled.current = true
+      redirecting.current = true
+      router.push(path)
+    }
+
     const handleAuth = async () => {
+      // The cleanup effect above is signing out a volatile (Remember-me-off)
+      // session — don't redirect a session we're about to clear, or we'd
+      // push the user onto a protected route the server then rejects.
+      if (volatileSignOut.current) return
+
       // 1. Check localStorage session first
       const { data: { session } } = await supabase.auth.getSession()
 
       if (session?.user) {
         const role = session.user.user_metadata?.role as string | undefined
         if (role) {
-          handled.current = true
-          if (role === 'employer') {
-            // Check if the employer has completed payment setup
-            const { data: sub } = await supabase
-              .from('employer_subscriptions')
-              .select('stripe_subscription_id')
-              .eq('user_id', session.user.id)
-              .maybeSingle()
-            window.location.href = sub?.stripe_subscription_id
-              ? '/employer/dashboard'
-              : '/register/employer/payment'
-          } else {
-            window.location.href = '/dashboard'
-          }
+          // ONE destination per role. SessionGuard no longer chooses
+          // payment-vs-dashboard — the server-side guard in
+          // app/employer/layout.tsx is the single source of truth for
+          // approval/entitlement (it bounces pending/unapproved employers
+          // to /account-under-review). Routing founding employers (who have
+          // no stripe_subscription_id) to /register/employer/payment here
+          // collided with each auth page's own "session → dashboard"
+          // redirect and caused the loop.
+          go(role === 'employer' ? '/employer/dashboard' : '/dashboard')
           return
         }
         // Session but no role — new user, check cookie
@@ -92,18 +115,12 @@ export default function SessionGuard() {
 
         if (role) {
           handled.current = true
-          if (role === 'employer') {
-            const { data: sub } = await supabase
-              .from('employer_subscriptions')
-              .select('stripe_subscription_id')
-              .eq('user_id', hydrated.user.id)
-              .maybeSingle()
-            window.location.href = sub?.stripe_subscription_id
-              ? '/employer/dashboard'
-              : '/register/employer/payment'
-          } else {
-            window.location.href = '/dashboard'
-          }
+          redirecting.current = true
+          // Cookie-hydration path (immediately after OAuth): a HARD
+          // navigation is kept deliberately so the destination re-reads the
+          // freshly written SSR cookies server-side. Single destination per
+          // role — the server guard decides approval/entitlement.
+          window.location.href = role === 'employer' ? '/employer/dashboard' : '/dashboard'
           return
         }
 

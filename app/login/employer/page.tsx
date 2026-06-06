@@ -41,6 +41,12 @@ function EmployerLoginPageContent() {
     setLoading(true)
     setError('')
 
+    // Clear any existing (possibly stale) session before signing in, so a
+    // fresh login cleanly REPLACES rather than stacking on top of a prior
+    // session. scope:'local' only clears client storage — no network call /
+    // refresh-token revocation — so the clean-login path is unaffected.
+    await supabase.auth.signOut({ scope: 'local' })
+
     const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
