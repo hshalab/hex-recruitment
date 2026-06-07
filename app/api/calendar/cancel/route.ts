@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getValidAccessToken, deleteCalendarEvent } from '@/lib/googleCalendar'
 import { sendInterviewMessage } from '@/lib/sendInterviewMessage'
+import { formatInterviewWhen } from '@/lib/interviewWhen'
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
@@ -30,6 +31,18 @@ export async function POST(req: NextRequest) {
     const jobTitle = job?.title || 'the role'
     const companyName = job?.company || 'The employer'
     const candidateId = interview?.candidate_id
+
+    // Format the interview's scheduled date the same way the confirmation
+    // email does ("Tuesday, 9 June 2026 at 12:00"), sourced from the
+    // interviews row (kept in sync on both the book and reschedule paths).
+    // Previously the cancellation email passed no date at all, so the
+    // template interpolated the literal word "undefined". Returns undefined
+    // when no date is resolvable — the template then omits the
+    // "scheduled for …" clause entirely (graceful fallback, never "undefined").
+    const scheduledWhen = formatInterviewWhen(
+      interview?.interview_date as string | null | undefined,
+      interview?.interview_time as string | null | undefined,
+    )
 
     // Update the interview status to cancelled
     await supabaseAdmin.from('interviews').update({ status: 'cancelled' }).eq('id', interviewId)
@@ -81,7 +94,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             to: candidateProfile.email,
             type: 'interview_cancelled',
-            data: { companyName, jobTitle, candidateName: candidateProfile.full_name || 'Candidate' },
+            data: { companyName, jobTitle, candidateName: candidateProfile.full_name || 'Candidate', date: scheduledWhen },
           }),
         }).catch(() => {})
       }
