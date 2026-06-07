@@ -46,68 +46,6 @@ const TYPE_BADGE_CLASS: Record<string, string> = {
   'phone': styles.typePhone,
 }
 
-async function sendThriveMessage(params: {
-  senderId: string
-  senderName: string
-  recipientId: string
-  recipientName: string
-  jobId: string
-  jobTitle: string
-  content: string
-}) {
-  const { senderId, senderName, recipientId, recipientName, jobId, jobTitle, content } = params
-  try {
-    const { data: existingConv } = await supabase
-      .from('conversations')
-      .select('id')
-      .or(`and(participant_1.eq.${senderId},participant_2.eq.${recipientId}),and(participant_1.eq.${recipientId},participant_2.eq.${senderId})`)
-      .eq('related_job_id', jobId)
-      .maybeSingle()
-
-    let conversationId = existingConv?.id || null
-
-    if (!conversationId) {
-      const { data: newConv } = await supabase
-        .from('conversations')
-        .insert({
-          participant_1: senderId,
-          participant_2: recipientId,
-          participant_1_name: senderName,
-          participant_1_role: 'employer',
-          participant_1_company: senderName,
-          participant_2_name: recipientName,
-          participant_2_role: 'candidate',
-          related_job_id: jobId,
-          related_job_title: jobTitle,
-          last_message: content,
-          last_message_at: new Date().toISOString(),
-        })
-        .select()
-        .single()
-      conversationId = newConv?.id || null
-    }
-
-    if (conversationId) {
-      await supabase.from('messages').insert({
-        conversation_id: conversationId,
-        sender_id: senderId,
-        sender_name: senderName,
-        sender_role: 'employer',
-        content,
-        is_read: false,
-      })
-      if (existingConv) {
-        await supabase
-          .from('conversations')
-          .update({ last_message: content, last_message_at: new Date().toISOString() })
-          .eq('id', conversationId)
-      }
-    }
-  } catch (err) {
-    console.error('Error sending Thrive message:', err)
-  }
-}
-
 export default function InterviewsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -275,13 +213,6 @@ export default function InterviewsPage() {
     return `${dayStr}, ${formatTime(timeStr)}`
   }
 
-  const formatLongDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split('-').map(Number)
-    return new Date(year, month - 1, day).toLocaleDateString('en-GB', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    })
-  }
-
   const buildCalendarUrl = (interview: InterviewItem) => {
     const [year, month, day] = interview.interviewDate.split('-').map(Number)
     const [hours, minutes] = interview.interviewTime.split(':').map(Number)
@@ -314,63 +245,22 @@ export default function InterviewsPage() {
 
     setCancellingId(interview.interviewId)
     try {
-      await supabase
-        .from('interviews')
-        .update({ status: 'cancelled' })
-        .eq('id', interview.interviewId)
-
-      // Remove the mirrored Google Calendar event (if any) — fire-and-forget
-      fetch('/api/calendar/cancel', {
+      // /api/calendar/cancel is the single source of truth for cancellation:
+      // it sets interviews.status='cancelled', notifies + messages + emails
+      // the candidate, AND deletes the mirrored Google Calendar event (via
+      // interview_bookings.gcal_event_id_employer). It soft-skips the Google
+      // call when there's no synced event (returns ok:true, skipped). We
+      // AWAIT it so the row only moves to "Past" once the cancel actually
+      // succeeded, and so we don't double-send the candidate comms (which is
+      // what would happen if we also did them client-side here).
+      const res = await fetch('/api/calendar/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ interviewId: interview.interviewId }),
-      }).catch(() => {})
-
-      const formattedDate = formatLongDate(interview.interviewDate)
-
-      const { error: notifCancelErr } = await supabase.from('notifications').insert({
-        user_id: interview.candidateId,
-        title: 'Interview Cancelled',
-        message: `Your interview for ${interview.jobTitle} at ${companyName} on ${formattedDate} has been cancelled.`,
-        type: 'application_update',
-        read: false,
-        related_id: interview.applicationId,
-        related_type: 'application',
+        body: JSON.stringify({ interviewId: interview.interviewId, employerId }),
       })
-      if (notifCancelErr) console.error('Notification error:', notifCancelErr)
-
-      await sendThriveMessage({
-        senderId: employerId,
-        senderName: companyName,
-        recipientId: interview.candidateId,
-        recipientName: interview.candidateName,
-        jobId: interview.jobId,
-        jobTitle: interview.jobTitle,
-        content: [
-          `Hi ${interview.candidateName.split(' ')[0]}, we need to let you know that your interview for ${interview.jobTitle} scheduled for ${formattedDate} has been cancelled.`,
-          '',
-          "If you have any questions, please don't hesitate to get in touch.",
-          '',
-          'Best regards,',
-          companyName,
-        ].join('\n'),
-      })
-
-      if (interview.candidateEmail) {
-        fetch('/api/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: interview.candidateEmail,
-            type: 'interview_cancelled',
-            data: {
-              companyName,
-              jobTitle: interview.jobTitle,
-              candidateName: interview.candidateName,
-              date: formattedDate,
-            },
-          }),
-        }).catch(() => {})
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.error || 'Cancellation failed')
       }
 
       const cancelled = { ...interview, status: 'cancelled' }
@@ -378,6 +268,7 @@ export default function InterviewsPage() {
       setPast(prev => [...prev, cancelled].sort((a, b) => b.interviewDate.localeCompare(a.interviewDate)))
     } catch (err) {
       console.error('Error cancelling interview:', err)
+      alert('Sorry — we couldn\'t cancel this interview. Please try again.')
     } finally {
       setCancellingId(null)
     }
@@ -565,8 +456,23 @@ export default function InterviewsPage() {
                               <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Calendar')}>Calendar</button>
                               <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Notes')}>Notes</button>
                               <div className={styles.menuDivider} />
-                              <button type="button" className={`${styles.menuItem} ${styles.menuItemDanger}`} role="menuitem" onClick={stubLog('Reschedule')}>Reschedule</button>
-                              <button type="button" className={`${styles.menuItem} ${styles.menuItemDanger}`} role="menuitem" onClick={stubLog('Cancel')}>Cancel</button>
+                              <button
+                                type="button"
+                                className={`${styles.menuItem} ${styles.menuItemDanger}`}
+                                role="menuitem"
+                                onClick={() => { setOpenMenuId(null); setRescheduleTarget(interview) }}
+                              >
+                                Reschedule
+                              </button>
+                              <button
+                                type="button"
+                                className={`${styles.menuItem} ${styles.menuItemDanger}`}
+                                role="menuitem"
+                                disabled={cancellingId === interview.interviewId}
+                                onClick={() => { setOpenMenuId(null); handleCancelInterview(interview) }}
+                              >
+                                {cancellingId === interview.interviewId ? 'Cancelling…' : 'Cancel'}
+                              </button>
                             </div>
                           )}
                         </div>
