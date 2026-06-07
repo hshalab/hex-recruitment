@@ -101,10 +101,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Find the booking for this interview (if any)
+    // Resolve the ACTIVE booking (the row carrying the live
+    // gcal_event_id_employer). A reschedule leaves the prior booking row as
+    // 'cancelled' and inserts a new active ('scheduled') row with the event id
+    // carried forward — so a rescheduled interview has >1 booking row. The old
+    // unfiltered .maybeSingle() returned null whenever more than one row
+    // matched, so the Google event was never resolved and the delete was
+    // silently skipped (lingering event on cancel-after-reschedule). Select the
+    // newest non-cancelled booking so we resolve the SAME event id that is
+    // currently live in Google.
     const { data: booking } = await supabaseAdmin
       .from('interview_bookings')
       .select('id, employer_id, gcal_event_id_employer')
       .eq('interview_id', interviewId)
+      .in('status', ['scheduled', 'confirmed'])
+      .order('booked_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     if (!booking?.gcal_event_id_employer || !booking.employer_id) {
