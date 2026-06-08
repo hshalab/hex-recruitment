@@ -1,0 +1,153 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding-left: max(1rem, env(safe-area-inset-left));
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 620px;
+  width: 100%;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 2px solid var(--border-gray, #e5e7eb);
+}
+
+.title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--black, #0f172a);
+  margin: 0 0 0.2rem 0;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--text-gray, #6b7280);
+  margin: 0;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 1.35rem;
+  color: var(--text-gray, #6b7280);
+  cursor: pointer;
+  padding: 0.4rem;
+  line-height: 1;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.closeBtn:hover {
+  color: var(--black, #0f172a);
+}
+
+.body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: var(--text-gray, #6b7280);
+  margin: 0 0 0.9rem 0;
+  line-height: 1.45;
+}
+
+.loading {
+  padding: 2rem 0;
+  text-align: center;
+  color: var(--text-gray, #6b7280);
+  font-size: 0.9rem;
+}
+
+.tooLong {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.82rem;
+  color: #b91c1c;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-gray, #e5e7eb);
+}
+
+.status {
+  font-size: 0.82rem;
+  color: var(--text-gray, #9ca3af);
+  min-height: 1.1em;
+  transition: color 0.2s;
+}
+
+.statusSaving { color: #0369a1; }
+.statusSaved { color: #047857; }
+.statusError { color: #b91c1c; }
+
+.footerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Brand light-blue primary — matches the calendar/interview light-blue family
+   (bg #e0f2fe / ink #0369a1) used elsewhere in the app. */
+.saveBtn {
+  background: #0369a1;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.saveBtn:hover:not(:disabled) {
+  background: #075985;
+}
+
+.saveBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.doneBtn {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.doneBtn:hover {
+  background: #bae6fd;
+}

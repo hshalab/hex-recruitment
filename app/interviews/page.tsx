@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
+import PrepNotesModal from '@/components/PrepNotesModal'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { MapPin, Video, Phone, MoreHorizontal } from 'lucide-react'
@@ -78,6 +79,8 @@ export default function InterviewsPage() {
   const [past, setPast] = useState<InterviewItem[]>([])
   const [pastExpanded, setPastExpanded] = useState(false)
   const [rescheduleTarget, setRescheduleTarget] = useState<InterviewItem | null>(null)
+  // Prep-notes modal target (private rich-text note for one interview).
+  const [notesTarget, setNotesTarget] = useState<InterviewItem | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [notesMap, setNotesMap] = useState<Record<string, string>>({})
   const [activeFilter, setActiveFilter] = useState<'today' | 'week' | 'all'>('all')
@@ -407,10 +410,6 @@ export default function InterviewsPage() {
                         : interview.interviewType === 'phone'
                           ? styles.modalityPhone
                           : styles.modalityInPerson
-                    const stubLog = (label: string) => () => {
-                      console.log(`[Phase 1 stub] ${label} on interview ${interview.interviewId}`)
-                      setOpenMenuId(null)
-                    }
 
                     return (
                       <div
@@ -497,7 +496,7 @@ export default function InterviewsPage() {
                               >
                                 Calendar
                               </button>
-                              <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Notes')}>Notes</button>
+                              <button type="button" className={styles.menuItem} role="menuitem" onClick={() => { setOpenMenuId(null); setNotesTarget(interview) }}>Notes</button>
                               <div className={styles.menuDivider} />
                               <button
                                 type="button"
@@ -562,6 +561,12 @@ export default function InterviewsPage() {
                       <span className={`${styles.statusPill} ${interview.status === 'completed' ? styles.statusCompleted : styles.statusCancelled}`}>
                         {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
                       </span>
+                      {/* Notes are available on every interview regardless of
+                          status; past/cancelled rows have no "…" menu, so the
+                          entry point lives inline here. */}
+                      <button type="button" className={styles.btnSm} onClick={() => setNotesTarget(interview)}>
+                        Notes
+                      </button>
                       <Link href={`/my-jobs/${interview.jobId}/applications`} className={styles.btnSm}>
                         View Application
                       </Link>
@@ -592,6 +597,17 @@ export default function InterviewsPage() {
             setRescheduleTarget(null)
             loadInterviews()
           }}
+        />
+      )}
+
+      {/* Prep Notes Modal — private rich-text note for one interview */}
+      {notesTarget && (
+        <PrepNotesModal
+          isOpen={true}
+          onClose={() => setNotesTarget(null)}
+          interviewId={notesTarget.interviewId}
+          candidateName={notesTarget.candidateName}
+          jobTitle={notesTarget.jobTitle}
         />
       )}
     </main>
