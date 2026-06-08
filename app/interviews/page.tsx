@@ -53,7 +53,14 @@ function buildCandidateMailto(interview: InterviewItem): string {
     'Best regards,',
     interview.company,
   ].join('\n')
-  return `mailto:${interview.candidateEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  const query = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  // Only inline the address if it's a clean address with none of the characters
+  // that could inject extra mailto parameters/recipients (?, &, #, %, comma,
+  // whitespace). Otherwise omit the recipient — the employer can fill in the To
+  // field — rather than risk mailto parameter injection from a tainted email.
+  const email = (interview.candidateEmail || '').trim()
+  const safeEmail = /^[^\s@,?&#%]+@[^\s@,?&#%]+\.[^\s@,?&#%]+$/.test(email) ? email : ''
+  return `mailto:${safeEmail}?${query}`
 }
 
 const TYPE_BADGE_CLASS: Record<string, string> = {
