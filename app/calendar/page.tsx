@@ -224,6 +224,23 @@ function DayView({
   )
 }
 
+// Opens the calendar at a specific day when a `?date=YYYY-MM-DD` query param is
+// present (used by the /interviews "⋯ → Calendar" deep-link). Read from
+// window.location rather than useSearchParams to avoid imposing a Suspense
+// boundary on this client page. Falls back to today on absent/invalid input.
+function initialCalendarDay(): Date {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  if (typeof window === 'undefined') return today
+  const raw = new URLSearchParams(window.location.search).get('date')
+  if (!raw) return today
+  const [y, m, d] = raw.split('-').map(Number)
+  if (!y || !m || !d) return today
+  const dt = new Date(y, m - 1, d)
+  if (isNaN(dt.getTime())) return today
+  dt.setHours(0, 0, 0, 0)
+  return dt
+}
+
 export default function CalendarPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -237,13 +254,22 @@ export default function CalendarPage() {
   const [blockedDates, setBlockedDates] = useState<Map<string, string | null>>(new Map())
   const [view, setView] = useState<'day' | 'week' | 'month'>('week')
   const [isMobile, setIsMobile] = useState(false)
-  const [cursor, setCursor] = useState<Date>(() => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); return d
-  })
+  const [cursor, setCursor] = useState<Date>(() => initialCalendarDay())
   // selectedDay used by mobile day view
-  const [selectedDay, setSelectedDay] = useState<Date>(() => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); return d
-  })
+  const [selectedDay, setSelectedDay] = useState<Date>(() => initialCalendarDay())
+
+  // Honour ?date=YYYY-MM-DD on mount (the /interviews "⋯ → Calendar" deep-link).
+  // The lazy useState initializers above catch a full page load, but on a
+  // client-side navigation the query isn't on window.location yet when they
+  // run — so re-apply it here once the URL has committed. Only overrides when
+  // a date param is actually present (a plain /calendar visit stays on today).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!new URLSearchParams(window.location.search).get('date')) return
+    const d = initialCalendarDay()
+    setCursor(d)
+    setSelectedDay(d)
+  }, [])
 
   // Track mobile viewport
   useEffect(() => {

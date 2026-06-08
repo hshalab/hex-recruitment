@@ -40,6 +40,22 @@ const TYPE_LABELS: Record<string, string> = {
   'phone': 'Phone Call',
 }
 
+// Build a mailto: link to the candidate with a short, professional draft
+// referencing the role + company, opening the employer's default mail client.
+function buildCandidateMailto(interview: InterviewItem): string {
+  const firstName = (interview.candidateName || '').split(' ')[0] || 'there'
+  const subject = `Your ${interview.jobTitle} interview at ${interview.company}`
+  const body = [
+    `Hi ${firstName},`,
+    '',
+    `I'm reaching out regarding your interview for the ${interview.jobTitle} role at ${interview.company}.`,
+    '',
+    'Best regards,',
+    interview.company,
+  ].join('\n')
+  return `mailto:${interview.candidateEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
 const TYPE_BADGE_CLASS: Record<string, string> = {
   'in-person': styles.typeInPerson,
   'video': styles.typeVideo,
@@ -450,10 +466,30 @@ export default function InterviewsPage() {
                               role="menu"
                               onClick={e => e.stopPropagation()}
                             >
-                              <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Message')}>Message</button>
-                              <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Email')}>Email</button>
-                              <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Applications')}>Applications</button>
-                              <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Calendar')}>Calendar</button>
+                              <button
+                                type="button"
+                                className={styles.menuItem}
+                                role="menuitem"
+                                onClick={() => { setOpenMenuId(null); router.push(`/messages?candidate=${interview.candidateId}`) }}
+                              >
+                                Message
+                              </button>
+                              <a
+                                className={styles.menuItem}
+                                role="menuitem"
+                                href={buildCandidateMailto(interview)}
+                                onClick={() => setOpenMenuId(null)}
+                              >
+                                Email
+                              </a>
+                              <button
+                                type="button"
+                                className={styles.menuItem}
+                                role="menuitem"
+                                onClick={() => { setOpenMenuId(null); router.push(`/calendar?date=${interview.interviewDate}`) }}
+                              >
+                                Calendar
+                              </button>
                               <button type="button" className={styles.menuItem} role="menuitem" onClick={stubLog('Notes')}>Notes</button>
                               <div className={styles.menuDivider} />
                               <button
