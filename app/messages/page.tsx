@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import { supabase } from '@/lib/supabase'
-import { isEmployerEntitled } from '@/lib/foundingEntitlement'
 import styles from './page.module.css'
 import {
   formatRelativeTime,
@@ -49,7 +48,6 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSidebar, setShowSidebar] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null)
 
   // ── Refs ───────────────────────────────────────────────────────────────
   const messageListRef = useRef<HTMLDivElement>(null)
@@ -228,38 +226,29 @@ export default function MessagesPage() {
         const userId = session.user.id
         if (isMounted.current) setCurrentUserId(userId)
 
-        // Entitlement is paying-sub OR in-window founding cohort —
-        // see lib/foundingEntitlement.ts. approval_status MUST be
-        // fetched alongside the subscription fields so isEmployerEntitled
-        // can see it; without it the helper fails closed (was previously
-        // a silent-pass back-compat hole — pending freemail users
-        // wrongly reached this page).
+        // Messaging is NOT subscription-gated — an employer must always be
+        // able to reach their candidate threads regardless of subscription
+        // state (active / trialing / lapsed / none). We only enforce the
+        // APPROVAL gate here: a pending/rejected/waitlisted (never-approved)
+        // employer doesn't belong in the app yet and is sent to the
+        // under-review page. (Was previously also redirecting lapsed-sub
+        // employers to /dashboard/subscription — removed.)
         if (session.user.user_metadata?.role === 'employer') {
           try {
-            const [subRes, profileRes] = await Promise.all([
-              supabase
-                .from('employer_subscriptions')
-                .select('subscription_status, subscription_tier, founding_period_ends_at')
-                .eq('user_id', userId)
-                .maybeSingle(),
-              supabase
-                .from('employer_profiles')
-                .select('approval_status')
-                .eq('user_id', userId)
-                .maybeSingle(),
-            ])
-            const approvalStatus: string | null | undefined = (profileRes.data as { approval_status?: string | null } | null)?.approval_status ?? null
+            const { data: profile } = await supabase
+              .from('employer_profiles')
+              .select('approval_status')
+              .eq('user_id', userId)
+              .maybeSingle()
+            const approvalStatus: string | null | undefined = (profile as { approval_status?: string | null } | null)?.approval_status ?? null
             if (approvalStatus === 'pending' || approvalStatus === 'rejected' || approvalStatus === 'waitlisted') {
               router.push('/account-under-review')
               return
             }
-            const subWithApproval = subRes.data ? { ...subRes.data, approval_status: approvalStatus } : null
-            if (isMounted.current) setHasSubscription(isEmployerEntitled(subWithApproval))
           } catch {
-            if (isMounted.current) setHasSubscription(false)
+            // Non-fatal: messaging isn't subscription-gated, so a failed
+            // approval lookup must not block access — fall through.
           }
-        } else {
-          if (isMounted.current) setHasSubscription(true)
         }
 
         // Load conversations directly
@@ -500,11 +489,6 @@ export default function MessagesPage() {
 
   if (isLoading) {
     return <div className={styles.loading}>Loading messages...</div>
-  }
-
-  if (hasSubscription === false) {
-    router.push('/dashboard/subscription')
-    return <div className={styles.loading}>Redirecting to subscription page...</div>
   }
 
   return (

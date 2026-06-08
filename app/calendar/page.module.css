@@ -284,7 +284,9 @@
      under the red hatch. */
   z-index: 2;
 }
-.eventConfirmed { background: #0f172a; color: #FFE500; }
+/* Confirmed + scheduled interviews share the calm light-blue event style
+   (confirmed previously rendered dark/yellow, inconsistent with the rest). */
+.eventConfirmed,
 .eventScheduled { background: #e0f2fe; color: #0369a1; }
 .eventCancelled { background: #f3f4f6; color: #9ca3af; text-decoration: line-through; }
 .eventName { font-weight: 600; display: block; }
@@ -386,8 +388,10 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  background: #0f172a;
-  color: #FFE500;
+  /* Default (confirmed) interview pill uses the same light-blue as scheduled
+     so all interview pills read consistently. */
+  background: #e0f2fe;
+  color: #0369a1;
   max-width: 100%;
 }
 .monthEventPillScheduled { background: #e0f2fe; color: #0369a1; }
