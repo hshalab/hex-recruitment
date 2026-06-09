@@ -158,14 +158,17 @@ export default function CompanySettingsPage() {
         return match || ''
       }
 
-      // Only overwrite fields that are currently empty
+      // Only overwrite fields that are currently empty. NOTE: the logo is
+      // intentionally NOT auto-filled from the import — a scraped logo is a
+      // hotlinked favicon/og:image on the third party's server, so it's low
+      // quality and can silently break if they remove/block it. The logo is
+      // upload-only (no logo → the initials placeholder).
       setFormData(prev => ({
         ...prev,
         companyName: prev.companyName || d.companyName || prev.companyName,
         description: prev.description || d.description || prev.description,
         city: prev.city || d.location || prev.city,
         website: prev.website || d.website || prev.website,
-        logoUrl: prev.logoUrl || d.logoUrl || prev.logoUrl,
         industry: prev.industry || matchIndustry(d.industry) || prev.industry,
         companySize: prev.companySize || matchSize(d.companySize) || prev.companySize,
       }))
