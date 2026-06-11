@@ -34,6 +34,8 @@ export default function PrepNotesModal({
   const [aiLimit, setAiLimit] = useState<number>(10)
   const [generating, setGenerating] = useState(false)
   const [aiError, setAiError] = useState('')
+  // Neutral (non-error) notice — e.g. "not enough candidate info to generate".
+  const [aiNotice, setAiNotice] = useState('')
 
   // Refs so the debounce/close/blur paths always see current values without
   // re-creating callbacks.
@@ -171,6 +173,7 @@ export default function PrepNotesModal({
     if (generating) return
     setGenerating(true)
     setAiError('')
+    setAiNotice('')
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
@@ -190,6 +193,12 @@ export default function PrepNotesModal({
       // slow case read clearly rather than the generic error below.
       if (res.status === 504 || res.status === 408 || res.status === 524) {
         setAiError('This is taking longer than expected — please try again.')
+        return
+      }
+      // Not enough candidate evidence — a distinct, friendly NOTICE (not an
+      // error); the server made NO model call, so nothing was charged/consumed.
+      if (res.status === 422 || json?.code === 'insufficient_evidence') {
+        setAiNotice(json?.error || "There isn't enough information on this candidate yet to generate tailored questions. You can still add your own prep notes below.")
         return
       }
       if (!res.ok || typeof json?.html !== 'string' || !json.html) {
@@ -279,9 +288,11 @@ export default function PrepNotesModal({
               ? <span className={styles.aiHint}>this takes a few seconds…</span>
               : aiError
                 ? <span className={styles.aiError}>{aiError}</span>
-                : aiEnabled && aiRemaining > 0
-                  ? <span className={styles.aiHint}>{aiRemaining} of {aiLimit} left today</span>
-                  : null}
+                : aiNotice
+                  ? <span className={styles.aiNotice}>{aiNotice}</span>
+                  : aiEnabled && aiRemaining > 0
+                    ? <span className={styles.aiHint}>{aiRemaining} of {aiLimit} left today</span>
+                    : null}
           </div>
           <div className={styles.footerActions}>
             <span

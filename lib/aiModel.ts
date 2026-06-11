@@ -58,6 +58,50 @@ export function parseGeneratedQuestions(raw: unknown): GeneratedQuestion[] {
 }
 
 /**
+ * Robustly extract a GeneratedQuestion[] from the model's RAW text. Sonnet
+ * mostly returns a clean JSON array, but for some inputs it varies: wrapping the
+ * array in an object ({"questions":[...]}), surrounding it with prose/markdown
+ * fences, leaving trailing commas, or — observed in prod for some candidates —
+ * DROPPING the opening "[" so the body is a comma-separated list of objects that
+ * still ends in "]". Tries, in order: direct parse (bare array or
+ * {questions:[...]}), a bracketed [..] slice within prose, and finally wrapping
+ * the first-"{"…last-"}" body in [..] (recovers the dropped-bracket case).
+ * Returns [] only if nothing usable survives.
+ */
+export function parseQuestionsFromModelText(text: string): GeneratedQuestion[] {
+  if (!text) return []
+  const cleaned = text.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
+  // Tolerate trailing commas before a closing ] or }.
+  const noTrailingCommas = (s: string) => s.replace(/,(\s*[\]}])/g, '$1')
+  const tryParse = (s: string): GeneratedQuestion[] => {
+    try {
+      const v = JSON.parse(noTrailingCommas(s))
+      if (Array.isArray(v)) return parseGeneratedQuestions(v)
+      if (v && typeof v === 'object' && Array.isArray((v as { questions?: unknown }).questions)) {
+        return parseGeneratedQuestions((v as { questions: unknown }).questions)
+      }
+    } catch { /* fall through */ }
+    return []
+  }
+
+  // 1. Direct.
+  let out = tryParse(cleaned)
+  if (out.length) return out
+  // 2. A bracketed [...] slice (array surrounded by prose).
+  const arr = cleaned.match(/\[[\s\S]*\]/)
+  if (arr) { out = tryParse(arr[0]); if (out.length) return out }
+  // 3. Comma-separated objects with a missing/unmatched outer bracket: take the
+  //    first "{"…last "}" body and wrap it in [ ].
+  const first = cleaned.indexOf('{')
+  const last = cleaned.lastIndexOf('}')
+  if (first !== -1 && last > first) {
+    out = tryParse('[' + cleaned.slice(first, last + 1) + ']')
+    if (out.length) return out
+  }
+  return []
+}
+
+/**
  * Format questions as allowlist-safe notes HTML to APPEND below an employer's
  * existing prep notes. Grouped by type, each question numbered with its italic
  * "why". All model text is HTML-escaped; the result still passes through

@@ -139,6 +139,15 @@
   color: #b91c1c;
 }
 
+/* Neutral, non-alarming notice (e.g. "not enough candidate info") — brand
+   light-blue ink, clearly distinct from the red error. */
+.aiNotice {
+  font-size: 0.78rem;
+  color: #0369a1;
+  max-width: 24rem;
+  line-height: 1.35;
+}
+
 .status {
   font-size: 0.82rem;
   color: var(--text-gray, #9ca3af);

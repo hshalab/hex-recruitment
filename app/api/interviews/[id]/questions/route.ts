@@ -6,7 +6,7 @@ import {
   INTERVIEW_QUESTION_MODEL,
   INTERVIEW_QUESTION_FEATURE,
   INTERVIEW_QUESTION_DAILY_LIMIT,
-  parseGeneratedQuestions,
+  parseQuestionsFromModelText,
   formatQuestionsToHtml,
 } from '@/lib/aiModel'
 
@@ -177,7 +177,7 @@ Rules:
 - Also include a few role-fit questions (can they actually do the day-to-day of this role) and 1-2 culture/values questions.
 - NEVER invent facts the candidate did not provide. If a detail isn't in the evidence, do not assert it. If the evidence is thin, ask more general questions that are still specific to the role and industry.
 - Each question gets a one-line "why" explaining what it tests.
-- Return STRICT JSON ONLY — no prose, no markdown fences. A JSON array of 10-12 objects, each exactly: {"type": "verification" | "role-fit" | "culture", "question": string, "why": string}. Order verification first.`
+- Return STRICT JSON ONLY. Your ENTIRE response must be a single JSON array: it MUST begin with the character [ and end with the character ]. No prose, no explanation, no markdown fences, and do NOT wrap it in an object. The array holds 10-12 objects, each exactly: {"type": "verification" | "role-fit" | "culture", "question": string, "why": string}. Order verification first.`
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const userId = await getUserId(req)
@@ -199,10 +199,23 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     )
   }
 
+  // Gather evidence first. If the candidate has essentially nothing to go on
+  // (no work history, no cover letter, no skills) we DON'T call the model —
+  // it can't produce meaningful tailored questions and would just waste a call
+  // and risk a poor result. Return a distinct, friendly message instead.
+  const { prompt: userPrompt, hasRichEvidence } = await buildEvidence(interview)
+  if (!hasRichEvidence) {
+    return NextResponse.json(
+      {
+        error: "There isn't enough information on this candidate yet to generate tailored questions. You can still add your own prep notes below.",
+        code: 'insufficient_evidence',
+      },
+      { status: 422 },
+    )
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
-
-  const { prompt: userPrompt } = await buildEvidence(interview)
 
   let aiText = ''
   try {
@@ -228,20 +241,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "Couldn't generate right now — try again." }, { status: 502 })
   }
 
-  // Reuse the strip-fences + direct-parse + regex-fallback pattern from the
-  // job-ad path in ai-assist.
-  const cleaned = aiText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
-  let parsedRaw: unknown = null
-  try {
-    parsedRaw = JSON.parse(cleaned)
-  } catch {
-    const match = cleaned.match(/\[[\s\S]*\]/)
-    if (match) { try { parsedRaw = JSON.parse(match[0]) } catch { /* falls through */ } }
-  }
-
-  const questions = parseGeneratedQuestions(parsedRaw)
+  // Robustly extract the questions — tolerant of the model dropping the outer
+  // "[", wrapping in {"questions":[...]}, adding prose/fences, or trailing
+  // commas (see parseQuestionsFromModelText).
+  const questions = parseQuestionsFromModelText(aiText)
   if (!questions.length) {
-    console.error('interview-questions parse failure:', cleaned.slice(0, 400))
+    console.error('interview-questions parse failure:', aiText.slice(0, 600))
     return NextResponse.json({ error: "Couldn't generate right now — try again." }, { status: 502 })
   }
 
