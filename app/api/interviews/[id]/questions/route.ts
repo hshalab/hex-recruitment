@@ -18,7 +18,10 @@ import {
 // per employer per UTC day.
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 30
+// 60s (Vercel ceiling is 300s) — the questions route does several DB lookups
+// then a large Sonnet generation; 30s occasionally timed out (504) on a cold
+// start + slow model response. 60s gives ample headroom.
+export const maxDuration = 60
 
 const todayUtc = () => new Date().toISOString().slice(0, 10)
 

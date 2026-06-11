@@ -186,6 +186,12 @@ export default function PrepNotesModal({
         setAiRemaining(0)
         return
       }
+      // Gateway/function timeout (the 504 body isn't our JSON) — make the rare
+      // slow case read clearly rather than the generic error below.
+      if (res.status === 504 || res.status === 408 || res.status === 524) {
+        setAiError('This is taking longer than expected — please try again.')
+        return
+      }
       if (!res.ok || typeof json?.html !== 'string' || !json.html) {
         setAiError(json?.error || "Couldn't generate right now — try again.")
         return
