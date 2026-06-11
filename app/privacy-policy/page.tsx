@@ -47,7 +47,7 @@ export default function PrivacyPolicyPage() {
             Back to Home
           </Link>
           <h1 className={styles.heroTitle}>Privacy Policy</h1>
-          <p className={styles.heroDate}>Last updated: May 2026</p>
+          <p className={styles.heroDate}>Last updated: June 2026</p>
         </div>
       </section>
 
@@ -233,11 +233,31 @@ export default function PrivacyPolicyPage() {
                 data processing agreements.
               </li>
               <li>
+                <strong>AI Provider (Anthropic):</strong> When an employer uses our
+                AI interview-question tool, the relevant candidate application details
+                (such as work history, skills, and cover letter) and the job details
+                are sent to Anthropic — AI processing (interview question generation),
+                United States. Anthropic processes this data on our behalf under its
+                commercial terms and does not use it to train its models.
+              </li>
+              <li>
                 <strong>Legal Requirements:</strong> We may disclose data if required by law, court
                 order, or government request, or to protect the rights, safety, or property of Thrive
                 and our users.
               </li>
             </ul>
+
+            <h3 className={styles.subTitle}>AI-assisted interview preparation</h3>
+            <p>
+              When an employer uses our AI interview-question tool, the relevant
+              candidate application details (such as work history, skills, and cover
+              letter) and the job details are sent to our AI provider, Anthropic, to
+              generate suggested interview questions. This processing takes place in
+              the United States. Anthropic processes this data on our behalf under
+              its commercial terms and does not use it to train its models. The
+              suggested questions are stored only within the employer&apos;s private
+              interview notes and are never shown to candidates.
+            </p>
           </section>
 
           {/* 4. Job Seeker Data Visibility */}
