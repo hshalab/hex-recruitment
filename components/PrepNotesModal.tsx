@@ -28,6 +28,13 @@ export default function PrepNotesModal({
   const [status, setStatus] = useState<SaveStatus>('loading')
   const [dirty, setDirty] = useState(false)
 
+  // AI interview-question generation (capability-flagged, daily-capped).
+  const [aiEnabled, setAiEnabled] = useState<boolean | null>(null)
+  const [aiRemaining, setAiRemaining] = useState<number>(0)
+  const [aiLimit, setAiLimit] = useState<number>(10)
+  const [generating, setGenerating] = useState(false)
+  const [aiError, setAiError] = useState('')
+
   // Refs so the debounce/close/blur paths always see current values without
   // re-creating callbacks.
   const bodyRef = useRef('')
@@ -67,6 +74,32 @@ export default function PrepNotesModal({
         if (cancelled) return
         setStatus('error')
         setLoaded(true)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isOpen, interviewId])
+
+  // Fetch capability + remaining quota when the modal opens, so the button can
+  // show/hide and display how many generations are left today.
+  useEffect(() => {
+    if (!isOpen) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        const res = await fetch(`/api/interviews/${interviewId}/questions`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          cache: 'no-store',
+        })
+        if (!res.ok) { if (!cancelled) setAiEnabled(false); return }
+        const j = await res.json().catch(() => ({}))
+        if (cancelled) return
+        setAiEnabled(!!j.enabled)
+        setAiLimit(typeof j.limit === 'number' ? j.limit : 10)
+        setAiRemaining(typeof j.remaining === 'number' ? j.remaining : 0)
+      } catch {
+        if (!cancelled) setAiEnabled(false)
       }
     })()
     return () => { cancelled = true }
@@ -132,6 +165,53 @@ export default function PrepNotesModal({
     onClose()
   }, [onClose, saveNow, tooLong])
 
+  // Generate AI questions and APPEND below the existing notes (never overwrite),
+  // then persist via the normal save path.
+  const handleGenerate = useCallback(async () => {
+    if (generating) return
+    setGenerating(true)
+    setAiError('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      const res = await fetch(`/api/interviews/${interviewId}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        // The browser sends ONLY the interview id (in the URL) — no candidate PII.
+        body: JSON.stringify({}),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (res.status === 429) {
+        setAiError(json?.error || `You've used today's ${aiLimit} AI generations.`)
+        setAiRemaining(0)
+        return
+      }
+      // Gateway/function timeout (the 504 body isn't our JSON) — make the rare
+      // slow case read clearly rather than the generic error below.
+      if (res.status === 504 || res.status === 408 || res.status === 524) {
+        setAiError('This is taking longer than expected — please try again.')
+        return
+      }
+      if (!res.ok || typeof json?.html !== 'string' || !json.html) {
+        setAiError(json?.error || "Couldn't generate right now — try again.")
+        return
+      }
+      const existing = bodyRef.current || ''
+      const hasExisting = existing.trim() && existing.replace(/<p>\s*<\/p>/gi, '').trim() !== ''
+      const combined = hasExisting ? existing + json.html : json.html
+      setBody(combined)
+      bodyRef.current = combined
+      setDirty(true)
+      dirtyRef.current = true
+      if (typeof json.remaining === 'number') setAiRemaining(json.remaining)
+      await saveNow()
+    } catch {
+      setAiError("Couldn't generate right now — try again.")
+    } finally {
+      setGenerating(false)
+    }
+  }, [generating, interviewId, aiLimit, saveNow])
+
   // Flush a pending debounce if the modal unmounts.
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current) }, [])
 
@@ -181,19 +261,41 @@ export default function PrepNotesModal({
         </div>
 
         <div className={styles.footer}>
-          <span
-            className={`${styles.status} ${
-              status === 'saved' && !dirty ? styles.statusSaved
-              : status === 'error' ? styles.statusError
-              : status === 'saving' ? styles.statusSaving
-              : ''
-            }`}
-            aria-live="polite"
-          >
-            {status === 'saved' && !dirty && <span aria-hidden="true">✓ </span>}
-            {statusLabel}
-          </span>
+          <div className={styles.footerLeft}>
+            {aiEnabled && (
+              <button
+                type="button"
+                className={styles.generateBtn}
+                onClick={() => void handleGenerate()}
+                disabled={generating || aiRemaining <= 0 || tooLong || !loaded}
+                title={aiRemaining <= 0
+                  ? `Daily limit reached (${aiLimit}/day)`
+                  : `Generate AI interview questions — ${aiRemaining} left today`}
+              >
+                {generating ? 'Generating…' : '✨ Generate questions'}
+              </button>
+            )}
+            {generating
+              ? <span className={styles.aiHint}>this takes a few seconds…</span>
+              : aiError
+                ? <span className={styles.aiError}>{aiError}</span>
+                : aiEnabled && aiRemaining > 0
+                  ? <span className={styles.aiHint}>{aiRemaining} of {aiLimit} left today</span>
+                  : null}
+          </div>
           <div className={styles.footerActions}>
+            <span
+              className={`${styles.status} ${
+                status === 'saved' && !dirty ? styles.statusSaved
+                : status === 'error' ? styles.statusError
+                : status === 'saving' ? styles.statusSaving
+                : ''
+              }`}
+              aria-live="polite"
+            >
+              {status === 'saved' && !dirty && <span aria-hidden="true">✓ </span>}
+              {statusLabel}
+            </span>
             <button
               type="button"
               className={styles.saveBtn}
