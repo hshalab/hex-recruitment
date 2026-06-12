@@ -1255,18 +1255,35 @@ export default function JobApplicationsPage() {
                       </button>
                     )}
 
-                    {/* ── OFFERED: Waiting for candidate, Withdraw, Reject ── */}
+                    {/* ── OFFERED ──
+                        When an offer exists, the offer card above owns the
+                        correct lifecycle controls (Withdraw offer / Confirm
+                        Hire / Rescind) — so here we only surface the pending
+                        "awaiting response" note. The old action-bar "Withdraw"
+                        button wrongly opened the candidate-DECLINE modal
+                        (setDeclineApp), which rejects the candidate rather than
+                        withdrawing the offer — removed.
+                        If the application is 'offered' with NO offer letter on
+                        record (a pre-fix drag, or seeded data), show a clear
+                        empty state + a path to send a real offer, instead of
+                        the mis-wired decline control. */}
                     {application.status === 'offered' && (
-                      <>
-                        {application.offer?.status === 'pending' && (
+                      application.offer ? (
+                        application.offer.status === 'pending' ? (
                           <span style={{ fontSize: '0.8rem', color: '#d97706', fontStyle: 'italic', padding: '0.5rem 0.75rem' }}>
                             Awaiting candidate response...
                           </span>
-                        )}
-                        <button className={styles.barBtnReject} onClick={() => setDeclineApp(application)}>
-                          Withdraw
-                        </button>
-                      </>
+                        ) : null
+                      ) : (
+                        <>
+                          <span style={{ fontSize: '0.8rem', color: '#6b7280', fontStyle: 'italic', padding: '0.5rem 0.75rem' }}>
+                            No offer letter on record yet.
+                          </span>
+                          <button className={styles.barBtnPrimary} onClick={() => { setOfferApplication(application); setOfferModalOpen(true) }}>
+                            Send Offer Letter →
+                          </button>
+                        </>
+                      )
                     )}
 
                     {/* ── HIRED / REJECTED: Reset ── */}

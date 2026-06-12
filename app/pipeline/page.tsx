@@ -10,6 +10,7 @@ import SignedLink from '@/components/SignedLink'
 import DeclineModal from '@/components/DeclineModal'
 import WithdrawModal from '@/components/WithdrawModal'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
+import MakeOfferModal from '@/components/MakeOfferModal'
 import BackwardToInterviewModal, { type BackwardToInterviewChoice } from '@/components/BackwardToInterviewModal'
 import StagePickerSheet from '@/components/StagePickerSheet'
 import StageDurationBadge from '@/components/StageDurationBadge'
@@ -151,6 +152,10 @@ export default function PipelinePage() {
   // we hold the card here while ScheduleInterviewModal is open. Cancel
   // closes the modal without ever writing job_applications.status.
   const [scheduleCard, setScheduleCard] = useState<PipelineCard | null>(null)
+  // Forward drag into the Offered column gates on a successful offer send —
+  // we hold the card here while MakeOfferModal is open. Cancel closes the
+  // modal without ever writing job_applications.status (mirrors scheduleCard).
+  const [offerCard, setOfferCard] = useState<PipelineCard | null>(null)
   // Backward drag into the Interview column shows BackwardToInterviewModal
   // first so the employer can pick: cancel / move-only / move-and-schedule.
   const [backwardToInterview, setBackwardToInterview] = useState<{ card: PipelineCard; previousStageLabel: string } | null>(null)
@@ -397,6 +402,16 @@ export default function PipelinePage() {
       } else {
         setScheduleCard(card)
       }
+      return
+    }
+
+    // Forward move into Offered must go through the offer-letter flow
+    // (MakeOfferModal) — the SAME gate the "Make Offer" button uses — so an
+    // Offered card always has a real job_offers row + signed letter. Cancel =
+    // no write, card stays put. Backward into Offered (e.g. from Hired) falls
+    // through to the generic cascade-confirm below, unchanged.
+    if (newStatus === 'offered' && !(fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx)) {
+      setOfferCard(card)
       return
     }
 
@@ -844,6 +859,31 @@ export default function PipelinePage() {
             setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'interview', stageEnteredAt: new Date().toISOString(), hasLiveInterview: true } : c))
             setScheduleCard(null)
             setToast({ message: `Moved to Interview. Schedule sent to ${scheduleCard.candidateName.split(' ')[0]}.`, key: Date.now() })
+            loadData()
+          }}
+        />
+      )}
+
+      {/* Forward-into-Offered gate. Card stays at source until an offer is
+          actually sent (MakeOfferModal writes the job_offers row + flips
+          status='offered' itself); cancel = no DB write, card stays put. On
+          success we refetch via loadData() so the card lands in Offered with
+          a real offer behind it. Mirrors the scheduleCard gate above. */}
+      {offerCard && employerId && (
+        <MakeOfferModal
+          isOpen
+          onClose={() => setOfferCard(null)}
+          applicationId={offerCard.id}
+          jobId={offerCard.jobId}
+          jobTitle={offerCard.jobTitle}
+          company={employerCompany}
+          candidateId={offerCard.candidateId}
+          candidateName={offerCard.candidateName}
+          candidateEmail={offerCard.candidateEmail || undefined}
+          onSuccess={() => {
+            const name = offerCard.candidateName.split(' ')[0]
+            setOfferCard(null)
+            setToast({ message: `Offer sent to ${name}. Moved to Offered.`, key: Date.now() })
             loadData()
           }}
         />
