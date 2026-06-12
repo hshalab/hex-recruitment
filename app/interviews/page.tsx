@@ -33,6 +33,27 @@ interface InterviewItem {
   calendarLink: string | null
   notes: string | null
   status: string
+  outcome: 'completed' | 'no_show' | null
+}
+
+// interview_date/interview_time are stored as local wall-clock; parsing with
+// `new Date(`${date}T${time}`)` (no Z) reads them in the local timezone, which
+// matches how the rest of this page formats them.
+function interviewStartMs(dateStr: string, timeStr: string | null): number {
+  return new Date(`${dateStr}T${timeStr || '00:00'}`).getTime()
+}
+// End of the interview = start + duration (duration_minutes is NOT NULL,
+// default 30). A 2:00–3:00pm interview is "past" at 3:00pm, not 2:00pm.
+function interviewEndMs(i: { interviewDate: string; interviewTime: string | null; durationMinutes: number }): number {
+  return interviewStartMs(i.interviewDate, i.interviewTime) + (i.durationMinutes || 30) * 60000
+}
+// Resolution state of a row that belongs in "Past".
+function pastState(i: InterviewItem): 'cancelled' | 'rescheduled' | 'completed' | 'no_show' | 'unresolved' {
+  if (i.status === 'cancelled') return 'cancelled'
+  if (i.status === 'rescheduled') return 'rescheduled'
+  if (i.outcome === 'completed' || i.status === 'completed') return 'completed'
+  if (i.outcome === 'no_show') return 'no_show'
+  return 'unresolved'
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -82,6 +103,8 @@ export default function InterviewsPage() {
   // Prep-notes modal target (private rich-text note for one interview).
   const [notesTarget, setNotesTarget] = useState<InterviewItem | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+  // The past interview currently being marked completed / no-show.
+  const [resolvingId, setResolvingId] = useState<string | null>(null)
   const [notesMap, setNotesMap] = useState<Record<string, string>>({})
   const [activeFilter, setActiveFilter] = useState<'today' | 'week' | 'all'>('all')
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
@@ -176,6 +199,7 @@ export default function InterviewsPage() {
         calendarLink: i.calendar_link || null,
         notes: i.notes || null,
         status: i.status,
+        outcome: i.outcome ?? null,
       }
     })
 
@@ -186,16 +210,26 @@ export default function InterviewsPage() {
     // 'confirmed' / 'completed' / 'cancelled' and NULL date/time, the
     // formatters and sort below would crash. Filtering by status is
     // the canonical gate; this NULL filter is the safety net.
+    const nowMs = Date.now()
+    // "Past" = the interview's END time (start + duration) has elapsed. An
+    // active row only leaves Upcoming once it has actually finished, so a
+    // 2:00–3:00pm interview still shows as upcoming at 2:30pm.
+    const hasEnded = (i: InterviewItem) =>
+      !!i.interviewDate && !!i.interviewTime && interviewEndMs(i) <= nowMs
+
+    // Upcoming = active status AND not yet ended, soonest first.
     const upcomingItems = mapped
-      .filter(i => ['scheduled', 'confirmed'].includes(i.status) && i.interviewDate && i.interviewTime)
-      .sort((a, b) => {
-        const dtA = new Date(`${a.interviewDate}T${a.interviewTime}`).getTime()
-        const dtB = new Date(`${b.interviewDate}T${b.interviewTime}`).getTime()
-        return dtA - dtB
-      })
+      .filter(i => ['scheduled', 'confirmed'].includes(i.status) && i.interviewDate && i.interviewTime && !hasEnded(i))
+      .sort((a, b) => interviewStartMs(a.interviewDate, a.interviewTime) - interviewStartMs(b.interviewDate, b.interviewTime))
+
+    // Past = terminal/resolved statuses, OR an active interview whose time has
+    // already passed (the "needs resolving" case). Most-recent-first by end time.
     const pastItems = mapped
-      .filter(i => ['completed', 'cancelled', 'rescheduled'].includes(i.status) && i.interviewDate)
-      .sort((a, b) => b.interviewDate.localeCompare(a.interviewDate))
+      .filter(i => i.interviewDate && (
+        ['completed', 'cancelled', 'rescheduled'].includes(i.status) ||
+        (['scheduled', 'confirmed'].includes(i.status) && hasEnded(i))
+      ))
+      .sort((a, b) => interviewEndMs(b) - interviewEndMs(a))
 
     const initialNotes: Record<string, string> = {}
     mapped.forEach(i => { initialNotes[i.interviewId] = i.notes || '' })
@@ -291,12 +325,37 @@ export default function InterviewsPage() {
 
       const cancelled = { ...interview, status: 'cancelled' }
       setUpcoming(prev => prev.filter(i => i.interviewId !== interview.interviewId))
-      setPast(prev => [...prev, cancelled].sort((a, b) => b.interviewDate.localeCompare(a.interviewDate)))
+      setPast(prev => [...prev, cancelled].sort((a, b) => interviewEndMs(b) - interviewEndMs(a)))
     } catch (err) {
       console.error('Error cancelling interview:', err)
       alert('Sorry — we couldn\'t cancel this interview. Please try again.')
     } finally {
       setCancellingId(null)
+    }
+  }
+
+  // Record the outcome of a passed interview (Completed / No-show). This is a
+  // RECORD-ONLY action: it sets interviews.outcome and does NOT change status
+  // or touch the candidate's pipeline stage — advancing/rejecting from the
+  // interview outcome is a deliberate later follow-up. RLS limits the update to
+  // the employer's own rows.
+  const handleResolveOutcome = async (interview: InterviewItem, outcome: 'completed' | 'no_show') => {
+    const label = outcome === 'completed' ? 'Completed' : 'No-show'
+    if (!window.confirm(`Mark this interview as “${label}”? This records what happened — it won’t move the candidate in your pipeline.`)) return
+
+    setResolvingId(interview.interviewId)
+    try {
+      const { error } = await supabase
+        .from('interviews')
+        .update({ outcome })
+        .eq('id', interview.interviewId)
+      if (error) throw error
+      setPast(prev => prev.map(i => i.interviewId === interview.interviewId ? { ...i, outcome } : i))
+    } catch (err) {
+      console.error('Error recording interview outcome:', err)
+      alert('Sorry — we couldn\'t save that. Please try again.')
+    } finally {
+      setResolvingId(null)
     }
   }
 
@@ -538,7 +597,16 @@ export default function InterviewsPage() {
                  as the upcoming rows, not a different tile layout. Avatar +
                  "View Application" action are preserved. */
               <div className={`${styles.interviewCards} ${styles.pastList}`}>
-                {past.map(interview => (
+                {past.map(interview => {
+                  const state = pastState(interview)
+                  const pill =
+                    state === 'completed' ? { cls: styles.statusCompleted, label: 'Completed' }
+                    : state === 'no_show' ? { cls: styles.statusNoShow, label: 'No-show' }
+                    : state === 'cancelled' ? { cls: styles.statusCancelled, label: 'Cancelled' }
+                    : state === 'rescheduled' ? { cls: styles.statusRescheduled, label: 'Rescheduled' }
+                    : { cls: styles.statusUnresolved, label: 'Needs review' }
+                  const busy = resolvingId === interview.interviewId
+                  return (
                   <div key={interview.interviewId} className={`${styles.interviewRow} ${styles.pastRow}`}>
                     <div className={styles.rowMain}>
                       <span className={styles.rowAvatar} aria-hidden="true">
@@ -558,9 +626,24 @@ export default function InterviewsPage() {
                       />
                     </div>
                     <div className={styles.rowAside}>
-                      <span className={`${styles.statusPill} ${interview.status === 'completed' ? styles.statusCompleted : styles.statusCancelled}`}>
-                        {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
-                      </span>
+                      <span className={`${styles.statusPill} ${pill.cls}`}>{pill.label}</span>
+                      {/* This interview's time has passed but the employer hasn't
+                          said what happened yet — prompt for the outcome. Recording
+                          it is RECORD-ONLY (no pipeline side-effects); Reschedule
+                          reuses the existing schedule modal/flow. */}
+                      {state === 'unresolved' && (
+                        <>
+                          <button type="button" className={styles.resolveBtnPrimary} onClick={() => handleResolveOutcome(interview, 'completed')} disabled={busy}>
+                            {busy ? 'Saving…' : 'Completed'}
+                          </button>
+                          <button type="button" className={styles.resolveBtn} onClick={() => handleResolveOutcome(interview, 'no_show')} disabled={busy}>
+                            No-show
+                          </button>
+                          <button type="button" className={styles.resolveBtn} onClick={() => setRescheduleTarget(interview)} disabled={busy}>
+                            Reschedule
+                          </button>
+                        </>
+                      )}
                       {/* Notes are available on every interview regardless of
                           status; past/cancelled rows have no "…" menu, so the
                           entry point lives inline here. */}
@@ -572,7 +655,8 @@ export default function InterviewsPage() {
                       </Link>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

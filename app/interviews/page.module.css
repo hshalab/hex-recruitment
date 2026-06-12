@@ -269,6 +269,67 @@
   border: 1px solid color-mix(in srgb, #dc2626 30%, transparent);
 }
 
+/* No-show — muted slate (a recorded negative, but neutral, not alarming like
+   the red Cancelled). */
+.statusNoShow {
+  background: color-mix(in srgb, #64748b 12%, transparent);
+  color: #475569;
+  border: 1px solid color-mix(in srgb, #64748b 30%, transparent);
+}
+
+/* Rescheduled — calendar blue, matches the in-person modality accent. */
+.statusRescheduled {
+  background: color-mix(in srgb, var(--rs-stage-reviewing, #3b82f6) 12%, transparent);
+  color: var(--rs-stage-reviewing, #3b82f6);
+  border: 1px solid color-mix(in srgb, var(--rs-stage-reviewing, #3b82f6) 30%, transparent);
+}
+
+/* Needs review — amber attention tone (same family as Pending); this row is
+   asking the employer to record an outcome. */
+.statusUnresolved {
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  color: #b45309;
+  border: 1px solid color-mix(in srgb, #f59e0b 40%, transparent);
+}
+
+/* Resolve actions on an unresolved past interview. Same compact geometry as
+   .btnSm; the primary (Completed) reads as the positive default. */
+.resolveBtn,
+.resolveBtnPrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.625rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+.resolveBtn {
+  border: 1px solid var(--rs-border-strong, var(--border-gray));
+  background: var(--rs-bg-surface, #fff);
+  color: var(--rs-text, var(--text-dark));
+}
+.resolveBtn:hover:not(:disabled) {
+  background: var(--rs-bg-subtle, var(--light-gray));
+  border-color: var(--rs-text, var(--text-dark));
+}
+.resolveBtnPrimary {
+  border: 1px solid var(--rs-stage-hired, #16a34a);
+  background: var(--rs-stage-hired, #16a34a);
+  color: #fff;
+}
+.resolveBtnPrimary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--rs-stage-hired, #16a34a) 88%, #000);
+}
+.resolveBtn:disabled,
+.resolveBtnPrimary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 /* ─── Modality icon (text-free; tooltip-only label) ───────────────────── */
 .modalityIcon {
   display: inline-flex;
