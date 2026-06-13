@@ -514,6 +514,18 @@
   padding: 0 2rem;
 }
 
+/* Detail pages (e.g. /candidates/[id], /post-job, /job/…) intentionally drop
+   the body[data-sidebar] offset so the page is full-width — but the collapsed
+   60px sidebar rail still renders fixed at left:0, on top of the sticky header,
+   which clipped the Thrive logo. When a sidebar IS shown (.headerEmployer) but
+   the body offset is absent, pad the header left so the logo clears the rail.
+   Desktop only — on ≤768px the rail isn't a fixed left gutter. */
+@media (min-width: 769px) {
+  body:not([data-sidebar]) .headerEmployer .headerFull {
+    padding-left: calc(60px + 2rem);
+  }
+}
+
 /* Search bar in employer top nav */
 .searchBar {
   display: flex;

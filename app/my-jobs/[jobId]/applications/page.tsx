@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { useJobs } from '@/lib/JobsContext'
 import { Interview, Offer } from '@/lib/types'
+import { headerThemeForStatus } from '@/lib/constants/pipelineStages'
 import styles from './page.module.css'
 
 interface Application {
@@ -813,7 +814,9 @@ export default function JobApplicationsPage() {
               Applications for {job?.title || 'Job'}
             </h1>
             <p className={styles.subtitle}>
-              {job?.company} • {job?.location}
+              {/* Join with the bullet only between parts that exist, so a job
+                  with no location never leaves a dangling "•" under the title. */}
+              {[job?.company, job?.location].filter(Boolean).join(' • ')}
             </p>
           </div>
 
@@ -888,9 +891,18 @@ export default function JobApplicationsPage() {
                 return true
               })
               .map(application => {
+              // Candidate-header "you are here" halo: tint the header to the
+              // candidate's current pipeline-stage colour (status → stage →
+              // colour via the shared constant). Unmapped statuses (e.g.
+              // 'pending') return null → the default navy header.
+              const headerTheme = headerThemeForStatus(application.status)
               return (
                 <div key={application.id} className={styles.applicationCard}>
-                  <div className={styles.cardMain}>
+                  <div
+                    className={styles.cardMain}
+                    style={headerTheme ? { background: headerTheme.bg } : undefined}
+                    data-ink={headerTheme?.ink}
+                  >
                     {/* Candidate Photo */}
                     <div className={styles.candidatePhoto}>
                       {application.candidatePhoto ? (

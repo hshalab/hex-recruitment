@@ -17,6 +17,7 @@ import StageDurationBadge from '@/components/StageDurationBadge'
 import SortOrderControl, { type PipelineSortOrder } from '@/components/SortOrderControl'
 import Toast from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
+import { STAGE_COLORS, STAGE_LABELS } from '@/lib/constants/pipelineStages'
 import styles from './page.module.css'
 
 // DECLINED is appended at the end and rendered with a muted neutral
@@ -24,13 +25,15 @@ import styles from './page.module.css'
 // Drag is disabled both ways; status changes to/from 'rejected' happen
 // only via the kebab menu (Decline opens the template-aware modal,
 // Restore returns the card to Reviewing silently).
+// Colours + labels come from the shared single source of truth
+// (lib/constants/pipelineStages.ts); this array just fixes the column ORDER.
 const STAGES = [
-  { id: 'reviewing', label: 'Reviewing', color: '#3b82f6' },
-  { id: 'shortlisted', label: 'Shortlisted', color: '#8b5cf6' },
-  { id: 'interview', label: 'Interview', color: '#06b6d4' },
-  { id: 'offered', label: 'Offered', color: '#10b981' },
-  { id: 'hired', label: 'Hired', color: '#16a34a' },
-  { id: 'rejected', label: 'Declined', color: '#6B7280' },
+  { id: 'reviewing', label: STAGE_LABELS.reviewing, color: STAGE_COLORS.reviewing },
+  { id: 'shortlisted', label: STAGE_LABELS.shortlisted, color: STAGE_COLORS.shortlisted },
+  { id: 'interview', label: STAGE_LABELS.interview, color: STAGE_COLORS.interview },
+  { id: 'offered', label: STAGE_LABELS.offered, color: STAGE_COLORS.offered },
+  { id: 'hired', label: STAGE_LABELS.hired, color: STAGE_COLORS.hired },
+  { id: 'rejected', label: STAGE_LABELS.rejected, color: STAGE_COLORS.rejected },
 ]
 
 // Forward-direction order. Indices match the kanban layout above (rejected
