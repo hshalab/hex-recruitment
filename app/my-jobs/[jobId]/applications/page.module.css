@@ -287,14 +287,17 @@
   font-weight: 700;
 }
 
+/* The NAME is the highest-priority element: it never shrinks or ellipses —
+   it shows in full and, on narrow viewports, the row wraps (name on its own
+   line, metadata below) rather than clipping the name. */
 .candidateName {
   font-size: 1rem;
   font-weight: 700;
   color: #fff;
   margin: 0;
   line-height: 1.3;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  flex: 0 1 auto; min-width: 0;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 .candidatePosition,
 .candidateLocation,
@@ -306,7 +309,16 @@
   white-space: nowrap;
   flex: 0 0 auto;
 }
-.candidatePosition { color: var(--ds-yellow); font-weight: 600; }
+/* Role is the secondary item that ellipses when horizontal space runs short —
+   the lower-priority metadata gives way before the name does. */
+.candidatePosition {
+  color: var(--ds-yellow);
+  font-weight: 600;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .cardSep {
   flex: 0 0 auto;
   color: rgba(255, 255, 255, 0.4);
