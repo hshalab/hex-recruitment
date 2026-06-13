@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { useJobs } from '@/lib/JobsContext'
 import { Interview, Offer } from '@/lib/types'
+import { confirmHire } from '@/lib/confirmHire'
 import { headerThemeForStatus, stageForStatus, STAGE_LABELS, STAGE_COLORS, stageSoftTint, stageSoftBorder } from '@/lib/constants/pipelineStages'
 import styles from './page.module.css'
 
@@ -217,6 +218,9 @@ export default function JobApplicationsPage() {
               employerSignatureImageUrl: offer.employer_signature_image_url,
               employerSignatureName: offer.employer_signature_name,
               employerSignatureTimestamp: offer.employer_signature_timestamp,
+              rightToWorkConfirmed: offer.right_to_work_confirmed ?? false,
+              rightToWorkConfirmedAt: offer.right_to_work_confirmed_at,
+              rightToWorkConfirmedBy: offer.right_to_work_confirmed_by,
               declineReason: offer.decline_reason,
               createdAt: offer.created_at,
               updatedAt: offer.updated_at,
@@ -338,6 +342,9 @@ export default function JobApplicationsPage() {
             employerSignatureImageUrl: offer.employer_signature_image_url,
             employerSignatureName: offer.employer_signature_name,
             employerSignatureTimestamp: offer.employer_signature_timestamp,
+            rightToWorkConfirmed: offer.right_to_work_confirmed ?? false,
+            rightToWorkConfirmedAt: offer.right_to_work_confirmed_at,
+            rightToWorkConfirmedBy: offer.right_to_work_confirmed_by,
             declineReason: offer.decline_reason,
             createdAt: offer.created_at,
             updatedAt: offer.updated_at,
@@ -561,111 +568,39 @@ export default function JobApplicationsPage() {
     alert(`Interview invitation sent to ${application.candidateName}`)
   }
 
+  // Toggle the right-to-work readiness flag on the accepted offer. Status only
+  // (no documents). Stamps confirmed_at + confirmed_by when ticked; clears both
+  // when unticked. The Hired gate (here and on the pipeline) requires this true.
+  const handleToggleRtw = async (offerId: string, next: boolean) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    await supabase
+      .from('job_offers')
+      .update({
+        right_to_work_confirmed: next,
+        right_to_work_confirmed_at: next ? new Date().toISOString() : null,
+        right_to_work_confirmed_by: next ? (session?.user.id ?? null) : null,
+      })
+      .eq('id', offerId)
+    loadApplications()
+  }
+
   const handleConfirmHire = async (application: Application) => {
+    // Gate: hire requires right-to-work confirmed on the accepted offer.
+    // (The button is also disabled until then; this is the defensive guard.)
+    if (application.offer?.rightToWorkConfirmed !== true) return
     const confirmed = confirm(`Confirm hire for ${application.candidateName}?`)
     if (!confirmed) return
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-
-      // Update application status to 'hired'
-      await supabase
-        .from('job_applications')
-        .update({ status: 'hired', status_updated_at: new Date().toISOString(), stage_entered_at: new Date().toISOString() })
-        .eq('id', application.id)
-
-      // Update job status to 'filled'
-      await supabase
-        .from('jobs')
-        .update({ status: 'filled' })
-        .eq('id', application.jobId)
-
-      // Send notification to candidate
-      await supabase.from('notifications').insert({
-        user_id: application.candidateId,
-        title: 'Hire Confirmed!',
-        message: `Congratulations! Your hire has been confirmed for ${application.jobTitle} at ${application.company}.`,
-        type: 'application_update',
-        read: false,
-        related_id: application.id,
-        related_type: 'application',
-        link: '/applications',
+      await confirmHire({
+        applicationId: application.id,
+        jobId: application.jobId,
+        candidateId: application.candidateId,
+        candidateName: application.candidateName,
+        candidateEmail: application.candidateEmail,
+        jobTitle: application.jobTitle,
+        company: application.company,
       })
-
-      // Send email notification
-      fetch('/api/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: application.candidateEmail,
-          type: 'application_status',
-          data: { status: 'hired', companyName: application.company, jobTitle: application.jobTitle },
-        }),
-      }).catch(() => {})
-
-      // Send message via conversation
-      const messageContent = [
-        `Hello ${application.candidateName},`,
-        '',
-        `Congratulations! Your hire for the ${application.jobTitle} position at ${application.company} has been officially confirmed.`,
-        '',
-        'We look forward to welcoming you to the team!',
-        '',
-        'Best regards,',
-        application.company,
-      ].join('\n')
-
-      let conversationId: string | null = null
-      const { data: existingConv } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`and(participant_1.eq.${session.user.id},participant_2.eq.${application.candidateId}),and(participant_1.eq.${application.candidateId},participant_2.eq.${session.user.id})`)
-        .eq('related_job_id', application.jobId)
-        .maybeSingle()
-
-      if (existingConv) {
-        conversationId = existingConv.id
-      } else {
-        const { data: newConv } = await supabase
-          .from('conversations')
-          .insert({
-            participant_1: session.user.id,
-            participant_2: application.candidateId,
-            participant_1_name: application.company,
-            participant_1_role: 'employer',
-            participant_1_company: application.company,
-            participant_2_name: application.candidateName,
-            participant_2_role: 'candidate',
-            related_job_id: application.jobId,
-            related_job_title: application.jobTitle,
-            last_message: messageContent,
-            last_message_at: new Date().toISOString(),
-          })
-          .select()
-          .single()
-
-        conversationId = newConv?.id || null
-      }
-
-      if (conversationId) {
-        await supabase.from('messages').insert({
-          conversation_id: conversationId,
-          sender_id: session.user.id,
-          sender_name: application.company,
-          sender_role: 'employer',
-          content: messageContent,
-          is_read: false,
-        })
-
-        if (existingConv) {
-          await supabase.from('conversations').update({
-            last_message: messageContent,
-            last_message_at: new Date().toISOString(),
-          }).eq('id', conversationId)
-        }
-      }
-
       loadApplications()
       refreshJobs()
     } catch (err) {
@@ -1177,21 +1112,50 @@ export default function JobApplicationsPage() {
                         </div>
                       )}
                       {application.offer.status === 'accepted' && application.status !== 'hired' && (
-                        <div className={styles.interviewActions}>
-                          <button
-                            className={styles.barBtnHire}
-                            onClick={() => handleConfirmHire(application)}
-                          >
-                            Confirm Hire
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.barBtn}
-                            onClick={() => setWithdrawApp(application)}
-                          >
-                            Rescind offer
-                          </button>
-                        </div>
+                        <>
+                          {/* Right-to-work confirmation — the single pre-hire
+                              readiness flag. Status only; no documents stored.
+                              The hire is gated on this being ticked. */}
+                          <label className={styles.rtwRow}>
+                            <input
+                              type="checkbox"
+                              className={styles.rtwCheckbox}
+                              checked={!!application.offer.rightToWorkConfirmed}
+                              onChange={e => handleToggleRtw(application.offer!.id, e.target.checked)}
+                            />
+                            <span className={styles.rtwText}>
+                              <span className={styles.rtwTitle}>Right to work confirmed</span>
+                              <span className={styles.rtwCaption}>
+                                Confirm you’ve verified this candidate’s right to work via the Home Office online service or your usual checks. Thrive stores only that you’ve confirmed it — no documents.
+                              </span>
+                              {application.offer.rightToWorkConfirmed && application.offer.rightToWorkConfirmedAt && (
+                                <span className={styles.rtwDate}>
+                                  Confirmed {new Date(application.offer.rightToWorkConfirmedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                </span>
+                              )}
+                            </span>
+                          </label>
+                          <div className={styles.interviewActions}>
+                            <button
+                              className={styles.barBtnHire}
+                              onClick={() => handleConfirmHire(application)}
+                              disabled={!application.offer.rightToWorkConfirmed}
+                              title={!application.offer.rightToWorkConfirmed ? 'Confirm right to work first.' : undefined}
+                            >
+                              Confirm Hire
+                            </button>
+                            {!application.offer.rightToWorkConfirmed && (
+                              <span className={styles.rtwHint}>Confirm right to work first.</span>
+                            )}
+                            <button
+                              type="button"
+                              className={styles.barBtn}
+                              onClick={() => setWithdrawApp(application)}
+                            >
+                              Rescind offer
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   )}

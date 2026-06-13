@@ -564,6 +564,32 @@
   border-color: #d1d5db;
 }
 
+/* Right-to-work confirmation row on the accepted-offer card (status only). */
+.rtwRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  margin: 0.5rem 0 0.75rem;
+  background: #f8fafc;
+  border: 1px solid var(--ds-border, #e2e8f0);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.rtwCheckbox {
+  width: 18px;
+  height: 18px;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--rs-stage-hired, #16a34a);
+}
+.rtwText { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.rtwTitle { font-weight: 600; color: var(--ds-text-primary, #0f172a); font-size: 0.9rem; }
+.rtwCaption { font-size: 0.78rem; color: var(--text-gray, #6b7280); line-height: 1.4; }
+.rtwDate { font-size: 0.78rem; color: #047857; font-weight: 600; margin-top: 0.1rem; }
+.rtwHint { font-size: 0.78rem; color: #b45309; align-self: center; }
+
 /* Responsive */
 @media (max-width: 640px) {
   .container {

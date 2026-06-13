@@ -50,6 +50,11 @@ export interface Offer {
   employerSignatureImageUrl: string | null
   employerSignatureName: string | null
   employerSignatureTimestamp: string | null
+  // Hiring-readiness flag: employer-confirmed right to work (status only, no
+  // documents). The Hired step is gated on this being true.
+  rightToWorkConfirmed: boolean
+  rightToWorkConfirmedAt: string | null
+  rightToWorkConfirmedBy: string | null
   declineReason: string | null
   createdAt: string
   updatedAt: string

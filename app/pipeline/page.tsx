@@ -18,6 +18,7 @@ import SortOrderControl, { type PipelineSortOrder } from '@/components/SortOrder
 import Toast from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
 import { STAGE_COLORS, STAGE_LABELS } from '@/lib/constants/pipelineStages'
+import { confirmHire } from '@/lib/confirmHire'
 import styles from './page.module.css'
 
 // DECLINED is appended at the end and rendered with a muted neutral
@@ -415,6 +416,48 @@ export default function PipelinePage() {
     // through to the generic cascade-confirm below, unchanged.
     if (newStatus === 'offered' && !(fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx)) {
       setOfferCard(card)
+      return
+    }
+
+    // Forward move into Hired requires an ACCEPTED offer AND right-to-work
+    // confirmed, then runs the SAME shared confirm-hire path as the card's
+    // "Confirm Hire" button (no duplication, no bare applyMove). If those
+    // aren't met, surface a prompt and don't move. Backward into Hired falls
+    // through to the generic cascade-confirm below.
+    if (newStatus === 'hired' && !(fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx)) {
+      const { data: offer } = await supabase
+        .from('job_offers')
+        .select('status, right_to_work_confirmed')
+        .eq('application_id', card.id)
+        .eq('status', 'accepted')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (!offer) {
+        setToast({ message: 'To hire, send an offer and have it accepted first.', key: Date.now() })
+        return
+      }
+      if (!offer.right_to_work_confirmed) {
+        setToast({ message: 'Confirm right to work on the accepted offer before hiring.', key: Date.now() })
+        return
+      }
+      if (!window.confirm(`Confirm hire for ${card.candidateName}?`)) return
+      try {
+        await confirmHire({
+          applicationId: card.id,
+          jobId: card.jobId,
+          candidateId: card.candidateId,
+          candidateName: card.candidateName,
+          candidateEmail: card.candidateEmail,
+          jobTitle: card.jobTitle,
+          company: employerCompany,
+        })
+        setCards(prev => prev.map(c => c.id === card.id ? { ...c, status: 'hired', stageEnteredAt: new Date().toISOString() } : c))
+        setToast({ message: `${card.candidateName.split(' ')[0]} hired.`, key: Date.now() })
+        loadData()
+      } catch {
+        setToast({ message: 'Hire failed. Please try again.', key: Date.now() })
+      }
       return
     }
 
