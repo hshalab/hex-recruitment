@@ -15,7 +15,7 @@ import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { useJobs } from '@/lib/JobsContext'
 import { Interview, Offer } from '@/lib/types'
-import { headerThemeForStatus } from '@/lib/constants/pipelineStages'
+import { headerThemeForStatus, stageForStatus, STAGE_LABELS, STAGE_COLORS, stageSoftTint, stageSoftBorder } from '@/lib/constants/pipelineStages'
 import styles from './page.module.css'
 
 interface Application {
@@ -810,6 +810,28 @@ export default function JobApplicationsPage() {
           </button>
 
           <div className={styles.jobInfo}>
+            {/* Quiet stage pill above the title (focused single-candidate views
+                only — Review / Make Offer / Schedule Interview come in focused
+                on one applicant). Same soft-tinted styling as the pipeline's
+                "N days in {stage}" pills. Title + subtitle stay as-is; this is
+                a label, not a link. */}
+            {(() => {
+              const focused = focusedApplicationId ? applications.find(a => a.id === focusedApplicationId) : null
+              const stage = focused ? stageForStatus(focused.status) : null
+              if (!stage) return null
+              return (
+                <span
+                  className={styles.stagePill}
+                  style={{
+                    background: stageSoftTint(stage),
+                    border: `1px solid ${stageSoftBorder(stage)}`,
+                    color: STAGE_COLORS[stage],
+                  }}
+                >
+                  {STAGE_LABELS[stage]}
+                </span>
+              )
+            })()}
             <h1 className={styles.title}>
               Applications for {job?.title || 'Job'}
             </h1>
@@ -900,8 +922,8 @@ export default function JobApplicationsPage() {
                 <div key={application.id} className={styles.applicationCard}>
                   <div
                     className={styles.cardMain}
-                    style={headerTheme ? { background: headerTheme.bg } : undefined}
-                    data-ink={headerTheme?.ink}
+                    style={headerTheme ? { background: headerTheme.bg, borderBottom: `1px solid ${headerTheme.border}` } : undefined}
+                    data-ink={headerTheme ? 'dark' : undefined}
                   >
                     {/* Candidate Photo */}
                     <div className={styles.candidatePhoto}>

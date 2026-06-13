@@ -28,16 +28,19 @@ export const STAGE_LABELS: Record<StageId, string> = {
   rejected: 'Declined',
 }
 
-// Text-ink theme per stage, chosen so the candidate-header text stays AA-legible
-// on that stage's colour: dark ink on the brighter colours, white on the
-// darker grey. (Verified ≥4.5:1 for each.)
-const STAGE_INK: Record<StageId, 'dark' | 'light'> = {
-  reviewing: 'dark',
-  shortlisted: 'dark',
-  interview: 'dark',
-  offered: 'dark',
-  hired: 'dark',
-  rejected: 'light',
+// Softened stage tints — the SAME treatment the pipeline board uses for its
+// column count badges and "N days in {stage}" pills (StageDurationBadge):
+// a 12% colour-mix fill with a 30% border. Reusing this here keeps the
+// applications candidate-header visually identical to the pipeline columns —
+// they can't drift because both derive from STAGE_COLORS via these helpers.
+const STAGE_TINT_PCT = 12
+const STAGE_BORDER_PCT = 30
+
+export function stageSoftTint(stage: StageId): string {
+  return `color-mix(in srgb, ${STAGE_COLORS[stage]} ${STAGE_TINT_PCT}%, transparent)`
+}
+export function stageSoftBorder(stage: StageId): string {
+  return `color-mix(in srgb, ${STAGE_COLORS[stage]} ${STAGE_BORDER_PCT}%, transparent)`
 }
 
 // job_applications.status is plain text (no enum). Map it to a pipeline stage.
@@ -63,12 +66,19 @@ export function stageForStatus(status: string | null | undefined): StageId | nul
   }
 }
 
-// Header background + text-ink for a candidate at a given application status.
-// null → use the existing navy fallback (unmapped statuses).
+// Softened candidate-header fill for a given application status, matching the
+// pipeline columns. Returns the soft 12% tint + 30% border (and the stage id /
+// label for the pill). null → use the existing navy fallback (unmapped
+// statuses, e.g. 'pending'). Text ink is always dark — the tint is pale.
 export function headerThemeForStatus(
   status: string | null | undefined
-): { bg: string; ink: 'dark' | 'light' } | null {
+): { stage: StageId; label: string; bg: string; border: string } | null {
   const stage = stageForStatus(status)
   if (!stage) return null
-  return { bg: STAGE_COLORS[stage], ink: STAGE_INK[stage] }
+  return {
+    stage,
+    label: STAGE_LABELS[stage],
+    bg: stageSoftTint(stage),
+    border: stageSoftBorder(stage),
+  }
 }

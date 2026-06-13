@@ -38,6 +38,20 @@
   margin-bottom: 1.5rem;
 }
 
+/* Quiet stage pill above the title — same geometry as the pipeline's
+   "N days in {stage}" pill (StageDurationBadge); soft-tint bg + border +
+   full-saturation stage colour are set inline from the shared constant. */
+.stagePill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 0.4rem;
+}
+
 .title {
   font-size: 1.75rem;
   font-weight: 700;
@@ -332,13 +346,11 @@
 }
 
 /* Stage-coloured candidate header.
-   The background colour is set inline from the shared stage-colour constant
-   (so the hex values live in exactly one place); only the TEXT theme lives
-   here. data-ink="dark" → dark text for the brighter stage colours
-   (reviewing/shortlisted/interview/offered/hired); data-ink="light" → keep
-   white text but swap the yellow position to white (the grey 'Declined'
-   stage). No data-ink attribute = the default navy header (white + yellow),
-   used as the fallback for statuses that don't map to a board stage. */
+   The background is a SOFT 12% stage tint (+ 30% bottom border) set inline from
+   the shared constant — the same softened treatment the pipeline columns use,
+   so the two can't drift. Because the tint is pale, every stage uses dark text
+   (data-ink="dark"). No data-ink attribute = the default navy header (white +
+   yellow), kept as the fallback for statuses that don't map to a board stage. */
 /* Pure black for the primary name/position so even the small position text
    clears AA (≥4.5:1) on the least-contrasty stage colour (shortlisted purple
    #8b5cf6 → ~4.9:1; the others are higher). */
@@ -357,8 +369,6 @@
   background: rgba(0, 0, 0, 0.08);
   border-color: rgba(0, 0, 0, 0.6);
 }
-
-.cardMain[data-ink='light'] .candidatePosition { color: #fff; }
 
 /* Screening answers — dark panel so the Q&A pops out of the body */
 .screeningBlock {
