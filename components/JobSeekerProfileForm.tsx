@@ -34,6 +34,23 @@ const STEPS = [
   { id: 5, title: 'Account', icon: '🔐' },
 ]
 
+// Maps a dashboard "Profile Completion" deep-link slug (?section=<slug>) to the
+// wizard step that owns the field and the element id to scroll to. Keeps the
+// "Add →" buttons landing directly on their own control.
+const SECTION_TARGETS: Record<string, { step: number; elementId: string }> = {
+  name: { step: 1, elementId: 'firstName' },
+  bio: { step: 1, elementId: 'personalBio' },
+  photo: { step: 1, elementId: 'photo-upload' },
+  phone: { step: 2, elementId: 'phone' },
+  location: { step: 2, elementId: 'addressLine1' },
+  'job-title': { step: 3, elementId: 'currentPosition' },
+  experience: { step: 3, elementId: 'yearsExperience' },
+  'job-sector': { step: 3, elementId: 'jobSector' },
+  skills: { step: 3, elementId: 'skills-section' },
+  cv: { step: 3, elementId: 'cv-upload' },
+  'job-preferences': { step: 3, elementId: 'job-preferences' },
+}
+
 // Work experience entry interface
 interface WorkExperience {
   company: string
@@ -289,17 +306,28 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
 
   const [currentStep, setCurrentStep] = useState(1)
 
-  // Deep-link: if URL has #job-preferences, jump to step 3 and scroll
+  // Deep-link from the dashboard "Profile Completion" panel: a ?section=<slug>
+  // query param (or the legacy #job-preferences hash) jumps straight to the
+  // wizard step that owns that field and scrolls to / highlights the control,
+  // so each "Add →" is one click instead of landing at the top of the form.
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (window.location.hash === '#job-preferences') {
-      setCurrentStep(3)
-      // Wait for step content to render before scrolling
-      setTimeout(() => {
-        document.getElementById('job-preferences')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 100)
-    }
-  }, [])
+    const slug = searchParams.get('section')
+      || (window.location.hash ? window.location.hash.slice(1) : '')
+    const target = slug ? SECTION_TARGETS[slug] : undefined
+    if (!target) return
+    setCurrentStep(target.step)
+    // Wait for the step content to render before scrolling/highlighting.
+    const t = setTimeout(() => {
+      const el = document.getElementById(target.elementId)
+      if (!el) return
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Briefly flash the control so it's obvious where the user landed.
+      el.classList.add(styles.deepLinkFlash)
+      setTimeout(() => el.classList.remove(styles.deepLinkFlash), 1600)
+    }, 140)
+    return () => clearTimeout(t)
+  }, [searchParams])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -1022,7 +1050,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       <h2 className={styles.stepHeading}>Personal Details</h2>
       <p className={styles.stepDescription}>Tell us about yourself</p>
 
-      <div className={styles.photoUpload}>
+      <div className={styles.photoUpload} id="photo-upload">
         <div
           className={styles.photoPreview}
           onClick={() => photoInputRef.current?.click()}
@@ -1741,7 +1769,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         </select>
       </div>
 
-      <div className={styles.formGroup}>
+      <div className={styles.formGroup} id="skills-section">
         <label className={styles.label}>Professional Skills</label>
         <p className={styles.photoHint} style={{ marginBottom: '0.75rem' }}>
           Skills for {JOB_SECTORS.find(s => s.id === formData.jobSector)?.label || 'your sector'} (choose up to 10)
@@ -1908,6 +1936,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       <div className={styles.formGroup}>
         <label className={styles.label} htmlFor="cvUpload">Upload CV</label>
         <div
+          id="cv-upload"
           className={styles.fileUpload}
           onClick={() => cvInputRef.current?.click()}
         >

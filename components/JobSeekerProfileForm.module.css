@@ -1093,3 +1093,17 @@
     height: 100px;
   }
 }
+
+/* Deep-link highlight: briefly pulse the control the user was sent to from the
+   dashboard "Profile Completion" panel, so it's obvious where they landed. */
+.deepLinkFlash {
+  animation: deepLinkFlash 1.6s ease-out;
+  border-radius: 8px;
+  scroll-margin-top: 90px;
+}
+
+@keyframes deepLinkFlash {
+  0% { box-shadow: 0 0 0 0 rgba(255, 229, 0, 0); }
+  15% { box-shadow: 0 0 0 4px rgba(255, 229, 0, 0.55); }
+  100% { box-shadow: 0 0 0 4px rgba(255, 229, 0, 0); }
+}

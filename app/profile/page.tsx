@@ -34,10 +34,13 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState<any>(null)
   const [editMode, setEditMode] = useState(false)
 
-  // Auto-enter edit mode if URL has a deep-link hash like #job-preferences
+  // Auto-enter edit mode when arriving via a "Profile Completion" deep-link
+  // (e.g. /profile?section=cv) or the legacy #job-preferences hash, so the
+  // user lands straight in the editable form at the right field.
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (window.location.hash === '#job-preferences') setEditMode(true)
+    const hasSection = new URLSearchParams(window.location.search).get('section')
+    if (hasSection || window.location.hash === '#job-preferences') setEditMode(true)
   }, [])
   const [employerPreview, setEmployerPreview] = useState(false)
 

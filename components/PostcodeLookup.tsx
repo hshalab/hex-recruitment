@@ -82,7 +82,16 @@ export default function PostcodeLookup({
       const data = await res.json()
 
       if (!res.ok) {
-        setLookupError(data.error || 'Postcode not found. Please check and try again.')
+        // A 404 is a genuine "we couldn't find that postcode" — keep it helpful.
+        // Anything else (e.g. the upstream Postcoder service being unavailable or
+        // out of credit, which surfaces as a 500/502) is not the user's problem:
+        // never show a raw "Lookup failed (403)" — point them to manual entry,
+        // which is always available via the button below.
+        if (res.status === 404) {
+          setLookupError(data.error || 'Postcode not found. Please check and try again.')
+        } else {
+          setLookupError('Address lookup is temporarily unavailable. Please enter your address manually below.')
+        }
         setIsLooking(false)
         return
       }
