@@ -955,8 +955,8 @@ export default function EmployerDashboardPage() {
               <div className={styles.checklistItems}>
                 <div className={styles.checklistItem}>
                   <span className={`${styles.checklistDot} ${hasLogo ? styles.checklistDotDone : ''}`} />
-                  <span className={styles.checklistLabel}>Add your company logo</span>
-                  {!hasLogo && <Link href="/settings/company" className={styles.checklistAction}>Add logo →</Link>}
+                  <span className={styles.checklistLabel}>{hasLogo ? 'Company logo added' : 'Add your company logo'}</span>
+                  <Link href="/settings/company" className={styles.checklistAction}>{hasLogo ? 'Update logo →' : 'Add logo →'}</Link>
                 </div>
                 <div className={styles.checklistItem}>
                   <span className={`${styles.checklistDot} ${hasJob ? styles.checklistDotDone : ''}`} />
@@ -980,14 +980,16 @@ export default function EmployerDashboardPage() {
         })()}
 
         {/* ── STALE APPLICATIONS NUDGE ────────────────── */}
+        {/* Whole banner links to /applied (the "New Applications" awaiting-review
+            queue) — staleApplications counts pending apps older than 2 weeks. */}
         {staleApplications > 0 && (
-          <div className={styles.staleNudge}>
+          <Link href="/applied" className={styles.staleNudge}>
             <span className={styles.staleNudgeIcon}>⏳</span>
             <div className={styles.staleNudgeText}>
               <strong>{staleApplications} application{staleApplications !== 1 ? 's' : ''}</strong> {staleApplications !== 1 ? 'have' : 'has'} been waiting for review for over 2 weeks.
             </div>
-            <Link href="/my-jobs" className={styles.staleNudgeLink}>Review now →</Link>
-          </div>
+            <span className={styles.staleNudgeLink}>Review now →</span>
+          </Link>
         )}
 
         {/* ── AVAILABILITY NUDGE ─────────────────────────── */}

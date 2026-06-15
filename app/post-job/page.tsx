@@ -822,6 +822,12 @@ function PostJobContent() {
                 <label htmlFor="logoUpload" className={styles.uploadLabel}>
                   {logoUploading ? (
                     <span>Processing logo...</span>
+                  ) : formData.companyLogo ? (
+                    <>
+                      <span className={styles.uploadIcon}>🔄</span>
+                      <span>Replace logo image</span>
+                      <span className={styles.uploadHint}>A logo is already set — choose a new image to replace it</span>
+                    </>
                   ) : (
                     <>
                       <span className={styles.uploadIcon}>📁</span>

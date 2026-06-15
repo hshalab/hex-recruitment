@@ -74,7 +74,10 @@ export function emailLayout(title: string, bodyHtml: string): string {
  * only yellow fill in any email. One per email.
  */
 export function ctaButton(text: string, url: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:26px 0;">
+  // Centred fixed-width button. align="center" keeps it centred in Outlook/MSO
+  // (which ignores margin:auto on tables); margin:26px auto centres it in
+  // modern clients (Gmail/Apple Mail). Matches the centred header/footer.
+  return `<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:26px auto;">
   <tr>
     <td style="background-color:#FFE500;border-radius:9px;">
       <a href="${url}" style="display:inline-block;padding:14px 30px;color:#0f172a;font-size:15px;font-weight:700;text-decoration:none;border-radius:9px;">
