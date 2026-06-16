@@ -658,12 +658,23 @@ export default function PipelinePage() {
                                 </div>
                               </div>
                               {card.status === 'interview' && !card.hasLiveInterview && (
-                                <span
+                                <button
+                                  type="button"
                                   className={styles.needsSchedulingBadge}
-                                  title="No interview scheduled yet — open the application to set one up."
+                                  title="Schedule interview"
+                                  aria-label={`Schedule interview for ${card.candidateName}`}
+                                  onClick={e => {
+                                    // stopPropagation so the card-body tap-to-move
+                                    // sheet doesn't also open. Opens the SAME
+                                    // ScheduleInterviewModal the drag/tap gate uses
+                                    // (create-new: no active interview row exists
+                                    // while this badge shows).
+                                    e.stopPropagation()
+                                    setScheduleCard(card)
+                                  }}
                                 >
                                   Needs scheduling
-                                </span>
+                                </button>
                               )}
                               {(() => {
                                 const cta = STAGE_CTA[card.status]
