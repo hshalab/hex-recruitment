@@ -838,6 +838,11 @@ function AvailabilitySettingsContent() {
                 Pick your calendar app and follow the steps below:
               </p>
 
+              {/* Hide the redundant Google "Add by URL" (ICS) option when the
+                  employer already has the real Google OAuth two-way sync — the
+                  same gcalConnected flag that drives the "Connected" banner.
+                  Kept (not deleted) so a not-yet-connected employer still sees it. */}
+              {!gcalConnected && (
               <details className={styles.feedDetails} open>
                 <summary className={styles.feedSummary}>
                   <span className={styles.feedSummaryIcon} aria-hidden="true">📅</span>
@@ -868,8 +873,11 @@ function AvailabilitySettingsContent() {
                   Open Google Calendar →
                 </a>
               </details>
+              )}
 
-              <details className={styles.feedDetails}>
+              {/* Apple defaults to open so the Apple/Outlook group still has one
+                  option expanded once the Google ICS block is hidden. */}
+              <details className={styles.feedDetails} open>
                 <summary className={styles.feedSummary}>
                   <span className={styles.feedSummaryIcon} aria-hidden="true">🍎</span>
                   Apple Calendar (Mac / iPhone / iPad)
