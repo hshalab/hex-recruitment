@@ -875,9 +875,7 @@ function AvailabilitySettingsContent() {
               </details>
               )}
 
-              {/* Apple defaults to open so the Apple/Outlook group still has one
-                  option expanded once the Google ICS block is hidden. */}
-              <details className={styles.feedDetails} open>
+              <details className={styles.feedDetails}>
                 <summary className={styles.feedSummary}>
                   <span className={styles.feedSummaryIcon} aria-hidden="true">🍎</span>
                   Apple Calendar (Mac / iPhone / iPad)
