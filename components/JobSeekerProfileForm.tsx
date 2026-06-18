@@ -1458,6 +1458,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           <label className={styles.label} htmlFor="linkedinUrl">LinkedIn Profile</label>
           <input
             type="text"
+            inputMode="url"
             id="linkedinUrl"
             name="linkedinUrl"
             value={formData.linkedinUrl}
@@ -1470,6 +1471,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           <label className={styles.label} htmlFor="facebookUrl">Facebook Profile</label>
           <input
             type="text"
+            inputMode="url"
             id="facebookUrl"
             name="facebookUrl"
             value={formData.facebookUrl}
@@ -1485,6 +1487,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           <label className={styles.label} htmlFor="instagramUrl">Instagram Profile</label>
           <input
             type="text"
+            inputMode="url"
             id="instagramUrl"
             name="instagramUrl"
             value={formData.instagramUrl}
