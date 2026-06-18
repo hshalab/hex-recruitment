@@ -129,7 +129,7 @@ export default function Home() {
       <section className={`${styles.howItWorks}`}>
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>Post a job in 3 minutes. Get applicants the same day.</h2>
-          <p className={styles.sectionSubtitle}>No agencies, no long contracts — just a simple hiring toolkit</p>
+          <p className={styles.sectionSubtitle}>No long contracts — just a simple hiring toolkit</p>
 
           <div className={`${styles.stepsGrid}`}>
             <div className={styles.step}>
