@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
+import SignedLink from '@/components/SignedLink'
 import JobSeekerProfileForm from '@/components/JobSeekerProfileForm'
 import { supabase } from '@/lib/supabase'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
@@ -545,10 +546,8 @@ export default function ProfilePage() {
               <div className={styles.sideCard}>
                 <h3 className={styles.sideCardTitle}>CV / Resume</h3>
                 {profileData.cvUrl ? (
-                  <a
-                    href={profileData.cvUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <SignedLink
+                    src={profileData.cvUrl}
                     className={styles.cvLink}
                   >
                     <span className={styles.cvIcon}>
@@ -560,7 +559,7 @@ export default function ProfilePage() {
                     </span>
                     <span className={styles.cvName}>{profileData.cvFileName}</span>
                     <span className={styles.cvDownload}>↗</span>
-                  </a>
+                  </SignedLink>
                 ) : (
                   <div className={styles.cvInfo}>
                     <span className={styles.cvIcon}>

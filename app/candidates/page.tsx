@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
+import SignedLink from '@/components/SignedLink'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
@@ -721,10 +722,10 @@ function CandidatesContent() {
                       Message
                     </Link>
                     {selectedCandidate.cvUrl ? (
-                      <a href={selectedCandidate.cvUrl} target="_blank" rel="noopener noreferrer" download className={styles.detailActionBtn}>
+                      <SignedLink src={selectedCandidate.cvUrl} download className={styles.detailActionBtn}>
                         <FileDown size={16} />
                         Download CV
-                      </a>
+                      </SignedLink>
                     ) : (
                       <button className={styles.detailActionBtn} disabled>
                         <FileDown size={16} />

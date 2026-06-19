@@ -5,6 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
+import SignedLink from '@/components/SignedLink'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
@@ -565,10 +566,10 @@ export default function CandidateDetailPage() {
                     </button>
                   )}
                   {visibility.show_cv && candidate.cvUrl ? (
-                    <a href={candidate.cvUrl} target="_blank" rel="noopener noreferrer" download className={styles.actionBtn}>
+                    <SignedLink src={candidate.cvUrl} download className={styles.actionBtn}>
                       <FileDown size={15} />
                       Download CV
-                    </a>
+                    </SignedLink>
                   ) : (
                     <button className={styles.actionBtn} disabled>
                       <FileDown size={15} />
