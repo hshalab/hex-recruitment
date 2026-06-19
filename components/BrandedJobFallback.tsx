@@ -42,7 +42,7 @@ export default function BrandedJobFallback({
             <path d="M7 8h10M12 8v8" stroke="#0A1628" strokeWidth="2.2" strokeLinecap="round" />
           </svg>
         </span>
-        <span className={styles.wordmark}>thrive</span>
+        <span className={styles.wordmark}>Thrive</span>
         <span className={styles.slogan}>Hire faster. Apply smarter.</span>
       </div>
     </div>

@@ -12,32 +12,34 @@
     linear-gradient(var(--fb-angle, 140deg), #0a1628 0%, #12294a 100%);
 }
 
-/* Large ghosted company initial — the per-employer signature, bleeding from the
-   top-right so it reads as texture, not content. */
+/* Large ghosted company initial — the per-employer signature. Anchored to the
+   right and vertically centred so it sits FULLY on the card (no edge clipping)
+   and reads as a deliberate background letter, not a bleed. */
 .ghost {
   position: absolute;
-  top: -14%;
-  right: -3%;
+  right: 3%;
+  top: 50%;
+  transform: translateY(-50%);
   font-family: var(--font-serif), Georgia, serif;
   font-weight: 700;
-  font-size: 82cqmin;
+  font-size: 76cqmin;
   line-height: 1;
   color: rgba(255, 255, 255, 0.055);
   user-select: none;
   pointer-events: none;
 }
 
-/* Centred Thrive lockup: mark + wordmark + slogan, all watermark-weight. */
+/* Thrive lockup: mark + wordmark + slogan, top-left aligned to fill the upper
+   space, all watermark-weight. (% offsets so positioning holds without cq.) */
 .brand {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 27%;
+  top: 9%;
+  left: 7%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 3.5cqh;
-  text-align: center;
+  align-items: flex-start;
+  gap: 3cqh;
+  text-align: left;
   pointer-events: none;
 }
 
