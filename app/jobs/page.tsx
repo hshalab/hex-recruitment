@@ -15,6 +15,7 @@ import { getTagCategory } from '@/lib/jobTags'
 import { Boost } from '@/lib/boostTypes'
 import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
 import CompanyLogo from '@/components/CompanyLogo'
+import { resolveJobBanner } from '@/lib/jobBanner'
 import JobPostingSchema from '@/components/JobPostingSchema'
 import { useAnalyticsTracking } from '@/hooks/useAnalyticsTracking'
 import styles from './page.module.css'
@@ -1018,10 +1019,46 @@ function JobsPageContent() {
           </div>
         </div>
 
-        {/* Sectors Panel */}
-        {sectorsExpanded && (
-          <div className={styles.filterPanel}>
-            <div className={styles.filterPanelInner}>
+        {/* Active filter chips — removable, beneath the one-line strip */}
+        {(activeCategory !== 'all' || quickWorkStyle || quickExperienceLevel || activeFilterCount > 0) && (
+          <div className={styles.activeChips}>
+            {activeCategory !== 'all' && (
+              <button className={styles.activeChip} onClick={() => setActiveCategory('all')}>
+                {categories.find(c => c.id === activeCategory)?.label}<span aria-hidden="true">✕</span>
+              </button>
+            )}
+            {quickWorkStyle && (
+              <button className={styles.activeChip} onClick={() => setQuickWorkStyle(null)}>
+                {quickWorkStyle}<span aria-hidden="true">✕</span>
+              </button>
+            )}
+            {quickExperienceLevel && (
+              <button className={styles.activeChip} onClick={() => setQuickExperienceLevel('')}>
+                {quickExperienceLevel}<span aria-hidden="true">✕</span>
+              </button>
+            )}
+            {filterSections.map(section => Array.from(filters[section.key]).map(option => (
+              <button key={`${section.key}-${option}`} className={styles.activeChip} onClick={() => toggleFilter(section.key, option)}>
+                {option}<span aria-hidden="true">✕</span>
+              </button>
+            )))}
+          </div>
+        )}
+      </div>
+
+      {/* Filter overlays — float ON TOP (popover on desktop, bottom sheet on
+          mobile); fixed-position so the page height never changes when open. */}
+      {(sectorsExpanded || filtersExpanded) && (
+        <div className={styles.filterBackdrop} onClick={() => { setSectorsExpanded(false); setFiltersExpanded(false) }} />
+      )}
+      {sectorsExpanded && (
+        <div className={styles.filterOverlay} role="dialog" aria-label="Sectors" aria-modal="true">
+          <div className={styles.filterOverlayHead}>
+            <span>Sectors</span>
+            <button className={styles.filterOverlayClose} onClick={() => setSectorsExpanded(false)} aria-label="Close">✕</button>
+          </div>
+          <div className={styles.filterOverlayBody}>
+            <div className={styles.filterGroupOptions}>
               {categories.map(category => (
                 <button
                   key={category.id}
@@ -1033,32 +1070,38 @@ function JobsPageContent() {
               ))}
             </div>
           </div>
-        )}
-
-        {/* Filters Panel */}
-        {filtersExpanded && (
-          <div className={styles.filterPanel}>
-            <div className={styles.filterPanelInner}>
-              {filterSections.map(section => (
-                <div key={section.key} className={styles.filterGroup}>
-                  <h4 className={styles.filterGroupTitle}>{section.title}</h4>
-                  <div className={styles.filterGroupOptions}>
-                    {section.options.map(option => (
-                      <button
-                        key={option}
-                        className={`${styles.filterPill} ${filters[section.key].has(option) ? styles.filterPillActive : ''}`}
-                        onClick={() => toggleFilter(section.key, option)}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+        </div>
+      )}
+      {filtersExpanded && (
+        <div className={styles.filterOverlay} role="dialog" aria-label="Filters" aria-modal="true">
+          <div className={styles.filterOverlayHead}>
+            <span>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
+            <button className={styles.filterOverlayClose} onClick={() => setFiltersExpanded(false)} aria-label="Close">✕</button>
           </div>
-        )}
-      </div>
+          <div className={styles.filterOverlayBody}>
+            {filterSections.map(section => (
+              <div key={section.key} className={styles.filterGroup}>
+                <h4 className={styles.filterGroupTitle}>{section.title}</h4>
+                <div className={styles.filterGroupOptions}>
+                  {section.options.map(option => (
+                    <button
+                      key={option}
+                      className={`${styles.filterPill} ${filters[section.key].has(option) ? styles.filterPillActive : ''}`}
+                      onClick={() => toggleFilter(section.key, option)}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className={styles.filterOverlayFoot}>
+            <button className={styles.filterOverlayClear} onClick={clearFilters}>Clear all</button>
+            <button className={styles.filterOverlayApply} onClick={() => setFiltersExpanded(false)}>Show {filteredJobs.length} jobs</button>
+          </div>
+        </div>
+      )}
 
       {/* Personalisation Banner */}
       {candidatePrefs && !prefsBannerDismissed && (activeCategory !== 'all' || quickWorkStyle) && (
@@ -1073,83 +1116,64 @@ function JobsPageContent() {
       <div className={styles.jobsContainer}>
         {filteredJobs.length > 0 ? (
           <div className={styles.jobsGrid} ref={listRef}>
-            {filteredJobs.map(job => (
+            {filteredJobs.map(job => {
+              const banner = resolveJobBanner({ id: job.id, companyBanner: job.companyBanner, company: job.company, category: job.category })
+              const initial = (job.company || '?').trim().charAt(0).toUpperCase() || '?'
+              const isNew = getPostedDaysAgo(job.postedAt) <= 2
+              const easyApply = !job.tags?.includes('CV required') && !job.tags?.includes('Cover letter required')
+              const badges = Array.isArray(job.employmentType) ? job.employmentType.slice(0, 2) : (job.employmentType ? [job.employmentType] : [])
+              const saved = isSaved(job.id)
+              return (
               <div
                 key={job.id}
-                className={`${styles.jobCard} ${boostedJobIds.has(job.id) ? styles.jobCardBoosted : ''}`}
+                className={`${styles.jobCard} ${banner ? '' : styles.jobCardFallback} ${boostedJobIds.has(job.id) ? styles.jobCardBoosted : ''}`}
                 onClick={() => selectJob(job)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && selectJob(job)}
               >
-                <div className={styles.jobCardTop}>
-                  <div className={styles.jobCardLogo}>
-                    <CompanyLogo src={job.companyLogo} alt={job.company} className={styles.jobCardLogoImg} />
+                <div className={styles.cardBg} style={banner ? { backgroundImage: `url(${banner})` } : undefined} aria-hidden="true" />
+                {!banner && <span className={styles.cardGhost} aria-hidden="true">{initial}</span>}
+                <div className={styles.cardScrim} aria-hidden="true" />
+
+                {isNew && <span className={styles.cardNew}>New</span>}
+                <button
+                  className={`${styles.cardSave} ${saved ? styles.cardSaved : ''}`}
+                  onClick={(e) => { e.stopPropagation(); if (!saved) trackClickEvent(job.id, 'save_click'); toggleSave(job.id) }}
+                  aria-label={saved ? 'Unsave job' : 'Save job'}
+                >
+                  <svg viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
+                </button>
+
+                <div className={styles.cardContent}>
+                  <div className={styles.cardCompanyRow}>
+                    <span className={styles.cardChip}>
+                      {job.companyLogo ? <CompanyLogo src={job.companyLogo} alt={job.company} className={styles.cardChipImg} /> : initial}
+                    </span>
+                    <span className={styles.cardCompany}>
+                      {job.company}
+                      {job.isRecruiterPosting && <span className={styles.cardViaRecruiter}> · via recruiter</span>}
+                    </span>
                   </div>
-                  <div className={styles.jobCardInfo}>
-                    <h3 className={styles.jobCardTitle}>{job.title}</h3>
-                    <p className={styles.jobCardCompany}>
-                      {job.company} · {job.location}{job.area ? `, ${job.area}` : ''}
-                      {job.isRecruiterPosting && (
-                        <span style={{ marginLeft: '0.4rem', fontSize: '0.65rem', fontWeight: 600, color: '#6366f1', background: '#eef2ff', padding: '0.1rem 0.35rem', borderRadius: 3, verticalAlign: 'middle' }}>Via recruiter</span>
-                      )}
-                    </p>
-                    <p className={styles.jobCardSalary}>{formatSalary(job)}</p>
+                  <h3 className={styles.cardRole}>{job.title}</h3>
+                  <div className={styles.cardMeta}>
+                    <span>{job.location}{job.area ? `, ${job.area}` : ''}</span>
+                    <span className={styles.cardDot}>·</span>
+                    <span className={styles.cardSalary}>{formatSalary(job)}</span>
                   </div>
-                </div>
-                <div className={styles.jobCardBottom}>
-                  <div className={styles.jobCardTags}>
-                    {Array.isArray(job.employmentType)
-                      ? job.employmentType.slice(0, 2).map((t, i) => <span key={i} className={styles.jobCardTag}>{t}</span>)
-                      : job.employmentType && <span className={styles.jobCardTag}>{job.employmentType}</span>
-                    }
-                    {job.workLocationType && <span className={styles.jobCardTag}>{job.workLocationType}</span>}
-                    {job.urgent && <span className={`${styles.jobCardTag} ${styles.jobCardTagUrgent}`}>Urgent</span>}
-                    {boostedJobIds.has(job.id) && <span className={styles.jobCardFeatured}>⚡ Featured</span>}
-                    {!job.tags?.includes('CV required') && !job.tags?.includes('Cover letter required') && (
-                      <span className={styles.jobCardEasyApply}>⚡ Easy Apply</span>
-                    )}
-                    {getPostedDaysAgo(job.postedAt) <= 2 && (
-                      <span className={styles.jobCardNew}>New</span>
-                    )}
-                  </div>
-                  {(() => {
-                    const benefitTags = ['Pension', 'Health insurance', 'Bonus scheme', 'Training provided', 'Career progression']
-                    const jobBenefits = (job.tags || []).filter(t => benefitTags.includes(t)).slice(0, 3)
-                    return jobBenefits.length > 0 ? (
-                      <div className={styles.jobCardBenefits}>
-                        {jobBenefits.map((b, i) => (
-                          <span key={i} className={styles.jobCardBenefit}>{b}</span>
-                        ))}
-                      </div>
-                    ) : null
-                  })()}
-                  <div className={styles.jobCardMeta}>
-                    <span className={styles.jobCardPosted}>{job.postedAt}</span>
-                    {job.expiresDate && (() => {
-                      const daysLeft = Math.ceil((new Date(job.expiresDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                      if (daysLeft <= 7 && daysLeft >= 0) {
-                        return <span className={styles.jobCardExpiry}>⏰ {daysLeft === 0 ? 'Closes today' : `${daysLeft}d left`}</span>
-                      }
-                      return null
-                    })()}
-                    {appliedJobIds.has(job.id) && (
-                      <span className={styles.jobCardApplied}>Applied ✓</span>
-                    )}
-                    <button
-                      className={`${styles.jobCardSave} ${isSaved(job.id) ? styles.jobCardSaved : ''}`}
-                      onClick={(e) => { e.stopPropagation(); if (!isSaved(job.id)) trackClickEvent(job.id, 'save_click'); toggleSave(job.id) }}
-                      aria-label={isSaved(job.id) ? 'Unsave job' : 'Save job'}
-                    >
-                      {isSaved(job.id) ? '★' : '☆'}
-                    </button>
+                  <div className={styles.cardBadges}>
+                    {badges.map((t, i) => <span key={i} className={styles.cardBadge}>{t}</span>)}
+                    {job.workLocationType && <span className={styles.cardBadge}>{job.workLocationType}</span>}
+                    {job.urgent && <span className={styles.cardBadge}>Urgent</span>}
+                    {easyApply && <span className={`${styles.cardBadge} ${styles.cardBadgeApply}`}>⚡ Easy apply</span>}
                   </div>
                 </div>
-                {shortlistedJobIds.has(job.id) && (
-                  <span className={styles.jobCardStamp}>SHORTLISTED</span>
-                )}
+
+                {appliedJobIds.has(job.id) && <span className={styles.cardApplied}>Applied ✓</span>}
+                {shortlistedJobIds.has(job.id) && <span className={styles.jobCardStamp}>SHORTLISTED</span>}
               </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <div className={styles.emptyState}>
@@ -1191,11 +1215,16 @@ function JobsPageContent() {
             </div>
 
             <div className={styles.modalBody}>
-              {selectedJob.companyBanner && (
-                <div className={styles.detailBanner}>
-                  <img src={selectedJob.companyBanner} alt={selectedJob.company} className={styles.detailBannerImg} />
-                </div>
-              )}
+              {(() => {
+                // Banner cascade so the detail header is never bare (incl. jobs
+                // saved without a banner, like Goldenkeys "Head Chef").
+                const detailBanner = resolveJobBanner({ id: selectedJob.id, companyBanner: selectedJob.companyBanner, company: selectedJob.company, category: selectedJob.category })
+                return (
+                  <div className={`${styles.detailBanner} ${detailBanner ? '' : styles.detailBannerFallback}`}>
+                    {detailBanner && <img src={detailBanner} alt={selectedJob.company} className={styles.detailBannerImg} />}
+                  </div>
+                )
+              })()}
 
               <div className={styles.detailHeader}>
                 <h1 className={styles.detailTitle}>{selectedJob.title}</h1>
@@ -1268,12 +1297,17 @@ function JobsPageContent() {
                 </div>
               )}
 
-              {(selectedJob.fullDescription || selectedJob.description) && (
+              {(() => {
+                const raw = (selectedJob.fullDescription || selectedJob.description || '').replace(/<[^>]*>/g, '').trim()
+                const isPlaceholder = /^join .+ as an? .+\.\s*apply now on thrive\.?$/i.test(raw)
+                if (!raw || isPlaceholder) return null
+                return (
                 <div className={styles.detailSection}>
                   <h2 className={styles.detailSectionTitle}>Full Job Description</h2>
                   <div className={styles.detailDescription}>{renderDescription(selectedJob.fullDescription || selectedJob.description)}</div>
                 </div>
-              )}
+                )
+              })()}
 
               {selectedJob.requirements && selectedJob.requirements.length > 0 && (
                 <div className={styles.detailSection}>

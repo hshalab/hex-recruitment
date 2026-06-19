@@ -545,8 +545,6 @@ function PostJobContent() {
       const jobReference = formData.jobReference || `JOB-${Date.now().toString(36).toUpperCase()}`
       const employerId = currentUser?.id || 'unknown'
 
-      const descriptionFallback = `Join ${formData.company} as a ${formData.title}. Apply now on Thrive.`
-
       const jobPayload = {
         company: formData.company,
         companyLogo,
@@ -567,8 +565,8 @@ function PostJobContent() {
           city: formData.city || formData.area?.split(' ')[0] || 'London',
           postcode: formData.postcode || '',
         },
-        description: shortDescription || descriptionFallback,
-        fullDescription: formData.description || descriptionFallback,
+        description: shortDescription,
+        fullDescription: formData.description || '',
         tags: [...tags, ...(salaryNegotiable ? ['Salary negotiable'] : []), ...(hideSalary ? ['Competitive salary'] : [])],
         urgent: formData.tags.has('Urgent hire') || formData.tags.has('Immediate start') || formData.tags.has('Interviews this week'),
         noExperience: formData.tags.has('No experience required'),
@@ -959,6 +957,11 @@ function PostJobContent() {
                   </button>
                 </div>
               </div>
+            )}
+            {!formData.companyBanner && (
+              <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: '0.5rem 0 0', lineHeight: 1.5 }}>
+                💡 A cover photo and a few lines of description make your job stand out — candidates see them first. Both are optional (we&apos;ll use a tasteful default image if you skip the photo), but they really help.
+              </p>
             )}
           </div>
 

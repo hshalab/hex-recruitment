@@ -5,6 +5,7 @@ import { Job } from '@/lib/mockJobs'
 import { supabase } from '@/lib/supabase'
 import { useSavedJobs } from '@/lib/useSavedJobs'
 import CompanyLogo from '@/components/CompanyLogo'
+import { resolveJobBanner } from '@/lib/jobBanner'
 import JobPostingSchema from '@/components/JobPostingSchema'
 import { getTagCategory, WORK_STYLE_TAGS } from '@/lib/jobTags'
 import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
@@ -227,12 +228,18 @@ export default function JobDetailModal({
         <div className={styles.content} ref={contentRef}>
           {/* Header with Banner */}
           <div className={styles.header}>
-            {job.companyBanner && (
-              <div className={styles.bannerWrapper}>
-                <img src={job.companyBanner} alt="" className={styles.banner} />
-                <div className={styles.bannerOverlay} />
-              </div>
-            )}
+            {(() => {
+              // Banner cascade: job/employer banner → sector-matched stock → navy
+              // fallback, so the detail header is never bare (incl. existing jobs
+              // like the Goldenkeys "Head Chef" that were saved without a banner).
+              const detailBanner = resolveJobBanner({ id: job.id, companyBanner: job.companyBanner, company: job.company, category: job.category })
+              return (
+                <div className={`${styles.bannerWrapper} ${detailBanner ? '' : styles.bannerFallback}`}>
+                  {detailBanner && <img src={detailBanner} alt="" className={styles.banner} />}
+                  <div className={styles.bannerOverlay} />
+                </div>
+              )
+            })()}
             <div className={styles.headerContent}>
               <div className={styles.companyLogo}>
                 <CompanyLogo src={job.companyLogo} alt={job.company} />
@@ -405,15 +412,22 @@ export default function JobDetailModal({
             </div>
           )}
 
-          {/* Full Description Section */}
-          {(job.fullDescription || job.description) && (
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>Full Job Description</h2>
-              <div className={styles.fullDescription}>
-                {renderDescription(job.fullDescription || job.description)}
+          {/* Full Description Section — hidden when empty or when it's the
+              legacy auto-generated "Join … Apply now on Thrive." placeholder
+              (so existing bare jobs don't show fabricated copy). */}
+          {(() => {
+            const raw = (job.fullDescription || job.description || '').replace(/<[^>]*>/g, '').trim()
+            const isPlaceholder = /^join .+ as an? .+\.\s*apply now on thrive\.?$/i.test(raw)
+            if (!raw || isPlaceholder) return null
+            return (
+              <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>Full Job Description</h2>
+                <div className={styles.fullDescription}>
+                  {renderDescription(job.fullDescription || job.description)}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Responsibilities Section */}
           {job.responsibilities && job.responsibilities.length > 0 && (

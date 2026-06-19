@@ -4,7 +4,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import SessionGuard from '@/components/SessionGuard'
 import { MessagesProvider } from '@/lib/MessagesContext'
 import type { Metadata } from 'next'
-import { Inter, Dancing_Script } from 'next/font/google'
+import { Inter, Dancing_Script, Fraunces } from 'next/font/google'
 import { Providers } from './providers'
 import { EMPLOYER_SUBSCRIPTION_PRICE, trialPhraseFormal } from '@/lib/trialUtils'
 import { BRAND_FULL } from '@/lib/constants/brand'
@@ -31,6 +31,15 @@ const dancingScript = Dancing_Script({
   subsets: ['latin'],
   variable: '--font-cursive',
   weight: ['400', '700'],
+  display: 'swap',
+})
+// Serif display face for the candidate job-card role titles (and matching
+// "Find your next role" header) — the image-led card design uses a serif over
+// the photo scrim. Exposed as --font-serif; only used where opted in.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-serif',
+  weight: ['500', '600', '700'],
   display: 'swap',
 })
 
@@ -100,7 +109,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-GB">
-      <body className={`${inter.className} ${dancingScript.variable} ${interDisplay.variable}`}>
+      <body className={`${inter.className} ${dancingScript.variable} ${interDisplay.variable} ${fraunces.variable}`}>
         <Providers>
           <MessagesProvider>
             <ScrollToTop />
