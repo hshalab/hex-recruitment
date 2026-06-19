@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useSavedJobs } from '@/lib/useSavedJobs'
 import CompanyLogo from '@/components/CompanyLogo'
 import { resolveJobBanner } from '@/lib/jobBanner'
+import BrandedJobFallback from '@/components/BrandedJobFallback'
 import JobPostingSchema from '@/components/JobPostingSchema'
 import { getTagCategory, WORK_STYLE_TAGS } from '@/lib/jobTags'
 import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
@@ -234,8 +235,10 @@ export default function JobDetailModal({
               // like the Goldenkeys "Head Chef" that were saved without a banner).
               const detailBanner = resolveJobBanner({ id: job.id, companyBanner: job.companyBanner, company: job.company, category: job.category })
               return (
-                <div className={`${styles.bannerWrapper} ${detailBanner ? '' : styles.bannerFallback}`}>
-                  {detailBanner && <img src={detailBanner} alt="" className={styles.banner} />}
+                <div className={styles.bannerWrapper}>
+                  {detailBanner
+                    ? <img src={detailBanner} alt="" className={styles.banner} />
+                    : <BrandedJobFallback company={job.company} seed={job.id} />}
                   <div className={styles.bannerOverlay} />
                 </div>
               )

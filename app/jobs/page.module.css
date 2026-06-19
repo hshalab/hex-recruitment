@@ -107,10 +107,9 @@
 .jobCard:hover .cardBg { transform: scale(1.05); }
 .cardScrim { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(10,22,40,.10) 0%, rgba(10,22,40,.30) 42%, rgba(10,22,40,.78) 78%, rgba(10,22,40,.93) 100%); }
 
-/* fallback (no banner): branded navy + ghost initial, must look deliberate */
-.jobCardFallback .cardBg { background: radial-gradient(120% 90% at 80% 0%, rgba(255,229,0,.10) 0%, rgba(255,229,0,0) 45%), linear-gradient(140deg, #0A1628 0%, #12294a 100%); }
+/* fallback (no banner): the branded panel (<BrandedJobFallback>) sits behind a
+   lighter scrim so its watermark stays visible while card text stays crisp. */
 .jobCardFallback .cardScrim { background: linear-gradient(180deg, rgba(10,22,40,0) 30%, rgba(10,22,40,.55) 100%); }
-.cardGhost { position: absolute; z-index: -1; right: -6px; top: -26px; font-family: var(--font-serif), Georgia, serif; font-weight: 700; font-size: 200px; line-height: 1; color: rgba(255,255,255,.06); pointer-events: none; user-select: none; }
 
 .cardNew { position: absolute; top: 14px; left: 14px; z-index: 2; background: #FFE500; color: #0A1628; font-weight: 700; font-size: 11px; letter-spacing: .03em; padding: 4px 9px; border-radius: 999px; text-transform: uppercase; }
 .cardSave { position: absolute; top: 12px; right: 12px; z-index: 2; width: 34px; height: 34px; border-radius: 50%; background: rgba(10,22,40,.35); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,.25); display: grid; place-items: center; color: #fff; cursor: pointer; padding: 0; }
@@ -187,9 +186,8 @@
 .modalBody { padding: 1.25rem; }
 
 /* ═══ Detail Content (inside modal) ═══════════════════════════ */
-.detailBanner { position: relative; margin: -1.25rem -1.25rem 1.25rem; border-radius: 0; overflow: hidden; height: 180px; }
+.detailBanner { position: relative; isolation: isolate; margin: -1.25rem -1.25rem 1.25rem; border-radius: 0; overflow: hidden; height: 180px; background: #0A1628; }
 .detailBannerImg { width: 100%; height: 100%; object-fit: cover; }
-.detailBannerFallback { background: radial-gradient(120% 90% at 80% 0%, rgba(255,229,0,.10) 0%, rgba(255,229,0,0) 45%), linear-gradient(140deg, #0A1628 0%, #12294a 100%); }
 .detailHeader { margin-bottom: 1.25rem; }
 .detailTitle { font-size: 1.35rem; font-weight: 800; color: #1a1a1a; margin: 0 0 0.35rem; line-height: 1.25; }
 .detailCompany { font-size: 0.95rem; color: #374151; margin: 0 0 0.35rem; font-weight: 500; }

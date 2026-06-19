@@ -16,6 +16,7 @@ import { Boost } from '@/lib/boostTypes'
 import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
 import CompanyLogo from '@/components/CompanyLogo'
 import { resolveJobBanner } from '@/lib/jobBanner'
+import BrandedJobFallback from '@/components/BrandedJobFallback'
 import JobPostingSchema from '@/components/JobPostingSchema'
 import { useAnalyticsTracking } from '@/hooks/useAnalyticsTracking'
 import styles from './page.module.css'
@@ -1132,8 +1133,9 @@ function JobsPageContent() {
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && selectJob(job)}
               >
-                <div className={styles.cardBg} style={banner ? { backgroundImage: `url(${banner})` } : undefined} aria-hidden="true" />
-                {!banner && <span className={styles.cardGhost} aria-hidden="true">{initial}</span>}
+                {banner
+                  ? <div className={styles.cardBg} style={{ backgroundImage: `url(${banner})` }} aria-hidden="true" />
+                  : <BrandedJobFallback company={job.company} seed={job.id} />}
                 <div className={styles.cardScrim} aria-hidden="true" />
 
                 {isNew && <span className={styles.cardNew}>New</span>}
@@ -1220,8 +1222,10 @@ function JobsPageContent() {
                 // saved without a banner, like Goldenkeys "Head Chef").
                 const detailBanner = resolveJobBanner({ id: selectedJob.id, companyBanner: selectedJob.companyBanner, company: selectedJob.company, category: selectedJob.category })
                 return (
-                  <div className={`${styles.detailBanner} ${detailBanner ? '' : styles.detailBannerFallback}`}>
-                    {detailBanner && <img src={detailBanner} alt={selectedJob.company} className={styles.detailBannerImg} />}
+                  <div className={styles.detailBanner}>
+                    {detailBanner
+                      ? <img src={detailBanner} alt={selectedJob.company} className={styles.detailBannerImg} />
+                      : <BrandedJobFallback company={selectedJob.company} seed={selectedJob.id} />}
                   </div>
                 )
               })()}

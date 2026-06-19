@@ -4,8 +4,12 @@ import { rateLimit } from '@/lib/rateLimit'
 
 const MIN_WIDTH = 400
 const MIN_HEIGHT = 300
-const MAX_WIDTH = 800
-const MAX_HEIGHT = 500
+// Target a fixed 16:11 landscape — the candidate job-card slot. Every stored
+// banner is centre/attention-cropped to this once, at upload, so the card shows
+// the uploaded image in full (no surprise per-slot crop) and the post-job
+// preview reflects the true result. 1200px wide keeps it crisp on desktop/retina.
+const TARGET_WIDTH = 1200
+const TARGET_HEIGHT = 825
 const WEBP_QUALITY = 80
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
@@ -63,10 +67,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Always crop to an exact 16:11 landscape, at the largest size that fits the
+    // source without upscaling (capped at TARGET_WIDTH). Computing the box from
+    // the source — rather than relying on fit:'cover' + withoutEnlargement, which
+    // skips the crop when the source is smaller than the target — guarantees the
+    // stored banner is exactly 16:11, so the card shows it uncropped and the
+    // post-job preview is an exact match.
+    const fitW = Math.min(TARGET_WIDTH, metadata.width, Math.floor((metadata.height * TARGET_WIDTH) / TARGET_HEIGHT))
+    const outW = Math.max(1, fitW)
+    const outH = Math.max(1, Math.round((outW * TARGET_HEIGHT) / TARGET_WIDTH))
+
     const processedBuffer = await sharp(buffer)
-      .resize(MAX_WIDTH, MAX_HEIGHT, {
-        fit: 'inside',
-        withoutEnlargement: true,
+      .resize(outW, outH, {
+        fit: 'cover',
+        position: 'attention',
       })
       .webp({ quality: WEBP_QUALITY })
       .toBuffer()

@@ -108,17 +108,12 @@
   color: var(--white);
 }
 
-/* Banner hidden - removed blurred logo background */
 .bannerWrapper {
   position: relative;
+  isolation: isolate;
   height: 160px;
   overflow: hidden;
   background: #0A1628;
-}
-.bannerFallback {
-  background:
-    radial-gradient(120% 90% at 80% 0%, rgba(255,229,0,.10) 0%, rgba(255,229,0,0) 45%),
-    linear-gradient(140deg, #0A1628 0%, #12294a 100%);
 }
 .banner {
   width: 100%;

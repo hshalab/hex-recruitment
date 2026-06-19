@@ -904,7 +904,7 @@ function PostJobContent() {
               Job Banner Image
             </h2>
             <p className={styles.helperText} style={{ marginBottom: '0.75rem' }}>
-              Landscape image shown at the top of the job detail view. Optional — if not provided, no banner is displayed.
+              Landscape cover photo shown on your job card and detail page. Optional — if you skip it, we show a branded Thrive cover instead.
             </p>
 
             <div className={styles.formGroup}>
@@ -924,7 +924,7 @@ function PostJobContent() {
                     <>
                       <span className={styles.uploadIcon}>📁</span>
                       <span>Choose a banner image</span>
-                      <span className={styles.uploadHint}>JPEG, PNG, WebP or GIF — recommended 1200x627px (1.91:1 landscape)</span>
+                      <span className={styles.uploadHint}>JPEG, PNG, WebP or GIF — landscape, ideally 1200×825px. We crop to fit.</span>
                     </>
                   )}
                 </label>
@@ -939,7 +939,7 @@ function PostJobContent() {
 
             {formData.companyBanner && (
               <div className={styles.logoPreviewContainer}>
-                <div className={styles.logoPreview} style={{ width: '100%', maxWidth: '400px', aspectRatio: '1.91 / 1' }}>
+                <div className={styles.logoPreview} style={{ width: '100%', maxWidth: '400px', aspectRatio: '16 / 11' }}>
                   <img
                     src={formData.companyBanner}
                     alt="Banner preview"

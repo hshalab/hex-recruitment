@@ -1,0 +1,75 @@
+/* Branded Thrive fallback panel — fills its relatively-positioned parent and
+   sits behind the slot's scrim/content. Container-query units keep the lockup
+   proportional whether the slot is a tall card or a short detail header. */
+.fallback {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  container-type: size;
+  background:
+    radial-gradient(130% 110% at var(--fb-glow-x, 80%) -10%, rgba(255, 229, 0, 0.13) 0%, rgba(255, 229, 0, 0) 46%),
+    linear-gradient(var(--fb-angle, 140deg), #0a1628 0%, #12294a 100%);
+}
+
+/* Large ghosted company initial — the per-employer signature, bleeding from the
+   top-right so it reads as texture, not content. */
+.ghost {
+  position: absolute;
+  top: -14%;
+  right: -3%;
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 700;
+  font-size: 82cqmin;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.055);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Centred Thrive lockup: mark + wordmark + slogan, all watermark-weight. */
+.brand {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 27%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3.5cqh;
+  text-align: center;
+  pointer-events: none;
+}
+
+.mark {
+  display: block;
+  width: 15cqmin;
+  height: 15cqmin;
+  color: rgba(255, 229, 0, 0.22);
+}
+
+.wordmark {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 600;
+  font-size: 9cqmin;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.16);
+}
+
+.slogan {
+  font-size: 4.6cqmin;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.13);
+}
+
+/* Older engines without container units: fall back to sensible fixed sizes so
+   the lockup still renders rather than collapsing to 0. */
+@supports not (width: 1cqmin) {
+  .ghost { font-size: 200px; }
+  .mark { width: 38px; height: 38px; }
+  .wordmark { font-size: 24px; }
+  .slogan { font-size: 12px; }
+  .brand { gap: 9px; }
+}
