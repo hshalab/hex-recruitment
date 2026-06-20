@@ -145,10 +145,13 @@ export default function JobDetailPage() {
 
   const formatSalary = () => {
     if (!job) return ''
+    const single = !job.salaryMax || job.salaryMin === job.salaryMax
     if (job.salaryPeriod === 'hour') {
-      return `£${job.salaryMin} - £${job.salaryMax} per hour`
+      return single ? `£${job.salaryMin} per hour` : `£${job.salaryMin} - £${job.salaryMax} per hour`
     }
-    return `£${job.salaryMin.toLocaleString()} - £${job.salaryMax.toLocaleString()} per year`
+    return single
+      ? `£${job.salaryMin.toLocaleString()} per year`
+      : `£${job.salaryMin.toLocaleString()} - £${job.salaryMax.toLocaleString()} per year`
   }
 
   const renderDescription = (text: string) => {

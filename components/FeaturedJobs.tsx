@@ -23,8 +23,13 @@ import styles from './FeaturedJobs.module.css'
 const SHOW = 8
 
 function formatSalary(job: Job): string {
-  if (job.salaryPeriod === 'hour') return `£${job.salaryMin}–£${job.salaryMax}/hr`
-  return `£${Math.round(job.salaryMin / 1000)}k–£${Math.round(job.salaryMax / 1000)}k`
+  const single = !job.salaryMax || job.salaryMin === job.salaryMax
+  if (job.salaryPeriod === 'hour') {
+    return single ? `£${job.salaryMin}/hr` : `£${job.salaryMin}–£${job.salaryMax}/hr`
+  }
+  return single
+    ? `£${Math.round(job.salaryMin / 1000)}k`
+    : `£${Math.round(job.salaryMin / 1000)}k–£${Math.round(job.salaryMax / 1000)}k`
 }
 
 export default function FeaturedJobs() {

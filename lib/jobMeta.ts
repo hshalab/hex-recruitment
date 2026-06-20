@@ -45,11 +45,18 @@ export async function getJobForMeta(id: string): Promise<JobMeta | null> {
   }
 }
 
-/** Short salary string, e.g. "£38,000–£45,000/yr" or "£14–£18/hr". null if absent. */
+/**
+ * Short salary string, e.g. "£38,000–£45,000/yr" or "£14–£18/hr". Collapses to
+ * a single figure ("£70,000/yr") when min == max or max is absent. null if no
+ * salary at all.
+ */
 export function formatSalaryShort(job: JobMeta): string | null {
-  if (job.salaryMin == null || job.salaryMax == null) return null
+  const lo = job.salaryMin
+  if (lo == null) return null
+  const hi = job.salaryMax
+  const single = hi == null || hi === lo
   if (job.salaryType === 'annual') {
-    return `£${job.salaryMin.toLocaleString()}–£${job.salaryMax.toLocaleString()}/yr`
+    return single ? `£${lo.toLocaleString()}/yr` : `£${lo.toLocaleString()}–£${hi.toLocaleString()}/yr`
   }
-  return `£${job.salaryMin}–£${job.salaryMax}/hr`
+  return single ? `£${lo}/hr` : `£${lo}–£${hi}/hr`
 }
