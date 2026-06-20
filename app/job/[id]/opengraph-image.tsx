@@ -42,8 +42,9 @@ export default async function OgImage({ params }: Props) {
       const res = await fetch(banner)
       let finalHost = ''
       try { finalHost = new URL(res.url || banner).host } catch {}
-      const okHost = finalHost === storageHost || finalHost.endsWith('.supabase.co')
-      if (res.ok && okHost) {
+      // Strict: after following any (same-host) Storage redirect, the final
+      // response must still be on OUR exact project host — never another tenant.
+      if (res.ok && finalHost === storageHost) {
         const buf = await res.arrayBuffer()
         return new Response(buf, {
           headers: {
