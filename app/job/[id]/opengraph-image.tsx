@@ -25,14 +25,23 @@ export default async function OgImage({ params }: Props) {
   const banner = job?.bannerUrl || null
 
   // Photo job: serve the real banner image bytes as the preview.
-  if (banner) {
+  //
+  // Hardened against SSRF + content-type passthrough: only ever fetch from our
+  // own public job-banners Storage prefix (so the URL can't be pointed at an
+  // internal/arbitrary host), don't follow redirects, and always serve the bytes
+  // as image/webp with nosniff (we only ever store WebP there) — never the
+  // upstream content type.
+  const allowedPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}/storage/v1/object/public/job-banners/`
+  if (banner && allowedPrefix.startsWith('http') && banner.startsWith(allowedPrefix)) {
     try {
-      const res = await fetch(banner)
+      const res = await fetch(banner, { redirect: 'error' })
       if (res.ok) {
         const buf = await res.arrayBuffer()
         return new Response(buf, {
           headers: {
-            'Content-Type': res.headers.get('content-type') || 'image/webp',
+            'Content-Type': 'image/webp',
+            'X-Content-Type-Options': 'nosniff',
+            'Content-Security-Policy': "default-src 'none'; sandbox",
             'Cache-Control': 'public, max-age=86400, s-maxage=86400',
           },
         })
