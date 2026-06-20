@@ -36,7 +36,6 @@ export default async function OgImage({ params }: Props) {
   const allowedPrefix = `${supaUrl}/storage/v1/object/public/job-banners/`
   let storageHost = ''
   try { storageHost = new URL(supaUrl).host } catch {}
-  let debug = banner ? 'banner-present' : 'no-banner'
   if (banner && allowedPrefix.startsWith('http') && banner.startsWith(allowedPrefix)) {
     try {
       const res = await fetch(banner)
@@ -52,16 +51,12 @@ export default async function OgImage({ params }: Props) {
             'X-Content-Type-Options': 'nosniff',
             'Content-Security-Policy': "default-src 'none'; sandbox",
             'Cache-Control': 'public, max-age=86400, s-maxage=86400',
-            'X-OG-Debug': 'photo',
           },
         })
       }
-      debug = `fetch ok=${res.ok} status=${res.status} host=${finalHost}`
-    } catch (e: any) {
-      debug = `fetch-threw ${(e?.message || 'err').slice(0, 60)}`
+    } catch {
+      // fall through to the branded card if the photo can't be fetched
     }
-  } else if (banner) {
-    debug = 'banner-not-allowed'
   }
 
   // No usable photo (or fetch failed) -> branded navy card with the role text.
@@ -70,7 +65,7 @@ export default async function OgImage({ params }: Props) {
   const salary = job ? formatSalaryShort(job) : null
   const metaLine = [job?.location, salary].filter(Boolean).join('   ·   ')
 
-  const branded = new ImageResponse(
+  return new ImageResponse(
     (
       <div
         style={{
@@ -102,6 +97,4 @@ export default async function OgImage({ params }: Props) {
     ),
     size,
   )
-  branded.headers.set('X-OG-Debug', debug)
-  return branded
 }
