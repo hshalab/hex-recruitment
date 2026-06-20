@@ -311,6 +311,21 @@ export default function EmployerSidebar() {
               )}
             </Link>
           ))}
+          <div className={`${styles.navDivider} ${styles.mobileOnly}`} />
+          <button
+            className={`${styles.item} ${styles.mobileOnly}`}
+            data-tooltip="Share Feedback"
+            title="Share Feedback"
+            onClick={() => {
+              setMobileOpen(false)
+              router.push('/feedback')
+            }}
+          >
+            <span className={styles.icon}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+            </span>
+            <span className={styles.label}>Share Feedback</span>
+          </button>
           <button
             className={`${styles.item} ${styles.mobileOnly}`}
             data-tooltip="Ask Thrive"

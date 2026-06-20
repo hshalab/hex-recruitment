@@ -216,9 +216,9 @@ export default function CandidateSidebar() {
               )}
             </Link>
           ))}
-          <div className={styles.navDivider} />
+          <div className={`${styles.navDivider} ${styles.mobileOnly}`} />
           <button
-            className={styles.item}
+            className={`${styles.item} ${styles.mobileOnly}`}
             data-tooltip="Share Feedback"
             title="Share Feedback"
             onClick={() => {
