@@ -10,6 +10,10 @@ export interface JobMeta {
   salaryMin: number | null
   salaryMax: number | null
   salaryType: string | null
+  /** Public banner photo URL (Storage). Only http(s) URLs are usable in the OG image. */
+  bannerUrl: string | null
+  /** Company logo (may be a data: URI or a URL). */
+  logoUrl: string | null
 }
 
 export async function getJobForMeta(id: string): Promise<JobMeta | null> {
@@ -20,7 +24,7 @@ export async function getJobForMeta(id: string): Promise<JobMeta | null> {
   if (!/^[0-9a-f-]{16,}$/i.test(id)) return null
   try {
     const url =
-      `${base}/rest/v1/jobs?select=title,company,location,salary_min,salary_max,salary_type` +
+      `${base}/rest/v1/jobs?select=title,company,location,salary_min,salary_max,salary_type,company_banner_url,company_logo_url` +
       `&status=eq.active&id=eq.${encodeURIComponent(id)}&limit=1`
     const res = await fetch(url, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
@@ -32,6 +36,12 @@ export async function getJobForMeta(id: string): Promise<JobMeta | null> {
     const rows = await res.json()
     const row = Array.isArray(rows) ? rows[0] : null
     if (!row) return null
+    // Only treat an http(s) banner as usable for the OG image. (Legacy base64
+    // data: URIs can't be embedded by the OG renderer; those fall back to the
+    // branded card.)
+    const banner = typeof row.company_banner_url === 'string' && /^https?:\/\//.test(row.company_banner_url)
+      ? row.company_banner_url
+      : null
     return {
       title: row.title,
       company: row.company,
@@ -39,6 +49,8 @@ export async function getJobForMeta(id: string): Promise<JobMeta | null> {
       salaryMin: row.salary_min != null ? Number(row.salary_min) : null,
       salaryMax: row.salary_max != null ? Number(row.salary_max) : null,
       salaryType: row.salary_type ?? null,
+      bannerUrl: banner,
+      logoUrl: row.company_logo_url ?? null,
     }
   } catch {
     return null
