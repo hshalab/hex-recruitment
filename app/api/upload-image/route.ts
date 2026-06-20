@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomUUID } from 'crypto'
 import sharp from 'sharp'
+import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rateLimit'
+
+const BANNER_BUCKET = 'job-banners'
 
 const MIN_WIDTH = 400
 const MIN_HEIGHT = 300
@@ -85,12 +89,34 @@ export async function POST(request: NextRequest) {
       .webp({ quality: WEBP_QUALITY })
       .toBuffer()
 
-    const base64 = processedBuffer.toString('base64')
-    const dataUrl = `data:image/webp;base64,${base64}`
+    // Store the processed banner as a file in the public 'job-banners' bucket and
+    // return its public URL. Falls back to an inline base64 data URL if Storage
+    // is unavailable, so uploads keep working either way. (Existing banners were
+    // migrated from base64 to this bucket by scripts/migrate-banners-to-storage.js.)
+    let url: string | null = null
+    try {
+      const admin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { persistSession: false } }
+      )
+      const path = `${randomUUID()}.webp`
+      const { error: upErr } = await admin.storage
+        .from(BANNER_BUCKET)
+        .upload(path, processedBuffer, { contentType: 'image/webp', upsert: false })
+      if (upErr) throw upErr
+      url = admin.storage.from(BANNER_BUCKET).getPublicUrl(path).data.publicUrl
+    } catch (e: any) {
+      console.error('[upload-image] Storage upload failed, falling back to base64:', e?.message)
+    }
+
+    const dataUrl = `data:image/webp;base64,${processedBuffer.toString('base64')}`
 
     return NextResponse.json({
       success: true,
-      dataUrl,
+      url: url || dataUrl, // prefer the Storage URL; base64 only if Storage failed
+      dataUrl, // kept for back-compat
+      storedToBucket: Boolean(url),
       originalSize: file.size,
       processedSize: processedBuffer.length,
       originalDimensions: { width: metadata.width, height: metadata.height },

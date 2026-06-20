@@ -375,7 +375,7 @@ function PostJobContent() {
         return
       }
 
-      setFormData(prev => ({ ...prev, companyBanner: result.dataUrl }))
+      setFormData(prev => ({ ...prev, companyBanner: result.url || result.dataUrl }))
       setBannerFileName(file.name)
     } catch {
       setBannerUploadError('Failed to upload image. Please try again.')
