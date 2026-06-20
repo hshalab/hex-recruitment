@@ -80,6 +80,20 @@ export default function JobDetailPage() {
     checkAuthAndDuplicate()
   }, [job?.id])
 
+  // Auto-open the apply modal when arriving with ?apply=1 — e.g. a candidate
+  // who tapped Apply while logged out, then signed up / logged in and was
+  // returned here. Only fires once we know they're a logged-in candidate.
+  useEffect(() => {
+    if (
+      searchParams.get('apply') === '1' &&
+      currentUserRole === 'employee' &&
+      !checkingApplied &&
+      !hasApplied
+    ) {
+      setShowApplyModal(true)
+    }
+  }, [searchParams, currentUserRole, checkingApplied, hasApplied])
+
   useEffect(() => {
     if (!showShareMenu) return
     const handleClickOutside = (e: MouseEvent) => {
@@ -115,7 +129,9 @@ export default function JobDetailPage() {
   const handleApply = () => {
     if (!job) return
     if (!currentUserRole) {
-      window.location.href = `/login/employee?redirect=${encodeURIComponent(`/job/${job.id}`)}`
+      // Send them through the login/sign-up gate, returning to THIS job with
+      // ?apply=1 so the apply modal re-opens automatically once authenticated.
+      window.location.href = `/login/employee?redirect=${encodeURIComponent(`/job/${job.id}?apply=1`)}`
       return
     }
     if (currentUserRole === 'employer') {

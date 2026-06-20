@@ -14,6 +14,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
+  // Same-origin return path (e.g. a job's apply page) carried from the Google
+  // button so an Apply-initiated sign-in lands back on the job, not /dashboard.
+  const nextParam = searchParams.get('next')
+  const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : null
 
   if (error) {
     return NextResponse.redirect(`${origin}/login/employee?error=${encodeURIComponent(error)}`)
@@ -22,7 +26,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login/employee?error=no-code`)
   }
 
-  const redirectTo = `${origin}/dashboard`
+  const redirectTo = `${origin}${safeNext || '/dashboard'}`
   const response = NextResponse.redirect(redirectTo)
 
   const supabase = createServerClient(

@@ -1,0 +1,94 @@
+/* Home hero featured-jobs strip. Layout only — the cards themselves reuse the
+   /jobs image-led card classes (imported from that page's module) so the visual
+   system stays identical. */
+
+.section {
+  padding: 2.4rem 1.25rem 2.8rem;
+  background: #f7f8fa;
+  border-top: 1px solid #eef0f3;
+}
+
+.inner {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.title {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #0a1628;
+  margin: 0;
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: #5b6470;
+}
+
+.seeAll {
+  flex: 0 0 auto;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0a1628;
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid #ffe500;
+  padding-bottom: 1px;
+}
+.seeAll:hover { opacity: 0.78; }
+
+/* Horizontal scroller — swipeable on mobile, scrollable on desktop. Edge
+   padding + scroll-snap so cards settle cleanly; a peek of the next card hints
+   there's more. */
+.scroller {
+  display: flex;
+  gap: 1.1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 4px 14px;
+  scrollbar-width: thin;
+}
+.scroller::-webkit-scrollbar { height: 8px; }
+.scroller::-webkit-scrollbar-thumb { background: #d6dae0; border-radius: 999px; }
+.scroller::-webkit-scrollbar-track { background: transparent; }
+
+.item {
+  flex: 0 0 auto;
+  width: 300px;
+  scroll-snap-align: start;
+  text-decoration: none;
+}
+@media (max-width: 720px) {
+  .item { width: 80vw; max-width: 320px; }
+  .title { font-size: 1.3rem; }
+}
+
+/* Skeleton placeholder keeps the strip's height reserved so there's no layout
+   shift while the live jobs load. Matches the card aspect ratio. */
+.skeleton {
+  width: 100%;
+  aspect-ratio: 16 / 11;
+  border-radius: 18px;
+  background: linear-gradient(100deg, #e9ecf1 30%, #f2f4f7 50%, #e9ecf1 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}

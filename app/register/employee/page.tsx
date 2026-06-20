@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import JobSeekerProfileForm from '@/components/JobSeekerProfileForm'
@@ -9,6 +10,8 @@ import loginStyles from '../../login/page.module.css'
 import styles from './page.module.css'
 
 function RegisterEmployeePageContent() {
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect')
   return (
     <main className={styles.main}>
       <Header />
@@ -21,7 +24,7 @@ function RegisterEmployeePageContent() {
         </div>
 
         <div style={{ maxWidth: 480, margin: '0 auto 1.5rem' }}>
-          <GoogleSignInButton role="employee" className={loginStyles.googleBtn} label="Sign up with Google" />
+          <GoogleSignInButton role="employee" className={loginStyles.googleBtn} label="Sign up with Google" next={redirectTo || undefined} />
           <div className={loginStyles.divider}><span>or</span></div>
         </div>
 

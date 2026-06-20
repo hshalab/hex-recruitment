@@ -124,7 +124,7 @@ function EmployeeLoginPageContent() {
           </div>
           <p className={styles.subtitle}>Find your next opportunity</p>
 
-          <GoogleSignInButton role="employee" className={styles.googleBtn} />
+          <GoogleSignInButton role="employee" className={styles.googleBtn} next={redirectTo || undefined} />
           <div className={styles.divider}><span>or</span></div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
@@ -189,7 +189,10 @@ function EmployeeLoginPageContent() {
 
           <div className={styles.signupSection}>
             <p className={styles.signupText}>New here?</p>
-            <Link href="/register/employee" className={styles.signupBtn}>
+            <Link
+              href={redirectTo ? `/register/employee?redirect=${encodeURIComponent(redirectTo)}` : '/register/employee'}
+              className={styles.signupBtn}
+            >
               Create your profile
             </Link>
           </div>

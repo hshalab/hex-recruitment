@@ -141,8 +141,9 @@ export default function JobDetailModal({
 
   const handleApply = () => {
     if (!currentUserRole) {
-      // Not logged in — redirect to login
-      window.location.href = `/login/employee?redirect=${encodeURIComponent(`/jobs?id=${job.id}`)}`
+      // Not logged in — gate at Apply, returning to the job's dedicated page
+      // with ?apply=1 so the apply modal re-opens once authenticated.
+      window.location.href = `/login/employee?redirect=${encodeURIComponent(`/job/${job.id}?apply=1`)}`
       return
     }
     if (currentUserRole === 'employer') {

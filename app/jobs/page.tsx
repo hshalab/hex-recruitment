@@ -407,10 +407,9 @@ function JobsPageContent() {
     if (isLoggedIn === null) return // Auth check still in progress
     const jobId = searchParams.get('id')
     if (jobId) {
-      if (!isLoggedIn) {
-        router.push(`/login/employee?redirect=${encodeURIComponent(`/jobs?id=${jobId}`)}`)
-        return
-      }
+      // Viewing a job is public — logged-out visitors open the detail too (the
+      // gate is at Apply, not at viewing). Previously this redirected anonymous
+      // visitors to /login, which made a shared /jobs?id= link a dead end.
       const job = jobs.find(j => j.id === jobId)
       if (job) {
         setSelectedJob(job)

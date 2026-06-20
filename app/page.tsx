@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import ThriveMark from '@/components/ThriveMark'
+import FeaturedJobs from '@/components/FeaturedJobs'
 import { supabase } from '@/lib/supabase'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/constants/brand'
@@ -124,6 +125,9 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      {/* Live roles strip — candidate funnel + proof of real inventory */}
+      <FeaturedJobs />
 
       {/* How It Works — employer focused */}
       <section className={`${styles.howItWorks}`}>

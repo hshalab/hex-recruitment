@@ -744,13 +744,21 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
 
           setSuccess(true)
           setTimeout(() => {
-            router.push('/login/employee?registered=true')
+            const applyRedirect = searchParams.get('redirect')
+            router.push(`/login/employee?registered=true${applyRedirect ? `&redirect=${encodeURIComponent(applyRedirect)}` : ''}`)
           }, 2000)
           return
         }
 
         // Production mode: Use Supabase
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+        // If the candidate arrived from an Apply gate (?redirect=/job/<id>?apply=1),
+        // carry that return path through the confirmation email so that clicking
+        // the link lands them back on the job ready to apply — not the dashboard.
+        const applyRedirect = searchParams.get('redirect')
+        const nextQS = applyRedirect && applyRedirect.startsWith('/') && !applyRedirect.startsWith('//')
+          ? `&next=${encodeURIComponent(applyRedirect)}`
+          : ''
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -759,7 +767,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
               full_name: `${formData.firstName} ${formData.lastName}`,
               role: 'employee'
             },
-            emailRedirectTo: `${siteUrl}/auth/confirm?role=employee`,
+            emailRedirectTo: `${siteUrl}/auth/confirm?role=employee${nextQS}`,
           }
         })
 

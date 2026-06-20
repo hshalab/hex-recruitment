@@ -7,6 +7,12 @@ interface GoogleSignInButtonProps {
   role: 'employer' | 'employee'
   className?: string
   label?: string
+  /**
+   * Same-origin path to return to after OAuth completes (e.g. a job's apply
+   * page). Carried through the callback as ?next= so a candidate who signed in
+   * via Google from an Apply button lands back on that job, not the dashboard.
+   */
+  next?: string
 }
 
 /**
@@ -15,7 +21,7 @@ interface GoogleSignInButtonProps {
  * URL so /auth/callback can stamp the right user_metadata.role and
  * create the matching profile row for first-time sign-ins.
  */
-export default function GoogleSignInButton({ role, className, label }: GoogleSignInButtonProps) {
+export default function GoogleSignInButton({ role, className, label, next }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -26,7 +32,10 @@ export default function GoogleSignInButton({ role, className, label }: GoogleSig
       // Use the env var for a stable, known-good origin — window.location.origin
       // can be unreliable during SSR or in edge cases.
       const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-      const redirectTo = `${siteUrl}/auth/callback/${role}`
+      // Carry a same-origin return path through the callback (?next=) so the
+      // user lands back where they started (e.g. a job's apply page).
+      const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : ''
+      const redirectTo = `${siteUrl}/auth/callback/${role}${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`
       console.log('[GoogleSignIn] redirectTo:', redirectTo)
       // Store intended role in a cookie so SessionGuard can pick it up
       // on whichever page the user lands on after OAuth (Supabase may
