@@ -1,0 +1,81 @@
+/* Employer-logo fallback panel. The navy base mirrors BrandedJobFallback's
+   .fallback exactly (same gradient + per-company --fb-angle/--fb-glow-x vars)
+   so logo and non-logo fallbacks read as one family; only the centrepiece
+   differs. Container-query units keep the logo proportional across the tall
+   card slot and the short detail-header strips. Sits behind the slot's own
+   scrim/content, same as the Thrive fallback. */
+.fallback {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  container-type: size;
+  background:
+    radial-gradient(130% 110% at var(--fb-glow-x, 80%) -10%, rgba(255, 229, 0, 0.13) 0%, rgba(255, 229, 0, 0) 46%),
+    linear-gradient(var(--fb-angle, 140deg), #0a1628 0%, #12294a 100%);
+}
+
+/* Centres the logo in the upper portion of the panel: padding-bottom reserves
+   the lower band for the slot's overlaid job text (card slot) so the logo and
+   the title/company/salary never collide. Hidden until analysis resolves. */
+.logoLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8cqh 8cqw 22cqh;
+  opacity: 0;
+}
+
+.logoLayer.show {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .logoLayer {
+    transition: opacity 0.45s ease;
+  }
+}
+
+/* Bare: logo straight on the navy. A soft shadow lifts it off the panel. */
+.bareLogo {
+  max-width: 62cqw;
+  max-height: 40cqh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 3cqmin 7cqmin rgba(0, 0, 0, 0.38));
+}
+
+/* Plaque: a clean white card that hugs the logo, guaranteeing contrast for
+   dark/coloured logos. Caps keep it from dominating short detail strips. */
+.plaque {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 6cqmin;
+  max-width: 66cqw;
+  max-height: 46cqh;
+  background: #ffffff;
+  border-radius: 6cqmin;
+  box-shadow: 0 5cqmin 15cqmin rgba(0, 0, 0, 0.3);
+}
+
+.plaqueLogo {
+  max-width: 54cqw;
+  max-height: 34cqh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Older engines without container units: fixed sizes so the logo still renders
+   at a sensible scale rather than collapsing. */
+@supports not (width: 1cqmin) {
+  .logoLayer { padding: 24px 24px 64px; }
+  .bareLogo { max-width: 60%; max-height: 130px; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.38)); }
+  .plaque { padding: 18px; max-width: 64%; max-height: 150px; border-radius: 16px; box-shadow: 0 12px 38px rgba(0, 0, 0, 0.3); }
+  .plaqueLogo { max-width: 240px; max-height: 110px; }
+}

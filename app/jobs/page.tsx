@@ -17,6 +17,7 @@ import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
 import CompanyLogo from '@/components/CompanyLogo'
 import { resolveJobBanner } from '@/lib/jobBanner'
 import BrandedJobFallback from '@/components/BrandedJobFallback'
+import BrandedLogoFallback from '@/components/BrandedLogoFallback'
 import JobPostingSchema from '@/components/JobPostingSchema'
 import { useAnalyticsTracking } from '@/hooks/useAnalyticsTracking'
 import styles from './page.module.css'
@@ -1135,7 +1136,9 @@ function JobsPageContent() {
               >
                 {banner
                   ? <div className={styles.cardBg} style={{ backgroundImage: `url(${banner})` }} aria-hidden="true" />
-                  : <BrandedJobFallback company={job.company} seed={job.id} />}
+                  : job.companyLogo
+                    ? <BrandedLogoFallback logoUrl={job.companyLogo} company={job.company} seed={job.id} />
+                    : <BrandedJobFallback company={job.company} seed={job.id} />}
                 <div className={styles.cardScrim} aria-hidden="true" />
 
                 {isNew && <span className={styles.cardNew}>New</span>}
@@ -1225,7 +1228,9 @@ function JobsPageContent() {
                   <div className={styles.detailBanner}>
                     {detailBanner
                       ? <img src={detailBanner} alt={selectedJob.company} className={styles.detailBannerImg} />
-                      : <BrandedJobFallback company={selectedJob.company} seed={selectedJob.id} />}
+                      : selectedJob.companyLogo
+                        ? <BrandedLogoFallback logoUrl={selectedJob.companyLogo} company={selectedJob.company} seed={selectedJob.id} />
+                        : <BrandedJobFallback company={selectedJob.company} seed={selectedJob.id} />}
                   </div>
                 )
               })()}
