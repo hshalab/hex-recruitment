@@ -26,16 +26,24 @@ export default async function OgImage({ params }: Props) {
 
   // Photo job: serve the real banner image bytes as the preview.
   //
-  // Hardened against SSRF + content-type passthrough: only ever fetch from our
-  // own public job-banners Storage prefix (so the URL can't be pointed at an
-  // internal/arbitrary host), don't follow redirects, and always serve the bytes
-  // as image/webp with nosniff (we only ever store WebP there) — never the
-  // upstream content type.
-  const allowedPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}/storage/v1/object/public/job-banners/`
+  // SSRF-safe: only proceed when the banner URL is under our own public
+  // job-banners Storage prefix. We follow redirects (Supabase Storage may 3xx to
+  // its CDN from some edge regions) but require the FINAL response to stay on a
+  // supabase.co host before serving, so a redirect can't escape to an arbitrary
+  // host. Always serve as image/webp + nosniff (we only ever store WebP) — never
+  // the upstream content type.
+  const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const allowedPrefix = `${supaUrl}/storage/v1/object/public/job-banners/`
+  let storageHost = ''
+  try { storageHost = new URL(supaUrl).host } catch {}
+  let debug = banner ? 'banner-present' : 'no-banner'
   if (banner && allowedPrefix.startsWith('http') && banner.startsWith(allowedPrefix)) {
     try {
-      const res = await fetch(banner, { redirect: 'error' })
-      if (res.ok) {
+      const res = await fetch(banner)
+      let finalHost = ''
+      try { finalHost = new URL(res.url || banner).host } catch {}
+      const okHost = finalHost === storageHost || finalHost.endsWith('.supabase.co')
+      if (res.ok && okHost) {
         const buf = await res.arrayBuffer()
         return new Response(buf, {
           headers: {
@@ -43,12 +51,16 @@ export default async function OgImage({ params }: Props) {
             'X-Content-Type-Options': 'nosniff',
             'Content-Security-Policy': "default-src 'none'; sandbox",
             'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+            'X-OG-Debug': 'photo',
           },
         })
       }
-    } catch {
-      // fall through to the branded card if the photo can't be fetched
+      debug = `fetch ok=${res.ok} status=${res.status} host=${finalHost}`
+    } catch (e: any) {
+      debug = `fetch-threw ${(e?.message || 'err').slice(0, 60)}`
     }
+  } else if (banner) {
+    debug = 'banner-not-allowed'
   }
 
   // No usable photo (or fetch failed) -> branded navy card with the role text.
@@ -57,7 +69,7 @@ export default async function OgImage({ params }: Props) {
   const salary = job ? formatSalaryShort(job) : null
   const metaLine = [job?.location, salary].filter(Boolean).join('   ·   ')
 
-  return new ImageResponse(
+  const branded = new ImageResponse(
     (
       <div
         style={{
@@ -89,4 +101,6 @@ export default async function OgImage({ params }: Props) {
     ),
     size,
   )
+  branded.headers.set('X-OG-Debug', debug)
+  return branded
 }
