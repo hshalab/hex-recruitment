@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
+import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { foundingPhraseShort } from '@/lib/trialUtils'
 import styles from '../page.module.css'
@@ -17,13 +18,23 @@ function EmployerLoginPageContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
-  const [error, setError] = useState(() => {
-    if (searchParams.get('error') === 'wrong_account') {
-      return 'This Google account is registered as a candidate. Please use the candidate login.'
-    }
-    return ''
-  })
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Friendly "you used the wrong login for this account" notice — amber info
+  // tone, not a scary red error. Fires for OAuth sign-ins (error=wrong-role)
+  // AND email confirmation (error=wrong_account), keyed on `have`. Provider-
+  // agnostic (Google / LinkedIn / email).
+  const authErr = searchParams.get('error')
+  const have = searchParams.get('have')
+  const roleNotice =
+    authErr === 'wrong-role' || authErr === 'wrong_account'
+      ? have === 'employer'
+        ? { text: 'This email is registered as an employer account. Head to the employer login to access your recruitment dashboard.', href: '/login/employer', cta: 'Go to employer login →' }
+        : have === 'employee'
+        ? { text: 'This email is registered as a job seeker account. Head to the job seeker login to find your next role.', href: '/login/employee', cta: 'Go to job seeker login →' }
+        : null
+      : null
 
   // If already authenticated as employer, redirect
   useEffect(() => {
@@ -129,7 +140,16 @@ function EmployerLoginPageContent() {
           </div>
           <p className={styles.subtitle}>Access your recruitment dashboard</p>
 
+          {roleNotice && (
+            <div className={styles.roleNotice}>
+              {roleNotice.text} <Link href={roleNotice.href}>{roleNotice.cta}</Link>
+            </div>
+          )}
+
           <GoogleSignInButton role="employer" className={styles.googleBtn} />
+          <div style={{ marginTop: '0.6rem' }}>
+            <LinkedInSignInButton role="employer" className={styles.googleBtn} />
+          </div>
           <div className={styles.divider}><span>or</span></div>
 
           <form onSubmit={handleSubmit} className={styles.form}>

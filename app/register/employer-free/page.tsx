@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
+import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import { supabase } from '@/lib/supabase'
 import { isValidEmail } from '@/lib/validateEmail'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
@@ -139,6 +140,9 @@ export default function RegisterEmployerFreePage() {
           {error && <div className={loginStyles.error}>{error}</div>}
 
           <GoogleSignInButton role="employer" className={loginStyles.googleBtn} label="Sign up with Google" />
+          <div style={{ marginTop: '0.6rem' }}>
+            <LinkedInSignInButton role="employer" className={loginStyles.googleBtn} label="Sign up with LinkedIn" />
+          </div>
           <div className={loginStyles.divider}><span>or</span></div>
 
           <form className={loginStyles.form} onSubmit={handleSubmit}>

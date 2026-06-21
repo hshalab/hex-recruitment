@@ -16,12 +16,7 @@ function EmployeeLoginPageContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
-  const [error, setError] = useState(() => {
-    if (searchParams.get('error') === 'wrong_account') {
-      return 'This Google account is registered as an employer. Please use the employer login.'
-    }
-    return ''
-  })
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
 
@@ -29,6 +24,21 @@ function EmployeeLoginPageContent() {
   const justRegistered = searchParams.get('registered') === 'true'
   const redirectTo = searchParams.get('redirect')
   const postLoginRedirect = redirectTo || '/dashboard'
+
+  // Friendly "you used the wrong login for this account" notice — amber info
+  // tone, not a scary red error. Fires for OAuth sign-ins (error=wrong-role)
+  // AND email confirmation (error=wrong_account), keyed on `have` (the role the
+  // account actually is). Provider-agnostic (Google / LinkedIn / email).
+  const authErr = searchParams.get('error')
+  const have = searchParams.get('have')
+  const roleNotice =
+    authErr === 'wrong-role' || authErr === 'wrong_account'
+      ? have === 'employer'
+        ? { text: 'This email is registered as an employer account. Head to the employer login to access your recruitment dashboard.', href: '/login/employer', cta: 'Go to employer login →' }
+        : have === 'employee'
+        ? { text: 'This email is registered as a job seeker account. Head to the job seeker login to find your next role.', href: '/login/employee', cta: 'Go to job seeker login →' }
+        : null
+      : null
 
   // If already authenticated, redirect immediately
   useEffect(() => {
@@ -124,6 +134,12 @@ function EmployeeLoginPageContent() {
             <h1 className={styles.title}>Job Seeker Login</h1>
           </div>
           <p className={styles.subtitle}>Find your next opportunity</p>
+
+          {roleNotice && (
+            <div className={styles.roleNotice}>
+              {roleNotice.text} <Link href={roleNotice.href}>{roleNotice.cta}</Link>
+            </div>
+          )}
 
           <GoogleSignInButton role="employee" className={styles.googleBtn} next={redirectTo || undefined} />
           <div style={{ marginTop: '0.6rem' }}>
