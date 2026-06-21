@@ -10,6 +10,23 @@ function getCookie(name: string): string | null {
 }
 
 /**
+ * Decode the `base64-` payload @supabase/ssr writes. It uses base64URL (the
+ * `-`/`_` alphabet, no `=` padding), which the browser's atob() — standard
+ * base64 only — rejects with "InvalidCharacterError: not correctly encoded".
+ * Convert to standard base64, re-pad, then UTF-8-decode the bytes (session
+ * metadata such as names can be non-ASCII). Works for standard base64 too, so
+ * it is safe regardless of which alphabet the cookie used.
+ */
+function decodeSupabaseBase64(b64: string): string {
+  let s = b64.replace(/-/g, '+').replace(/_/g, '/')
+  const pad = s.length % 4
+  if (pad) s += '='.repeat(4 - pad)
+  const bin = atob(s)
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0))
+  return new TextDecoder().decode(bytes)
+}
+
+/**
  * Parse the chunked session cookie written by @supabase/ssr on the server.
  * Cookies are split across `sb-<ref>-auth-token.0`, `.1`, … and contain a
  * JSON payload with access_token + refresh_token (base64-prefixed).
@@ -31,9 +48,14 @@ function readChunkedCookie(): { access_token?: string; refresh_token?: string } 
     }
     if (!combined) return null
 
-    const jsonStr = combined.startsWith('base64-')
-      ? atob(combined.slice(7))
-      : decodeURIComponent(combined)
+    // Cookie values are percent-encoded in document.cookie; decode first so a
+    // plain-JSON cookie parses and the `base64-` prefix is detectable.
+    let raw = combined
+    try { raw = decodeURIComponent(combined) } catch { /* not encoded */ }
+
+    const jsonStr = raw.startsWith('base64-')
+      ? decodeSupabaseBase64(raw.slice(7))
+      : raw
 
     return JSON.parse(jsonStr)
   } catch (e) {
