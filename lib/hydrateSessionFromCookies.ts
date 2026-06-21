@@ -57,26 +57,51 @@ function clearStaleAuthCookies() {
 /**
  * After an OAuth redirect, @supabase/ssr has written the session as chunked
  * cookies on the server, but the client's localStorage is still empty. This
- * reads those cookies and calls refreshSession — using the refresh_token to
- * mint a fresh access_token and persist the session to localStorage.
+ * reads those cookies and INSTALLS the session into the browser client with
+ * setSession({ access_token, refresh_token }).
  *
- * Returns the hydrated Session, or null if there were no cookies or the
- * refresh failed (in which case stale cookies are cleared).
+ * Why setSession and not refreshSession: the access_token in the cookie was
+ * just minted by the server's exchangeCodeForSession and is still valid, so
+ * setSession persists the session WITHOUT calling /token — i.e. without
+ * consuming/rotating the single-use refresh_token. refreshSession() did consume
+ * it, and when anything else (auto-refresh, a second hydrate, a re-render) had
+ * already spent that token, the second /token call came back 400
+ * "refresh_token_already_used" (Supabase reuse-detection), hydration returned
+ * null, and the employer dashboard bounced to /login — the LinkedIn flash-then-
+ * bounce. setSession sidesteps that entirely. (supabase-js only falls back to a
+ * network refresh if the access_token is already expired, which it isn't here.)
+ *
+ * Returns the hydrated Session, or null if there were no cookies or the install
+ * failed (in which case stale cookies are cleared). Falls back to refreshSession
+ * only if the cookie somehow lacks an access_token.
  */
 export async function hydrateSessionFromCookies(): Promise<Session | null> {
   const cookieSession = readChunkedCookie()
   if (!cookieSession?.refresh_token) return null
 
-  console.log('[hydrate] refreshing session from chunked cookies')
+  if (cookieSession.access_token) {
+    console.log('[hydrate] installing session from chunked cookies via setSession')
+    const { data, error } = await supabase.auth.setSession({
+      access_token: cookieSession.access_token,
+      refresh_token: cookieSession.refresh_token,
+    })
+    if (error) {
+      console.error('[hydrate] setSession error:', error.message)
+      clearStaleAuthCookies()
+      return null
+    }
+    return data.session ?? null
+  }
+
+  // Fallback: no access_token in the cookie — refresh from the refresh_token.
+  console.log('[hydrate] no access_token in cookie; refreshing session')
   const { data, error } = await supabase.auth.refreshSession({
     refresh_token: cookieSession.refresh_token,
   })
-
   if (error) {
     console.error('[hydrate] refreshSession error:', error.message)
     clearStaleAuthCookies()
     return null
   }
-
   return data.session ?? null
 }

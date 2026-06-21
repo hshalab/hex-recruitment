@@ -744,9 +744,17 @@ export default function EmployerDashboardPage() {
 
       // No localStorage session — try to hydrate from the chunked cookies
       // written by the server OAuth callback. This is the common case on the
-      // first load after Google sign-in: server cookies are present but
-      // localStorage is empty until we call refreshSession.
-      const hydrated = await hydrateSessionFromCookies()
+      // first load after an OAuth sign-in: server cookies are present but
+      // localStorage is empty until we install the session.
+      let hydrated = await hydrateSessionFromCookies()
+      if (!hydrated) {
+        // The server layout just rendered this page, so a valid session DOES
+        // exist server-side. A momentarily-null client hydration (cookies not
+        // yet readable for a tick after the OAuth redirect) should not bounce
+        // the user — retry once before giving up.
+        await new Promise((r) => setTimeout(r, 400))
+        hydrated = await hydrateSessionFromCookies()
+      }
       if (hydrated) {
         await loadDashboardData(hydrated)
         return
