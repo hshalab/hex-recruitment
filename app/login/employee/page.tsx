@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
+import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import styles from '../page.module.css'
 
 function EmployeeLoginPageContent() {
@@ -125,6 +126,9 @@ function EmployeeLoginPageContent() {
           <p className={styles.subtitle}>Find your next opportunity</p>
 
           <GoogleSignInButton role="employee" className={styles.googleBtn} next={redirectTo || undefined} />
+          <div style={{ marginTop: '0.6rem' }}>
+            <LinkedInSignInButton role="employee" className={styles.googleBtn} next={redirectTo || undefined} />
+          </div>
           <div className={styles.divider}><span>or</span></div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
