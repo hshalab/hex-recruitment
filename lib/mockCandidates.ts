@@ -29,11 +29,17 @@ export interface Candidate {
   profilePictureUrl: string | null
   jobTitle: string
   jobSector?: string
+  /** Phase 2: one short candidate-written line ("sell yourself" tagline). */
+  headline?: string
   location: string
   yearsExperience: number
   bio: string
   personalBio?: string
   skills: string[]
+  /** Phase 2: free-form strength tags (sector-agnostic). */
+  specialties?: string[]
+  /** Phase 2: notable employers / venues the candidate has worked at. */
+  notableVenues?: string[]
   workHistory: WorkHistory[]
   education?: Education[]
   languages?: Language[]
@@ -79,10 +85,13 @@ export const devMockCandidates: Candidate[] = [
     profilePictureUrl: null,
     jobTitle: 'Senior Sous Chef',
     jobSector: 'hospitality',
+    headline: 'Pastry-led sous chef, 2 AA rosettes, opening-team specialist',
     location: 'Manchester, UK',
     yearsExperience: 7,
     bio: 'Passionate sous chef with 7 years of experience in fine dining and gastropubs. Strong background in menu development, kitchen leadership, and seasonal British cuisine. Looking for a head chef role in a quality-led kitchen.',
     skills: ['Menu Development', 'Kitchen Management', 'Food Safety (Level 3)', 'Allergens', 'Pastry', 'Butchery', 'Stock Control'],
+    specialties: ['Pastry', 'Larder', 'Menu development', 'Kitchen leadership'],
+    notableVenues: ['The Oak & Vine', 'Hawksmoor', 'The Ivy'],
     workHistory: [
       { title: 'Senior Sous Chef', company: 'The Oak & Vine', location: 'Manchester', startDate: 'Jan 2022', endDate: null, description: 'Leading a brigade of 8 in a 2-AA-rosette gastropub. Responsible for menu changes, supplier relationships, and food cost.' },
       { title: 'Sous Chef', company: 'Hawksmoor', location: 'Manchester', startDate: 'Mar 2019', endDate: 'Dec 2021', description: 'Section management across grill and larder during a high-volume restaurant launch.' },
@@ -122,10 +131,15 @@ export const devMockCandidates: Candidate[] = [
     profilePictureUrl: null,
     jobTitle: 'Bar Manager',
     jobSector: 'hospitality',
+    headline: 'Cocktail-led bar manager — grew wet sales 30% across two sites',
     location: 'Leeds, UK',
     yearsExperience: 5,
     bio: 'Cocktail-led bar manager with a track record of growing wet sales and building winning teams. WSET Level 2 Spirits.',
     skills: ['Cocktails', 'Stock Control', 'Team Leadership', 'Rotas', 'Cellar Management'],
+    specialties: ['Cocktails', 'Cellar management', 'Team building'],
+    notableVenues: ['The Alchemist'],
+    certifications: ['WSET Level 2 Spirits', 'Personal Licence'],
+    interests: ['Mixology', 'Five-a-side', 'Vinyl'],
     workHistory: [
       { title: 'Bar Manager', company: 'The Alchemist', location: 'Leeds', startDate: 'Apr 2021', endDate: null, description: 'Managing a 12-person bar team across two sites.' },
     ],
@@ -151,10 +165,12 @@ export const devMockCandidates: Candidate[] = [
     profilePictureUrl: null,
     jobTitle: 'Front of House Supervisor',
     jobSector: 'hospitality',
+    headline: 'Service-led FOH supervisor — boutique hotels & independents',
     location: 'Birmingham, UK',
     yearsExperience: 4,
     bio: 'Service-led FOH supervisor with experience across boutique hotels and independent restaurants.',
     skills: ['Customer Service', 'Reservations', 'Cash Handling', 'Training', 'Wine Service'],
+    specialties: ['Wine service', 'Reservations', 'Staff training'],
     workHistory: [],
     education: [],
     languages: [

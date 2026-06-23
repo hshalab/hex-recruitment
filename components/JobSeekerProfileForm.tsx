@@ -261,9 +261,14 @@ interface ProfileFormData {
   // Professional
   jobSector: string
   currentPosition: string
+  headline: string
   aboutMe: string
   personalBio: string
   professionalSkills: string[]
+  specialties: string[]
+  notableVenues: string[]
+  certifications: string[]
+  interests: string[]
   workExperience: WorkExperience[]
   yearsExperience: number
   desiredSalary: string
@@ -387,9 +392,14 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     preferredLocations: (existingData as any)?.preferredLocations || '',
     jobSector: (existingData as any)?.jobSector || '',
     currentPosition: existingData?.currentPosition || '',
+    headline: (existingData as any)?.headline || '',
     aboutMe: (existingData as any)?.aboutMe || '',
     personalBio: (existingData as any)?.personalBio || '',
     professionalSkills: (existingData as any)?.professionalSkills || [],
+    specialties: (existingData as any)?.specialties || [],
+    notableVenues: (existingData as any)?.notableVenues || [],
+    certifications: (existingData as any)?.certifications || [],
+    interests: (existingData as any)?.interests || [],
     workExperience: (existingData as any)?.workExperience || [{ company: '', role: '', startDate: '', endDate: '', description: '' }],
     yearsExperience: (existingData as any)?.yearsExperience || 1,
     desiredSalary: existingData?.desiredSalary || '',
@@ -816,6 +826,11 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             bio: formData.aboutMe || '',
             personal_bio: formData.personalBio || '',
             skills: formData.professionalSkills || [],
+            headline: formData.headline || null,
+            specialties: formData.specialties || [],
+            notable_venues: formData.notableVenues || [],
+            certifications: formData.certifications || [],
+            interests: formData.interests || [],
             work_history: workHistory,
             education: formData.education.filter(edu => edu.institution || edu.qualification).map(edu => ({
               institution: edu.institution, qualification: edu.qualification, field_of_study: edu.fieldOfStudy,
@@ -972,6 +987,11 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           bio: formData.aboutMe || '',
           personal_bio: formData.personalBio || '',
           skills: formData.professionalSkills || [],
+          headline: formData.headline || null,
+          specialties: formData.specialties || [],
+          notable_venues: formData.notableVenues || [],
+          certifications: formData.certifications || [],
+          interests: formData.interests || [],
           work_history: workHistory,
           education: formData.education.filter(edu => edu.institution || edu.qualification).map(edu => ({
             institution: edu.institution, qualification: edu.qualification, field_of_study: edu.fieldOfStudy,
@@ -1521,6 +1541,64 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     }))
   }
 
+  // Free-form tag fields (Phase 2): specialties / notableVenues / certifications
+  // / interests. Generic add/remove on a string[] form field, capped at 12.
+  type TagField = 'specialties' | 'notableVenues' | 'certifications' | 'interests'
+  const addTag = (field: TagField, raw: string) => {
+    const val = raw.trim()
+    if (!val) return
+    setFormData(prev => (
+      prev[field].includes(val) || prev[field].length >= 12
+        ? prev
+        : { ...prev, [field]: [...prev[field], val] }
+    ))
+  }
+  const removeTag = (field: TagField, val: string) => {
+    setFormData(prev => ({ ...prev, [field]: prev[field].filter(t => t !== val) }))
+  }
+  const renderTagField = (field: TagField, label: string, placeholder: string, hint?: string) => (
+    <div className={styles.formGroup}>
+      <label className={styles.label}>{label}</label>
+      {hint && <p className={styles.photoHint} style={{ marginBottom: '0.75rem' }}>{hint}</p>}
+      {formData[field].length > 0 && (
+        <div className={styles.skillsGrid} style={{ marginBottom: '0.5rem' }}>
+          {formData[field].map(tag => (
+            <button key={tag} type="button" onClick={() => removeTag(field, tag)} className={`${styles.skillPill} ${styles.skillPillActive}`}>
+              {tag} ✕
+            </button>
+          ))}
+        </div>
+      )}
+      <div className={styles.customSkillRow}>
+        <input
+          type="text"
+          placeholder={placeholder}
+          className={styles.input}
+          id={`tagInput_${field}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              const input = e.target as HTMLInputElement
+              addTag(field, input.value)
+              input.value = ''
+            }
+          }}
+          autoComplete="off"
+        />
+        <button
+          type="button"
+          className={styles.addSkillBtn}
+          onClick={() => {
+            const input = document.getElementById(`tagInput_${field}`) as HTMLInputElement
+            if (input) { addTag(field, input.value); input.value = '' }
+          }}
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  )
+
   // Handle sector change — keep any already-selected skills
   const handleSectorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFormData(prev => ({
@@ -1780,6 +1858,27 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         </select>
       </div>
 
+      <div className={styles.formGroup} id="headline-section">
+        <label className={styles.label} htmlFor="headline">Headline</label>
+        <p className={styles.photoHint} style={{ marginBottom: '0.75rem' }}>
+          One short line that sells you — this shows on your card (e.g. “Pastry-led sous chef, 2 AA rosettes, opening-team specialist”).
+        </p>
+        <input
+          type="text"
+          id="headline"
+          name="headline"
+          className={styles.input}
+          value={formData.headline}
+          maxLength={90}
+          placeholder="Your one-line pitch"
+          onChange={(e) => setFormData(prev => ({ ...prev, headline: e.target.value }))}
+          autoComplete="off"
+        />
+        <p className={styles.photoHint} style={{ marginTop: '0.375rem', fontSize: '0.75rem', textAlign: 'right' }}>
+          {formData.headline.length}/90
+        </p>
+      </div>
+
       <div className={styles.formGroup} id="skills-section">
         <label className={styles.label}>Professional Skills</label>
         <p className={styles.photoHint} style={{ marginBottom: '0.75rem' }}>
@@ -1849,6 +1948,11 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           </button>
         </div>
       </div>
+
+      {renderTagField('specialties', 'Specialties / strengths', 'Add a strength and press Enter…', 'Free-form tags that make you stand out (e.g. Pastry, Larder, Menu development).')}
+      {renderTagField('notableVenues', 'Notable venues / employers', 'Add a venue and press Enter…', 'Standout places you’ve worked — shown on your profile.')}
+      {renderTagField('certifications', 'Certifications', 'Add a certification and press Enter…', 'e.g. Food Hygiene Level 3, First Aid, WSET Level 2.')}
+      {renderTagField('interests', 'Interests & hobbies', 'Add an interest and press Enter…', 'A little personality — optional.')}
 
       <div className={styles.divider}><span>Work Experience</span></div>
 

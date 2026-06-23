@@ -271,6 +271,7 @@ export default function CandidateDetailPage() {
             <div className={styles.headerInfo}>
               <h1 className={styles.candidateName}>{candidate.fullName}</h1>
               <p className={styles.candidateTitle}>{candidate.jobTitle}</p>
+              {candidate.headline && <p className={styles.candidateHeadline}>{candidate.headline}</p>}
 
               {/* Prominent availability badge */}
               {visibility.show_availability && candidate.availability && (
@@ -400,6 +401,36 @@ export default function CandidateDetailPage() {
                         {job.description && <p className={styles.timelineDesc}>{job.description}</p>}
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Strengths (specialties) */}
+            {candidate.specialties && candidate.specialties.length > 0 && (
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <Award size={20} className={styles.cardIcon} />
+                  <h2 className={styles.cardTitle}>Strengths</h2>
+                </div>
+                <div className={styles.skillsGrid}>
+                  {candidate.specialties.map((s, index) => (
+                    <span key={index} className={styles.skillPill}>{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Notable venues */}
+            {candidate.notableVenues && candidate.notableVenues.length > 0 && (
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <MapPin size={20} className={styles.cardIcon} />
+                  <h2 className={styles.cardTitle}>Notable venues</h2>
+                </div>
+                <div className={styles.skillsGrid}>
+                  {candidate.notableVenues.map((v, index) => (
+                    <span key={index} className={styles.skillPill}>{v}</span>
                   ))}
                 </div>
               </div>

@@ -170,6 +170,15 @@
   margin: 0 0 0.4rem;
 }
 
+/* Phase 2: candidate "sell yourself" headline (dark header → light italic). */
+.candidateHeadline {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-style: italic;
+  line-height: 1.4;
+  margin: 0 0 0.5rem;
+}
+
 .headerMeta {
   display: flex;
   flex-wrap: wrap;

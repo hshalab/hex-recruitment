@@ -696,6 +696,7 @@ function CandidatesContent() {
                       <span className={styles.cardCompany}>{candidate.fullName}</span>
                     </div>
                     <h3 className={styles.cardRole}>{candidate.jobTitle}</h3>
+                    {candidate.headline && <p className={styles.cardHeadline}>{candidate.headline}</p>}
                     <div className={styles.cardMeta}>
                       {candidate.location && <span>{candidate.location}</span>}
                       {candidate.location && <span className={styles.cardDot}>·</span>}
@@ -707,8 +708,8 @@ function CandidatesContent() {
                           <span className={styles.cardAvailDot} />{candidate.availability}
                         </span>
                       )}
-                      {candidate.skills.slice(0, 2).map((skill, i) => (
-                        <span key={i} className={styles.cardBadge}>{skill}</span>
+                      {(candidate.specialties && candidate.specialties.length > 0 ? candidate.specialties : candidate.skills).slice(0, 2).map((tag, i) => (
+                        <span key={i} className={styles.cardBadge}>{tag}</span>
                       ))}
                     </div>
                   </div>
@@ -762,6 +763,7 @@ function CandidatesContent() {
                       <div className={styles.detailHeaderInfo}>
                         <h1 className={styles.detailName}>{selectedCandidate.fullName}</h1>
                         <p className={styles.detailTitle}>{selectedCandidate.jobTitle}</p>
+                        {selectedCandidate.headline && <p className={styles.detailHeadline}>{selectedCandidate.headline}</p>}
                         <div className={styles.detailHeaderMeta}>
                           {selectedCandidate.location && (
                             <span className={styles.detailMetaItem}>
@@ -864,6 +866,36 @@ function CandidatesContent() {
                               {job.description && <p className={styles.detailTimelineDesc}>{job.description}</p>}
                             </div>
                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Strengths (specialties) */}
+                  {selectedCandidate.specialties && selectedCandidate.specialties.length > 0 && (
+                    <div className={styles.detailSection}>
+                      <div className={styles.detailSectionHeader}>
+                        <Award size={18} className={styles.detailSectionIcon} />
+                        <h2 className={styles.detailSectionTitle}>Strengths</h2>
+                      </div>
+                      <div className={styles.detailSkillsGrid}>
+                        {selectedCandidate.specialties.map((s, index) => (
+                          <span key={index} className={styles.detailSkillPill}>{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notable venues */}
+                  {selectedCandidate.notableVenues && selectedCandidate.notableVenues.length > 0 && (
+                    <div className={styles.detailSection}>
+                      <div className={styles.detailSectionHeader}>
+                        <MapPin size={18} className={styles.detailSectionIcon} />
+                        <h2 className={styles.detailSectionTitle}>Notable venues</h2>
+                      </div>
+                      <div className={styles.detailSkillsGrid}>
+                        {selectedCandidate.notableVenues.map((v, index) => (
+                          <span key={index} className={styles.detailSkillPill}>{v}</span>
                         ))}
                       </div>
                     </div>
