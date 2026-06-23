@@ -1259,3 +1259,141 @@
   margin-left: 6px;
   vertical-align: middle;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   MIRROR /jobs — search section, sticky filter strip, overlays,
+   image-led card grid, slide-in detail modal. Values ported from
+   app/jobs/page.module.css so the two pages share a visual system.
+   (CSS Modules are file-scoped, so these names cannot affect /jobs.)
+   ════════════════════════════════════════════════════════════════ */
+
+/* ═══ Search Section (dark banner) ═════════════════════════════ */
+.searchSection { background: var(--dark-gray); padding: 0.8rem 0 0.7rem; }
+.searchInner { max-width: 980px; margin: 0 auto; padding: 0 1.5rem; }
+.searchSectionTitle { font-family: var(--font-serif), Georgia, serif; font-size: 1.4rem; font-weight: 600; letter-spacing: -0.01em; color: var(--white); margin: 0 0 0.6rem; text-align: left; }
+.searchControls { display: flex; gap: 0.5rem; }
+.searchInputWrap { flex: 1; position: relative; }
+.searchBox { width: 100%; padding: 0.7rem 2.25rem 0.7rem 1rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-size: 0.95rem; outline: none; box-sizing: border-box; background: rgba(255,255,255,0.1); color: var(--white); }
+.searchBox::placeholder { color: rgba(255,255,255,0.5); }
+.searchBox:focus { border-color: var(--primary-yellow); background: rgba(255,255,255,0.15); }
+.searchClear { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 0.85rem; padding: 0; }
+
+/* ═══ Filter Strip (sticky) ═══════════════════════════════════ */
+.filterStrip { position: sticky; top: var(--nav-height); z-index: 8; background: var(--white); border-bottom: 1px solid #e5e7eb; }
+.filterStripInner { max-width: 1200px; margin: 0 auto; padding: 0.5rem 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.filterStripLeft { display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.filterStripLeft::-webkit-scrollbar { display: none; }
+.filterStripRight { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.resultCount { font-size: 0.82rem; color: #6b7280; font-weight: 500; white-space: nowrap; margin: 0; }
+.clearFiltersBtn { font-size: 0.78rem; color: #dc2626; background: none; border: none; cursor: pointer; font-weight: 600; white-space: nowrap; padding: 0; }
+.clearFiltersBtn:hover { text-decoration: underline; }
+
+.filterPill { padding: 0.35rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 999px; background: var(--white); font-size: 0.78rem; color: #374151; cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
+.filterPill:hover { border-color: #d1d5db; background: #f9fafb; }
+.filterPillActive { background: var(--dark-gray); color: white; border-color: var(--dark-gray); }
+.filterSelect { padding: 0.35rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 999px; background: var(--white); font-size: 0.78rem; color: #374151; cursor: pointer; appearance: none; -webkit-appearance: none; padding-right: 1.5rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.5rem center; }
+.filterSelectActive { background-color: #1a1a1a; color: white; border-color: #1a1a1a; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); }
+
+/* Active filter chips (removable, beneath the one-line strip) */
+.activeChips { max-width: 1200px; margin: 0 auto; padding: 0.4rem 1.5rem 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.activeChip { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.74rem; font-weight: 500; color: #0A1628; background: #eef2f6; border: 1px solid #dbe2ea; border-radius: 999px; padding: 0.2rem 0.6rem; cursor: pointer; }
+.activeChip:hover { background: #e2e8f0; }
+.activeChip span { font-size: 0.7rem; opacity: 0.55; }
+
+/* Filter overlays — popover on desktop, bottom sheet on mobile */
+.filterBackdrop { position: fixed; inset: 0; background: rgba(10,22,40,.38); z-index: 60; animation: fadeIn .15s ease; }
+.filterOverlay {
+  position: fixed; z-index: 61; background: #fff;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 60px rgba(10,22,40,.28);
+  top: 88px; left: 50%; transform: translateX(-50%);
+  width: min(560px, 94vw); max-height: 72vh; border-radius: 16px; overflow: hidden;
+  animation: overlayIn .18s ease;
+}
+.filterOverlayHead { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.1rem; border-bottom: 1px solid #eef0f3; font-weight: 700; font-size: 0.95rem; color: #0A1628; flex-shrink: 0; }
+.filterOverlayClose { background: none; border: none; font-size: 1rem; color: #6b7280; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; }
+.filterOverlayClose:hover { background: #f3f4f6; }
+.filterOverlayBody { padding: 1rem 1.1rem; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.filterOverlayFoot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.75rem 1.1rem; border-top: 1px solid #eef0f3; flex-shrink: 0; }
+.filterOverlayClear { background: none; border: none; color: #6b7280; font-weight: 600; font-size: 0.82rem; cursor: pointer; padding: 0.4rem 0; }
+.filterOverlayClear:hover { color: #0A1628; }
+.filterOverlayApply { background: #0A1628; color: #fff; border: none; border-radius: 999px; padding: 0.55rem 1.1rem; font-weight: 600; font-size: 0.84rem; cursor: pointer; }
+.filterOverlayApply:hover { background: #12294a; }
+.filterGroup { width: 100%; margin-bottom: 0.5rem; }
+.filterGroupTitle { font-size: 0.78rem; font-weight: 600; color: #374151; margin: 0 0 0.35rem; }
+.filterGroupOptions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes overlayIn { from { opacity: 0; transform: translateX(-50%) translateY(-6px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes sheetIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+@media (max-width: 720px) {
+  .filterOverlay { top: auto; bottom: 0; left: 0; transform: none; width: 100%; max-height: 82vh; border-radius: 18px 18px 0 0; animation: sheetIn .22s ease; }
+}
+@media (prefers-reduced-motion: reduce) { .filterBackdrop, .filterOverlay { animation: none; } }
+
+/* ═══ Candidate Card Grid (image-led, mirrors .jobCard) ═══════ */
+.cardsContainer { max-width: 1200px; margin: 0 auto; padding: 1.25rem 1.5rem 1.5rem; }
+.cardsGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.1rem; }
+@media (max-width: 720px) { .cardsGrid { grid-template-columns: 1fr; gap: 0.9rem; } }
+
+.candidateCard {
+  position: relative; border-radius: 18px; overflow: hidden;
+  aspect-ratio: 16 / 11; cursor: pointer; isolation: isolate;
+  background: #0A1628;
+  box-shadow: 0 1px 2px rgba(10,22,40,.08), 0 8px 22px rgba(10,22,40,.10);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.candidateCard:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(10,22,40,.10), 0 16px 34px rgba(10,22,40,.18); }
+.candidateCard:focus-visible { outline: 3px solid #FFE500; outline-offset: 2px; }
+.candidateCardBoosted { box-shadow: 0 0 0 2px rgba(255,229,0,.55), 0 8px 22px rgba(10,22,40,.14); }
+
+.cardScrim { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(10,22,40,0) 30%, rgba(10,22,40,.55) 100%); }
+.cardMatch { position: absolute; top: 14px; left: 14px; z-index: 2; background: #FFE500; color: #0A1628; font-weight: 700; font-size: 11px; letter-spacing: .03em; padding: 4px 9px; border-radius: 999px; }
+.cardFeatured { position: absolute; top: 12px; right: 12px; z-index: 2; background: rgba(10,22,40,.55); color: #FFE500; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255,229,0,.45); font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; }
+
+.cardContent { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 16px 16px 15px; color: #fff; display: flex; flex-direction: column; gap: 7px; }
+.cardCompanyRow { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.cardChip { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; display: grid; place-items: center; overflow: hidden; font-family: var(--font-serif), Georgia, serif; font-weight: 700; font-size: 13px; color: #0A1628; background: #FFE500; }
+.cardCompany { font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cardRole { font-family: var(--font-serif), Georgia, serif; font-weight: 600; font-size: 23px; line-height: 1.08; letter-spacing: -.01em; margin: 1px 0 0; color: #fff; }
+.cardMeta { font-size: 13px; color: rgba(255,255,255,.85); display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+.cardDot { opacity: .5; }
+.cardBadges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+.cardBadge { font-size: 11px; font-weight: 500; color: #fff; border: 1px solid rgba(255,255,255,.35); padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.08); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); display: inline-flex; align-items: center; gap: 4px; }
+.cardAvail { border-color: rgba(255,255,255,.5); }
+.cardAvailDot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.cardAvail_green .cardAvailDot { background: #22c55e; }
+.cardAvail_yellow .cardAvailDot { background: #FFE500; }
+.cardAvail_grey .cardAvailDot { background: #cbd5e1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .candidateCard { transition: none; }
+  .candidateCard:hover { transform: none; }
+}
+
+/* ═══ Candidate Detail Modal (slide-in, mirrors /jobs) ════════ */
+.modalOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; }
+.modalPanel { position: fixed; top: 0; right: 0; height: 100vh; width: 560px; background: var(--white); overflow-y: auto; z-index: 501; box-shadow: -8px 0 32px rgba(0,0,0,0.12); animation: slideInRight 0.25s ease; }
+@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.modalHeader { position: sticky; top: 0; background: var(--white); border-bottom: 1px solid #e5e7eb; padding: 0.75rem 1.25rem; display: flex; align-items: center; justify-content: space-between; z-index: 3; }
+.modalNav { display: flex; gap: 0.35rem; }
+.modalNavBtn { width: 36px; height: 36px; border: 1px solid #e5e7eb; border-radius: 8px; background: var(--white); cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; color: #374151; }
+.modalNavBtn:hover { background: #f9fafb; }
+.modalNavBtn:disabled { opacity: 0.3; cursor: not-allowed; }
+.modalClose { width: 36px; height: 36px; border: none; border-radius: 8px; background: none; cursor: pointer; font-size: 1.1rem; color: #6b7280; display: flex; align-items: center; justify-content: center; }
+.modalClose:hover { background: #f1f5f9; }
+.modalBody { padding: 1.25rem; }
+/* The detail hero has top rounded corners meant for the old right panel —
+   square them off so it sits flush under the sticky modal header. */
+.modalBody .detailProfileHeader { border-radius: 0; }
+
+@media (max-width: 600px) {
+  .searchControls { flex-direction: column; }
+  .searchInner { padding: 0 1rem; }
+  .cardsContainer { padding: 1rem 1rem 3rem; }
+  .cardsGrid { grid-template-columns: 1fr; gap: 0.75rem; }
+  .filterStripInner { padding: 0.5rem 1rem; }
+  .filterStripRight { display: none; }
+  .modalPanel { width: 100%; top: auto; bottom: 0; height: 92vh; border-radius: 16px 16px 0 0; animation: sheetIn 0.25s ease; }
+}

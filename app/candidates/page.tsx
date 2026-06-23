@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import SignedLink from '@/components/SignedLink'
+import BrandedJobFallback from '@/components/BrandedJobFallback'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
@@ -402,18 +403,14 @@ function CandidatesContent() {
     })
   }, [allCandidates, searchQuery, locationQuery, activeCategories, filters, boostedProfileIds, matchedJob, matchScores])
 
-  // Auto-select first candidate on desktop when filtered results change
+  // Clear the open candidate if it drops out of the filtered set (mirrors
+  // /jobs). The detail is now a click-opened slide-in modal, so we must NOT
+  // auto-select / auto-open a candidate on load or on filter change.
   useEffect(() => {
-    if (isMobile) return
-    if (filteredCandidates.length > 0) {
-      setSelectedCandidate(prev => {
-        if (prev && filteredCandidates.some(c => c.id === prev.id)) return prev
-        return filteredCandidates[0]
-      })
-    } else {
+    if (selectedCandidate && filteredCandidates.length > 0 && !filteredCandidates.some(c => c.id === selectedCandidate.id)) {
       setSelectedCandidate(null)
     }
-  }, [filteredCandidates, isMobile])
+  }, [filteredCandidates])
 
   const selectCandidate = (candidate: Candidate) => {
     if (isMobile) {
@@ -429,6 +426,27 @@ function CandidatesContent() {
     setActiveCategories([])
     clearAllFilters()
   }
+
+  // Filter-strip helpers (mirror /jobs). These re-present the SAME existing
+  // filter Sets — no new filter dimensions are introduced.
+  const closeOverlays = () => { setSectorsExpanded(false); setFiltersExpanded(false) }
+  const availabilityOptions = candidateFilterSections.find(s => s.key === 'availability')!.options
+  const experienceOptions = candidateFilterSections.find(s => s.key === 'experienceLevel')!.options
+  const selectedExperience = filters.experienceLevel.size === 1 ? Array.from(filters.experienceLevel)[0] : ''
+  const setExperience = (val: string) =>
+    setFilters(prev => ({ ...prev, experienceLevel: new Set(val ? [val] : []) }))
+  const hasActiveFilters =
+    activeFilterCount > 0 || !!searchQuery || !!locationQuery || activeCategories.length > 0
+
+  // Slide-in detail modal nav (mirrors /jobs prev/next)
+  const navigateToCandidate = (direction: 'prev' | 'next') => {
+    if (!selectedCandidate) return
+    const i = filteredCandidates.findIndex(c => c.id === selectedCandidate.id)
+    const ni = direction === 'prev' ? i - 1 : i + 1
+    if (ni >= 0 && ni < filteredCandidates.length) setSelectedCandidate(filteredCandidates[ni])
+  }
+  const currentCandidateIndex = () =>
+    selectedCandidate ? filteredCandidates.findIndex(c => c.id === selectedCandidate.id) : -1
 
   if (checkingAuth) {
     return (
@@ -479,53 +497,120 @@ function CandidatesContent() {
   }
 
   return (
-    <main>
+    <main className="no-pad">
       <Header />
 
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Find Your Perfect Candidate</h1>
-        <p className={styles.pageSubtitle}>Browse profiles across all sectors in the UK</p>
+      {/* Search Section (dark) — mirrors /jobs */}
+      <div className={styles.searchSection}>
+        <div className={styles.searchInner}>
+          <h1 className={styles.searchSectionTitle}>Find Your Perfect Candidate</h1>
+          <div className={styles.searchControls}>
+            <div className={styles.searchInputWrap}>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Name, role or skill"
+                className={styles.searchBox}
+              />
+              {searchQuery && (
+                <button className={styles.searchClear} onClick={() => setSearchQuery('')} aria-label="Clear search">✕</button>
+              )}
+            </div>
+            <div className={styles.searchInputWrap}>
+              <input
+                type="text"
+                value={locationQuery}
+                onChange={e => setLocationQuery(e.target.value)}
+                placeholder="City or town"
+                className={styles.searchBox}
+              />
+              {locationQuery && (
+                <button className={styles.searchClear} onClick={() => setLocationQuery('')} aria-label="Clear location">✕</button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Category Pills - Collapsible */}
-      <section className={styles.categoriesSection}>
-        <div className={styles.categoriesInner}>
-          <div className={styles.categoriesHeader}>
-            <button
-              className={styles.sectorsToggle}
-              onClick={() => setSectorsExpanded(!sectorsExpanded)}
-            >
-              Job Sectors
-              {activeCategories.length === 1 && (
-                <span className={styles.activeSectorLabel}>
-                  {categories.find(c => c.id === activeCategories[0])?.label}
-                </span>
-              )}
-              {activeCategories.length > 1 && (
-                <span className={styles.activeSectorLabel}>
-                  {activeCategories.length} selected
-                </span>
-              )}
-              <span className={`${styles.chevron} ${sectorsExpanded ? styles.chevronUp : ''}`}>&#9662;</span>
-            </button>
-            {activeCategories.length > 0 && !sectorsExpanded && (
+      {/* Filter Strip — sticky, mirrors /jobs */}
+      <div className={styles.filterStrip}>
+        <div className={styles.filterStripInner}>
+          <div className={styles.filterStripLeft}>
+            {availabilityOptions.map(opt => (
               <button
-                className={styles.clearSectorBtn}
-                onClick={() => setActiveCategories([])}
+                key={opt}
+                className={`${styles.filterPill} ${filters.availability.has(opt) ? styles.filterPillActive : ''}`}
+                onClick={() => toggleFilter('availability', opt)}
               >
-                Clear
+                {opt}
               </button>
+            ))}
+            <select
+              value={selectedExperience}
+              onChange={e => setExperience(e.target.value)}
+              className={`${styles.filterSelect} ${selectedExperience ? styles.filterSelectActive : ''}`}
+            >
+              <option value="">Experience level</option>
+              {experienceOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+            <button
+              className={`${styles.filterPill} ${sectorsExpanded ? styles.filterPillActive : ''}`}
+              onClick={() => { setFiltersExpanded(false); setSectorsExpanded(!sectorsExpanded) }}
+            >
+              Sectors{activeCategories.length === 1 ? ` · ${categories.find(c => c.id === activeCategories[0])?.label}` : activeCategories.length > 1 ? ` · ${activeCategories.length}` : ''} ▾
+            </button>
+            <button
+              className={`${styles.filterPill} ${filtersExpanded ? styles.filterPillActive : ''}`}
+              onClick={() => { setSectorsExpanded(false); setFiltersExpanded(!filtersExpanded) }}
+            >
+              More filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''} ▾
+            </button>
+          </div>
+          <div className={styles.filterStripRight}>
+            <span className={styles.resultCount}>{filteredCandidates.length} candidates</span>
+            {hasActiveFilters && (
+              <button className={styles.clearFiltersBtn} onClick={clearFilters}>Clear filters</button>
             )}
           </div>
-          <div className={`${styles.categoriesCollapsible} ${sectorsExpanded ? styles.categoriesExpanded : ''}`}>
-            <div className={styles.categoriesWrap}>
+        </div>
+
+        {/* Active filter chips — removable */}
+        {(activeCategories.length > 0 || activeFilterCount > 0) && (
+          <div className={styles.activeChips}>
+            {activeCategories.map(catId => (
+              <button key={catId} className={styles.activeChip} onClick={() => toggleCategory(catId)}>
+                {categories.find(c => c.id === catId)?.label}<span aria-hidden="true">✕</span>
+              </button>
+            ))}
+            {candidateFilterSections.map(section => Array.from(filters[section.key]).map(option => (
+              <button key={`${section.key}-${option}`} className={styles.activeChip} onClick={() => toggleFilter(section.key, option)}>
+                {option}<span aria-hidden="true">✕</span>
+              </button>
+            )))}
+          </div>
+        )}
+      </div>
+
+      {/* Filter overlays — popover on desktop, bottom sheet on mobile */}
+      {(sectorsExpanded || filtersExpanded) && (
+        <div className={styles.filterBackdrop} onClick={closeOverlays} />
+      )}
+      {sectorsExpanded && (
+        <div className={styles.filterOverlay} role="dialog" aria-label="Job Sectors" aria-modal="true">
+          <div className={styles.filterOverlayHead}>
+            <span>Job Sectors</span>
+            <button className={styles.filterOverlayClose} onClick={() => setSectorsExpanded(false)} aria-label="Close">✕</button>
+          </div>
+          <div className={styles.filterOverlayBody}>
+            <div className={styles.filterGroupOptions}>
               {categories.map(category => (
                 <button
                   key={category.id}
-                  className={`${styles.categoryPill} ${
+                  className={`${styles.filterPill} ${
                     category.id === 'all'
-                      ? (activeCategories.length === 0 ? styles.categoryPillActive : '')
-                      : (activeCategories.includes(category.id) ? styles.categoryPillActive : '')
+                      ? (activeCategories.length === 0 ? styles.filterPillActive : '')
+                      : (activeCategories.includes(category.id) ? styles.filterPillActive : '')
                   }`}
                   onClick={() => toggleCategory(category.id)}
                 >
@@ -534,123 +619,133 @@ function CandidatesContent() {
               ))}
             </div>
           </div>
-
-          <div className={styles.filtersDivider} />
-
-          <div className={styles.categoriesHeader}>
-            <button
-              className={styles.sectorsToggle}
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-            >
-              Filters{activeFilterCount > 0 && ` (${activeFilterCount})`}
-              <span className={`${styles.chevron} ${filtersExpanded ? styles.chevronUp : ''}`}>&#9662;</span>
-            </button>
-            {activeFilterCount > 0 && !filtersExpanded && (
-              <button
-                className={styles.clearSectorBtn}
-                onClick={clearAllFilters}
-              >
-                Clear all
-              </button>
-            )}
-          </div>
-          <div className={`${styles.categoriesCollapsible} ${filtersExpanded ? styles.categoriesExpanded : ''}`}>
-            <div className={styles.filtersPanel}>
-              {candidateFilterSections.map(section => (
-                <div key={section.key} className={styles.filterSection}>
-                  <h4 className={styles.filterSectionTitle}>{section.title}</h4>
-                  <div className={styles.filterOptions}>
-                    {section.options.map(option => (
-                      <button
-                        key={option}
-                        className={`${styles.categoryPill} ${filters[section.key].has(option) ? styles.categoryPillActive : ''}`}
-                        onClick={() => toggleFilter(section.key, option)}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {activeFilterCount > 0 && (
-                <button className={styles.clearAllBtn} onClick={clearAllFilters}>
-                  Clear all filters
-                </button>
-              )}
-            </div>
+          <div className={styles.filterOverlayFoot}>
+            <button className={styles.filterOverlayClear} onClick={() => setActiveCategories([])}>Clear</button>
+            <button className={styles.filterOverlayApply} onClick={() => setSectorsExpanded(false)}>Show {filteredCandidates.length} candidates</button>
           </div>
         </div>
-      </section>
-
-      {/* Main Content */}
-      <div className={styles.mainContainer}>
-        {matchedJob && (
-          <div className={styles.matchBanner}>
-            <span>Showing candidates matched to: <strong>{matchedJob.title}</strong></span>
-            <button className={styles.matchBannerClear} onClick={() => { setMatchedJob(null); setMatchScores({}) }}>
-              Clear filter ✕
-            </button>
+      )}
+      {filtersExpanded && (
+        <div className={styles.filterOverlay} role="dialog" aria-label="Filters" aria-modal="true">
+          <div className={styles.filterOverlayHead}>
+            <span>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
+            <button className={styles.filterOverlayClose} onClick={() => setFiltersExpanded(false)} aria-label="Close">✕</button>
           </div>
-        )}
-        <p className={styles.candidateCount}>
-          <span className={styles.candidateCountHighlight}>{filteredCandidates.length}</span> candidates found
-          {activeCategories.length === 1 && ` in ${categories.find(c => c.id === activeCategories[0])?.label}`}
-          {activeCategories.length > 1 && ` in ${activeCategories.length} sectors`}
-          {locationQuery && ` in "${locationQuery}"`}
-        </p>
+          <div className={styles.filterOverlayBody}>
+            {candidateFilterSections.map(section => (
+              <div key={section.key} className={styles.filterGroup}>
+                <h4 className={styles.filterGroupTitle}>{section.title}</h4>
+                <div className={styles.filterGroupOptions}>
+                  {section.options.map(option => (
+                    <button
+                      key={option}
+                      className={`${styles.filterPill} ${filters[section.key].has(option) ? styles.filterPillActive : ''}`}
+                      onClick={() => toggleFilter(section.key, option)}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className={styles.filterOverlayFoot}>
+            <button className={styles.filterOverlayClear} onClick={clearAllFilters}>Clear all</button>
+            <button className={styles.filterOverlayApply} onClick={() => setFiltersExpanded(false)}>Show {filteredCandidates.length} candidates</button>
+          </div>
+        </div>
+      )}
 
+      {/* Matched-job banner (preserved) */}
+      {matchedJob && (
+        <div className={styles.matchBanner}>
+          <span>Showing candidates matched to: <strong>{matchedJob.title}</strong></span>
+          <button className={styles.matchBannerClear} onClick={() => { setMatchedJob(null); setMatchScores({}) }}>
+            Clear filter ✕
+          </button>
+        </div>
+      )}
+
+      {/* Candidate Card Grid — image-led, mirrors /jobs */}
+      <div className={styles.cardsContainer}>
         {filteredCandidates.length > 0 ? (
-          <div className={styles.splitLayout}>
-            {/* LEFT PANEL - Candidate List */}
-            <div className={styles.listPanel} ref={listRef}>
-              {filteredCandidates.map(candidate => (
+          <div className={styles.cardsGrid} ref={listRef}>
+            {filteredCandidates.map(candidate => {
+              const initials = candidate.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+              const score = matchScores[candidate.id] || 0
+              const availColor = getAvailabilityColor(candidate.availability)
+              const boosted = boostedProfileIds.has(candidate.id)
+              return (
                 <div
                   key={candidate.id}
-                  className={`${styles.listCard} ${selectedCandidate?.id === candidate.id ? styles.listCardActive : ''} ${boostedProfileIds.has(candidate.id) ? styles.listCardBoosted : ''}`}
+                  className={`${styles.candidateCard} ${boosted ? styles.candidateCardBoosted : ''}`}
                   onClick={() => selectCandidate(candidate)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && selectCandidate(candidate)}
                 >
-                  <div className={styles.listCardContent}>
-                    <h3 className={styles.listCardName}>
-                      {candidate.fullName}
-                      {matchScores[candidate.id] > 0 && (
-                        <span className={styles.matchBadge}>{matchScores[candidate.id]}% match</span>
+                  <BrandedJobFallback company={candidate.fullName} seed={candidate.id} />
+                  <div className={styles.cardScrim} aria-hidden="true" />
+
+                  {score > 0 && <span className={styles.cardMatch}>{score}% match</span>}
+                  {boosted && <span className={styles.cardFeatured}>⚡ Featured</span>}
+
+                  <div className={styles.cardContent}>
+                    <div className={styles.cardCompanyRow}>
+                      <span className={styles.cardChip}>{initials}</span>
+                      <span className={styles.cardCompany}>{candidate.fullName}</span>
+                    </div>
+                    <h3 className={styles.cardRole}>{candidate.jobTitle}</h3>
+                    <div className={styles.cardMeta}>
+                      {candidate.location && <span>{candidate.location}</span>}
+                      {candidate.location && <span className={styles.cardDot}>·</span>}
+                      <span>{candidate.yearsExperience} yrs exp</span>
+                    </div>
+                    <div className={styles.cardBadges}>
+                      {candidate.availability && (
+                        <span className={`${styles.cardBadge} ${styles.cardAvail} ${styles[`cardAvail_${availColor}`]}`}>
+                          <span className={styles.cardAvailDot} />{candidate.availability}
+                        </span>
                       )}
-                    </h3>
-                    <p className={styles.listCardCompany}>{candidate.jobTitle}</p>
-                    <p className={styles.listCardLocation}>{candidate.yearsExperience} yrs exp · {candidate.location}</p>
-                    <p className={styles.listCardSalary}>{candidate.bio}</p>
-                    <div className={styles.listCardTags}>
-                      {candidate.skills.slice(0, 3).map((skill, i) => (
-                        <span key={i} className={styles.listCardTag}>{skill}</span>
+                      {candidate.skills.slice(0, 2).map((skill, i) => (
+                        <span key={i} className={styles.cardBadge}>{skill}</span>
                       ))}
-                      {candidate.skills.length > 3 && (
-                        <span className={styles.listCardTagMore}>+{candidate.skills.length - 3}</span>
-                      )}
                     </div>
                   </div>
-                  <div className={styles.listCardLogo}>
-                    {candidate.profilePictureUrl ? (
-                      <SignedImage src={candidate.profilePictureUrl} alt={candidate.fullName} className={styles.listCardLogoImg} />
-                    ) : (
-                      <span className={styles.listCardLogoPlaceholder}>
-                        {candidate.fullName.split(' ').map(n => n[0]).join('')}
-                      </span>
-                    )}
-                  </div>
-                  {boostedProfileIds.has(candidate.id) && (
-                    <span className={styles.listCardFeaturedBadge}>⚡ Featured</span>
-                  )}
-
                 </div>
-              ))}
+              )
+            })}
+          </div>
+        ) : (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
             </div>
+            <h2 className={styles.emptyTitle}>No candidates match your search</h2>
+            <p className={styles.emptyText}>Try adjusting your filters or search terms</p>
+            <button className={styles.browseBtn} onClick={clearFilters}>
+              Clear all filters
+            </button>
+          </div>
+        )}
+      </div>
 
-            {/* RIGHT PANEL - Candidate Detail (desktop only) */}
-            {!isMobile && selectedCandidate && (
-              <div className={styles.detailPanel}>
+      {/* Candidate Detail — slide-in modal (desktop); mobile routes to /candidates/[id] */}
+      {!isMobile && selectedCandidate && (
+        <>
+          <div className={styles.modalOverlay} onClick={() => setSelectedCandidate(null)} />
+          <div className={styles.modalPanel}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalNav}>
+                <button className={styles.modalNavBtn} onClick={() => navigateToCandidate('prev')} disabled={currentCandidateIndex() <= 0} aria-label="Previous candidate">←</button>
+                <button className={styles.modalNavBtn} onClick={() => navigateToCandidate('next')} disabled={currentCandidateIndex() >= filteredCandidates.length - 1} aria-label="Next candidate">→</button>
+              </div>
+              <button className={styles.modalClose} onClick={() => setSelectedCandidate(null)} aria-label="Close">✕</button>
+            </div>
+            <div className={styles.modalBody}>
                 <div className={styles.detailInner}>
                   {/* Profile Header */}
                   <div className={styles.detailProfileHeader}>
@@ -956,24 +1051,9 @@ function CandidatesContent() {
                   )}
                 </div>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>
-              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
             </div>
-            <h2 className={styles.emptyTitle}>No candidates match your search</h2>
-            <p className={styles.emptyText}>Try adjusting your filters or search terms</p>
-            <button className={styles.browseBtn} onClick={clearFilters}>
-              Clear all filters
-            </button>
-          </div>
+          </>
         )}
-      </div>
     </main>
   )
 }
