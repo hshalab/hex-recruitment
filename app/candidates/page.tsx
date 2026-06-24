@@ -689,15 +689,17 @@ function CandidatesContent() {
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && selectCandidate(candidate)}
                 >
-                  {cardPhoto ? (
-                    <div className={styles.cardPhotoBg} style={{ backgroundImage: `url(${cardPhoto})` }} aria-hidden="true" />
-                  ) : (
-                    <div
-                      className={styles.cardBackdrop}
-                      style={{ ['--fb-angle' as any]: `${v.angle}deg`, ['--fb-glow-x' as any]: `${v.glowX}%` }}
-                      aria-hidden="true"
-                    />
-                  )}
+                  <div
+                    className={styles.cardBackdrop}
+                    style={{ ['--fb-angle' as any]: `${v.angle}deg`, ['--fb-glow-x' as any]: `${v.glowX}%` }}
+                    aria-hidden="true"
+                  >
+                    {cardPhoto ? (
+                      <div className={styles.cardPhotoBg} style={{ backgroundImage: `url(${cardPhoto})` }} />
+                    ) : (
+                      <span className={styles.cardGhostInitials}>{initials}</span>
+                    )}
+                  </div>
                   <div className={styles.cardScrim} aria-hidden="true" />
 
                   {(score > 0 || boosted) && (
