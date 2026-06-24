@@ -1348,9 +1348,31 @@
 .candidateCard:focus-visible { outline: 3px solid #FFE500; outline-offset: 2px; }
 .candidateCardBoosted { box-shadow: 0 0 0 2px rgba(255,229,0,.55), 0 8px 22px rgba(10,22,40,.14); }
 
+/* Simplified branded backdrop — the navy gradient + subtle yellow glow from
+   BrandedJobFallback, but WITHOUT the Thrive lockup / "Hire faster…" tagline /
+   giant ghost letter (that's employer-pitch copy, wrong on a candidate card).
+   Per-candidate angle/glow (--fb-angle / --fb-glow-x) so a wall of empty cards
+   still varies and looks intentional rather than bare. */
+.cardBackdrop {
+  position: absolute; inset: 0; z-index: -2; overflow: hidden;
+  background:
+    radial-gradient(130% 110% at var(--fb-glow-x, 80%) -10%, rgba(255,229,0,.13) 0%, rgba(255,229,0,0) 46%),
+    linear-gradient(var(--fb-angle, 140deg), #0a1628 0%, #12294a 100%);
+}
+/* Phase 3: candidate work-photo background — renders behind the scrim when a
+   photo exists; until then .cardBackdrop above is always used. */
+.cardPhotoBg { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center; }
+
 .cardScrim { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(10,22,40,0) 30%, rgba(10,22,40,.55) 100%); }
-.cardMatch { position: absolute; top: 14px; left: 14px; z-index: 2; background: #FFE500; color: #0A1628; font-weight: 700; font-size: 11px; letter-spacing: .03em; padding: 4px 9px; border-radius: 999px; }
-.cardFeatured { position: absolute; top: 12px; right: 12px; z-index: 2; background: rgba(10,22,40,.55); color: #FFE500; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255,229,0,.45); font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; }
+
+/* Identity block — top-left: initials chip with the candidate name under it. */
+.cardIdentity { position: absolute; top: 14px; left: 14px; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; max-width: calc(100% - 96px); }
+.cardIdentityName { font-family: var(--font-serif), Georgia, serif; font-weight: 600; font-size: 16px; line-height: 1.15; color: #fff; text-shadow: 0 1px 10px rgba(10,22,40,.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Top-right badge stack — match % + Featured. */
+.cardTopBadges { position: absolute; top: 12px; right: 12px; z-index: 2; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.cardMatch { background: #FFE500; color: #0A1628; font-weight: 700; font-size: 11px; letter-spacing: .03em; padding: 4px 9px; border-radius: 999px; }
+.cardFeatured { background: rgba(10,22,40,.55); color: #FFE500; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255,229,0,.45); font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; }
 
 .cardContent { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 16px 16px 15px; color: #fff; display: flex; flex-direction: column; gap: 7px; }
 .cardCompanyRow { display: flex; align-items: center; gap: 9px; min-width: 0; }

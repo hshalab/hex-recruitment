@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import SignedLink from '@/components/SignedLink'
-import BrandedJobFallback from '@/components/BrandedJobFallback'
+import { fallbackVariant } from '@/lib/jobBanner'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
@@ -675,6 +675,11 @@ function CandidatesContent() {
               const score = matchScores[candidate.id] || 0
               const availColor = getAvailabilityColor(candidate.availability)
               const boosted = boostedProfileIds.has(candidate.id)
+              const v = fallbackVariant(candidate.id || candidate.fullName || 'thrive')
+              // Phase 3 (separate, with moderation): a candidate work-photo will
+              // render as the faded card background. Until then this is always
+              // null, so every card falls back to the simplified branded panel.
+              const cardPhoto: string | null = null
               return (
                 <div
                   key={candidate.id}
@@ -684,17 +689,32 @@ function CandidatesContent() {
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && selectCandidate(candidate)}
                 >
-                  <BrandedJobFallback company={candidate.fullName} seed={candidate.id} />
+                  {cardPhoto ? (
+                    <div className={styles.cardPhotoBg} style={{ backgroundImage: `url(${cardPhoto})` }} aria-hidden="true" />
+                  ) : (
+                    <div
+                      className={styles.cardBackdrop}
+                      style={{ ['--fb-angle' as any]: `${v.angle}deg`, ['--fb-glow-x' as any]: `${v.glowX}%` }}
+                      aria-hidden="true"
+                    />
+                  )}
                   <div className={styles.cardScrim} aria-hidden="true" />
 
-                  {score > 0 && <span className={styles.cardMatch}>{score}% match</span>}
-                  {boosted && <span className={styles.cardFeatured}>⚡ Featured</span>}
-
-                  <div className={styles.cardContent}>
-                    <div className={styles.cardCompanyRow}>
-                      <span className={styles.cardChip}>{initials}</span>
-                      <span className={styles.cardCompany}>{candidate.fullName}</span>
+                  {(score > 0 || boosted) && (
+                    <div className={styles.cardTopBadges}>
+                      {score > 0 && <span className={styles.cardMatch}>{score}% match</span>}
+                      {boosted && <span className={styles.cardFeatured}>⚡ Featured</span>}
                     </div>
+                  )}
+
+                  {/* Identity — top-left */}
+                  <div className={styles.cardIdentity}>
+                    <span className={styles.cardChip}>{initials}</span>
+                    <span className={styles.cardIdentityName}>{candidate.fullName}</span>
+                  </div>
+
+                  {/* Content — bottom */}
+                  <div className={styles.cardContent}>
                     <h3 className={styles.cardRole}>{candidate.jobTitle}</h3>
                     {candidate.headline && <p className={styles.cardHeadline}>{candidate.headline}</p>}
                     <div className={styles.cardMeta}>
