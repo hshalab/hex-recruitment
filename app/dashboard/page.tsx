@@ -449,6 +449,21 @@ export default function DashboardPage() {
       setPhotoUploading(false)
     }
   }
+  const handlePhotoRemove = async () => {
+    if (!user?.id || !dashboardPhotoUrl) return
+    if (!window.confirm('Remove your profile photo?')) return
+    setPhotoUploading(true)
+    try {
+      const { error } = await supabase.from('candidate_profiles').update({ dashboard_photo_url: null }).eq('user_id', user.id)
+      if (error) throw error
+      setDashboardPhotoUrl(null)
+    } catch (err) {
+      console.error('Dashboard photo remove failed:', err)
+      alert('Could not remove your photo. Please try again.')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
 
   // Profile completion. The "photo" field tracks the dashboard photo
   // (dashboard_photo_url) since that's what the candidate sets here.
@@ -686,27 +701,38 @@ export default function DashboardPage() {
       <div className={styles.dashboardWrap}>
         {/* ── 1. WELCOME HEADER ──────────────────────────────── */}
         <div className={styles.welcomeHeader}>
-          <button
-            type="button"
-            className={styles.avatarEditable}
-            onClick={triggerPhotoUpload}
-            disabled={photoUploading}
-            aria-label="Change your profile photo"
-            title="Change your profile photo"
-          >
-            {dashboardPhotoUrl ? (
-              <SignedImage src={dashboardPhotoUrl} alt={displayName} className={styles.avatar} />
-            ) : (
-              <div className={styles.avatarPlaceholder}>{getInitials(displayName)}</div>
-            )}
-            <span className={styles.avatarOverlay} aria-hidden="true">
-              {photoUploading ? (
-                <span className={styles.avatarSpinner} />
+          <div className={styles.avatarWrap}>
+            <button
+              type="button"
+              className={styles.avatarEditable}
+              onClick={triggerPhotoUpload}
+              disabled={photoUploading}
+              aria-label={dashboardPhotoUrl ? 'Change your profile photo' : 'Add a profile photo'}
+              title={dashboardPhotoUrl ? 'Change your profile photo' : 'Add a profile photo'}
+            >
+              {dashboardPhotoUrl ? (
+                <SignedImage src={dashboardPhotoUrl} alt={displayName} className={styles.avatar} />
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <div className={styles.avatarPlaceholder}>{getInitials(displayName)}</div>
               )}
-            </span>
-          </button>
+              <span className={styles.avatarOverlay} aria-hidden="true">
+                {photoUploading ? (
+                  <span className={styles.avatarSpinner} />
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                )}
+              </span>
+            </button>
+            {dashboardPhotoUrl && !photoUploading && (
+              <button
+                type="button"
+                className={styles.avatarRemove}
+                onClick={handlePhotoRemove}
+                aria-label="Remove your profile photo"
+                title="Remove photo"
+              >✕</button>
+            )}
+          </div>
           <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
           <div className={styles.welcomeText}>
             <h1>{getGreeting()}, {displayName.split(' ')[0]}</h1>

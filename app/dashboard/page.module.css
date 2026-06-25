@@ -24,6 +24,12 @@
 /* Editable dashboard avatar — clickable, with a hover/upload overlay. The
    photo here writes to dashboard_photo_url (dashboard-only); employers never
    see it. */
+.avatarWrap {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
 .avatarEditable {
   position: relative;
   width: 64px;
@@ -36,6 +42,27 @@
   flex-shrink: 0;
   display: block;
 }
+/* Remove-photo badge — only shown when a photo is set. */
+.avatarRemove {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #1e293b;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 2;
+}
+.avatarRemove:hover { background: #dc2626; }
 .avatarEditable:disabled { cursor: default; }
 .avatarOverlay {
   position: absolute;
