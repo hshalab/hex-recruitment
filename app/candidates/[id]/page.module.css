@@ -1253,3 +1253,16 @@
     flex-direction: column;
   }
 }
+
+/* Shared-detail panel — wraps <CandidateDetail> on the full-profile page. */
+.detailPanel {
+  background: #fff;
+  border: 1px solid var(--border-gray, #e5e7eb);
+  border-radius: 14px;
+  padding: 1.5rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+@media (max-width: 600px) {
+  .detailPanel { padding: 1.1rem; border-radius: 12px; }
+}

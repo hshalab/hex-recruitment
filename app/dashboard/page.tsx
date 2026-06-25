@@ -25,6 +25,7 @@ const ProfileBoostPaymentModal = dynamic(() => import('@/components/ProfileBoost
   loading: () => null,
 })
 import SignedImage from '@/components/SignedImage'
+import CandidateCard from '@/components/CandidateCard'
 import styles from './page.module.css'
 
 // ── Helpers ─────────────────────────────────────────────
@@ -167,6 +168,7 @@ export default function DashboardPage() {
   // Candidate type) so it can never be read/rendered by employer surfaces.
   const [dashboardPhotoUrl, setDashboardPhotoUrl] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
+  const [isDiscoverable, setIsDiscoverable] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   // Application data
@@ -280,6 +282,7 @@ export default function DashboardPage() {
         if (profileData) {
           setCandidate(supabaseProfileToCandidate(profileData))
           setDashboardPhotoUrl(profileData.dashboard_photo_url || null)
+          setIsDiscoverable(!!profileData.is_discoverable)
         } else {
           // Try employees table as fallback
           const { data: empData } = await supabase
@@ -462,6 +465,18 @@ export default function DashboardPage() {
       alert('Could not remove your photo. Please try again.')
     } finally {
       setPhotoUploading(false)
+    }
+  }
+  // "Make my profile visible to employers" → writes is_discoverable (default
+  // false). Optimistic; reverts on error.
+  const handleToggleDiscoverable = async (next: boolean) => {
+    if (!user?.id) return
+    setIsDiscoverable(next)
+    const { error } = await supabase.from('candidate_profiles').update({ is_discoverable: next }).eq('user_id', user.id)
+    if (error) {
+      console.error('Visibility toggle failed:', error)
+      setIsDiscoverable(!next)
+      alert('Could not update your visibility. Please try again.')
     }
   }
 
@@ -691,6 +706,14 @@ export default function DashboardPage() {
 
   const displayName = candidate?.fullName || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'there'
 
+  // Incomplete-field prompts for the dashboard card. Photo opens the inline
+  // uploader; everything else deep-links to the right /profile section.
+  const cardMissing = missingFields.map(f => ({
+    key: f.key,
+    label: f.label.replace(/\s*\(.*\)/, ''),
+    onAdd: f.key === 'photo' ? triggerPhotoUpload : () => router.push(f.link),
+  })).slice(0, 6)
+
   // ═════════════════════════════════════════════════════════
   // RENDER
   // ═════════════════════════════════════════════════════════
@@ -699,99 +722,44 @@ export default function DashboardPage() {
       <Header />
 
       <div className={styles.dashboardWrap}>
-        {/* ── 1. WELCOME HEADER ──────────────────────────────── */}
-        <div className={styles.welcomeHeader}>
-          <div className={styles.avatarWrap}>
-            <button
-              type="button"
-              className={styles.avatarEditable}
-              onClick={triggerPhotoUpload}
-              disabled={photoUploading}
-              aria-label={dashboardPhotoUrl ? 'Change your profile photo' : 'Add a profile photo'}
-              title={dashboardPhotoUrl ? 'Change your profile photo' : 'Add a profile photo'}
-            >
-              {dashboardPhotoUrl ? (
-                <SignedImage src={dashboardPhotoUrl} alt={displayName} className={styles.avatar} />
-              ) : (
-                <div className={styles.avatarPlaceholder}>{getInitials(displayName)}</div>
-              )}
-              <span className={styles.avatarOverlay} aria-hidden="true">
-                {photoUploading ? (
-                  <span className={styles.avatarSpinner} />
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                )}
-              </span>
-            </button>
-            {dashboardPhotoUrl && !photoUploading && (
-              <button
-                type="button"
-                className={styles.avatarRemove}
-                onClick={handlePhotoRemove}
-                aria-label="Remove your profile photo"
-                title="Remove photo"
-              >✕</button>
-            )}
+        {/* ── 1. LIGHT GREETING (no boxed header band) ────────── */}
+        <div className={styles.greetingRow}>
+          <div>
+            <h1 className={styles.greeting}>{getGreeting()}, {displayName.split(' ')[0]}</h1>
+            <p className={styles.greetingSub}>{candidate?.jobTitle || 'Job Seeker'}{candidate?.location ? ` · ${candidate.location}` : ''}</p>
           </div>
-          <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
-          <div className={styles.welcomeText}>
-            <h1>{getGreeting()}, {displayName.split(' ')[0]}</h1>
-            <p>{candidate?.jobTitle || 'Job Seeker'} {candidate?.location ? `in ${candidate.location}` : ''}</p>
-          </div>
-          <div className={styles.welcomeActions}>
+          <div className={styles.greetingActions}>
             <Link href="/jobs" className={styles.welcomeActionPrimary}>Browse Jobs</Link>
             <Link href="/profile" className={styles.welcomeActionSecondary}>Edit Profile</Link>
           </div>
         </div>
+        <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
 
         <div className={styles.grid}>
           {/* ════════════════════ LEFT COLUMN ═════════════════ */}
           <div className={styles.colLeft}>
 
-            {/* ── 2. PROFILE COMPLETION ────────────────────── */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Your profile</h2>
-                <Link href="/profile" className={styles.cardLink}>Edit Profile</Link>
-              </div>
-              <div className={styles.cardBody}>
-                <div className={styles.progressRow}>
-                  <CircleProgress pct={completionPct} />
-                  <div className={styles.progressInfo}>
-                    <h3>{completionPct === 100 ? 'Profile complete!' : 'Complete your profile'}</h3>
-                    <p>
-                      {completionPct === 100
-                        ? 'Your profile is fully complete — you stand out to employers.'
-                        : 'Complete your profile and boost your chances of landing the right role.'}
-                    </p>
-                    <span className={styles.progressCount}>
-                      {PROFILE_FIELDS.length - missingFields.length} of {PROFILE_FIELDS.length} fields completed
-                    </span>
-                  </div>
+            {/* ── 2. YOUR PROFILE — shared dual-mode card (dashboard) ── */}
+            {candidate ? (
+              <CandidateCard
+                candidate={candidate}
+                mode="dashboard"
+                dashboardPhotoUrl={dashboardPhotoUrl}
+                photoUploading={photoUploading}
+                onPhotoClick={triggerPhotoUpload}
+                onPhotoRemove={handlePhotoRemove}
+                completionPct={completionPct}
+                missingFields={cardMissing}
+                isDiscoverable={isDiscoverable}
+                onToggleDiscoverable={handleToggleDiscoverable}
+              />
+            ) : (
+              <div className={styles.card}>
+                <div className={styles.cardBody}>
+                  <p>Set up your profile so employers can find you. <Link href="/profile" className={styles.cardLink}>Get started &rarr;</Link></p>
                 </div>
-
-                {missingFields.length > 0 && (
-                  <div className={styles.missingFields}>
-                    {missingFields.slice(0, 4).map(f => (
-                      <div key={f.key} className={styles.missingItem}>
-                        <span>{f.label}</span>
-                        {f.key === 'photo' ? (
-                          <button type="button" className={styles.missingAddBtn} onClick={triggerPhotoUpload}>Add &rarr;</button>
-                        ) : (
-                          <Link href={f.link}>Add &rarr;</Link>
-                        )}
-                      </div>
-                    ))}
-                    {missingFields.length > 4 && (
-                      <div className={styles.missingItem}>
-                        <span>+ {missingFields.length - 4} more fields</span>
-                        <Link href="/profile">Complete &rarr;</Link>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
-            </div>
+            )}
 
             {/* ── 3. APPLICATION TRACKER ───────────────────── */}
             <div className={styles.card}>

@@ -1170,3 +1170,12 @@
     padding: 1rem;
   }
 }
+
+/* ── Light greeting row (replaces the heavy dark welcome band) ── */
+.greetingRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.greeting { font-size: 1.5rem; font-weight: 800; color: var(--text-dark, #0f172a); margin: 0; }
+.greetingSub { font-size: 0.9rem; color: var(--text-gray, #64748b); margin: 0.15rem 0 0; }
+.greetingActions { display: flex; gap: 0.6rem; }
+.greetingActions .welcomeActionSecondary { background: #fff; color: var(--text-dark, #1e293b); border: 1px solid var(--border-gray, #e2e8f0); }
+.greetingActions .welcomeActionSecondary:hover { background: #f8fafc; }
+@media (max-width: 600px) { .greeting { font-size: 1.3rem; } }

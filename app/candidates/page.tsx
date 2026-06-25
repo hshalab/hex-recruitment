@@ -7,6 +7,9 @@ import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import SignedLink from '@/components/SignedLink'
 import { fallbackVariant } from '@/lib/jobBanner'
+import CandidateCard from '@/components/CandidateCard'
+import CandidateDetail from '@/components/CandidateDetail'
+import { DEFAULT_VISIBILITY, resolveVisibility, type VisibilitySettings } from '@/lib/profileVisibility'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
@@ -158,6 +161,7 @@ function CandidatesContent() {
   const [isEmployer, setIsEmployer] = useState(false)
   const [hasSubscription, setHasSubscription] = useState(false)
   const [allCandidates, setAllCandidates] = useState<Candidate[]>([])
+  const [visibilityMap, setVisibilityMap] = useState<Map<string, VisibilitySettings>>(new Map())
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [boostedProfileIds, setBoostedProfileIds] = useState<Set<string>>(new Set())
@@ -284,14 +288,17 @@ function CandidatesContent() {
         return
       }
 
-      // Fetch candidates only after auth + subscription confirmed
+      // Fetch candidates only after auth + subscription confirmed. is_discoverable
+      // gates this proactive browse — candidates who haven't opted in are hidden.
       const { data, error } = await supabase
         .from('candidate_profiles')
         .select('*')
+        .eq('is_discoverable', true)
         .limit(200)
       if (!error && data) {
         const candidates = data.map(supabaseProfileToCandidate)
         setAllCandidates(candidates)
+        setVisibilityMap(new Map(data.map((r: any) => [r.user_id || r.id, resolveVisibility(r.visibility_settings)])))
 
         // If jobId param is present, fetch job and compute match scores
         const jobIdParam = searchParams.get('jobId')
@@ -671,71 +678,15 @@ function CandidatesContent() {
         {filteredCandidates.length > 0 ? (
           <div className={styles.cardsGrid} ref={listRef}>
             {filteredCandidates.map(candidate => {
-              const initials = candidate.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-              const score = matchScores[candidate.id] || 0
-              const availColor = getAvailabilityColor(candidate.availability)
-              const boosted = boostedProfileIds.has(candidate.id)
-              const v = fallbackVariant(candidate.id || candidate.fullName || 'thrive')
-              // Phase 3 (separate, with moderation): a candidate work-photo will
-              // render as the faded card background. Until then this is always
-              // null, so every card falls back to the simplified branded panel.
-              const cardPhoto: string | null = null
               return (
-                <div
+                <CandidateCard
                   key={candidate.id}
-                  className={`${styles.candidateCard} ${boosted ? styles.candidateCardBoosted : ''}`}
-                  onClick={() => selectCandidate(candidate)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && selectCandidate(candidate)}
-                >
-                  <div
-                    className={styles.cardBackdrop}
-                    style={{ ['--fb-angle' as any]: `${v.angle}deg`, ['--fb-glow-x' as any]: `${v.glowX}%` }}
-                    aria-hidden="true"
-                  >
-                    {cardPhoto ? (
-                      <div className={styles.cardPhotoBg} style={{ backgroundImage: `url(${cardPhoto})` }} />
-                    ) : (
-                      <span className={styles.cardGhostInitials}>{initials}</span>
-                    )}
-                  </div>
-                  <div className={styles.cardScrim} aria-hidden="true" />
-
-                  {(score > 0 || boosted) && (
-                    <div className={styles.cardTopBadges}>
-                      {score > 0 && <span className={styles.cardMatch}>{score}% match</span>}
-                      {boosted && <span className={styles.cardFeatured}>⚡ Featured</span>}
-                    </div>
-                  )}
-
-                  {/* Identity — top-left */}
-                  <div className={styles.cardIdentity}>
-                    <span className={styles.cardChip}>{initials}</span>
-                    <span className={styles.cardIdentityName}>{candidate.fullName}</span>
-                  </div>
-
-                  {/* Content — bottom */}
-                  <div className={styles.cardContent}>
-                    <h3 className={styles.cardRole}>{candidate.jobTitle}</h3>
-                    {candidate.headline && <p className={styles.cardHeadline}>{candidate.headline}</p>}
-                    <div className={styles.cardMeta}>
-                      {candidate.location && <span>{candidate.location}</span>}
-                      {candidate.location && <span className={styles.cardDot}>·</span>}
-                      <span>{candidate.yearsExperience} yrs exp</span>
-                    </div>
-                    <div className={styles.cardBadges}>
-                      {candidate.availability && (
-                        <span className={`${styles.cardBadge} ${styles.cardAvail} ${styles[`cardAvail_${availColor}`]}`}>
-                          <span className={styles.cardAvailDot} />{candidate.availability}
-                        </span>
-                      )}
-                      {(candidate.specialties && candidate.specialties.length > 0 ? candidate.specialties : candidate.skills).slice(0, 2).map((tag, i) => (
-                        <span key={i} className={styles.cardBadge}>{tag}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                  candidate={candidate}
+                  mode="employer"
+                  matchScore={matchScores[candidate.id] || undefined}
+                  featured={boostedProfileIds.has(candidate.id)}
+                  onOpen={() => selectCandidate(candidate)}
+                />
               )
             })}
           </div>
@@ -769,341 +720,7 @@ function CandidatesContent() {
               <button className={styles.modalClose} onClick={() => setSelectedCandidate(null)} aria-label="Close">✕</button>
             </div>
             <div className={styles.modalBody}>
-                <div className={styles.detailInner}>
-                  {/* Profile Header */}
-                  <div className={styles.detailProfileHeader}>
-                    <div className={styles.detailHeaderContent}>
-                      <div className={styles.detailAvatar}>
-                        {selectedCandidate.profilePictureUrl ? (
-                          <SignedImage src={selectedCandidate.profilePictureUrl} alt={selectedCandidate.fullName} />
-                        ) : (
-                          <span className={styles.detailAvatarPlaceholder}>
-                            {selectedCandidate.fullName.split(' ').map(n => n[0]).join('')}
-                          </span>
-                        )}
-                      </div>
-                      <div className={styles.detailHeaderInfo}>
-                        <h1 className={styles.detailName}>{selectedCandidate.fullName}</h1>
-                        <p className={styles.detailTitle}>{selectedCandidate.jobTitle}</p>
-                        {selectedCandidate.headline && <p className={styles.detailHeadline}>{selectedCandidate.headline}</p>}
-                        <div className={styles.detailHeaderMeta}>
-                          {selectedCandidate.location && (
-                            <span className={styles.detailMetaItem}>
-                              <MapPin size={15} />
-                              {selectedCandidate.location}
-                            </span>
-                          )}
-                          {selectedCandidate.yearsExperience != null && (
-                            <span className={styles.detailMetaItem}>
-                              <Clock size={15} />
-                              {selectedCandidate.yearsExperience} years experience
-                            </span>
-                          )}
-                          {selectedCandidate.availability && (
-                            <span className={`${styles.detailAvailBadge} ${styles[`detailAvail_${getAvailabilityColor(selectedCandidate.availability)}`]}`}>
-                              <span className={styles.detailAvailDot} />
-                              {selectedCandidate.availability}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Quick Stats */}
-                    {(selectedCandidate.jobSector || (selectedCandidate.preferredJobTypes && selectedCandidate.preferredJobTypes.length > 0) || (selectedCandidate.workLocationPreferences && selectedCandidate.workLocationPreferences.length > 0)) && (
-                      <div className={styles.detailQuickStats}>
-                        {selectedCandidate.jobSector && (
-                          <div className={styles.detailQuickStat}>
-                            <span className={styles.detailQuickStatLabel}>Sector</span>
-                            <span className={styles.detailQuickStatValue}>{JOB_SECTOR_LABELS[selectedCandidate.jobSector] || selectedCandidate.jobSector}</span>
-                          </div>
-                        )}
-                        {selectedCandidate.preferredJobTypes && selectedCandidate.preferredJobTypes.length > 0 && (
-                          <div className={styles.detailQuickStat}>
-                            <span className={styles.detailQuickStatLabel}>Work Type</span>
-                            <span className={styles.detailQuickStatValue}>{selectedCandidate.preferredJobTypes.join(', ')}</span>
-                          </div>
-                        )}
-                        {selectedCandidate.workLocationPreferences && selectedCandidate.workLocationPreferences.length > 0 && (
-                          <div className={styles.detailQuickStat}>
-                            <span className={styles.detailQuickStatLabel}>Work Location</span>
-                            <span className={styles.detailQuickStatValue}>{selectedCandidate.workLocationPreferences.join(', ')}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className={styles.detailActions}>
-                    <Link href={`/messages?candidate=${selectedCandidate.id}`} className={styles.detailActionBtnPrimary}>
-                      <MessageSquare size={16} />
-                      Message
-                    </Link>
-                    {selectedCandidate.cvUrl ? (
-                      <SignedLink src={selectedCandidate.cvUrl} download className={styles.detailActionBtn}>
-                        <FileDown size={16} />
-                        Download CV
-                      </SignedLink>
-                    ) : (
-                      <button className={styles.detailActionBtn} disabled>
-                        <FileDown size={16} />
-                        No CV
-                      </button>
-                    )}
-                    <Link href={`/candidates/${selectedCandidate.id}`} className={styles.detailActionBtn}>
-                      View Full Profile
-                    </Link>
-                  </div>
-
-                  {/* About Me */}
-                  {selectedCandidate.bio && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <User size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>About Me</h2>
-                      </div>
-                      <p className={styles.detailBio}>{selectedCandidate.bio}</p>
-                    </div>
-                  )}
-
-                  {/* Work Experience */}
-                  {selectedCandidate.workHistory && selectedCandidate.workHistory.length > 0 && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <Briefcase size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>Work Experience</h2>
-                      </div>
-                      <div className={styles.detailTimeline}>
-                        {selectedCandidate.workHistory.map((job, index) => (
-                          <div key={index} className={styles.detailTimelineItem}>
-                            <div className={styles.detailTimelineTrack}>
-                              <div className={styles.detailTimelineDot} />
-                              {index < selectedCandidate.workHistory.length - 1 && <div className={styles.detailTimelineLine} />}
-                            </div>
-                            <div className={styles.detailTimelineBody}>
-                              <h3 className={styles.detailTimelineRole}>{job.title}</h3>
-                              <p className={styles.detailTimelineCompany}>{job.company} &bull; {job.location}</p>
-                              <p className={styles.detailTimelineDates}>{job.startDate} — {job.endDate || 'Present'}</p>
-                              {job.description && <p className={styles.detailTimelineDesc}>{job.description}</p>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Strengths (specialties) */}
-                  {selectedCandidate.specialties && selectedCandidate.specialties.length > 0 && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <Award size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>Strengths</h2>
-                      </div>
-                      <div className={styles.detailSkillsGrid}>
-                        {selectedCandidate.specialties.map((s, index) => (
-                          <span key={index} className={styles.detailSkillPill}>{s}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Notable venues */}
-                  {selectedCandidate.notableVenues && selectedCandidate.notableVenues.length > 0 && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <MapPin size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>Notable venues</h2>
-                      </div>
-                      <div className={styles.detailSkillsGrid}>
-                        {selectedCandidate.notableVenues.map((v, index) => (
-                          <span key={index} className={styles.detailSkillPill}>{v}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Skills */}
-                  {selectedCandidate.skills && selectedCandidate.skills.length > 0 && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <Wrench size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>Skills</h2>
-                      </div>
-                      <div className={styles.detailSkillsGrid}>
-                        {selectedCandidate.skills.map((skill, index) => (
-                          <span key={index} className={styles.detailSkillPill}>{skill}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Education */}
-                  {selectedCandidate.education && selectedCandidate.education.length > 0 && selectedCandidate.education.some(edu => edu.institution || edu.qualification) && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <GraduationCap size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>Education</h2>
-                      </div>
-                      <div className={styles.detailTimeline}>
-                        {selectedCandidate.education.filter(edu => edu.institution || edu.qualification).map((edu, index, arr) => (
-                          <div key={index} className={styles.detailTimelineItem}>
-                            <div className={styles.detailTimelineTrack}>
-                              <div className={styles.detailTimelineDot} />
-                              {index < arr.length - 1 && <div className={styles.detailTimelineLine} />}
-                            </div>
-                            <div className={styles.detailTimelineBody}>
-                              <h3 className={styles.detailTimelineRole}>{edu.qualification}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}</h3>
-                              <p className={styles.detailTimelineCompany}>{edu.institution}{edu.grade ? ` • ${edu.grade}` : ''}</p>
-                              <p className={styles.detailTimelineDates}>{edu.startDate} — {edu.inProgress ? 'In Progress' : (edu.endDate || 'N/A')}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Languages */}
-                  {selectedCandidate.languages && selectedCandidate.languages.length > 0 && selectedCandidate.languages.some(lang => lang.name) && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <Globe size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>Languages</h2>
-                      </div>
-                      <div className={styles.detailSkillsGrid}>
-                        {selectedCandidate.languages.filter(lang => lang.name).map((lang, index) => (
-                          <span key={index} className={styles.detailLangPill}>
-                            {lang.name} <span className={styles.detailLangLevel}>({lang.proficiency})</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Certifications */}
-                  {selectedCandidate.certifications && selectedCandidate.certifications.length > 0 && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <Award size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>Certifications</h2>
-                      </div>
-                      <ul className={styles.detailCertList}>
-                        {selectedCandidate.certifications.map((cert, index) => (
-                          <li key={index} className={styles.detailCertItem}>
-                            <span className={styles.detailCertCheck}>✓</span>
-                            {cert}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Preferences */}
-                  {(selectedCandidate.preferredLocations || selectedCandidate.preferredJobTypes || selectedCandidate.salaryMin || selectedCandidate.salaryMax || selectedCandidate.desiredSalary) && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <Sliders size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>Preferences</h2>
-                      </div>
-                      <div className={styles.detailPrefGrid}>
-                        {(selectedCandidate.salaryMin || selectedCandidate.salaryMax || selectedCandidate.desiredSalary) && (
-                          <div className={styles.detailPrefRow}>
-                            <span className={styles.detailPrefLabel}>Desired Salary</span>
-                            <span className={styles.detailPrefValue}>
-                              {selectedCandidate.salaryMin && selectedCandidate.salaryMax ? (
-                                <>£{Number(selectedCandidate.salaryMin).toLocaleString()} – £{Number(selectedCandidate.salaryMax).toLocaleString()}{selectedCandidate.salaryPeriod === 'hour' ? '/hour' : '/year'}</>
-                              ) : selectedCandidate.desiredSalary ? (
-                                <>£{Number(selectedCandidate.desiredSalary).toLocaleString()}{selectedCandidate.salaryPeriod === 'hour' ? '/hour' : '/year'}</>
-                              ) : selectedCandidate.salaryMin ? (
-                                <>From £{Number(selectedCandidate.salaryMin).toLocaleString()}{selectedCandidate.salaryPeriod === 'hour' ? '/hour' : '/year'}</>
-                              ) : (
-                                <>Up to £{Number(selectedCandidate.salaryMax).toLocaleString()}{selectedCandidate.salaryPeriod === 'hour' ? '/hour' : '/year'}</>
-                              )}
-                            </span>
-                          </div>
-                        )}
-                        {selectedCandidate.preferredJobTypes && selectedCandidate.preferredJobTypes.length > 0 && (
-                          <div className={styles.detailPrefRow}>
-                            <span className={styles.detailPrefLabel}>Work Type</span>
-                            <span className={styles.detailPrefValue}>{selectedCandidate.preferredJobTypes.join(', ')}</span>
-                          </div>
-                        )}
-                        {selectedCandidate.workLocationPreferences && selectedCandidate.workLocationPreferences.length > 0 && (
-                          <div className={styles.detailPrefRow}>
-                            <span className={styles.detailPrefLabel}>Work Location</span>
-                            <span className={styles.detailPrefValue}>{selectedCandidate.workLocationPreferences.join(', ')}</span>
-                          </div>
-                        )}
-                        {selectedCandidate.preferredLocations && (
-                          <div className={styles.detailPrefRow}>
-                            <span className={styles.detailPrefLabel}>Preferred Areas</span>
-                            <span className={styles.detailPrefValue}>{selectedCandidate.preferredLocations}</span>
-                          </div>
-                        )}
-                        {selectedCandidate.availability && (
-                          <div className={styles.detailPrefRow}>
-                            <span className={styles.detailPrefLabel}>Availability</span>
-                            <span className={styles.detailPrefValue}>{selectedCandidate.availability}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Interests & Hobbies */}
-                  {(selectedCandidate.personalBio || (selectedCandidate.interests && selectedCandidate.interests.length > 0)) && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <Heart size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>Interests & Hobbies</h2>
-                      </div>
-                      {selectedCandidate.personalBio && <p className={styles.detailBio}>{selectedCandidate.personalBio}</p>}
-                      {selectedCandidate.interests && selectedCandidate.interests.length > 0 && (
-                        <div className={styles.detailInterestsTags} style={selectedCandidate.personalBio ? { marginTop: '0.75rem' } : undefined}>
-                          {selectedCandidate.interests.map((interest, index) => (
-                            <span key={index} className={styles.detailInterestTag}>{interest}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Verified Documents */}
-                  {(selectedCandidate.hasNiNumber || selectedCandidate.hasBankAccount || selectedCandidate.hasRightToWork || selectedCandidate.hasP45) && (
-                    <div className={styles.detailSection}>
-                      <div className={styles.detailSectionHeader}>
-                        <Award size={18} className={styles.detailSectionIcon} />
-                        <h2 className={styles.detailSectionTitle}>Verified Documents</h2>
-                      </div>
-                      <div className={styles.detailVerificationBadges}>
-                        {selectedCandidate.hasNiNumber && (
-                          <div className={styles.detailVerificationBadge}>
-                            <span className={styles.detailBadgeCheck}>✓</span>
-                            NI Number
-                          </div>
-                        )}
-                        {selectedCandidate.hasBankAccount && (
-                          <div className={styles.detailVerificationBadge}>
-                            <span className={styles.detailBadgeCheck}>✓</span>
-                            UK Bank Account
-                          </div>
-                        )}
-                        {selectedCandidate.hasRightToWork && (
-                          <div className={styles.detailVerificationBadge}>
-                            <span className={styles.detailBadgeCheck}>✓</span>
-                            Right to Work
-                          </div>
-                        )}
-                        {selectedCandidate.hasP45 && (
-                          <div className={styles.detailVerificationBadge}>
-                            <span className={styles.detailBadgeCheck}>✓</span>
-                            P45 Available
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <CandidateDetail candidate={selectedCandidate} visibility={visibilityMap.get(selectedCandidate.id) ?? DEFAULT_VISIBILITY} />
               </div>
             </div>
           </>
