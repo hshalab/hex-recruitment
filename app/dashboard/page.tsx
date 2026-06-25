@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -163,6 +163,11 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [candidate, setCandidate] = useState<Candidate | null>(null)
   const [loading, setLoading] = useState(true)
+  // Dashboard-only profile photo — kept in local state (NOT on the shared
+  // Candidate type) so it can never be read/rendered by employer surfaces.
+  const [dashboardPhotoUrl, setDashboardPhotoUrl] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   // Application data
   const [applications, setApplications] = useState<any[]>([])
@@ -274,6 +279,7 @@ export default function DashboardPage() {
 
         if (profileData) {
           setCandidate(supabaseProfileToCandidate(profileData))
+          setDashboardPhotoUrl(profileData.dashboard_photo_url || null)
         } else {
           // Try employees table as fallback
           const { data: empData } = await supabase
@@ -418,14 +424,42 @@ export default function DashboardPage() {
 
   // ── Derived data ────────────────────────────────────────
 
-  // Profile completion
+  // Dashboard-only profile photo upload. Stores the storage PATH (rendered via
+  // SignedImage) on candidate_profiles.dashboard_photo_url — a column read ONLY
+  // here, never on any employer surface, so the hard constraint holds.
+  const triggerPhotoUpload = () => photoInputRef.current?.click()
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !user?.id) return
+    if (!file.type.startsWith('image/')) { alert('Please choose an image file.'); return }
+    setPhotoUploading(true)
+    try {
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `photos/${user.id}/dashboard-${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('profiles').upload(path, file, { contentType: file.type, upsert: true })
+      if (upErr) throw upErr
+      const { error: dbErr } = await supabase.from('candidate_profiles').update({ dashboard_photo_url: path }).eq('user_id', user.id)
+      if (dbErr) throw dbErr
+      setDashboardPhotoUrl(path)
+    } catch (err) {
+      console.error('Dashboard photo upload failed:', err)
+      alert('Could not upload your photo. Please try again.')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  // Profile completion. The "photo" field tracks the dashboard photo
+  // (dashboard_photo_url) since that's what the candidate sets here.
   const { completionPct, missingFields } = useMemo(() => {
+    const check = (f: typeof PROFILE_FIELDS[number]) =>
+      f.key === 'photo' ? !!dashboardPhotoUrl : (candidate ? f.check(candidate) : false)
     if (!candidate) return { completionPct: 0, missingFields: PROFILE_FIELDS }
-    const completed = PROFILE_FIELDS.filter(f => f.check(candidate))
-    const pct = Math.round((completed.length / PROFILE_FIELDS.length) * 100)
-    const missing = PROFILE_FIELDS.filter(f => !f.check(candidate))
+    const pct = Math.round((PROFILE_FIELDS.filter(check).length / PROFILE_FIELDS.length) * 100)
+    const missing = PROFILE_FIELDS.filter(f => !check(f))
     return { completionPct: pct, missingFields: missing }
-  }, [candidate])
+  }, [candidate, dashboardPhotoUrl])
 
   // Application counts by status
   const statusCounts = useMemo(() => {
@@ -652,11 +686,28 @@ export default function DashboardPage() {
       <div className={styles.dashboardWrap}>
         {/* ── 1. WELCOME HEADER ──────────────────────────────── */}
         <div className={styles.welcomeHeader}>
-          {candidate?.profilePictureUrl ? (
-            <SignedImage src={candidate.profilePictureUrl} alt={displayName} className={styles.avatar} />
-          ) : (
-            <div className={styles.avatarPlaceholder}>{getInitials(displayName)}</div>
-          )}
+          <button
+            type="button"
+            className={styles.avatarEditable}
+            onClick={triggerPhotoUpload}
+            disabled={photoUploading}
+            aria-label="Change your profile photo"
+            title="Change your profile photo"
+          >
+            {dashboardPhotoUrl ? (
+              <SignedImage src={dashboardPhotoUrl} alt={displayName} className={styles.avatar} />
+            ) : (
+              <div className={styles.avatarPlaceholder}>{getInitials(displayName)}</div>
+            )}
+            <span className={styles.avatarOverlay} aria-hidden="true">
+              {photoUploading ? (
+                <span className={styles.avatarSpinner} />
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              )}
+            </span>
+          </button>
+          <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
           <div className={styles.welcomeText}>
             <h1>{getGreeting()}, {displayName.split(' ')[0]}</h1>
             <p>{candidate?.jobTitle || 'Job Seeker'} {candidate?.location ? `in ${candidate.location}` : ''}</p>
@@ -674,7 +725,7 @@ export default function DashboardPage() {
             {/* ── 2. PROFILE COMPLETION ────────────────────── */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Profile Completion</h2>
+                <h2 className={styles.cardTitle}>Your profile</h2>
                 <Link href="/profile" className={styles.cardLink}>Edit Profile</Link>
               </div>
               <div className={styles.cardBody}>
@@ -684,9 +735,12 @@ export default function DashboardPage() {
                     <h3>{completionPct === 100 ? 'Profile complete!' : 'Complete your profile'}</h3>
                     <p>
                       {completionPct === 100
-                        ? 'Your profile is fully complete. You stand out to employers!'
-                        : `${PROFILE_FIELDS.length - missingFields.length} of ${PROFILE_FIELDS.length} fields completed`}
+                        ? 'Your profile is fully complete — you stand out to employers.'
+                        : 'Complete your profile and boost your chances of landing the right role.'}
                     </p>
+                    <span className={styles.progressCount}>
+                      {PROFILE_FIELDS.length - missingFields.length} of {PROFILE_FIELDS.length} fields completed
+                    </span>
                   </div>
                 </div>
 
@@ -695,7 +749,11 @@ export default function DashboardPage() {
                     {missingFields.slice(0, 4).map(f => (
                       <div key={f.key} className={styles.missingItem}>
                         <span>{f.label}</span>
-                        <Link href={f.link}>Add &rarr;</Link>
+                        {f.key === 'photo' ? (
+                          <button type="button" className={styles.missingAddBtn} onClick={triggerPhotoUpload}>Add &rarr;</button>
+                        ) : (
+                          <Link href={f.link}>Add &rarr;</Link>
+                        )}
                       </div>
                     ))}
                     {missingFields.length > 4 && (
