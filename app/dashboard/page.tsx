@@ -726,7 +726,6 @@ export default function DashboardPage() {
         <div className={styles.greetingRow}>
           <div>
             <h1 className={styles.greeting}>{getGreeting()}, {displayName.split(' ')[0]}</h1>
-            <p className={styles.greetingSub}>{candidate?.jobTitle || 'Job Seeker'}{candidate?.location ? ` · ${candidate.location}` : ''}</p>
           </div>
           <div className={styles.greetingActions}>
             <Link href="/jobs" className={styles.welcomeActionPrimary}>Browse Jobs</Link>
