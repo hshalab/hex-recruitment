@@ -767,7 +767,7 @@ export default function DashboardPage() {
                 onToggleDiscoverable={handleToggleDiscoverable}
               />
             ) : (
-              <div className={styles.card}>
+              <div className={`${styles.card} ${styles.aYellow}`}>
                 <div className={styles.cardBody}>
                   <p>Set up your profile so employers can find you. <Link href="/profile" className={styles.cardLink}>Get started &rarr;</Link></p>
                 </div>
@@ -775,7 +775,7 @@ export default function DashboardPage() {
             )}
 
             {/* ── 3. APPLICATION TRACKER ───────────────────── */}
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aBlue}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Applications</h2>
                 <Link href="/applications" className={styles.cardLink}>View All</Link>
@@ -821,7 +821,7 @@ export default function DashboardPage() {
             </div>
 
             {/* ── 4. RECOMMENDED JOBS ─────────────────────── */}
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aViolet}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Recommended for You</h2>
                 <Link href="/jobs" className={styles.cardLink}>View All</Link>
@@ -864,7 +864,7 @@ export default function DashboardPage() {
             </div>
 
             {/* ── 5. CAREER INSIGHTS ─────────────────────── */}
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aCyan}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Career Insights</h2>
                 {candidate?.jobSector && (
@@ -1001,7 +1001,7 @@ export default function DashboardPage() {
             </div>
 
             {/* ── 6. ACTIVITY FEED ───────────────────────── */}
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aEmerald}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Activity</h2>
               </div>
@@ -1037,7 +1037,7 @@ export default function DashboardPage() {
           <div className={styles.colRight}>
 
             {/* ── 5. PROFILE VIEWS ────────────────────────── */}
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aGreen}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Profile Views</h2>
               </div>
@@ -1059,7 +1059,7 @@ export default function DashboardPage() {
             </div>
 
             {/* ── 6. MESSAGES ─────────────────────────────── */}
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aAmber}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>
                   Messages
@@ -1108,7 +1108,7 @@ export default function DashboardPage() {
             </div>
 
             {/* ── 7. BOOST STATUS ─────────────────────────── */}
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aYellow}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Profile Boost</h2>
               </div>
@@ -1137,7 +1137,7 @@ export default function DashboardPage() {
             </div>
 
             {/* ── 8. SAVED JOBS ───────────────────────────── */}
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aGrey}`}>
               <div className={styles.cardBody} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--black)' }}>{savedCount}</span>
@@ -1149,7 +1149,7 @@ export default function DashboardPage() {
 
             {/* ── 9. UPCOMING INTERVIEWS ──────────────────── */}
             {upcomingInterviews.length > 0 && (
-              <div className={styles.card}>
+              <div className={`${styles.card} ${styles.aCyan}`}>
                 <div className={styles.cardHeader}>
                   <h2 className={styles.cardTitle}>Upcoming Interviews</h2>
                   <Link href="/applications" className={styles.cardLink}>View all &rarr;</Link>
@@ -1191,7 +1191,7 @@ export default function DashboardPage() {
             )}
 
             {/* ── 10. NOTIFICATIONS ───────────────────────── */}
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aBlue}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Notifications</h2>
               </div>

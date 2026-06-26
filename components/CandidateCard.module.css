@@ -42,7 +42,7 @@
 
 /* ═══════════ DASHBOARD MODE — light card matching the platform scheme ═══════════ */
 /* White, bordered card (like the other dashboard cards) — overrides the navy .card shell. */
-.cardDashboard { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; }
+.cardDashboard { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; border-top: 3px solid #FFE500; }
 .dashInner { position: relative; z-index: 1; min-height: 340px; padding: 20px 22px 22px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; }
 
 /* Top row: identity (chip + name beside it) on the left, visibility toggle on the right. */

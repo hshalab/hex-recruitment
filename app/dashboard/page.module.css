@@ -202,10 +202,22 @@
 .card {
   background: #fff;
   border: 1px solid #e2e8f0;
+  border-top: 3px solid var(--card-accent, #e2e8f0);
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   overflow: hidden;
 }
+
+/* Per-section top accent — the pipeline stage palette, so each card is
+   colour-coded like the board columns. */
+.aBlue { --card-accent: #3b82f6; }
+.aViolet { --card-accent: #8b5cf6; }
+.aCyan { --card-accent: #06b6d4; }
+.aEmerald { --card-accent: #10b981; }
+.aGreen { --card-accent: #16a34a; }
+.aAmber { --card-accent: #f59e0b; }
+.aGrey { --card-accent: #6b7280; }
+.aYellow { --card-accent: #FFE500; }
 
 .cardHeader {
   display: flex;
