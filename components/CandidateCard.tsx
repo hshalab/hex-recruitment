@@ -137,7 +137,7 @@ export default function CandidateCard(props: {
                   <span className={styles.dashChipInitials}>{initials}</span>
                 )}
                 <span className={styles.dashChipOverlay} aria-hidden="true">
-                  {props.photoUploading ? <span className={styles.dashSpinner} /> : <Camera size={18} />}
+                  {props.photoUploading ? <span className={styles.dashSpinner} /> : <Camera size={24} />}
                 </span>
               </button>
               {props.dashboardPhotoUrl && !props.photoUploading && (
