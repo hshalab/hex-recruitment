@@ -748,6 +748,8 @@ export default function DashboardPage() {
                 onPhotoClick={triggerPhotoUpload}
                 onPhotoRemove={handlePhotoRemove}
                 completionPct={completionPct}
+                fieldsComplete={PROFILE_FIELDS.length - missingFields.length}
+                fieldsTotal={PROFILE_FIELDS.length}
                 missingFields={cardMissing}
                 isDiscoverable={isDiscoverable}
                 onToggleDiscoverable={handleToggleDiscoverable}

@@ -42,6 +42,8 @@ export default function CandidateCard(props: {
   onPhotoClick?: () => void
   onPhotoRemove?: () => void
   completionPct?: number
+  fieldsComplete?: number
+  fieldsTotal?: number
   missingFields?: MissingPrompt[]
   isDiscoverable?: boolean
   onToggleDiscoverable?: (next: boolean) => void
@@ -106,69 +108,86 @@ export default function CandidateCard(props: {
   }
 
   // ─────────── DASHBOARD MODE ───────────
+  // Compact card: identity top-left, toggle top-right, the completion bar as the
+  // centrepiece (no watermark), then employer-style data + Add to-dos at the
+  // bottom. Flows to its own height — no large empty centre.
+  const pct = Math.max(0, Math.min(100, Math.round(props.completionPct ?? 0)))
+  const showCount = props.fieldsTotal != null && props.fieldsComplete != null
   return (
     <div className={`${styles.card} ${styles.cardDashboard}`}>
-      <div className={styles.backdrop} style={bgVars} aria-hidden="true">
-        <span className={styles.ghostInitials}>{initials}</span>
-      </div>
+      <div className={styles.backdrop} style={bgVars} aria-hidden="true" />
       <div className={styles.scrim} aria-hidden="true" />
 
-      {/* Visibility toggle — compact, top-right (out of the card body) */}
-      <div className={styles.dashToggleCorner}>
-        <label className={styles.dashToggleCompact} title="When on, employers can find your profile in candidate search and contact you.">
-          <input
-            type="checkbox"
-            checked={!!props.isDiscoverable}
-            onChange={(e) => props.onToggleDiscoverable?.(e.target.checked)}
-          />
-          <span className={styles.dashToggleTrack}><span className={styles.dashToggleThumb} /></span>
-          <span className={styles.dashToggleLabel}>Visible to employers</span>
-        </label>
-      </div>
-
-      {/* Identity — top-left: editable photo chip + name (mirrors employer) */}
-      <div className={styles.identity}>
-        <span className={styles.dashChipWrap}>
-          <button
-            type="button"
-            className={styles.dashChip}
-            onClick={props.onPhotoClick}
-            disabled={props.photoUploading}
-            aria-label={props.dashboardPhotoUrl ? 'Change your profile photo' : 'Add a profile photo'}
-            title={props.dashboardPhotoUrl ? 'Change your profile photo' : 'Add a profile photo'}
-          >
-            {props.dashboardPhotoUrl ? (
-              <SignedImage src={props.dashboardPhotoUrl} alt={c.fullName} className={styles.dashChipImg} />
-            ) : (
-              <span className={styles.dashChipInitials}>{initials}</span>
-            )}
-            <span className={styles.dashChipOverlay} aria-hidden="true">
-              {props.photoUploading ? <span className={styles.dashSpinner} /> : <Camera size={12} />}
+      <div className={styles.dashInner}>
+        {/* Top row: identity (editable chip + name) left, visibility toggle right */}
+        <div className={styles.dashTop}>
+          <div className={styles.dashId}>
+            <span className={styles.dashChipWrap}>
+              <button
+                type="button"
+                className={styles.dashChip}
+                onClick={props.onPhotoClick}
+                disabled={props.photoUploading}
+                aria-label={props.dashboardPhotoUrl ? 'Change your profile photo' : 'Add a profile photo'}
+                title={props.dashboardPhotoUrl ? 'Change your profile photo' : 'Add a profile photo'}
+              >
+                {props.dashboardPhotoUrl ? (
+                  <SignedImage src={props.dashboardPhotoUrl} alt={c.fullName} className={styles.dashChipImg} />
+                ) : (
+                  <span className={styles.dashChipInitials}>{initials}</span>
+                )}
+                <span className={styles.dashChipOverlay} aria-hidden="true">
+                  {props.photoUploading ? <span className={styles.dashSpinner} /> : <Camera size={12} />}
+                </span>
+              </button>
+              {props.dashboardPhotoUrl && !props.photoUploading && (
+                <button type="button" className={styles.dashChipRemove} onClick={props.onPhotoRemove} aria-label="Remove your profile photo" title="Remove photo"><X size={10} /></button>
+              )}
             </span>
-          </button>
-          {props.dashboardPhotoUrl && !props.photoUploading && (
-            <button type="button" className={styles.dashChipRemove} onClick={props.onPhotoRemove} aria-label="Remove your profile photo" title="Remove photo"><X size={10} /></button>
-          )}
-        </span>
-        <span className={styles.identityName}>{c.fullName}</span>
-      </div>
-
-      {/* Content — bottom (mirrors employer) + faded Add prompts */}
-      <div className={styles.content}>
-        <h3 className={styles.role}>{c.jobTitle || 'Add your job title'}</h3>
-        {c.headline && <p className={styles.cardHeadline}>{c.headline}</p>}
-        <div className={styles.meta}>
-          {c.location && <span>{c.location}</span>}
-          {c.location && <span className={styles.dot}>·</span>}
-          <span>{c.yearsExperience} yrs exp</span>
-        </div>
-        {props.missingFields && props.missingFields.length > 0 && (
-          <div className={styles.dashPrompts}>
-            {props.missingFields.map(f => (
-              <button key={f.key} type="button" className={styles.dashPrompt} onClick={f.onAdd}>+ {f.label}</button>
-            ))}
+            <span className={styles.identityName}>{c.fullName}</span>
           </div>
-        )}
+
+          <label className={styles.dashToggleCompact} title="When on, employers can find your profile in candidate search and contact you.">
+            <input
+              type="checkbox"
+              checked={!!props.isDiscoverable}
+              onChange={(e) => props.onToggleDiscoverable?.(e.target.checked)}
+            />
+            <span className={styles.dashToggleTrack}><span className={styles.dashToggleThumb} /></span>
+            <span className={styles.dashToggleLabel}>Visible to employers</span>
+          </label>
+        </div>
+
+        {/* Middle: completion bar as the centrepiece */}
+        <div className={styles.dashProgress}>
+          <div className={styles.dashProgressTrack}><div className={styles.dashProgressFill} style={{ width: `${pct}%` }} /></div>
+          <div className={styles.dashProgressMeta}>
+            <span className={styles.dashProgressPct}>{pct === 100 ? 'Profile complete' : `${pct}% complete`}</span>
+            {showCount && <span className={styles.dashProgressCount}>{props.fieldsComplete} of {props.fieldsTotal} fields</span>}
+          </div>
+        </div>
+
+        {/* Bottom: employer-style data, then dashboard-only Add to-dos */}
+        <div className={styles.dashBottom}>
+          <h3 className={styles.dashRole}>{c.jobTitle || 'Add your job title'}</h3>
+          <div className={styles.dashMeta}>
+            {c.location && <span>{c.location}</span>}
+            {c.location && <span className={styles.dot}>·</span>}
+            <span>{c.yearsExperience} yrs</span>
+            {c.availability && (
+              <span className={`${styles.badge} ${styles.availBadge} ${availClass(c.availability)}`}>
+                <span className={styles.availDot} />{c.availability}
+              </span>
+            )}
+          </div>
+          {props.missingFields && props.missingFields.length > 0 && (
+            <div className={styles.dashPrompts}>
+              {props.missingFields.map(f => (
+                <button key={f.key} type="button" className={styles.dashPrompt} onClick={f.onAdd}>+ {f.label}</button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
