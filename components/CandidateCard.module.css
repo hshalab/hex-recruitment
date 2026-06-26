@@ -42,26 +42,27 @@
 
 /* ═══════════ DASHBOARD MODE — compact: identity + progress centrepiece + to-dos ═══════════ */
 .cardDashboard { /* height flows from content — no fixed aspect ratio */ }
-.dashInner { position: relative; z-index: 1; padding: 14px 16px 15px; display: flex; flex-direction: column; gap: 11px; }
+.dashInner { position: relative; z-index: 1; min-height: 340px; padding: 20px 22px 22px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; }
 
 /* Top row: identity (chip + name beneath) on the left, visibility toggle on the right. */
 .dashTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.dashId { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.dashId { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; min-width: 0; }
 
-/* Editable photo chip (same size as the employer identity chip). */
-.dashChipWrap { position: relative; width: 30px; height: 30px; }
-.dashChip { position: relative; width: 30px; height: 30px; border-radius: 8px; padding: 0; border: none; overflow: hidden; cursor: pointer; display: block; background: #FFE500; }
+/* Larger editable photo square. */
+.dashChipWrap { position: relative; width: 52px; height: 52px; }
+.dashChip { position: relative; width: 52px; height: 52px; border-radius: 12px; padding: 0; border: none; overflow: hidden; cursor: pointer; display: block; background: #FFE500; }
 .dashChip:disabled { cursor: default; }
 .dashChipImg { width: 100%; height: 100%; object-fit: cover; }
-.dashChipInitials { width: 100%; height: 100%; display: grid; place-items: center; font-family: var(--font-serif), Georgia, serif; font-weight: 700; font-size: 13px; color: #0A1628; }
-.dashChipOverlay { position: absolute; inset: 0; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: rgba(10,22,40,.55); color: #fff; opacity: 0; transition: opacity .15s ease; }
+.dashChipInitials { width: 100%; height: 100%; display: grid; place-items: center; font-family: var(--font-serif), Georgia, serif; font-weight: 700; font-size: 21px; color: #0A1628; }
+.dashChipOverlay { position: absolute; inset: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(10,22,40,.55); color: #fff; opacity: 0; transition: opacity .15s ease; }
 .dashChip:hover .dashChipOverlay, .dashChip:focus-visible .dashChipOverlay, .dashChip:disabled .dashChipOverlay { opacity: 1; }
-.dashChipRemove { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #0A1628; background: #ef4444; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; z-index: 3; }
+.dashChipRemove { position: absolute; top: -7px; right: -7px; width: 19px; height: 19px; border-radius: 50%; border: 2px solid #0A1628; background: #ef4444; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; z-index: 3; }
 .dashChipRemove:hover { background: #dc2626; }
-.dashSpinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: dashCardSpin .7s linear infinite; }
+.dashSpinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: dashCardSpin .7s linear infinite; }
 @keyframes dashCardSpin { to { transform: rotate(360deg); } }
 
-/* Completion bar — the card centrepiece. */
+/* Middle group: completion bar centrepiece + Add to-dos directly beneath it. */
+.dashMid { display: flex; flex-direction: column; gap: 11px; }
 .dashProgress { display: flex; flex-direction: column; gap: 6px; }
 .dashProgressTrack { height: 8px; border-radius: 999px; background: rgba(255,255,255,.16); overflow: hidden; }
 .dashProgressFill { height: 100%; border-radius: 999px; background: #FFE500; transition: width .3s ease; }

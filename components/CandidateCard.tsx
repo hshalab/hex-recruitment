@@ -137,11 +137,11 @@ export default function CandidateCard(props: {
                   <span className={styles.dashChipInitials}>{initials}</span>
                 )}
                 <span className={styles.dashChipOverlay} aria-hidden="true">
-                  {props.photoUploading ? <span className={styles.dashSpinner} /> : <Camera size={12} />}
+                  {props.photoUploading ? <span className={styles.dashSpinner} /> : <Camera size={18} />}
                 </span>
               </button>
               {props.dashboardPhotoUrl && !props.photoUploading && (
-                <button type="button" className={styles.dashChipRemove} onClick={props.onPhotoRemove} aria-label="Remove your profile photo" title="Remove photo"><X size={10} /></button>
+                <button type="button" className={styles.dashChipRemove} onClick={props.onPhotoRemove} aria-label="Remove your profile photo" title="Remove photo"><X size={12} /></button>
               )}
             </span>
             <span className={styles.identityName}>{c.fullName}</span>
@@ -158,16 +158,25 @@ export default function CandidateCard(props: {
           </label>
         </div>
 
-        {/* Middle: completion bar as the centrepiece */}
-        <div className={styles.dashProgress}>
-          <div className={styles.dashProgressTrack}><div className={styles.dashProgressFill} style={{ width: `${pct}%` }} /></div>
-          <div className={styles.dashProgressMeta}>
-            <span className={styles.dashProgressPct}>{pct === 100 ? 'Profile complete' : `${pct}% complete`}</span>
-            {showCount && <span className={styles.dashProgressCount}>{props.fieldsComplete} of {props.fieldsTotal} fields</span>}
+        {/* Middle: completion bar centrepiece, with the Add to-dos right below it */}
+        <div className={styles.dashMid}>
+          <div className={styles.dashProgress}>
+            <div className={styles.dashProgressTrack}><div className={styles.dashProgressFill} style={{ width: `${pct}%` }} /></div>
+            <div className={styles.dashProgressMeta}>
+              <span className={styles.dashProgressPct}>{pct === 100 ? 'Profile complete' : `${pct}% complete`}</span>
+              {showCount && <span className={styles.dashProgressCount}>{props.fieldsComplete} of {props.fieldsTotal} fields</span>}
+            </div>
           </div>
+          {props.missingFields && props.missingFields.length > 0 && (
+            <div className={styles.dashPrompts}>
+              {props.missingFields.map(f => (
+                <button key={f.key} type="button" className={styles.dashPrompt} onClick={f.onAdd}>+ {f.label}</button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Bottom: employer-style data, then dashboard-only Add to-dos */}
+        {/* Bottom: employer-style data */}
         <div className={styles.dashBottom}>
           <h3 className={styles.dashRole}>{c.jobTitle || 'Add your job title'}</h3>
           <div className={styles.dashMeta}>
@@ -180,13 +189,6 @@ export default function CandidateCard(props: {
               </span>
             )}
           </div>
-          {props.missingFields && props.missingFields.length > 0 && (
-            <div className={styles.dashPrompts}>
-              {props.missingFields.map(f => (
-                <button key={f.key} type="button" className={styles.dashPrompt} onClick={f.onAdd}>+ {f.label}</button>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>
