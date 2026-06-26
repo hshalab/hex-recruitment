@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -26,6 +26,7 @@ const ProfileBoostPaymentModal = dynamic(() => import('@/components/ProfileBoost
 })
 import SignedImage from '@/components/SignedImage'
 import CandidateCard from '@/components/CandidateCard'
+import { STAGE_COLORS } from '@/lib/constants/pipelineStages'
 import styles from './page.module.css'
 
 // ── Helpers ─────────────────────────────────────────────
@@ -80,12 +81,23 @@ function getStatusColor(status: string): string {
   return 'statusApplied'
 }
 
-function getPipelineColor(status: string): string {
-  if (status === 'pending') return 'pipelineCountYellow'
-  if (status === 'reviewing' || status === 'shortlisted') return 'pipelineCountBlue'
-  if (status === 'interview' || status === 'offered' || status === 'hired') return 'pipelineCountGreen'
-  if (status === 'rejected') return 'pipelineCountRed'
-  return 'pipelineCountYellow'
+// Funnel accent per status — reuse the pipeline board's stage colours (single
+// source of truth in lib/constants/pipelineStages) so the dashboard funnel and
+// the pipeline columns share one palette. 'pending'/Applied isn't a board stage,
+// so it gets a warm amber of its own.
+function funnelColor(status: string): string {
+  if (status === 'pending') return '#f59e0b'
+  return (STAGE_COLORS as Record<string, string>)[status] || '#94a3b8'
+}
+// Soft 14%/32% tint treatment matching the pipeline column count badges, with
+// the count itself in the full stage colour for vibrancy.
+function funnelChipStyle(status: string): CSSProperties {
+  const c = funnelColor(status)
+  return {
+    background: `color-mix(in srgb, ${c} 14%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${c} 32%, transparent)`,
+    color: c,
+  }
 }
 
 // Profile completion fields
@@ -775,7 +787,7 @@ export default function DashboardPage() {
                     <div className={styles.pipeline}>
                       {STATUS_ORDER.map(s => (
                         <div key={s} className={styles.pipelineStage}>
-                          <div className={`${styles.pipelineCount} ${styles[getPipelineColor(s)]}`}>
+                          <div className={styles.pipelineCount} style={funnelChipStyle(s)}>
                             {statusCounts[s]}
                           </div>
                           <span className={styles.pipelineLabel}>{STATUS_LABELS[s]}</span>

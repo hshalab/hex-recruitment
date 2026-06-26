@@ -80,10 +80,10 @@
 .cardDashboard .badge { color: #0f172a; background: #f1f5f9; border-color: #e2e8f0; }
 .cardDashboard .availBadge { border-color: #e2e8f0; }
 
-/* Faded dashboard-only "Add" to-dos. */
+/* Dashboard-only "Add" to-dos — pipeline green (emerald) soft-tint pills. */
 .dashPrompts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 1px; }
-.dashPrompt { font-size: 11px; font-weight: 500; color: #475569; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 999px; padding: 3px 9px; cursor: pointer; }
-.dashPrompt:hover { background: #fffbeb; border-color: #FFE500; color: #0f172a; }
+.dashPrompt { font-size: 11px; font-weight: 600; color: #047857; background: color-mix(in srgb, #10b981 12%, transparent); border: 1px dashed color-mix(in srgb, #10b981 45%, transparent); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
+.dashPrompt:hover { background: color-mix(in srgb, #10b981 20%, transparent); border-color: #10b981; color: #065f46; }
 
 /* Compact visibility toggle (top-right of the top row). */
 .dashToggleCompact { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 999px; padding: 4px 9px 4px 6px; }
