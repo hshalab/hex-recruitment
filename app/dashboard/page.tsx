@@ -673,7 +673,7 @@ export default function DashboardPage() {
   // ── Loading state ───────────────────────────────────────
   if (loading) {
     return (
-      <main>
+      <main className={styles.page}>
         <Header />
         <div className={styles.dashboardWrap}>
           <div className={styles.welcomeHeader}>
@@ -718,7 +718,7 @@ export default function DashboardPage() {
   // RENDER
   // ═════════════════════════════════════════════════════════
   return (
-    <main>
+    <main className={styles.page}>
       <Header />
 
       <div className={styles.dashboardWrap}>
@@ -1053,8 +1053,8 @@ export default function DashboardPage() {
                   Messages
                   {totalUnreadCount > 0 && (
                     <span style={{
-                      background: '#6366f1',
-                      color: '#fff',
+                      background: '#0f172a',
+                      color: '#FFE500',
                       fontSize: '0.7rem',
                       fontWeight: 700,
                       padding: '0.1rem 0.45rem',
