@@ -40,16 +40,17 @@
 
 @media (prefers-reduced-motion: reduce) { .cardEmployer, .cardEmployer:hover { transition: none; transform: none; } }
 
-/* ═══════════ DASHBOARD MODE — compact: identity + progress centrepiece + to-dos ═══════════ */
-.cardDashboard { /* height flows from content — no fixed aspect ratio */ }
+/* ═══════════ DASHBOARD MODE — light card matching the platform scheme ═══════════ */
+/* White, bordered card (like the other dashboard cards) — overrides the navy .card shell. */
+.cardDashboard { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; }
 .dashInner { position: relative; z-index: 1; min-height: 340px; padding: 20px 22px 22px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; }
 
-/* Top row: identity (chip + name beneath) on the left, visibility toggle on the right. */
+/* Top row: identity (chip + name beside it) on the left, visibility toggle on the right. */
 .dashTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .dashId { display: flex; flex-direction: row; align-items: center; gap: 15px; min-width: 0; }
-.dashId .identityName { font-size: 23px; }
+.dashId .identityName { font-size: 23px; color: #0f172a; text-shadow: none; }
 
-/* Large editable photo square, name running alongside it. */
+/* Large editable photo square (brand-yellow placeholder), name running alongside it. */
 .dashChipWrap { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
 .dashChip { position: relative; width: 72px; height: 72px; border-radius: 14px; padding: 0; border: none; overflow: hidden; cursor: pointer; display: block; background: #FFE500; }
 .dashChip:disabled { cursor: default; }
@@ -57,7 +58,7 @@
 .dashChipInitials { width: 100%; height: 100%; display: grid; place-items: center; font-family: var(--font-serif), Georgia, serif; font-weight: 700; font-size: 28px; color: #0A1628; }
 .dashChipOverlay { position: absolute; inset: 0; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: rgba(10,22,40,.55); color: #fff; opacity: 0; transition: opacity .15s ease; }
 .dashChip:hover .dashChipOverlay, .dashChip:focus-visible .dashChipOverlay, .dashChip:disabled .dashChipOverlay { opacity: 1; }
-.dashChipRemove { position: absolute; top: -7px; right: -7px; width: 21px; height: 21px; border-radius: 50%; border: 2px solid #0A1628; background: #ef4444; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; z-index: 3; }
+.dashChipRemove { position: absolute; top: -7px; right: -7px; width: 21px; height: 21px; border-radius: 50%; border: 2px solid #fff; background: #ef4444; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; z-index: 3; }
 .dashChipRemove:hover { background: #dc2626; }
 .dashSpinner { width: 22px; height: 22px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: dashCardSpin .7s linear infinite; }
 @keyframes dashCardSpin { to { transform: rotate(360deg); } }
@@ -65,28 +66,31 @@
 /* Middle group: completion bar centrepiece + Add to-dos directly beneath it. */
 .dashMid { display: flex; flex-direction: column; gap: 11px; }
 .dashProgress { display: flex; flex-direction: column; gap: 6px; }
-.dashProgressTrack { height: 8px; border-radius: 999px; background: rgba(255,255,255,.16); overflow: hidden; }
+.dashProgressTrack { height: 8px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
 .dashProgressFill { height: 100%; border-radius: 999px; background: #FFE500; transition: width .3s ease; }
 .dashProgressMeta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.dashProgressPct { font-size: 12.5px; font-weight: 700; color: #fff; }
-.dashProgressCount { font-size: 11.5px; color: rgba(255,255,255,.7); }
+.dashProgressPct { font-size: 12.5px; font-weight: 700; color: #0f172a; }
+.dashProgressCount { font-size: 11.5px; color: #64748b; }
 
 /* Bottom: employer-style data (role, location · yrs, availability). */
 .dashBottom { display: flex; flex-direction: column; gap: 6px; }
-.dashRole { font-family: var(--font-serif), Georgia, serif; font-weight: 600; font-size: 19px; line-height: 1.1; letter-spacing: -.01em; margin: 0; color: #fff; }
-.dashMeta { font-size: 13px; color: rgba(255,255,255,.85); display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+.dashRole { font-family: var(--font-serif), Georgia, serif; font-weight: 600; font-size: 19px; line-height: 1.1; letter-spacing: -.01em; margin: 0; color: #0f172a; }
+.dashMeta { font-size: 13px; color: #475569; display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+/* Light availability pill (overrides the navy translucent .badge used in employer mode). */
+.cardDashboard .badge { color: #0f172a; background: #f1f5f9; border-color: #e2e8f0; }
+.cardDashboard .availBadge { border-color: #e2e8f0; }
 
-/* Faded dashboard-only "Add" to-dos, appended under the data. */
+/* Faded dashboard-only "Add" to-dos. */
 .dashPrompts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 1px; }
-.dashPrompt { font-size: 11px; font-weight: 500; color: rgba(255,255,255,.85); background: rgba(255,255,255,.08); border: 1px dashed rgba(255,255,255,.35); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
-.dashPrompt:hover { background: rgba(255,229,0,.16); border-color: rgba(255,229,0,.5); color: #FFE500; }
+.dashPrompt { font-size: 11px; font-weight: 500; color: #475569; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 999px; padding: 3px 9px; cursor: pointer; }
+.dashPrompt:hover { background: #fffbeb; border-color: #FFE500; color: #0f172a; }
 
 /* Compact visibility toggle (top-right of the top row). */
-.dashToggleCompact { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; background: rgba(10,22,40,.45); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 4px 9px 4px 6px; }
+.dashToggleCompact { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 999px; padding: 4px 9px 4px 6px; }
 .dashToggleCompact input { position: absolute; opacity: 0; width: 0; height: 0; }
-.dashToggleTrack { flex-shrink: 0; width: 30px; height: 17px; border-radius: 999px; background: rgba(255,255,255,.3); position: relative; transition: background .15s ease; }
+.dashToggleTrack { flex-shrink: 0; width: 30px; height: 17px; border-radius: 999px; background: #cbd5e1; position: relative; transition: background .15s ease; }
 .dashToggleThumb { position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; transition: transform .15s ease; }
 .dashToggleCompact input:checked + .dashToggleTrack { background: #22c55e; }
 .dashToggleCompact input:checked + .dashToggleTrack .dashToggleThumb { transform: translateX(13px); }
 .dashToggleCompact input:focus-visible + .dashToggleTrack { outline: 2px solid #FFE500; outline-offset: 2px; }
-.dashToggleLabel { font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; }
+

@@ -115,9 +115,6 @@ export default function CandidateCard(props: {
   const showCount = props.fieldsTotal != null && props.fieldsComplete != null
   return (
     <div className={`${styles.card} ${styles.cardDashboard}`}>
-      <div className={styles.backdrop} style={bgVars} aria-hidden="true" />
-      <div className={styles.scrim} aria-hidden="true" />
-
       <div className={styles.dashInner}>
         {/* Top row: identity (editable chip + name) left, visibility toggle right */}
         <div className={styles.dashTop}>
