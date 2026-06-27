@@ -881,6 +881,9 @@ function JobsPageContent() {
 
   useEffect(() => {
     if (currentUserRole !== 'employee') return
+    // "Browse all" entry (e.g. the dashboard "View All"): show every job, do NOT
+    // pre-apply the candidate's profile filters or the matching-profile banner.
+    if (searchParams.get('browse') === 'all') return
     const dismissed = sessionStorage.getItem('hex_prefs_banner_dismissed')
     if (dismissed) setPrefsBannerDismissed(true)
 

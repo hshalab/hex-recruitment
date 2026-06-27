@@ -850,7 +850,7 @@ export default function DashboardPage() {
             <div className={`${styles.card} ${styles.aViolet} ${styles.mRecommended}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Recommended for You</h2>
-                <Link href="/jobs" className={styles.cardLink}>View All</Link>
+                <Link href="/jobs?browse=all" className={styles.cardLink}>View All</Link>
               </div>
               <div className={styles.cardBody}>
                 {recommendedJobs.length > 0 ? (
