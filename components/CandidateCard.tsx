@@ -151,7 +151,7 @@ export default function CandidateCard(props: {
               onChange={(e) => props.onToggleDiscoverable?.(e.target.checked)}
             />
             <span className={styles.dashToggleTrack}><span className={styles.dashToggleThumb} /></span>
-            <span className={styles.dashToggleLabel}>Visible to employers</span>
+            <span className={styles.dashToggleLabel}>{props.isDiscoverable ? 'Visible to employers' : 'Hidden from employers'}</span>
           </label>
         </div>
 
