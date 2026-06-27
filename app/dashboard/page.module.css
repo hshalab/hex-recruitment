@@ -1087,6 +1087,15 @@
   .colRight {
     display: contents;
   }
+  /* Grid items promoted by display:contents default to min-width:auto, which
+     inflates the 1fr track to the widest card's min-content (~853px) and pushes
+     the card content off-screen (clipped, so the page doesn't scroll but the
+     right edge / Add-tags run past the viewport). Let them shrink to the column. */
+  .mProfile, .mRecommended, .mApplications, .mInterviews, .mNotifications,
+  .mActivity, .mMessages, .mViews, .mBoost, .mInsights, .mSaved {
+    min-width: 0;
+    max-width: 100%;
+  }
   .mProfile { order: 1; }
   .mRecommended { order: 2; }
   .mApplications { order: 3; }
