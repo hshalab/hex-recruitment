@@ -12,6 +12,7 @@ import { useJobs } from '@/lib/JobsContext'
 import { useMessages } from '@/lib/MessagesContext'
 import { useSavedJobs } from '@/lib/useSavedJobs'
 import { scoreAndRankJobs, RecommendedJob } from '@/lib/recommendations'
+import JobCardLink from '@/components/JobCardLink'
 import { Boost, getDaysRemaining } from '@/lib/boostTypes'
 import { Notification, formatNotificationTime } from '@/lib/mockNotifications'
 import { useNotifications } from '@/lib/NotificationsContext'
@@ -181,6 +182,8 @@ export default function DashboardPage() {
   const [dashboardPhotoUrl, setDashboardPhotoUrl] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
   const [isDiscoverable, setIsDiscoverable] = useState(false)
+  // "Not interested" job ids — remembered per device via localStorage (no DB).
+  const [dismissedJobIds, setDismissedJobIds] = useState<Set<string>>(new Set())
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   // Application data
@@ -492,6 +495,24 @@ export default function DashboardPage() {
     }
   }
 
+  // "Not interested" dismissals for the recommended row — persisted in
+  // localStorage (per device), so dismissed jobs stay gone across visits.
+  const DISMISSED_KEY = 'thrive_dismissed_jobs'
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DISMISSED_KEY)
+      if (raw) setDismissedJobIds(new Set(JSON.parse(raw)))
+    } catch { /* ignore malformed/unavailable storage */ }
+  }, [])
+  const dismissJob = (id: string) => {
+    setDismissedJobIds(prev => {
+      const next = new Set(prev)
+      next.add(id)
+      try { localStorage.setItem(DISMISSED_KEY, JSON.stringify(Array.from(next))) } catch { /* ignore */ }
+      return next
+    })
+  }
+
   // Profile completion. The "photo" field tracks the dashboard photo
   // (dashboard_photo_url) since that's what the candidate sets here.
   const { completionPct, missingFields } = useMemo(() => {
@@ -522,8 +543,10 @@ export default function DashboardPage() {
   const recommendedJobs: RecommendedJob[] = useMemo(() => {
     if (!candidate || jobs.length === 0) return []
     const appliedIds = new Set(applications.map((a: any) => a.job_id).filter(Boolean))
-    return scoreAndRankJobs(jobs, candidate, appliedIds, []).slice(0, 3)
-  }, [candidate, jobs, applications])
+    return scoreAndRankJobs(jobs, candidate, appliedIds, [])
+      .filter(j => !dismissedJobIds.has(j.id))
+      .slice(0, 10)
+  }, [candidate, jobs, applications, dismissedJobIds])
 
   // Recent conversations (top 3)
   const recentConversations = useMemo(() => {
@@ -739,10 +762,6 @@ export default function DashboardPage() {
           <div>
             <h1 className={styles.greeting}>{getGreeting()}, {displayName.split(' ')[0]}</h1>
           </div>
-          <div className={styles.greetingActions}>
-            <Link href="/jobs" className={styles.welcomeActionPrimary}>Browse Jobs</Link>
-            <Link href="/profile" className={styles.welcomeActionSecondary}>Edit Profile</Link>
-          </div>
         </div>
         <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
 
@@ -830,24 +849,20 @@ export default function DashboardPage() {
               </div>
               <div className={styles.cardBody}>
                 {recommendedJobs.length > 0 ? (
-                  <div className={styles.recCards}>
-                    {recommendedJobs.map(job => {
-                      const matchClass = job.matchPercentage >= 70 ? 'recMatchHigh' : job.matchPercentage >= 40 ? 'recMatchMed' : 'recMatchLow'
-                      const salary = job.salaryPeriod === 'hour'
-                        ? `\u00A3${job.salaryMin}-${job.salaryMax}/hr`
-                        : `\u00A3${(job.salaryMin / 1000).toFixed(0)}k-${(job.salaryMax / 1000).toFixed(0)}k`
-                      return (
-                        <Link href={`/jobs?id=${job.id}`} key={job.id} className={styles.recCard}>
-                          <div className={`${styles.recMatch} ${styles[matchClass]}`}>
-                            {job.matchPercentage}%
-                          </div>
-                          <div className={styles.recCardInfo}>
-                            <h4>{job.title}</h4>
-                            <p className={styles.recCardMeta}>{job.company} &middot; {salary} &middot; {job.location}</p>
-                          </div>
-                        </Link>
-                      )
-                    })}
+                  <div className={styles.recScroller}>
+                    {recommendedJobs.map(job => (
+                      <JobCardLink key={job.id} job={job} className={styles.recItem}>
+                        <button
+                          type="button"
+                          className={styles.recDismiss}
+                          aria-label={`Not interested in ${job.title}`}
+                          title="Not interested"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissJob(job.id) }}
+                        >
+                          &times;
+                        </button>
+                      </JobCardLink>
+                    ))}
                   </div>
                 ) : !candidate?.jobSector && !candidate?.jobTitle && (!candidate?.skills || candidate.skills.length === 0) ? (
                   <div className={styles.emptyState}>
