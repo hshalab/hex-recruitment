@@ -1079,9 +1079,25 @@
     grid-template-columns: 1fr;
   }
 
+  /* Single column: flatten both columns so every section becomes a direct grid
+     item, then order them into one candidate-first priority. Desktop (>1100px)
+     keeps the original two-column layout untouched — these order rules only exist
+     inside this media query. */
+  .colLeft,
   .colRight {
-    order: -1;
+    display: contents;
   }
+  .mProfile { order: 1; }
+  .mRecommended { order: 2; }
+  .mApplications { order: 3; }
+  .mInterviews { order: 4; }
+  .mNotifications { order: 5; }
+  .mActivity { order: 6; }
+  .mMessages { order: 7; }
+  .mViews { order: 8; }
+  .mBoost { order: 9; }
+  .mInsights { order: 10; }
+  .mSaved { order: 11; }
 }
 
 @media (max-width: 768px) {

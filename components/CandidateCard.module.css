@@ -94,3 +94,13 @@
 .dashToggleCompact input:checked + .dashToggleTrack .dashToggleThumb { transform: translateX(13px); }
 .dashToggleCompact input:focus-visible + .dashToggleTrack { outline: 2px solid #FFE500; outline-offset: 2px; }
 
+
+/* Mobile: stack the visibility toggle below the identity so the full name has
+   room beside the photo (was clipping to "Gian. / Lora." and colliding with the
+   toggle pill at ~390px). */
+@media (max-width: 600px) {
+  .dashTop { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .dashId { width: 100%; }
+  .dashId .identityName { font-size: 21px; -webkit-line-clamp: 2; }
+  .dashToggleCompact { align-self: flex-start; }
+}
