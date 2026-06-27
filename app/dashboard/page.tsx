@@ -185,6 +185,11 @@ export default function DashboardPage() {
   // "Not interested" job ids — remembered per device via localStorage (no DB).
   const [dismissedJobIds, setDismissedJobIds] = useState<Set<string>>(new Set())
   const photoInputRef = useRef<HTMLInputElement>(null)
+  // Recommended row horizontal scroll (desktop arrows; mobile uses touch swipe).
+  const recScrollerRef = useRef<HTMLDivElement>(null)
+  const scrollRec = (dir: number) => {
+    recScrollerRef.current?.scrollBy({ left: dir * 320, behavior: 'smooth' })
+  }
 
   // Application data
   const [applications, setApplications] = useState<any[]>([])
@@ -849,20 +854,38 @@ export default function DashboardPage() {
               </div>
               <div className={styles.cardBody}>
                 {recommendedJobs.length > 0 ? (
-                  <div className={styles.recScroller}>
-                    {recommendedJobs.map(job => (
-                      <JobCardLink key={job.id} job={job} className={styles.recItem}>
-                        <button
-                          type="button"
-                          className={styles.recDismiss}
-                          aria-label={`Not interested in ${job.title}`}
-                          title="Not interested"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissJob(job.id) }}
-                        >
-                          &times;
-                        </button>
-                      </JobCardLink>
-                    ))}
+                  <div className={styles.recScrollWrap}>
+                    <button
+                      type="button"
+                      className={`${styles.recNav} ${styles.recNavPrev}`}
+                      aria-label="Scroll recommended jobs left"
+                      onClick={() => scrollRec(-1)}
+                    >
+                      &lsaquo;
+                    </button>
+                    <div className={styles.recScroller} ref={recScrollerRef}>
+                      {recommendedJobs.map(job => (
+                        <JobCardLink key={job.id} job={job} className={styles.recItem}>
+                          <button
+                            type="button"
+                            className={styles.recDismiss}
+                            aria-label={`Not interested in ${job.title}`}
+                            title="Not interested"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissJob(job.id) }}
+                          >
+                            &times;
+                          </button>
+                        </JobCardLink>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className={`${styles.recNav} ${styles.recNavNext}`}
+                      aria-label="Scroll recommended jobs right"
+                      onClick={() => scrollRec(1)}
+                    >
+                      &rsaquo;
+                    </button>
                   </div>
                 ) : !candidate?.jobSector && !candidate?.jobTitle && (!candidate?.skills || candidate.skills.length === 0) ? (
                   <div className={styles.emptyState}>

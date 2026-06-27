@@ -166,12 +166,16 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  /* Allow the 1fr column to shrink so the recommended horizontal scroller
+     scrolls internally instead of widening the column past the viewport. */
+  min-width: 0;
 }
 
 .colRight {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 /* ── Card base ───────────────────────────────────────── */
@@ -493,6 +497,38 @@
   padding: 0;
 }
 .recDismiss:hover { background: rgba(220, 38, 38, 0.92); }
+
+/* Horizontal scroll affordances for the recommended row. */
+.recScrollWrap { position: relative; }
+.recItem { transition: transform 0.15s ease; }
+.recItem:hover { transform: translateY(-3px); }
+/* Desktop prev/next arrows — hidden on touch/mobile where native swipe is used. */
+.recNav {
+  position: absolute;
+  top: 47%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 2px;
+}
+.recNav:hover { background: #f8fafc; border-color: #cbd5e1; }
+.recNavPrev { left: -10px; }
+.recNavNext { right: -10px; }
+@media (max-width: 768px) {
+  .recNav { display: none; }
+}
 
 /* ── Stat card (profile views, saved jobs) ───────────── */
 .statRow {
