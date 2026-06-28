@@ -605,13 +605,14 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  /* Soft cyan tint to match the Recent Messages section accent + the pipeline palette. */
+  background: #cffafe;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #475569;
+  color: #0e7490;
 }
 
 .msgOnline {
@@ -876,8 +877,10 @@
    collides with the name + watermark. Scoped to .applicantItem only (so the
    /candidates appearance is untouched): drop the ratio and give it room to breathe. */
 .applicantItem :global([class*='cardEmployer']) { aspect-ratio: auto; height: 238px; }
-.applicantMsg { display: block; text-align: center; padding: 0.55rem; font-size: 0.82rem; font-weight: 700; color: #FFE500; background: #0f172a; border-radius: 9px; text-decoration: none; }
-.applicantMsg:hover { background: #1e293b; }
+/* Softer violet primary (matches the Recent Applicants accent) instead of the
+   harsh black/yellow pill — still a clear, legible primary action. */
+.applicantMsg { display: block; text-align: center; padding: 0.55rem; font-size: 0.82rem; font-weight: 700; color: #fff; background: #7c3aed; border-radius: 9px; text-decoration: none; }
+.applicantMsg:hover { background: #6d28d9; }
 
 /* Application Pipeline — compact read-only mirror of the /pipeline board. */
 .pipeCol { flex: 0 0 auto; width: 230px; max-width: 82%; scroll-snap-align: start; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
