@@ -9,6 +9,12 @@ import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import { useMessages } from '@/lib/MessagesContext'
 import Header from '@/components/Header'
+import { supabaseJobToJob } from '@/lib/types'
+import { STAGE_COLORS, STAGE_LABELS } from '@/lib/constants/pipelineStages'
+import StageDurationBadge from '@/components/StageDurationBadge'
+import JobCardLink from '@/components/JobCardLink'
+import CandidateCard from '@/components/CandidateCard'
+import type { Candidate } from '@/lib/mockCandidates'
 import styles from './page.module.css'
 
 // ── Helpers ─────────────────────────────────────────────
@@ -193,22 +199,50 @@ function ActiveJobsScroller({ jobs, styles }: { jobs: any[]; styles: Record<stri
     <div className={styles.jobScrollWrap}>
       <button type="button" className={`${styles.jobNav} ${styles.jobNavPrev}`} aria-label="Scroll jobs left" onClick={() => scroll(-1)}>&lsaquo;</button>
       <div className={styles.jobScroller} ref={ref}>
-        {jobs.map((job: any) => {
-          const appCount = job.application_count || 0
-          const fillPct = Math.min((appCount / 20) * 100, 100)
+        {jobs.map((job: any) => (
+          // The real image-led job card; tap MANAGES the post (edit), not apply.
+          // The overlay keeps the management stats (apps · views) visible.
+          <JobCardLink key={job.id} job={job} href={`/post-job?edit=${job.id}`} className={styles.jobCardItem}>
+            <span className={styles.jobOverlay}>{job.application_count || 0} apps · {job.views || 0} views</span>
+          </JobCardLink>
+        ))}
+      </div>
+      <button type="button" className={`${styles.jobNav} ${styles.jobNavNext}`} aria-label="Scroll jobs right" onClick={() => scroll(1)}>&rsaquo;</button>
+    </div>
+  )
+}
+
+// ── Recent applicants — horizontal row of the real /candidates CandidateCard
+// (employer mode = ghost INITIALS, never the candidate's photo) + a Message
+// action. Tap the card → the candidate's profile. Shared by desktop + mobile.
+function ApplicantScroller({ apps, styles, router }: { apps: any[]; styles: Record<string, string>; router: ReturnType<typeof useRouter> }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 270, behavior: 'smooth' })
+  return (
+    <div className={styles.jobScrollWrap}>
+      <button type="button" className={`${styles.jobNav} ${styles.jobNavPrev}`} aria-label="Scroll applicants left" onClick={() => scroll(-1)}>&lsaquo;</button>
+      <div className={styles.applicantScroller} ref={ref}>
+        {apps.map((app: any) => {
+          const candidate = {
+            id: app.candidate_id,
+            fullName: app.candidate_name || 'Candidate',
+            jobTitle: app.candidate_job_title || app.job_title || '',
+            headline: app.candidate_sector || undefined,
+            location: app.candidate_city || '',
+            yearsExperience: app.candidate_years_exp || 0,
+            availability: app.candidate_availability || '',
+            cvUrl: app.candidate_cv_url || null,
+            skills: Array.isArray(app.candidate_skills) ? app.candidate_skills : [],
+          } as unknown as Candidate
           return (
-            <Link key={job.id} href={`/my-jobs/${job.id}/applications`} className={styles.jobTile}>
-              <h4 className={styles.jobTileTitle}>{job.title}</h4>
-              <div className={styles.jobTileProgress}><div className={styles.jobTileProgressFill} style={{ width: `${fillPct}%` }} /></div>
-              <div className={styles.jobTileStats}>
-                <div className={styles.jobTileStat}><span className={styles.jobTileStatNum}>{job.views || 0}</span><span className={styles.jobTileStatLabel}>Views</span></div>
-                <div className={styles.jobTileStat}><span className={styles.jobTileStatNum}>{appCount}</span><span className={styles.jobTileStatLabel}>Apps</span></div>
-              </div>
-            </Link>
+            <div key={app.id} className={styles.applicantItem}>
+              <CandidateCard candidate={candidate} mode="employer" onOpen={() => router.push(`/candidates/${app.candidate_id}`)} />
+              <Link href={`/messages?candidate=${app.candidate_id}`} className={styles.applicantMsg} onClick={(e: any) => e.stopPropagation()}>Message</Link>
+            </div>
           )
         })}
       </div>
-      <button type="button" className={`${styles.jobNav} ${styles.jobNavNext}`} aria-label="Scroll jobs right" onClick={() => scroll(1)}>&rsaquo;</button>
+      <button type="button" className={`${styles.jobNav} ${styles.jobNavNext}`} aria-label="Scroll applicants right" onClick={() => scroll(1)}>&rsaquo;</button>
     </div>
   )
 }
@@ -609,7 +643,7 @@ export default function EmployerDashboardPage() {
       try {
         const { data: jobs } = await supabase
           .from('jobs')
-          .select('id, title, status, views, posted_at')
+          .select('id, title, status, views, posted_at, company, company_logo_url, company_banner_url, salary_min, salary_max, salary_type, location, area, category, is_recruiter_posting')
           .eq('employer_id', userId)
           .order('posted_at', { ascending: false })
 
@@ -636,7 +670,7 @@ export default function EmployerDashboardPage() {
             try {
               const { data: appData } = await supabase
                 .from('job_applications')
-                .select('id, job_id, job_title, company, status, created_at, candidate_id, viewed_at')
+                .select('id, job_id, job_title, company, status, created_at, candidate_id, viewed_at, stage_entered_at')
                 .in('job_id', jobIds)
                 .order('created_at', { ascending: false })
 
@@ -656,9 +690,12 @@ export default function EmployerDashboardPage() {
                   appCountByJob[a.job_id] = (appCountByJob[a.job_id] || 0) + 1
                 })
 
-                // Enrich jobs with real application counts
+                // Enrich jobs with real application counts. Map through
+                // supabaseJobToJob so the Active Jobs cards can render the real
+                // image-led job card; keep views + application_count for the overlay.
                 const enrichedJobs = jobs.map(j => ({
-                  ...j,
+                  ...supabaseJobToJob(j),
+                  views: j.views || 0,
                   application_count: appCountByJob[j.id] || 0,
                 }))
                 setJobsData(enrichedJobs)
@@ -673,7 +710,7 @@ export default function EmployerDashboardPage() {
                   try {
                     const { data: profiles } = await supabase
                       .from('candidate_profiles')
-                      .select('user_id, full_name, profile_picture_url, city, availability, years_experience, job_title, job_sector, skills, bio')
+                      .select('user_id, full_name, profile_picture_url, city, availability, years_experience, job_title, job_sector, skills, bio, cv_url')
                       .in('user_id', candidateIds)
 
                     if (profiles) {
@@ -690,6 +727,7 @@ export default function EmployerDashboardPage() {
                           sector: p.job_sector || null,
                           skills: p.skills || [],
                           bio: p.bio || null,
+                          cvUrl: p.cv_url || null,
                         }
                       })
                       setApplications(prev => prev.map(a => ({
@@ -703,13 +741,14 @@ export default function EmployerDashboardPage() {
                         candidate_sector: profileExtras[a.candidate_id]?.sector || null,
                         candidate_skills: profileExtras[a.candidate_id]?.skills || [],
                         candidate_bio: profileExtras[a.candidate_id]?.bio || null,
+                        candidate_cv_url: profileExtras[a.candidate_id]?.cvUrl || null,
                       })))
                     }
                   } catch { /* candidate_profiles may not exist */ }
                 }
               } else {
                 // No applications — still set jobsData with zero counts
-                setJobsData(jobs.map(j => ({ ...j, application_count: 0 })))
+                setJobsData(jobs.map(j => ({ ...supabaseJobToJob(j), views: j.views || 0, application_count: 0 })))
               }
             } catch {
               // job_applications table may not exist — set jobsData with zero counts
@@ -1079,29 +1118,40 @@ export default function EmployerDashboardPage() {
               <div className={styles.cardBody}>
                 <div className={styles.pipelineScroller}>
                   {PIPELINE_STAGES.filter(s => s !== 'rejected').map(s => {
+                    // Mirror the /pipeline board: a stage column (coloured header +
+                    // count pill) with the real candidate cards (initials avatar,
+                    // name, role, "N days in stage" badge, Review →). Read-only.
+                    const color = s === 'pending' ? '#f59e0b' : (STAGE_COLORS[s as keyof typeof STAGE_COLORS] || '#6b7280')
+                    const label = s === 'pending' ? 'Applied' : (STAGE_LABELS[s as keyof typeof STAGE_LABELS] || STATUS_LABELS[s] || s)
                     const count = statusCounts[s] || 0
                     const candidates = candidatesByStage[s] || []
-                    const hasCandidates = candidates.length > 0
                     return (
-                      <Link key={s} href="/pipeline" className={`${styles.pipelineCard} ${hasCandidates ? styles.pipelineCardActive : ''}`}>
-                        <div className={styles.pipelineCardTop}>
-                          <span className={styles.pipelineCardCount}>{count}</span>
-                          <span className={styles.pipelineCardStage}>{STATUS_LABELS[s]}</span>
+                      <div key={s} className={styles.pipeCol}>
+                        <div className={styles.pipeColHead} style={{ borderTopColor: color }}>
+                          <span className={styles.pipeColLabel}>{label}</span>
+                          <span className={styles.pipeColCount} style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}>{count}</span>
                         </div>
-                        <div className={styles.pipelineCardCandidates}>
+                        <div className={styles.pipeColBody}>
                           {candidates.length === 0 ? (
-                            <span className={styles.pipelineCardEmpty}>No candidates</span>
-                          ) : (
-                            candidates.slice(0, 2).map((app: any, i: number) => (
-                              <div key={i} className={styles.pipelineCardCandidate}>
-                                <span className={styles.pipelineCardName}>{app.candidate_name || 'Candidate'}</span>
-                                <span className={styles.pipelineCardJob}>{app.job_title || ''}</span>
+                            <span className={styles.pipeColEmpty}>No candidates</span>
+                          ) : candidates.slice(0, 3).map((app: any) => (
+                            <Link key={app.id} href="/pipeline" className={styles.pipeCard}>
+                              <div className={styles.pipeCardTop}>
+                                <span className={styles.pipeAvatar} style={{ background: color }}>{getInitials(app.candidate_name || 'C')}</span>
+                                <div className={styles.pipeCardInfo}>
+                                  <span className={styles.pipeCardName}>{app.candidate_name || 'Candidate'}</span>
+                                  <span className={styles.pipeCardRole}>{app.candidate_job_title || app.job_title || ''}</span>
+                                </div>
                               </div>
-                            ))
-                          )}
-                          {candidates.length > 2 && <span className={styles.pipelineCardMore}>+{candidates.length - 2} more</span>}
+                              {app.stage_entered_at && (
+                                <StageDurationBadge stageEnteredAt={app.stage_entered_at} stageLabel={label} stageColor={color} />
+                              )}
+                              <span className={styles.pipeReview}>Review &rarr;</span>
+                            </Link>
+                          ))}
+                          {candidates.length > 3 && <Link href="/pipeline" className={styles.pipeColMore}>+{candidates.length - 3} more</Link>}
                         </div>
-                      </Link>
+                      </div>
                     )
                   })}
                 </div>
@@ -1176,23 +1226,7 @@ export default function EmployerDashboardPage() {
               </div>
               <div className={styles.cardBody}>
                 {applications.length > 0 ? (
-                  <div className={styles.recentApps}>
-                    <p className={styles.previewLabel}>{totalApplications} total applications</p>
-                    {recentApps.map((app: any) => (
-                      <Link href={`/my-jobs/${app.job_id}/applications`} key={app.id} className={styles.appCard}>
-                        <div className={styles.appCardInfo}>
-                          <h4>{app.candidate_name || 'Candidate'}</h4>
-                          <p>{app.job_title || 'Position'} &middot; {formatRelativeTime(app.created_at)}</p>
-                        </div>
-                        <div className={styles.appCardRight}>
-                          <span className={`${styles.statusBadge} ${styles[getStatusStyle(app.status)]}`}>
-                            {STATUS_LABELS[app.status] || app.status}
-                          </span>
-                          <span className={styles.appChevron}>&rsaquo;</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+                  <ApplicantScroller apps={recentApps} styles={styles} router={router} />
                 ) : (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128196;</div>
@@ -1236,7 +1270,7 @@ export default function EmployerDashboardPage() {
                 </div>
                 <div className={styles.cardBody}>
                   {applications.length > 0 ? (
-                    <CandidateCardSlider apps={recentApps} totalApplications={totalApplications} styles={styles} />
+                    <ApplicantScroller apps={recentApps} styles={styles} router={router} />
                   ) : (
                     <div className={styles.emptyState}>
                       <div className={styles.emptyIcon}>&#128196;</div>

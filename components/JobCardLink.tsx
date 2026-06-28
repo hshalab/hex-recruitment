@@ -31,10 +31,15 @@ export default function JobCardLink({
   job,
   className,
   children,
+  href,
 }: {
   job: Job
   className?: string
   children?: ReactNode
+  // Optional tap target. Defaults to the candidate apply page /job/<id> (so the
+  // candidate dashboard + FeaturedJobs are unchanged); the employer dashboard
+  // passes /post-job?edit=<id> to manage its own post instead.
+  href?: string
 }) {
   const banner = resolveJobBanner({
     id: job.id,
@@ -44,7 +49,7 @@ export default function JobCardLink({
   })
   const initial = (job.company || '?').trim().charAt(0).toUpperCase() || '?'
   return (
-    <Link href={`/job/${job.id}`} className={className}>
+    <Link href={href ?? `/job/${job.id}`} className={className}>
       <div className={`${jobStyles.jobCard} ${banner ? '' : jobStyles.jobCardFallback}`}>
         {banner ? (
           <div className={jobStyles.cardBg} style={{ backgroundImage: `url(${banner})` }} aria-hidden="true" />

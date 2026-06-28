@@ -318,13 +318,18 @@
 .pipelineScroller {
   display: flex;
   gap: 0.75rem;
-  overflow-x: visible;
-  overflow-y: visible;
-  flex-wrap: wrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
   padding: 0.5rem 0 0.5rem;
   margin: 0;
+  scrollbar-width: thin;
   -webkit-transform: translateZ(0);
 }
+.pipelineScroller::-webkit-scrollbar { height: 6px; }
+.pipelineScroller::-webkit-scrollbar-thumb { background: #d6dae0; border-radius: 999px; }
 
 .pipelineCard {
   flex: 1 1 140px;
@@ -854,3 +859,34 @@
 .jobNavPrev { left: -8px; }
 .jobNavNext { right: -8px; }
 @media (max-width: 768px) { .jobNav { display: none; } }
+
+/* Active Jobs: the real image-led JobCardLink as a scroll-snap item + the
+   management overlay (apps · views) so stats aren't lost. */
+.jobCardItem { flex: 0 0 auto; width: 240px; max-width: 80%; scroll-snap-align: start; text-decoration: none; }
+.jobOverlay { position: absolute; top: 8px; left: 8px; z-index: 3; background: rgba(10, 22, 40, 0.62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+
+/* Recent Applicants: horizontal row of CandidateCards (employer mode) + Message. */
+.applicantScroller { display: flex; gap: 0.7rem; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: thin; }
+.applicantScroller::-webkit-scrollbar { height: 6px; }
+.applicantScroller::-webkit-scrollbar-thumb { background: #d6dae0; border-radius: 999px; }
+.applicantScroller::-webkit-scrollbar-track { background: transparent; }
+.applicantItem { flex: 0 0 auto; width: 260px; max-width: 84%; scroll-snap-align: start; display: flex; flex-direction: column; gap: 0.5rem; }
+.applicantMsg { display: block; text-align: center; padding: 0.55rem; font-size: 0.82rem; font-weight: 700; color: #FFE500; background: #0f172a; border-radius: 9px; text-decoration: none; }
+.applicantMsg:hover { background: #1e293b; }
+
+/* Application Pipeline — compact read-only mirror of the /pipeline board. */
+.pipeCol { flex: 0 0 auto; width: 230px; max-width: 82%; scroll-snap-align: start; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+.pipeColHead { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.6rem 0.75rem; background: #fff; border-top: 3px solid #6b7280; border-bottom: 1px solid #eef2f7; }
+.pipeColLabel { font-size: 0.8rem; font-weight: 700; color: #0f172a; }
+.pipeColCount { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; }
+.pipeColBody { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.6rem; }
+.pipeColEmpty { font-size: 0.75rem; color: #94a3b8; font-style: italic; padding: 0.4rem 0.1rem; }
+.pipeCard { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.6rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; transition: border-color .15s ease, box-shadow .15s ease; }
+.pipeCard:hover { border-color: #cbd5e1; box-shadow: 0 2px 8px rgba(15,23,42,.06); }
+.pipeCardTop { display: flex; align-items: center; gap: 0.5rem; }
+.pipeAvatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: #fff; }
+.pipeCardInfo { display: flex; flex-direction: column; min-width: 0; }
+.pipeCardName { font-size: 0.82rem; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pipeCardRole { font-size: 0.68rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pipeReview { font-size: 0.72rem; font-weight: 700; color: #0f172a; align-self: flex-start; }
+.pipeColMore { font-size: 0.72rem; font-weight: 600; color: #475569; text-decoration: none; padding: 0.2rem; }
