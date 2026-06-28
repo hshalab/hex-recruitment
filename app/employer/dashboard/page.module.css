@@ -150,6 +150,7 @@
   align-items: center;
   background: var(--white);
   border: 1px solid var(--border-gray);
+  border-top: 3px solid #16a34a;
   border-radius: 12px;
   margin-bottom: 1.25rem;
   overflow: hidden;
@@ -205,7 +206,7 @@
 
 /* ── Stale applications nudge ────────────────────────── */
 /* ── Getting started checklist ────────────────────── */
-.checklistCard { position: relative; background: #fff; border: 1px solid var(--ds-border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+.checklistCard { position: relative; background: #fff; border: 1px solid var(--ds-border); border-top: 3px solid #f59e0b; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
 .checklistDismiss { position: absolute; top: 0.75rem; right: 0.75rem; background: none; border: none; color: #d4a017; font-size: 1.25rem; cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
 .checklistDismiss:hover { background: rgba(0,0,0,0.05); }
 .checklistHeading { font-size: 1rem; font-weight: 600; color: #1a1a1a; margin: 0 0 0.2rem; }
@@ -219,7 +220,7 @@
 .checklistAction:hover { text-decoration: underline; }
 .checklistProgress { font-size: 0.78rem; color: var(--ds-text-muted); margin: 0.875rem 0 0; }
 
-.staleNudge { display: flex; align-items: center; gap: 0.75rem; background: var(--ds-status-amber-bg); border: 1px solid #fcd9a0; border-radius: 12px; padding: 0.875rem 1.25rem; margin-bottom: 1.25rem; text-decoration: none; cursor: pointer; transition: border-color 0.15s ease; }
+.staleNudge { display: flex; align-items: center; gap: 0.75rem; background: var(--ds-status-amber-bg); border: 1px solid #fcd9a0; border-top: 3px solid #f59e0b; border-radius: 12px; padding: 0.875rem 1.25rem; margin-bottom: 1.25rem; text-decoration: none; cursor: pointer; transition: border-color 0.15s ease; }
 .staleNudge:hover { border-color: #f5b964; }
 .staleNudgeIcon { font-size: 1.25rem; flex-shrink: 0; }
 .staleNudgeText { flex: 1; font-size: 0.875rem; color: var(--ds-status-amber-fg); }
@@ -248,22 +249,37 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  /* Let the 1fr column shrink so the Active Jobs scroller scrolls internally
+     instead of widening the column past the viewport. */
+  min-width: 0;
 }
 
 .colRight {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 /* ── Card base ───────────────────────────────────────── */
 .card {
   background: var(--white);
   border-radius: 12px;
+  border-top: 3px solid var(--card-accent, transparent);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   min-width: 0;
 }
+
+/* Per-section top accent — the pipeline STAGE_COLORS palette, so the employer
+   dashboard reads like the candidate dashboard + the board columns. */
+.aBlue { --card-accent: #3b82f6; }
+.aViolet { --card-accent: #8b5cf6; }
+.aCyan { --card-accent: #06b6d4; }
+.aEmerald { --card-accent: #10b981; }
+.aGreen { --card-accent: #16a34a; }
+.aAmber { --card-accent: #f59e0b; }
+.aYellow { --card-accent: #FFE500; }
 
 .cardHeader {
   display: flex;
@@ -784,3 +800,57 @@
 @media (max-width: 375px) {
   .dashboardWrap { padding: 0.5rem; }
 }
+
+/* ── Active Jobs — horizontal scroll-snap row of post tiles ──────────── */
+.jobScrollWrap { position: relative; }
+.jobScroller {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.jobScroller::-webkit-scrollbar { height: 6px; }
+.jobScroller::-webkit-scrollbar-thumb { background: #d6dae0; border-radius: 999px; }
+.jobScroller::-webkit-scrollbar-track { background: transparent; }
+.jobTile {
+  flex: 0 0 auto;
+  width: 200px;
+  max-width: 78%;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border-gray);
+  border-radius: 10px;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  box-sizing: border-box;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.jobTile:hover { transform: translateY(-2px); border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(15,23,42,.08); }
+.jobTileTitle { margin: 0; font-size: 0.9rem; font-weight: 700; color: #1a1a1a; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.3em; }
+.jobTileProgress { height: 4px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+.jobTileProgressFill { height: 100%; border-radius: 999px; background: #FFE500; }
+.jobTileStats { display: flex; gap: 0.85rem; margin-top: auto; }
+.jobTileStat { display: flex; flex-direction: column; }
+.jobTileStatNum { font-size: 1rem; font-weight: 800; color: #1e293b; line-height: 1; }
+.jobTileStatLabel { font-size: 0.6rem; text-transform: uppercase; letter-spacing: .04em; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+/* Desktop scroll arrows — hidden on touch/mobile (native swipe). */
+.jobNav {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid #e2e8f0; background: #fff;
+  box-shadow: 0 2px 10px rgba(15,23,42,.16);
+  color: #0f172a; font-size: 20px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 0 0 2px;
+}
+.jobNav:hover { background: #f8fafc; border-color: #cbd5e1; }
+.jobNavPrev { left: -8px; }
+.jobNavNext { right: -8px; }
+@media (max-width: 768px) { .jobNav { display: none; } }

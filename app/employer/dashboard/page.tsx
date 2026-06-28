@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Session } from '@supabase/supabase-js'
@@ -178,6 +178,37 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
           )
         })}
       </div>
+    </div>
+  )
+}
+
+// ── Active Jobs horizontal scroller — the employer's own posts as fixed-width
+// tiles in a native scroll-snap row. Each tile taps to that post's management
+// (its applicants view), NOT the candidate apply page. Desktop ‹ › arrows are
+// hidden on mobile via CSS (native swipe). Shared by the desktop + mobile cards.
+function ActiveJobsScroller({ jobs, styles }: { jobs: any[]; styles: Record<string, string> }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 240, behavior: 'smooth' })
+  return (
+    <div className={styles.jobScrollWrap}>
+      <button type="button" className={`${styles.jobNav} ${styles.jobNavPrev}`} aria-label="Scroll jobs left" onClick={() => scroll(-1)}>&lsaquo;</button>
+      <div className={styles.jobScroller} ref={ref}>
+        {jobs.map((job: any) => {
+          const appCount = job.application_count || 0
+          const fillPct = Math.min((appCount / 20) * 100, 100)
+          return (
+            <Link key={job.id} href={`/my-jobs/${job.id}/applications`} className={styles.jobTile}>
+              <h4 className={styles.jobTileTitle}>{job.title}</h4>
+              <div className={styles.jobTileProgress}><div className={styles.jobTileProgressFill} style={{ width: `${fillPct}%` }} /></div>
+              <div className={styles.jobTileStats}>
+                <div className={styles.jobTileStat}><span className={styles.jobTileStatNum}>{job.views || 0}</span><span className={styles.jobTileStatLabel}>Views</span></div>
+                <div className={styles.jobTileStat}><span className={styles.jobTileStatNum}>{appCount}</span><span className={styles.jobTileStatLabel}>Apps</span></div>
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+      <button type="button" className={`${styles.jobNav} ${styles.jobNavNext}`} aria-label="Scroll jobs right" onClick={() => scroll(1)}>&rsaquo;</button>
     </div>
   )
 }
@@ -1010,6 +1041,7 @@ export default function EmployerDashboardPage() {
               padding: '0.85rem 1.1rem',
               background: '#fffbeb',
               border: '1px solid #fde68a',
+              borderTop: '3px solid #f59e0b',
               borderRadius: '10px',
               marginBottom: '1.25rem',
             }}
@@ -1039,7 +1071,7 @@ export default function EmployerDashboardPage() {
 
           {/* ── FULL WIDTH: Pipeline ── */}
           <div className={styles.colFull}>
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aBlue}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Application Pipeline</h2>
                 <Link href="/pipeline" className={styles.cardLink}>View All</Link>
@@ -1080,44 +1112,14 @@ export default function EmployerDashboardPage() {
 
           {/* ── LEFT COLUMN: Active Jobs ── */}
           <div className={styles.colLeft}>
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aYellow}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Active Jobs</h2>
                 <Link href="/my-jobs" className={styles.cardLink}>Manage Jobs</Link>
               </div>
               <div className={styles.cardBody}>
                 {activeJobsList.length > 0 ? (
-                  <div className={styles.jobList}>
-                    {activeJobsList.map((job: any) => {
-                      const appCount = job.application_count || 0
-                      const fillPct = Math.min((appCount / 20) * 100, 100)
-                      return (
-                        <Link href="/my-jobs" key={job.id} className={styles.jobItem}>
-                          <div className={styles.jobItemInfo}>
-                            <h4>{job.title}</h4>
-                            <div className={styles.jobItemMeta}>
-                              <div className={styles.jobProgressWrap}>
-                                <div className={styles.jobProgressLabel}>{appCount} apps</div>
-                                <div className={styles.jobProgressBar}>
-                                  <div className={styles.jobProgressFill} style={{ width: `${fillPct}%` }} />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className={styles.jobItemStats}>
-                            <div className={styles.jobItemStat}>
-                              <span className={styles.jobItemStatNum}>{job.views || 0}</span>
-                              <span className={styles.jobItemStatLabel}>Views</span>
-                            </div>
-                            <div className={styles.jobItemStat}>
-                              <span className={styles.jobItemStatNum}>{appCount}</span>
-                              <span className={styles.jobItemStatLabel}>Apps</span>
-                            </div>
-                          </div>
-                        </Link>
-                      )
-                    })}
-                  </div>
+                  <ActiveJobsScroller jobs={activeJobsList} styles={styles} />
                 ) : (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128188;</div>
@@ -1131,7 +1133,7 @@ export default function EmployerDashboardPage() {
 
           {/* ── RIGHT COLUMN: Messages + Applicants (desktop only via CSS) ── */}
           <div className={styles.colRight}>
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aCyan}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Recent Messages</h2>
                 <Link href="/messages" className={styles.cardLink}>View All</Link>
@@ -1167,7 +1169,7 @@ export default function EmployerDashboardPage() {
               </div>
             </div>
 
-            <div className={styles.card}>
+            <div className={`${styles.card} ${styles.aViolet}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Recent Applicants</h2>
                 <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
@@ -1205,31 +1207,14 @@ export default function EmployerDashboardPage() {
           {/* ── MOBILE ONLY: Active Jobs 2-col grid ── */}
           {isMobile && (
             <div className={styles.colFull}>
-              <div className={styles.card}>
+              <div className={`${styles.card} ${styles.aYellow}`}>
                 <div className={styles.cardHeader}>
                   <h2 className={styles.cardTitle}>Active Jobs</h2>
                   <Link href="/my-jobs" className={styles.cardLink}>Manage Jobs</Link>
                 </div>
                 <div className={styles.cardBody}>
                   {activeJobsList.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.375rem', width: '100%', boxSizing: 'border-box' as const }}>
-                      {activeJobsList.map((job: any) => {
-                        const appCount = job.application_count || 0
-                        const fillPct = Math.min((appCount / 20) * 100, 100)
-                        return (
-                          <Link key={job.id} href="/my-jobs" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.625rem', textDecoration: 'none', color: 'inherit', boxSizing: 'border-box' as const, width: '100%', overflow: 'hidden' }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
-                              <div style={{ height: 3, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden', marginTop: '0.25rem' }}><div style={{ height: '100%', background: '#FFE500', borderRadius: 2, width: `${fillPct}%` }} /></div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b' }}>{job.views || 0}</div><div style={{ fontSize: '0.5rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Views</div></div>
-                              <div style={{ textAlign: 'center' as const }}><div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b' }}>{appCount}</div><div style={{ fontSize: '0.5rem', color: '#94a3b8', textTransform: 'uppercase' as const }}>Apps</div></div>
-                            </div>
-                          </Link>
-                        )
-                      })}
-                    </div>
+                    <ActiveJobsScroller jobs={activeJobsList} styles={styles} />
                   ) : (
                     <div className={styles.emptyState}>
                       <div className={styles.emptyIcon}>&#128188;</div>
@@ -1244,7 +1229,7 @@ export default function EmployerDashboardPage() {
           {/* ── MOBILE ONLY: Candidate card slider ── */}
           {isMobile && (
             <div className={styles.colFull}>
-              <div className={styles.card}>
+              <div className={`${styles.card} ${styles.aViolet}`}>
                 <div className={styles.cardHeader}>
                   <h2 className={styles.cardTitle}>Recent Applicants</h2>
                   <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
@@ -1266,7 +1251,7 @@ export default function EmployerDashboardPage() {
           {/* ── MOBILE ONLY: Messages stacked list ── */}
           {isMobile && (
             <div className={styles.colFull}>
-              <div className={styles.card}>
+              <div className={`${styles.card} ${styles.aCyan}`}>
                 <div className={styles.cardHeader}>
                   <h2 className={styles.cardTitle}>Recent Messages</h2>
                   <Link href="/messages" className={styles.cardLink}>View All</Link>
