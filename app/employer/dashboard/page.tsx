@@ -1134,7 +1134,7 @@ export default function EmployerDashboardPage() {
                         <div className={styles.pipeColBody}>
                           {candidates.length === 0 ? (
                             <span className={styles.pipeColEmpty}>No candidates</span>
-                          ) : candidates.slice(0, 3).map((app: any) => (
+                          ) : candidates.slice(0, 2).map((app: any) => (
                             <Link key={app.id} href="/pipeline" className={styles.pipeCard}>
                               <div className={styles.pipeCardTop}>
                                 <span className={styles.pipeAvatar} style={{ background: color }}>{getInitials(app.candidate_name || 'C')}</span>
@@ -1149,7 +1149,7 @@ export default function EmployerDashboardPage() {
                               <span className={styles.pipeReview}>Review &rarr;</span>
                             </Link>
                           ))}
-                          {candidates.length > 3 && <Link href="/pipeline" className={styles.pipeColMore}>+{candidates.length - 3} more</Link>}
+                          {candidates.length > 2 && <Link href="/pipeline" className={styles.pipeColMore}>+{candidates.length - 2} more</Link>}
                         </div>
                       </div>
                     )

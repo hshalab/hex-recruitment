@@ -318,6 +318,9 @@
 .pipelineScroller {
   display: flex;
   gap: 0.75rem;
+  /* Let each stage column size to its own content — an empty/short column must
+     not stretch to the tallest column's height. */
+  align-items: flex-start;
   overflow-x: auto;
   overflow-y: hidden;
   flex-wrap: nowrap;
