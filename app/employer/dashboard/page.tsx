@@ -516,7 +516,7 @@ function MessagesSlider({ conversations }: { conversations: any[] }) {
           <Link key={conv.id} href={`/messages?conversation=${conv.id}`} style={{ flex: '0 0 220px', minWidth: 220, background: conv.unreadCount > 0 ? '#fffbeb' : '#fff', border: conv.unreadCount > 0 ? '1px solid #fde68a' : '1px solid #e5e7eb', borderRadius: '12px', padding: '1rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.5rem', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{ position: 'relative' }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#cffafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#0e7490' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#fff' }}>
                   {getInitials(conv.participantName)}
                 </div>
                 {conv.unreadCount > 0 && (
@@ -1296,7 +1296,7 @@ export default function EmployerDashboardPage() {
                       {recentConversations.map((conv: any) => (
                         <Link href="/messages" key={conv.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: conv.unreadCount > 0 ? '#fffbeb' : '#fff', border: conv.unreadCount > 0 ? '1px solid #fde68a' : '1px solid #e5e7eb', borderRadius: '12px', textDecoration: 'none', color: 'inherit', boxSizing: 'border-box' as const, width: '100%', overflow: 'hidden' }}>
                           <div style={{ position: 'relative' as const, flexShrink: 0 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#cffafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#0e7490' }}>
+                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#fff' }}>
                               {(conv.participantName || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                             </div>
                             {conv.unreadCount > 0 && <div style={{ position: 'absolute' as const, top: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: '#ef4444', color: '#fff', fontSize: '0.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>{conv.unreadCount}</div>}
@@ -1305,7 +1305,7 @@ export default function EmployerDashboardPage() {
                             <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1e293b' }}>{conv.participantName}</div>
                             <div style={{ fontSize: '0.7rem', color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 'calc(100vw - 140px)' }}>{conv.lastMessage || 'No messages yet'}</div>
                           </div>
-                          <span style={{ fontSize: '0.62rem', color: '#94a3b8', flexShrink: 0 }}>{formatRelativeTime(conv.lastMessageAt)}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: '0.62rem', lineHeight: 1.4, padding: '0.15rem 0.45rem', borderRadius: 999, background: '#fef3c7', border: '1px solid #fde68a', color: '#92400e', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>{formatRelativeTime(conv.lastMessageAt)}</span>
                         </Link>
                       ))}
                     </div>
