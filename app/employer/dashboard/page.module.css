@@ -863,14 +863,19 @@
 /* Active Jobs: the real image-led JobCardLink as a scroll-snap item + the
    management overlay (apps · views) so stats aren't lost. */
 .jobCardItem { flex: 0 0 auto; width: 240px; max-width: 80%; scroll-snap-align: start; text-decoration: none; }
-.jobOverlay { position: absolute; top: 8px; left: 8px; z-index: 3; background: rgba(10, 22, 40, 0.62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.jobOverlay { position: absolute; bottom: 8px; right: 8px; z-index: 3; background: rgba(10, 22, 40, 0.62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
 
 /* Recent Applicants: horizontal row of CandidateCards (employer mode) + Message. */
 .applicantScroller { display: flex; gap: 0.7rem; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: thin; }
 .applicantScroller::-webkit-scrollbar { height: 6px; }
 .applicantScroller::-webkit-scrollbar-thumb { background: #d6dae0; border-radius: 999px; }
 .applicantScroller::-webkit-scrollbar-track { background: transparent; }
-.applicantItem { flex: 0 0 auto; width: 260px; max-width: 84%; scroll-snap-align: start; display: flex; flex-direction: column; gap: 0.5rem; }
+.applicantItem { flex: 0 0 auto; width: 280px; max-width: 86%; scroll-snap-align: start; display: flex; flex-direction: column; gap: 0.5rem; }
+/* CandidateCard's 16/11 ratio is sized for the big /candidates grid cells; at the
+   dashboard's compact width that makes the card too short and its bottom content
+   collides with the name + watermark. Scoped to .applicantItem only (so the
+   /candidates appearance is untouched): drop the ratio and give it room to breathe. */
+.applicantItem :global([class*='cardEmployer']) { aspect-ratio: auto; height: 238px; }
 .applicantMsg { display: block; text-align: center; padding: 0.55rem; font-size: 0.82rem; font-weight: 700; color: #FFE500; background: #0f172a; border-radius: 9px; text-decoration: none; }
 .applicantMsg:hover { background: #1e293b; }
 
