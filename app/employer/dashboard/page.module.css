@@ -889,10 +889,12 @@
    collides with the name + watermark. Scoped to .applicantItem only (so the
    /candidates appearance is untouched): drop the ratio and give it room to breathe. */
 .applicantItem :global([class*='cardEmployer']) { aspect-ratio: auto; height: 238px; }
-/* Softer violet primary (matches the Recent Applicants accent) instead of the
-   harsh black/yellow pill — still a clear, legible primary action. */
-.applicantMsg { display: block; text-align: center; padding: 0.55rem; font-size: 0.82rem; font-weight: 700; color: #fff; background: #7c3aed; border-radius: 9px; text-decoration: none; }
-.applicantMsg:hover { background: #6d28d9; }
+/* Soft-pill treatment in the SAME family as StageDurationBadge (pale tinted bg,
+   coloured text of the same hue, subtle matching border, 999px pill). Violet so it
+   still reads as the action; full-width + a slightly stronger tint give it primary
+   emphasis while staying in the soft language with the badges + time pills. */
+.applicantMsg { display: block; text-align: center; padding: 0.5rem; font-size: 0.82rem; font-weight: 600; border-radius: 999px; text-decoration: none; color: #6d28d9; background: color-mix(in srgb, #7c3aed 14%, transparent); border: 1px solid color-mix(in srgb, #7c3aed 34%, transparent); }
+.applicantMsg:hover { background: color-mix(in srgb, #7c3aed 22%, transparent); border-color: color-mix(in srgb, #7c3aed 46%, transparent); }
 
 /* Application Pipeline — compact read-only mirror of the /pipeline board. */
 .pipeCol { flex: 0 0 auto; width: 230px; max-width: 82%; scroll-snap-align: start; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
