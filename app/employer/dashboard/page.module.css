@@ -884,6 +884,13 @@
    FeaturedJobs are untouched. */
 .jobCardItem :global([class*='BrandedJobFallback_brand']) { display: none; }
 
+/* The shared job card is 16/11; at the dashboard's compact width that's too short
+   for a 3-line role title, so its bottom-anchored content overflows upward and
+   clips the company chip. Give just these cards a touch more height so a 3-line
+   title fits cleanly. Targets the card (the Link's only child) without depending
+   on the shared module's hashed class name. */
+.jobCardItem > div { aspect-ratio: auto; height: 200px; }
+
 .jobOverlay { position: absolute; bottom: 8px; right: 8px; z-index: 3; background: rgba(10, 22, 40, 0.62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
 
 /* Recent Applicants: horizontal row of CandidateCards (employer mode) + Message. */
