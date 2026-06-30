@@ -1244,27 +1244,10 @@ export default function EmployerDashboardPage() {
             </div>
           </div>
 
-          {/* ── MOBILE ONLY: Active Jobs 2-col grid ── */}
-          {isMobile && (
-            <div className={styles.colFull}>
-              <div className={`${styles.card} ${styles.aYellow}`}>
-                <div className={styles.cardHeader}>
-                  <h2 className={styles.cardTitle}>Active Jobs</h2>
-                  <Link href="/my-jobs" className={styles.cardLink}>Manage Jobs</Link>
-                </div>
-                <div className={styles.cardBody}>
-                  {activeJobsList.length > 0 ? (
-                    <ActiveJobsScroller jobs={activeJobsList} styles={styles} />
-                  ) : (
-                    <div className={styles.emptyState}>
-                      <div className={styles.emptyIcon}>&#128188;</div>
-                      <p>No active jobs.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Active Jobs is rendered once in the full-width colFull block above
+              (it spans the row on desktop as a grid, and on mobile via the same
+              .jobScroller, which is a scroller ≤960). No separate mobile block —
+              a duplicate one previously rendered Active Jobs twice on mobile. */}
 
           {/* ── MOBILE ONLY: Candidate card slider ── */}
           {isMobile && (
