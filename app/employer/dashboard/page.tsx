@@ -1226,7 +1226,26 @@ export default function EmployerDashboardPage() {
               </div>
               <div className={styles.cardBody}>
                 {applications.length > 0 ? (
-                  <ApplicantScroller apps={recentApps} styles={styles} router={router} />
+                  /* Desktop right column is narrow (340px) — a compact list reads
+                     cleanly here and matches the Recent Messages list above it. The
+                     rich CandidateCard scroller is used on mobile (full width). */
+                  <div className={styles.recentApps}>
+                    <p className={styles.previewLabel}>{totalApplications} total applications</p>
+                    {recentApps.map((app: any) => (
+                      <Link href={`/candidates/${app.candidate_id}`} key={app.id} className={styles.appCard}>
+                        <div className={styles.appCardInfo}>
+                          <h4>{app.candidate_name || 'Candidate'}</h4>
+                          <p>{app.job_title || 'Position'} &middot; {formatRelativeTime(app.created_at)}</p>
+                        </div>
+                        <div className={styles.appCardRight}>
+                          <span className={`${styles.statusBadge} ${styles[getStatusStyle(app.status)]}`}>
+                            {STATUS_LABELS[app.status] || app.status}
+                          </span>
+                          <span className={styles.appChevron}>&rsaquo;</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 ) : (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128196;</div>
