@@ -927,3 +927,29 @@
 .pipeCardRole { font-size: 0.68rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pipeReview { font-size: 0.72rem; font-weight: 700; color: #0f172a; align-self: flex-start; }
 .pipeColMore { font-size: 0.72rem; font-weight: 600; color: #475569; text-decoration: none; padding: 0.2rem; }
+
+/* ── Desktop (≥961px) responsive correction ──────────────────────────────────
+   The dashboard's horizontal card scrollers + fixed mobile card sizes were tuned
+   for the small-screen swipe layout and leaked past their breakpoint, leaving the
+   wide desktop grid with dead space — most visibly a 2-card Active Jobs scroller
+   stranded in a full-width row, and pipeline stage columns that didn't use the row.
+   Convert Active Jobs to a filling grid and let the pipeline columns share the
+   width. Everything ≤960 keeps the mobile scrollers exactly as shipped. */
+@media (min-width: 961px) {
+  /* Active Jobs: fill the full-width row as a grid instead of a short scroller. */
+  .jobScroller {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+  .jobCardItem { width: auto; max-width: none; }
+  /* Natural card proportions on desktop (the 200px height was a mobile chip-clip fix). */
+  .jobCardItem > div { height: auto; aspect-ratio: 16 / 11; }
+  .jobNav { display: none; }
+
+  /* Pipeline: let the stage columns share the row so there's no dead space at the
+     right on wide screens (they still scroll if the row is too narrow). */
+  .pipeCol { flex: 1 1 0; width: auto; min-width: 190px; }
+}
