@@ -1160,8 +1160,9 @@ export default function EmployerDashboardPage() {
           </div>
 
 
-          {/* ── LEFT COLUMN: Active Jobs ── */}
-          <div className={styles.colLeft}>
+          {/* ── Active Jobs — full width: the horizontal image-card scroller uses the
+              width well and removes the empty gap a short left column left behind. ── */}
+          <div className={styles.colFull}>
             <div className={`${styles.card} ${styles.aYellow}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Active Jobs</h2>
@@ -1181,7 +1182,30 @@ export default function EmployerDashboardPage() {
             </div>
           </div>
 
-          {/* ── RIGHT COLUMN: Messages + Applicants (desktop only via CSS) ── */}
+          {/* ── Recent Applicants — WIDE left column: the rich CandidateCard scroller
+              needs the width (it was cramped in the narrow right column), and it sits
+              under the full-width Active Jobs row. ── */}
+          <div className={styles.colLeft}>
+            <div className={`${styles.card} ${styles.aViolet}`}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>Recent Applicants</h2>
+                <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
+              </div>
+              <div className={styles.cardBody}>
+                {applications.length > 0 ? (
+                  <ApplicantScroller apps={recentApps} styles={styles} router={router} />
+                ) : (
+                  <div className={styles.emptyState}>
+                    <div className={styles.emptyIcon}>&#128196;</div>
+                    <p>No applications yet.</p>
+                    <Link href="/post-job" className={styles.cardLink}>Post a Job &rarr;</Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Recent Messages — narrow right column (a list fits cleanly here) ── */}
           <div className={styles.colRight}>
             <div className={`${styles.card} ${styles.aCyan}`}>
               <div className={styles.cardHeader}>
@@ -1214,43 +1238,6 @@ export default function EmployerDashboardPage() {
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128172;</div>
                     <p>No messages yet.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className={`${styles.card} ${styles.aViolet}`}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Recent Applicants</h2>
-                <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
-              </div>
-              <div className={styles.cardBody}>
-                {applications.length > 0 ? (
-                  /* Desktop right column is narrow (340px) — a compact list reads
-                     cleanly here and matches the Recent Messages list above it. The
-                     rich CandidateCard scroller is used on mobile (full width). */
-                  <div className={styles.recentApps}>
-                    <p className={styles.previewLabel}>{totalApplications} total applications</p>
-                    {recentApps.map((app: any) => (
-                      <Link href={`/candidates/${app.candidate_id}`} key={app.id} className={styles.appCard}>
-                        <div className={styles.appCardInfo}>
-                          <h4>{app.candidate_name || 'Candidate'}</h4>
-                          <p>{app.job_title || 'Position'} &middot; {formatRelativeTime(app.created_at)}</p>
-                        </div>
-                        <div className={styles.appCardRight}>
-                          <span className={`${styles.statusBadge} ${styles[getStatusStyle(app.status)]}`}>
-                            {STATUS_LABELS[app.status] || app.status}
-                          </span>
-                          <span className={styles.appChevron}>&rsaquo;</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>&#128196;</div>
-                    <p>No applications yet.</p>
-                    <Link href="/post-job" className={styles.cardLink}>Post a Job &rarr;</Link>
                   </div>
                 )}
               </div>
