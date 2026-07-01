@@ -936,10 +936,13 @@
    Convert Active Jobs to a filling grid and let the pipeline columns share the
    width. Everything ≤960 keeps the mobile scrollers exactly as shipped. */
 @media (min-width: 961px) {
-  /* Active Jobs: fill the full-width row as a grid instead of a short scroller. */
+  /* Active Jobs: a 3-per-row grid instead of the mobile scroller. Fixed 3 tracks
+     (not auto-fit) so cards sit at the 3-column size and don't stretch to fill the
+     row — with 2 live jobs you get 2 cards + a trailing empty track, and 3+ jobs
+     wrap cleanly 3-up. */
   .jobScroller {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
     overflow: visible;
     scroll-snap-type: none;
