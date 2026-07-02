@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
+import PasswordInput from '@/components/PasswordInput'
 import styles from './page.module.css'
 
 type Phase =
@@ -197,9 +198,8 @@ function AcceptInviteContent() {
             autoComplete="name"
             autoFocus
           />
-          <input
+          <PasswordInput
             className={styles.field}
-            type="password"
             placeholder="Create a password (8+ characters)"
             value={signupPassword}
             onChange={(e) => setSignupPassword(e.target.value)}
