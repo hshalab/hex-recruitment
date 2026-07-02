@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { getEmployerCapabilities } from '@/lib/employer'
+import type { PermissionKey } from '@/lib/teamPermissions'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import styles from './page.module.css'
 
@@ -15,6 +17,9 @@ interface SettingCard {
   icon: string
   href: string
   forUserTypes: ('employer' | 'employee')[]
+  // When set, an employer must hold this capability to see the card. Owners
+  // hold everything; team members are hidden the controls they can't use.
+  requiresCap?: PermissionKey
 }
 
 const settingsCards: SettingCard[] = [
@@ -49,6 +54,7 @@ const settingsCards: SettingCard[] = [
     icon: '🏢',
     href: '/settings/company',
     forUserTypes: ['employer'],
+    requiresCap: 'edit_company',
   },
   {
     id: 'availability',
@@ -73,6 +79,7 @@ const settingsCards: SettingCard[] = [
     icon: '👥',
     href: '/settings/team',
     forUserTypes: ['employer'],
+    requiresCap: 'manage_team',
   },
   {
     id: 'notifications',
@@ -97,6 +104,7 @@ const settingsCards: SettingCard[] = [
     icon: '💳',
     href: '/settings/subscription',
     forUserTypes: ['employer', 'employee'],
+    requiresCap: 'manage_billing',
   },
 ]
 
@@ -105,6 +113,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [userType, setUserType] = useState<'employer' | 'employee' | null>(null)
   const [userName, setUserName] = useState('')
+  const [caps, setCaps] = useState<Record<PermissionKey, boolean> | null>(null)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -136,6 +145,9 @@ export default function SettingsPage() {
 
       if (role === 'employer') {
         setUserName(session.user.user_metadata?.company_name || 'User')
+        // Resolve this employer's capabilities so team members only see the
+        // settings they can actually use (owners hold everything).
+        setCaps(await getEmployerCapabilities(supabase))
       } else {
         setUserName(`${session.user.user_metadata?.first_name || ''} ${session.user.user_metadata?.last_name || ''}`.trim() || 'User')
       }
@@ -146,9 +158,14 @@ export default function SettingsPage() {
     checkAuth()
   }, [router])
 
-  const visibleCards = settingsCards.filter(card =>
-    userType && card.forUserTypes.includes(userType)
-  )
+  const visibleCards = settingsCards.filter(card => {
+    if (!userType || !card.forUserTypes.includes(userType)) return false
+    // Capability gate applies to employers only; a resolved cap set that lacks
+    // the requirement hides the card. Unresolved caps (null) default to visible
+    // so owners / DEV are never over-hidden.
+    if (card.requiresCap && userType === 'employer' && caps && caps[card.requiresCap] === false) return false
+    return true
+  })
 
   if (loading) {
     return (

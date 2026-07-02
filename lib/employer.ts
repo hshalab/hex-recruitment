@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { PERMISSIONS, type PermissionKey } from './teamPermissions'
 
 /**
  * Resolve the OWNER user_id of the employer the current signed-in user belongs to.
@@ -37,6 +38,35 @@ export async function getCurrentEmployerOwnerId(
  * Returns null if the user is not an active member of any employer (callers
  * should fall back to the user's own id to preserve single-user behaviour).
  */
+/**
+ * Resolve the current user's employer capabilities for UI gating (which settings
+ * cards / controls to show). Owner or unknown/legacy membership → full access
+ * (never over-hide from a real owner); an active MEMBER → their actual
+ * permissions. The authoritative enforcement is still RLS + the API routes; this
+ * only decides what to render.
+ */
+export async function getEmployerCapabilities(
+  supabase: SupabaseClient,
+): Promise<Record<PermissionKey, boolean>> {
+  const keys = PERMISSIONS.map(p => p.key)
+  const allTrue = () => Object.fromEntries(keys.map(k => [k, true])) as Record<PermissionKey, boolean>
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return Object.fromEntries(keys.map(k => [k, false])) as Record<PermissionKey, boolean>
+
+  const { data: member } = await supabase
+    .from('employer_members')
+    .select('role, permissions')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle()
+
+  if (!member || (member as { role: string }).role === 'owner') return allTrue()
+  const perms = ((member as { permissions: Record<string, boolean> }).permissions) || {}
+  return Object.fromEntries(keys.map(k => [k, perms[k] === true])) as Record<PermissionKey, boolean>
+}
+
 export async function getEmployerOwnerIdForUser(
   admin: SupabaseClient,
   userId: string,

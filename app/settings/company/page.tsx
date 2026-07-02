@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import PostcodeLookup, { type AddressData } from '@/components/PostcodeLookup'
 import { supabase } from '@/lib/supabase'
+import { getEmployerCapabilities } from '@/lib/employer'
 import { DEV_MODE, getMockUserType } from '@/lib/mockAuth'
 import styles from './page.module.css'
 
@@ -238,6 +239,14 @@ export default function CompanySettingsPage() {
       const userRole = session.user.user_metadata?.role
       if (userRole !== 'employer') {
         router.push('/login')
+        return
+      }
+
+      // Multi-user: editing the company profile is owner/edit_company only. A
+      // team member without it is bounced to Settings (RLS also blocks the write).
+      const caps = await getEmployerCapabilities(supabase)
+      if (!caps.edit_company) {
+        router.push('/settings')
         return
       }
 

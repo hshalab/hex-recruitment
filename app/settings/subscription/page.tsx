@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { getEmployerCapabilities } from '@/lib/employer'
 import { DEV_MODE, getMockUserType, getSubscriptionStatus, getTrialExpiryDate } from '@/lib/mockAuth'
 import {
   EMPLOYER_SUBSCRIPTION_PRICE,
@@ -114,6 +115,15 @@ export default function SubscriptionSettingsPage() {
       const role = session.user.user_metadata?.role
       if (role !== 'employer') {
         router.push('/login')
+        return
+      }
+
+      // Multi-user: billing is owner/manage_billing only. A team member without
+      // it is bounced back to Settings (defence in depth on top of the RLS gate
+      // that already blocks any subscription write).
+      const caps = await getEmployerCapabilities(supabase)
+      if (!caps.manage_billing) {
+        router.push('/settings')
         return
       }
 
