@@ -28,7 +28,16 @@ const C = {
 }
 
 async function authFetch(url: string, init: RequestInit = {}) {
-  const { data: { session } } = await supabase.auth.getSession()
+  // Always attach a FRESH access token. getSession() can hand back a token that
+  // is missing or within seconds of expiry (especially right after page load),
+  // which the API rejects with 401. Refresh in that case so a request from a
+  // hydrated session always carries a valid token.
+  let { data: { session } } = await supabase.auth.getSession()
+  const nearExpiry = session?.expires_at ? session.expires_at * 1000 < Date.now() + 15_000 : false
+  if (!session?.access_token || nearExpiry) {
+    const { data } = await supabase.auth.refreshSession()
+    if (data?.session) session = data.session
+  }
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(init.headers as Record<string, string> || {}) }
   if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`
   const res = await fetch(url, { ...init, headers })
@@ -100,6 +109,7 @@ export default function TeamSettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [denied, setDenied] = useState(false)
+  const [authReady, setAuthReady] = useState(false)
   const [members, setMembers] = useState<Member[]>([])
   const [viewerIsOwner, setViewerIsOwner] = useState(false)
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'err' } | null>(null)
@@ -132,8 +142,16 @@ export default function TeamSettingsPage() {
 
   useEffect(() => {
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      // Confirm a live session (refresh if the stored token is stale) BEFORE
+      // enabling any team action, so the first click always carries a valid
+      // token — no pre-hydration 401, no refresh-and-retry.
+      let { data: { session } } = await supabase.auth.getSession()
+      if (session && session.expires_at && session.expires_at * 1000 < Date.now() + 15_000) {
+        const { data } = await supabase.auth.refreshSession()
+        if (data?.session) session = data.session
+      }
       if (!session) { router.push('/login/employer'); return }
+      setAuthReady(true)
       await load()
     }
     init()
@@ -195,7 +213,7 @@ export default function TeamSettingsPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: '0.35rem' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Team</h1>
           {!showInvite && (
-            <button onClick={() => setShowInvite(true)} style={{ ...btn(C.yellow, C.ink), padding: '9px 16px', fontSize: '0.9rem' }}>
+            <button disabled={!authReady} onClick={() => setShowInvite(true)} style={{ ...btn(C.yellow, C.ink), padding: '9px 16px', fontSize: '0.9rem', opacity: authReady ? 1 : 0.6, cursor: authReady ? 'pointer' : 'default' }}>
               Invite teammate
             </button>
           )}
@@ -227,7 +245,7 @@ export default function TeamSettingsPage() {
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>What can they do?</label>
             <PermissionPicker value={invitePerms} onChange={setInvitePerms} viewerIsOwner={viewerIsOwner} />
             <div style={{ display: 'flex', gap: 10, marginTop: '1.25rem' }}>
-              <button disabled={inviteBusy || !inviteEmail.trim()} onClick={doInvite} style={{ ...btn(C.yellow, C.ink), padding: '9px 18px', fontSize: '0.9rem', opacity: inviteBusy || !inviteEmail.trim() ? 0.6 : 1 }}>
+              <button disabled={inviteBusy || !inviteEmail.trim() || !authReady} onClick={doInvite} style={{ ...btn(C.yellow, C.ink), padding: '9px 18px', fontSize: '0.9rem', opacity: inviteBusy || !inviteEmail.trim() || !authReady ? 0.6 : 1 }}>
                 {inviteBusy ? 'Sending…' : 'Send invitation'}
               </button>
               <button onClick={() => setShowInvite(false)} style={{ ...btn('#fff', '#334155'), padding: '9px 18px', fontSize: '0.9rem' }}>Cancel</button>

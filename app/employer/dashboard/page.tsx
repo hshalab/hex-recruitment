@@ -599,15 +599,21 @@ export default function EmployerDashboardPage() {
       // is keyed employer_id / user_id = OWNER user_id. Resolve the owner of the
       // employer this user is active in — owner → own id (unchanged).
       const userId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
+      // Provisional name from the session; overridden by the resolved employer's
+      // profile below so a team member sees the EMPLOYER'S name, not their own
+      // (a member has no company_name in their metadata → would show "Your Company").
       setCompanyName(session.user.user_metadata?.company_name || 'Your Company')
 
-      // Fetch company logo from employer_profiles, fallback to user_metadata
+      // Fetch company name/logo from the RESOLVED employer's profile (owner's row).
       try {
         const { data: empProfile } = await supabase
           .from('employer_profiles')
-          .select('logo_url, description')
+          .select('company_name, logo_url, description')
           .eq('user_id', userId)
           .maybeSingle()
+        if (empProfile?.company_name) {
+          setCompanyName(empProfile.company_name)
+        }
         if (empProfile?.logo_url) {
           setCompanyLogo(empProfile.logo_url)
         } else if (session.user.user_metadata?.logo_url) {
