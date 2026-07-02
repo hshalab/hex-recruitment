@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendEmail } from '@/lib/email'
 import { buildInviteEmail } from '@/lib/teamInviteEmail'
+import { inviteOrigin } from '@/lib/inviteOrigin'
 import { PERMISSIONS, OWNER_ONLY_KEYS, type Permissions, type PermissionKey } from '@/lib/teamPermissions'
 
 const ALL_KEYS = PERMISSIONS.map(p => p.key)
@@ -16,14 +17,6 @@ function sanitizePerms(input: unknown): Permissions {
     }
   }
   return out
-}
-
-function originFrom(req: NextRequest): string {
-  const env = process.env.NEXT_PUBLIC_SITE_URL
-  const host = req.headers.get('host')
-  const proto = req.headers.get('x-forwarded-proto') ?? 'https'
-  if (host) return `${proto}://${host}`
-  return env || 'https://thrivecareer.co.uk'
 }
 
 /**
@@ -99,7 +92,7 @@ export async function POST(req: NextRequest) {
   const company = prof?.company_name || 'the team'
   const inviterName = user.user_metadata?.full_name || user.email || 'A teammate'
 
-  const link = `${originFrom(req)}/invite/accept?token=${inviteToken}`
+  const link = `${inviteOrigin(req)}/invite/accept?token=${inviteToken}`
   const { subject, html } = buildInviteEmail({ company, inviterName, email, link })
   const sent = await sendEmail(email, subject, html)
 
