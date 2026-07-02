@@ -43,17 +43,15 @@ export interface Preset {
   permissions: Permissions
 }
 
+// Two presets only. Recruiter covers all four operational capabilities (the
+// three owner-granted ones stay off); Admin is everything. A custom mix is still
+// possible via the manual checkboxes. Recruiter includes manage_jobs, so the
+// confirmHire "mark job filled" step works for any preset-based member.
 export const PRESETS: Preset[] = [
   {
     id: 'recruiter',
     label: 'Recruiter',
-    description: 'Review applicants, move the pipeline and run interviews.',
-    permissions: { view_applications: true, manage_pipeline: true, manage_interviews: true },
-  },
-  {
-    id: 'hiring_manager',
-    label: 'Hiring manager',
-    description: 'Everything a recruiter can do, plus posting and editing jobs.',
+    description: 'Post jobs, review applicants, move the pipeline and run interviews.',
     permissions: { manage_jobs: true, view_applications: true, manage_pipeline: true, manage_interviews: true },
   },
   {
