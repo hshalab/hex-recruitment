@@ -65,6 +65,33 @@
   gap: 12px;
 }
 
+.field {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d9dde3;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #0f172a;
+  background: #fff;
+  box-sizing: border-box;
+}
+.field:focus {
+  outline: none;
+  border-color: #0f172a;
+}
+.field[readonly] {
+  background: #f4f5f7;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.fieldError {
+  margin: 0;
+  font-size: 13px;
+  color: #b91c1c;
+  text-align: left;
+}
+
 .primary {
   display: inline-block;
   width: 100%;

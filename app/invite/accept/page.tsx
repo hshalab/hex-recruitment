@@ -38,6 +38,12 @@ function AcceptInviteContent() {
   const [currentEmail, setCurrentEmail] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
 
+  // Minimal staff-signup form (Create your account from an invite).
+  const [signupName, setSignupName] = useState('')
+  const [signupPassword, setSignupPassword] = useState('')
+  const [signupBusy, setSignupBusy] = useState(false)
+  const [signupErr, setSignupErr] = useState('')
+
   const accept = useCallback(async () => {
     setPhase('accepting')
     const { data: { session } } = await supabase.auth.getSession()
@@ -76,6 +82,41 @@ function AcceptInviteContent() {
     setPhase('done')
     router.push('/employer/dashboard')
   }, [token, router])
+
+  // Create a minimal EMPLOYER-SIDE staff account for the invited email, then
+  // sign in and accept — the invitee joins the existing employer (no candidate
+  // profile, no company creation).
+  const handleSignup = useCallback(async () => {
+    setSignupErr('')
+    if (signupName.trim().length < 2) { setSignupErr('Please enter your name.'); return }
+    if (signupPassword.length < 8) { setSignupErr('Password must be at least 8 characters.'); return }
+    setSignupBusy(true)
+
+    const res = await fetch('/api/team/invite-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, name: signupName.trim(), password: signupPassword }),
+    })
+    const json = await res.json().catch(() => ({ error: 'server_error' }))
+    if (!json.ok) {
+      if (json.error === 'account_exists') {
+        setSignupErr('You already have an account with this email — use "I already have an account" below.')
+      } else {
+        setSignupErr(json.error || 'Could not create your account.')
+      }
+      setSignupBusy(false)
+      return
+    }
+
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email: invitedEmail, password: signupPassword })
+    if (signInErr) {
+      setSignupErr('Account created, but sign-in failed. Try logging in.')
+      setSignupBusy(false)
+      return
+    }
+    // Session is live — run the shared accept flow (accept RPC → cookie bridge → dashboard).
+    await accept()
+  }, [token, signupName, signupPassword, invitedEmail, accept])
 
   useEffect(() => {
     let cancelled = false
@@ -134,18 +175,39 @@ function AcceptInviteContent() {
       <Shell>
         <p className={styles.eyebrow}>Team invitation</p>
         <h1 className={styles.title}>Join <span className={styles.company}>{company}</span> on Thrive</h1>
-        <p className={styles.body}>
-          You've been invited to help with hiring{invitedEmail ? <> at this email: <span className={styles.email}>{invitedEmail}</span></> : null}.
-        </p>
-        <p className={styles.body}>Sign in or create your account to accept.</p>
-        <div className={styles.actions}>
-          <Link className={styles.primary} href={`/register/employee?redirect=${encodeURIComponent(acceptUrl)}${emailQ}`}>
-            Create your account
-          </Link>
-          <Link className={styles.secondary} href={`/login/employer?redirect=${encodeURIComponent(acceptUrl)}${emailQ}`}>
-            I already have an account
-          </Link>
-        </div>
+        <p className={styles.body}>Create your account to join the team. Your invitation email is locked below.</p>
+
+        <form
+          className={styles.actions}
+          onSubmit={(e) => { e.preventDefault(); handleSignup() }}
+        >
+          <input className={styles.field} type="email" value={invitedEmail} readOnly aria-label="Invited email" />
+          <input
+            className={styles.field}
+            type="text"
+            placeholder="Your full name"
+            value={signupName}
+            onChange={(e) => setSignupName(e.target.value)}
+            autoComplete="name"
+            autoFocus
+          />
+          <input
+            className={styles.field}
+            type="password"
+            placeholder="Create a password (8+ characters)"
+            value={signupPassword}
+            onChange={(e) => setSignupPassword(e.target.value)}
+            autoComplete="new-password"
+          />
+          {signupErr && <p className={styles.fieldError}>{signupErr}</p>}
+          <button className={styles.primary} type="submit" disabled={signupBusy}>
+            {signupBusy ? 'Joining…' : `Create account & join ${company}`}
+          </button>
+        </form>
+
+        <Link className={styles.link} href={`/login/employer?redirect=${encodeURIComponent(acceptUrl)}${emailQ}`}>
+          I already have an account
+        </Link>
       </Shell>
     )
   }
