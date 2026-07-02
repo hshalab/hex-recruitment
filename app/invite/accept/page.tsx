@@ -27,6 +27,21 @@ const ERROR_COPY: Record<string, string> = {
   server_error: 'Something went wrong accepting the invitation. Please try again.',
 }
 
+// Module-level (stable identity) so it does NOT remount on every keystroke —
+// a Shell defined inside the component would be a new component type each render,
+// unmounting/remounting the form inputs and yanking focus back to the autoFocus
+// field.
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className={styles.wrap}>
+      <div className={styles.card}>
+        <Image src="/logo/thrive-mark-192.png" alt="Thrive" width={46} height={46} className={styles.mark} />
+        {children}
+      </div>
+    </div>
+  )
+}
+
 function AcceptInviteContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -150,15 +165,6 @@ function AcceptInviteContent() {
 
   const acceptUrl = `/invite/accept?token=${encodeURIComponent(token)}`
   const emailQ = invitedEmail ? `&email=${encodeURIComponent(invitedEmail)}` : ''
-
-  const Shell = ({ children }: { children: React.ReactNode }) => (
-    <div className={styles.wrap}>
-      <div className={styles.card}>
-        <Image src="/logo/thrive-mark-192.png" alt="Thrive" width={46} height={46} className={styles.mark} />
-        {children}
-      </div>
-    </div>
-  )
 
   if (phase === 'loading' || phase === 'accepting' || phase === 'done') {
     return (
