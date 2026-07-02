@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import ScheduleInterviewModal from '@/components/ScheduleInterviewModal'
 import styles from './page.module.css'
@@ -402,7 +403,10 @@ export default function CalendarPage() {
       const session = await getSessionWithRetry()
       if (!session) { router.push('/login/employer'); return }
       if (session.user.user_metadata?.role !== 'employer') { router.push('/dashboard'); return }
-      setUserId(session.user.id)
+      // Multi-user: calendar data is keyed employer_id = owner user_id. Resolve
+      // the owner of the employer this user is active in (owner → own id).
+      const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
+      setUserId(ownerId)
     }
     init()
   }, [router])

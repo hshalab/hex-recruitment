@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import { useJobs } from '@/lib/JobsContext' // refreshJobs only — data fetched directly from Supabase
 import CompanyLogo from '@/components/CompanyLogo'
 import BoostModal from '@/components/BoostModal'
@@ -103,7 +104,8 @@ function MyJobsContent() {
       if (userRole === 'employer') {
         setIsEmployer(true)
         const company = session.user.user_metadata?.company_name || 'Your Company'
-        const employerId = session.user.id
+        // Multi-user: jobs/apps are keyed employer_id = owner user_id.
+        const employerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
         setCompanyName(company)
 
         // Recruiter flag — drives the conditional company-logo column on

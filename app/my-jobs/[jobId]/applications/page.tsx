@@ -13,6 +13,7 @@ import DeclineModal from '@/components/DeclineModal'
 import { isOfferConditional } from '@/lib/offerConditional'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import { useJobs } from '@/lib/JobsContext'
 import { Interview, Offer } from '@/lib/types'
 import { confirmHire } from '@/lib/confirmHire'
@@ -83,7 +84,8 @@ export default function JobApplicationsPage() {
         return
       }
       setIsEmployer(true)
-      setEmployerId(session.user.id)
+      // Multi-user: applications/writes are keyed employer_id = owner user_id.
+      setEmployerId((await getCurrentEmployerOwnerId(supabase)) ?? session.user.id)
 
       // Find the job
       const foundJob = jobs.find(j => j.id === jobId)

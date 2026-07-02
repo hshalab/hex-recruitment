@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import Header from '@/components/Header'
 import UnderReviewClient from './UnderReviewClient'
 
@@ -42,10 +43,14 @@ export default async function AccountUnderReviewPage() {
     redirect('/login/employer')
   }
 
+  // Multi-user: an invited member has no profile of their own — resolve the
+  // owner of the employer they belong to so an approved employer bounces the
+  // member to the dashboard too. Owner → own id (unchanged); null → user.id.
+  const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? user.id
   const { data: profile } = await supabase
     .from('employer_profiles')
     .select('approval_status')
-    .eq('user_id', user.id)
+    .eq('user_id', ownerId)
     .maybeSingle()
 
   // ONLY explicit 'approved' bounces to the dashboard. Pre-pivot

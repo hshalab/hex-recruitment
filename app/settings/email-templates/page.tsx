@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 
 const TEMPLATE_TYPES = [
   { id: 'shortlisted', label: 'Shortlisted', description: 'Sent when you shortlist a candidate', defaultSubject: 'Application Shortlisted \u2014 {{jobTitle}}', defaultBody: "Great news! Your application for {{jobTitle}} at {{companyName}} has been shortlisted. We'll be in touch with next steps." },
@@ -41,10 +42,12 @@ export default function EmailTemplatesPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login/employer'); return }
 
+      // Multi-user: templates are keyed employer_id = owner user_id.
+      const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
       const { data } = await supabase
         .from('employer_email_templates')
         .select('*')
-        .eq('employer_id', session.user.id)
+        .eq('employer_id', ownerId)
 
       const map: Record<string, Template> = {}
       for (const row of data || []) {
@@ -64,10 +67,11 @@ export default function EmailTemplatesPage() {
     const tpl = templates[type]
     const defaultTpl = TEMPLATE_TYPES.find(t => t.id === type)!
 
+    const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
     await supabase
       .from('employer_email_templates')
       .upsert({
-        employer_id: session.user.id,
+        employer_id: ownerId,
         template_type: type,
         subject: tpl?.subject || defaultTpl.defaultSubject,
         body: tpl?.body || defaultTpl.defaultBody,

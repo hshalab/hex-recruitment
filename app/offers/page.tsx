@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import SignedLink from '@/components/SignedLink'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 
 type OfferStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn'
 
@@ -110,10 +111,12 @@ export default function OffersPage() {
         return
       }
 
+      // Multi-user: offers are keyed employer_id = owner user_id.
+      const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
       const { data, error } = await supabase
         .from('job_offers')
         .select('id, application_id, job_id, candidate_id, salary, start_date, contract_type, status, offer_letter_url, created_at, signature_timestamp, employer_signature_timestamp, ai_summary, ai_tags, jobs ( title )')
-        .eq('employer_id', session.user.id)
+        .eq('employer_id', ownerId)
         .order('created_at', { ascending: false })
 
       if (error) {

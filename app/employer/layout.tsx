@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 
 // Server-side entitlement guard for the /employer/* area.
 //
@@ -79,10 +80,18 @@ export default async function EmployerLayout({ children }: { children: React.Rea
   // auth.uid()=user.id). Returning users from pre-pivot accounts may not
   // have an approval_status row at all — that's the "legacy" case
   // covered by the row-present-but-status-null branch below.
+  //
+  // Multi-user: resolve the OWNER of the employer this user is active in and
+  // read THAT profile's approval_status — so an invited team member inherits
+  // the employer's approval and reaches the shell. For an owner the helper
+  // returns their own id (unchanged); null (RPC miss / no membership yet, e.g.
+  // a brand-new owner before their member row exists) falls back to user.id so
+  // owner behaviour is never regressed.
+  const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? user.id
   const { data: profile, error: profileErr } = await supabase
     .from('employer_profiles')
     .select('approval_status')
-    .eq('user_id', user.id)
+    .eq('user_id', ownerId)
     .maybeSingle()
 
   // No row at all → safe default. A signup that completed the auth flow

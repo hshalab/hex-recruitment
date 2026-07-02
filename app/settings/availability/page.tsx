@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import DatePicker from '@/components/DatePicker'
 import styles from './page.module.css'
 
@@ -124,8 +125,11 @@ function AvailabilitySettingsContent() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
       if (session.user.user_metadata?.role !== 'employer') { router.push('/login'); return }
-      setUserId(session.user.id)
-      await loadAll(session.user.id)
+      // Multi-user: availability is keyed employer_id = owner user_id; scope
+      // every read/write on this page to the owner of the active employer.
+      const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
+      setUserId(ownerId)
+      await loadAll(ownerId)
       setLoading(false)
     }
     init()

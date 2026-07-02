@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import { useMessages } from '@/lib/MessagesContext'
@@ -594,7 +595,10 @@ export default function EmployerDashboardPage() {
       }
 
       setUser(session.user)
-      const userId = session.user.id
+      // Multi-user: dashboard data (jobs, availability, subscription, profile)
+      // is keyed employer_id / user_id = OWNER user_id. Resolve the owner of the
+      // employer this user is active in — owner → own id (unchanged).
+      const userId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
       setCompanyName(session.user.user_metadata?.company_name || 'Your Company')
 
       // Fetch company logo from employer_profiles, fallback to user_metadata

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isOfferConditional } from '@/lib/offerConditional'
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { getEmployerOwnerIdForUser } from '@/lib/employer'
 
 type Action = 'withdrawn' | 'rescinded_for_condition' | 'rescinded_unconditional'
 type ReasonCode = 'failed_rtw' | 'failed_references' | 'failed_dbs' | 'mutual_agreement' | 'other'
@@ -45,6 +46,10 @@ export async function POST(
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
   if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Multi-user: offers are keyed employer_id = owner user_id. Resolve the owner
+  // of the employer this user is active in (owner → own id, unchanged).
+  const ownerId = (await getEmployerOwnerIdForUser(supabaseAdmin, user.id)) ?? user.id
+
   // ── Parse body ──────────────────────────────────────
   let body: { action?: string; reasonCode?: string | null; reasonDetail?: string | null }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
@@ -64,7 +69,7 @@ export async function POST(
     .from('job_offers')
     .select('id, status, employer_id, candidate_id, application_id, offer_letter_text, jobs(title, company)')
     .eq('id', offerId)
-    .eq('employer_id', user.id)
+    .eq('employer_id', ownerId)
     .maybeSingle()
 
   if (fetchErr) {
@@ -156,7 +161,7 @@ export async function POST(
     .from('job_offers')
     .update({ status: newStatus })
     .eq('id', offerId)
-    .eq('employer_id', user.id)
+    .eq('employer_id', ownerId)
 
   if (updateErr) {
     console.error('[withdraw] status update failed AFTER audit row written:', updateErr)

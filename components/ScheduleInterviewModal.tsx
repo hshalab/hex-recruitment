@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import styles from './ScheduleInterviewModal.module.css'
 
 const INTERVIEW_TYPES = [
@@ -146,12 +147,14 @@ export default function ScheduleInterviewModal({
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) { setAvailableSlots([]); return }
+        // Multi-user: slots come from the owner's availability (employer_id = owner uid).
+        const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
         const from = new Date()
         const to = new Date(Date.now() + 28 * 86_400_000)
         const fromStr = from.toISOString().slice(0, 10)
         const toStr = to.toISOString().slice(0, 10)
         const res = await fetch(
-          `/api/calendar/slots?employerId=${session.user.id}&from=${fromStr}&to=${toStr}`
+          `/api/calendar/slots?employerId=${ownerId}&from=${fromStr}&to=${toStr}`
         )
         const data = await res.json()
         if (cancelled) return
@@ -248,10 +251,12 @@ export default function ScheduleInterviewModal({
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
+      // Multi-user: interviews are keyed employer_id = owner user_id.
+      const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
       const { data: existing } = await supabase
         .from('interviews')
         .select('interview_date, interview_time, candidate_id')
-        .eq('employer_id', session.user.id)
+        .eq('employer_id', ownerId)
         .eq('interview_date', date)
         .in('status', ['pending_selection', 'scheduled', 'confirmed'])
       if (existing && existing.length > 0) {

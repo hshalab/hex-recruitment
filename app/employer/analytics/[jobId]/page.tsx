@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
@@ -98,12 +99,14 @@ function JobAnalyticsContent() {
         return
       }
 
-      // Fetch job details and verify ownership
+      // Fetch job details and verify ownership. Multi-user: scope to the owner
+      // of the employer this user is active in (owner → own id, unchanged).
+      const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
       const { data: jobData } = await supabase
         .from('jobs')
         .select('*')
         .eq('id', jobId)
-        .eq('employer_id', session.user.id)
+        .eq('employer_id', ownerId)
         .single()
 
       if (!jobData) {

@@ -17,6 +17,7 @@ import StageDurationBadge from '@/components/StageDurationBadge'
 import SortOrderControl, { type PipelineSortOrder } from '@/components/SortOrderControl'
 import Toast from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import { STAGE_COLORS, STAGE_LABELS } from '@/lib/constants/pipelineStages'
 import { confirmHire } from '@/lib/confirmHire'
 import styles from './page.module.css'
@@ -183,7 +184,8 @@ export default function PipelinePage() {
       return
     }
 
-    const sessionEmployerId = session.user.id
+    // Multi-user: pipeline data is keyed employer_id = owner user_id.
+    const sessionEmployerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
     setEmployerId(sessionEmployerId)
     setEmployerCompany(session.user.user_metadata?.company_name || '')
 
