@@ -67,6 +67,14 @@ const settingsCards: SettingCard[] = [
     forUserTypes: ['employer'],
   },
   {
+    id: 'team',
+    title: 'Team',
+    description: 'Invite colleagues and manage what each teammate can do',
+    icon: '👥',
+    href: '/settings/team',
+    forUserTypes: ['employer'],
+  },
+  {
     id: 'notifications',
     title: 'Notifications',
     description: 'Manage email and SMS notification preferences',

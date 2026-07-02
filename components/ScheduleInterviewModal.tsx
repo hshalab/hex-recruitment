@@ -361,6 +361,10 @@ export default function ScheduleInterviewModal({
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { setError('You must be logged in'); setSubmitting(false); return }
+      // Multi-user: interviews/bookings are keyed employer_id = owner user_id.
+      // Using the owner id is also what makes the manage_interviews RLS gate pass
+      // for a capable team member (has_employer_permission is keyed on owner id).
+      const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
 
       // Enforce "one active interview per application" via the shared
       // helper rather than relying on the caller-passed existingInterviewId
@@ -400,7 +404,7 @@ export default function ScheduleInterviewModal({
           .insert({
             application_id: applicationId,
             job_id: jobId,
-            employer_id: session.user.id,
+            employer_id: ownerId,
             candidate_id: candidateId,
             ...calendarRowState,
           })
@@ -413,10 +417,10 @@ export default function ScheduleInterviewModal({
       // Book via API
       const bookRes = await fetch('/api/calendar/book', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({
           interviewId,
-          employerId: session.user.id,
+          employerId: ownerId,
           candidateId,
           bookedDate: selectedSlotObj.date,
           bookedTime: selectedSlotObj.time,
@@ -477,6 +481,9 @@ export default function ScheduleInterviewModal({
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Not authenticated')
+      // Multi-user: key interviews to the owner id (also required for the
+      // manage_interviews RLS gate to pass for a team member).
+      const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
 
       // Reuse-in-place pattern (fix #1c): never create a second active
       // interview for the same application. If one already exists in
@@ -523,7 +530,7 @@ export default function ScheduleInterviewModal({
           .insert({
             application_id: applicationId,
             job_id: jobId,
-            employer_id: session.user.id,
+            employer_id: ownerId,
             candidate_id: candidateId,
             ...selfScheduleRowState,
           })
@@ -608,6 +615,9 @@ export default function ScheduleInterviewModal({
         setSubmitting(false)
         return
       }
+      // Multi-user: key interviews to the owner id (also required for the
+      // manage_interviews RLS gate to pass for a team member).
+      const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
 
       // Reuse-in-place pattern (fix #1c). The previous isReschedule
       // branch (mark old row 'rescheduled', then INSERT new) had a
@@ -658,7 +668,7 @@ export default function ScheduleInterviewModal({
         const { error: insErr } = await supabase.from('interviews').insert({
           application_id: applicationId,
           job_id: jobId,
-          employer_id: session.user.id,
+          employer_id: ownerId,
           candidate_id: candidateId,
           ...manualRowState,
         })

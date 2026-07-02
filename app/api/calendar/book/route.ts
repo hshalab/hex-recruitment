@@ -9,6 +9,7 @@ import {
 import { sendInterviewMessage } from '@/lib/sendInterviewMessage'
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,6 +33,23 @@ export async function POST(req: NextRequest) {
         { error: 'employerId, candidateId, bookedDate and bookedTime are required' },
         { status: 400 }
       )
+    }
+
+    // Employer-initiated bookings carry the caller's token — require the
+    // manage_interviews capability for the employer being booked (403 otherwise).
+    // Anonymous candidate self-scheduling (magic-link page, no token) is
+    // unaffected: that path is constrained by the schedule token itself.
+    const authToken = req.headers.get('authorization')?.replace('Bearer ', '')
+    if (authToken) {
+      const asUser = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { global: { headers: { Authorization: `Bearer ${authToken}` } }, auth: { persistSession: false, autoRefreshToken: false } },
+      )
+      const { data: allowed, error: capErr } = await asUser.rpc('has_employer_permission', { target: employerId, cap: 'manage_interviews' })
+      if (capErr || allowed !== true) {
+        return NextResponse.json({ error: 'You do not have permission to schedule interviews for this employer.' }, { status: 403 })
+      }
     }
 
     const dur = Number(duration) || 45
