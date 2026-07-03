@@ -131,10 +131,6 @@ export const exampleQuestions: string[] = [
   'This venue is known for its regulars. How do you build rapport so customers come back and ask for you?',
 ]
 
-// ── Job-card photo guidance (candidates notice the image first) ─────────────
-export const exampleImageTips: string[] = [
-  'Use a bright, high-resolution photo — at least 1200px wide and landscape.',
-  'Show your venue, your food or your team — something candidates will recognise.',
-  'Avoid dark, blurry or heavily-filtered shots, and keep text off the image.',
-  'No pro photo? A clean shot on a phone in good daylight works great.',
-]
+// Job-card photo guidance lives in lib/photoTips.ts (plain copy, safe to import
+// anywhere). Re-exported here so the onboarding showcase keeps a single import.
+export { PHOTO_TIPS as exampleImageTips } from '@/lib/photoTips'

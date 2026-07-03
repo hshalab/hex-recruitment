@@ -11,6 +11,7 @@ import { useJobs } from '@/lib/JobsContext'
 import { getTagsByCategory, TAG_CATEGORIES, getTagCategory, type TagCategory } from '@/lib/jobTags'
 import { categories } from '@/lib/categories'
 import { isEmployerEntitled } from '@/lib/foundingEntitlement'
+import { PHOTO_TIPS } from '@/lib/photoTips'
 import styles from './page.module.css'
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false })
@@ -906,6 +907,19 @@ function PostJobContent() {
             <p className={styles.helperText} style={{ marginBottom: '0.75rem' }}>
               Landscape cover photo shown on your job card and detail page. Optional — if you skip it, we show a branded Thrive cover instead.
             </p>
+
+            {/* Photo-quality tips — candidates notice the image first, so meet
+                employers with guidance right where they choose the photo. */}
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '0.75rem 0.9rem', marginBottom: '0.9rem' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#92400e', marginBottom: '0.4rem' }}>
+                📸 A great photo gets more applicants
+              </div>
+              <ul style={{ margin: 0, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                {PHOTO_TIPS.map((tip, i) => (
+                  <li key={i} style={{ fontSize: '0.8rem', lineHeight: 1.45, color: '#78350f' }}>{tip}</li>
+                ))}
+              </ul>
+            </div>
 
             <div className={styles.formGroup}>
               <div className={styles.uploadArea}>
