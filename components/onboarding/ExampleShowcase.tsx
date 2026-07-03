@@ -107,7 +107,7 @@ export default function ExampleShowcase() {
             </div>
             <span className={styles.photoTag}>✓ Bright, sharp, landscape</span>
           </div>
-          <div className={styles.photoBad}>
+          <div className={styles.photoBad} data-tour="photo-example-bad">
             <div className={styles.photoBadImg}>?</div>
             <span className={styles.photoTagBad}>✕ Dark / blurry / no photo</span>
           </div>
