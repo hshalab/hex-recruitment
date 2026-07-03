@@ -121,3 +121,12 @@ export const exampleOffer: ExampleOffer = {
   start: 'Mon 14 Jul',
   status: 'Awaiting signature',
 }
+
+// ── Example AI-generated interview questions ────────────────────────────────
+// Illustrates the "read the CV + application, compare to the job description &
+// expectations, then suggest tailored questions" feature. Display only.
+export const exampleQuestions: string[] = [
+  'Your CV shows two years at a high-volume cocktail bar — walk me through how you kept service fast during a Friday-night rush.',
+  'The role needs strong cash and card reconciliation. Tell me about a time a till didn\'t balance and how you resolved it.',
+  'This venue is known for its regulars. How do you build rapport so customers come back and ask for you?',
+]

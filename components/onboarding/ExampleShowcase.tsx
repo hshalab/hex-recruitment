@@ -13,9 +13,22 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
-  exampleJob, exampleApplicants, EXAMPLE_PIPELINE_STAGES, exampleInterview, exampleOffer,
+  exampleJob, exampleApplicants, EXAMPLE_PIPELINE_STAGES, exampleInterview, exampleOffer, exampleQuestions,
 } from '@/lib/example-data'
 import styles from './ExampleShowcase.module.css'
+
+// Compact "what else you can do" tiles. Display-only teasers; each links to the
+// real page so the employer can go there after the tour.
+const FEATURE_TILES: { anchor: string; icon: string; title: string; blurb: string; href: string; cta: string }[] = [
+  { anchor: 'feat-calendar', icon: '📅', title: 'Sync your calendar', blurb: 'Connect Google Calendar so candidates book interview slots straight into your diary — no back-and-forth.', href: '/settings/availability', cta: 'Set availability' },
+  { anchor: 'feat-analytics', icon: '📈', title: 'See your analytics', blurb: 'Track views, applications and conversion for every job so you know what\'s working.', href: '/dashboard/analytics', cta: 'View analytics' },
+  { anchor: 'feat-boost', icon: '🚀', title: 'Boost a listing', blurb: 'Feature a job to rank higher in search and get a Featured badge for more applicants.', href: '/my-jobs', cta: 'Boost a job' },
+  { anchor: 'feat-candidates', icon: '🔎', title: 'Search candidates', blurb: 'Don\'t wait to be found — browse candidates and reach out to the ones you like.', href: '/candidates', cta: 'Browse candidates' },
+  { anchor: 'feat-message', icon: '💬', title: 'Message candidates', blurb: 'Chat with candidates in real time, right inside Thrive — ask a quick question or arrange a call.', href: '/messages', cta: 'Open messages' },
+  { anchor: 'feat-email', icon: '✉️', title: 'Email candidates', blurb: 'Branded emails go out automatically at each stage — customise the wording to sound like you.', href: '/settings/email-templates', cta: 'Edit email templates' },
+  { anchor: 'feat-jobs', icon: '🧭', title: 'Browse other jobs', blurb: 'See what other hospitality venues are hiring for and how they pitch their roles.', href: '/jobs', cta: 'Browse jobs' },
+  { anchor: 'feat-team', icon: '👥', title: 'Invite your team', blurb: 'Add colleagues with the right permissions so hiring is a team effort.', href: '/settings/team', cta: 'Manage team' },
+]
 
 const JOB_FIELDS = 4 // title, pay, location, description
 
@@ -109,6 +122,24 @@ export default function ExampleShowcase() {
         <Link href="/pipeline" className={styles.ctaGhost}>Go to your pipeline →</Link>
       </div>
 
+      {/* AI interview questions */}
+      <div className={styles.card} data-tour="example-ai">
+        <div className={styles.cardTop}>
+          <span className={styles.cardKicker}>AI interview questions</span>
+          <Badge />
+        </div>
+        <p className={styles.aiIntro}>
+          Thrive reads each candidate&apos;s application and CV, compares them to your job description and
+          must-haves, then suggests tailored questions to ask:
+        </p>
+        <ul className={styles.qList}>
+          {exampleQuestions.map((q, i) => (
+            <li key={i} className={styles.qItem}><span className={styles.qMark}>✨</span>{q}</li>
+          ))}
+        </ul>
+        <Link href="/pipeline" className={styles.ctaGhost}>Review your candidates →</Link>
+      </div>
+
       {/* Example interview + offer */}
       <div className={styles.grid2}>
         <div className={styles.card} data-tour="example-interview">
@@ -131,9 +162,23 @@ export default function ExampleShowcase() {
           <div className={styles.miniTitle}>{exampleOffer.candidate}</div>
           <div className={styles.miniSub}>{exampleOffer.role} · {exampleOffer.salary}</div>
           <div className={styles.miniLine}>Starts {exampleOffer.start}</div>
+          <div className={styles.miniLine}>Offer letter sent · candidate signs online</div>
           <div className={styles.offerStatus}>{exampleOffer.status}</div>
-          <Link href="/offers" className={styles.ctaGhost}>View offers →</Link>
+          <Link href="/offers" className={styles.ctaGhost}>Create &amp; send offers →</Link>
         </div>
+      </div>
+
+      {/* More you can do — display-only teaser tiles, each linking to the real page */}
+      <div className={styles.tilesHeader}>More you can do</div>
+      <div className={styles.tiles}>
+        {FEATURE_TILES.map(t => (
+          <div key={t.anchor} className={styles.tile} data-tour={t.anchor}>
+            <div className={styles.tileIcon} aria-hidden>{t.icon}</div>
+            <div className={styles.tileTitle}>{t.title}</div>
+            <div className={styles.tileBlurb}>{t.blurb}</div>
+            <Link href={t.href} className={styles.tileCta}>{t.cta} →</Link>
+          </div>
+        ))}
       </div>
     </section>
   )
