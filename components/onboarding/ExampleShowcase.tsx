@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
-  exampleJob, exampleApplicants, EXAMPLE_PIPELINE_STAGES, exampleInterview, exampleOffer, exampleQuestions, exampleImageTips,
+  exampleJob, exampleApplicants, EXAMPLE_PIPELINE_STAGES, exampleInterview, exampleOffer, exampleQuestions,
 } from '@/lib/example-data'
 import styles from './ExampleShowcase.module.css'
 
@@ -112,11 +112,9 @@ export default function ExampleShowcase() {
             <span className={styles.photoTagBad}>✕ Dark / blurry / no photo</span>
           </div>
         </div>
-        <ul className={styles.tipList}>
-          {exampleImageTips.map((t, i) => (
-            <li key={i} className={styles.tipItem}><span className={styles.tipDot}>•</span>{t}</li>
-          ))}
-        </ul>
+        <p className={styles.photoHint}>
+          Bright, sharp, landscape, 1200px+ — show your venue, food or team. You&apos;ll get these tips again when you upload.
+        </p>
         <Link href="/post-job" className={styles.ctaGhost}>Add your job photo →</Link>
       </div>
 
