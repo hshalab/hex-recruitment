@@ -1334,7 +1334,8 @@
 
 /* ═══ Candidate Card Grid (image-led, mirrors .jobCard) ═══════ */
 .cardsContainer { max-width: 1200px; margin: 0 auto; padding: 1.25rem 1.5rem 1.5rem; }
-.cardsGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.1rem; }
+.cardsGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+@media (max-width: 1024px) { .cardsGrid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 720px) { .cardsGrid { grid-template-columns: 1fr; gap: 0.9rem; } }
 
 .candidateCard {

@@ -31,7 +31,7 @@ export interface MissingPrompt { key: string; label: string; onAdd: () => void }
  */
 export default function CandidateCard(props: {
   candidate: Candidate
-  mode: 'employer' | 'dashboard'
+  mode: 'employer' | 'dashboard' | 'directory'
   // employer
   matchScore?: number
   featured?: boolean
@@ -52,6 +52,59 @@ export default function CandidateCard(props: {
   const v = fallbackVariant(c.id || c.fullName || 'thrive')
   const bgVars = { ['--fb-angle' as any]: `${v.angle}deg`, ['--fb-glow-x' as any]: `${v.glowX}%` } as CSSProperties
   const initials = initialsOf(c.fullName)
+
+  // ─────────── DIRECTORY MODE (/candidates) ───────────
+  // Compact, light card: a prominent initials avatar with the name stacked
+  // directly above the role, then location/experience and the availability + CV
+  // pills tucked tightly beneath. No watermark; no personal photo (privacy —
+  // employers see initials only, same as the banner card).
+  if (mode === 'directory') {
+    return (
+      <div
+        className={`${styles.card} ${styles.cardDirectory}`}
+        onClick={props.onOpen}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && props.onOpen?.()}
+      >
+        {(props.matchScore || props.featured) && (
+          <div className={styles.dirTopBadges}>
+            {props.matchScore ? <span className={styles.matchBadge}>{props.matchScore}% match</span> : null}
+            {props.featured ? <span className={styles.dirFeatured}>⚡ Featured</span> : null}
+          </div>
+        )}
+
+        <div className={styles.dirHeader}>
+          <span className={styles.dirAvatar} aria-hidden="true">{initials}</span>
+          <div className={styles.dirNameRole}>
+            <span className={styles.dirName}>{c.fullName}</span>
+            {c.jobTitle && <span className={styles.dirRole}>{c.jobTitle}</span>}
+          </div>
+        </div>
+
+        <div className={styles.dirMeta}>
+          {c.location && <span>{c.location}</span>}
+          {c.location && <span className={styles.dot}>·</span>}
+          <span>{c.yearsExperience} yrs exp</span>
+        </div>
+
+        <div className={styles.badges}>
+          {c.availability && (
+            <span className={`${styles.badge} ${styles.availBadge} ${availClass(c.availability)}`}>
+              <span className={styles.availDot} />{c.availability}
+            </span>
+          )}
+          {c.cvUrl ? (
+            <SignedLink src={c.cvUrl} download className={`${styles.badge} ${styles.cvTag}`} onClick={(e: any) => e.stopPropagation()}>
+              <FileDown size={12} /> CV
+            </SignedLink>
+          ) : (
+            <span className={`${styles.badge} ${styles.cvTagEmpty}`}><FileDown size={12} /> No CV</span>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   // ─────────── EMPLOYER MODE ───────────
   if (mode === 'employer') {

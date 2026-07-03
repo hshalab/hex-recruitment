@@ -104,3 +104,47 @@
   .dashId .identityName { font-size: 21px; -webkit-line-clamp: 2; }
   .dashToggleCompact { align-self: flex-start; }
 }
+
+/* ═══════════ DIRECTORY MODE (/candidates) — compact light card ═══════════ */
+.cardDirectory {
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(10,22,40,.05), 0 6px 18px rgba(10,22,40,.06);
+  cursor: pointer;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.cardDirectory:hover { transform: translateY(-2px); box-shadow: 0 3px 6px rgba(10,22,40,.08), 0 14px 30px rgba(10,22,40,.12); border-color: #cbd5e1; }
+.cardDirectory:focus-visible { outline: 3px solid #FFE500; outline-offset: 2px; }
+
+.dirTopBadges { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; align-items: center; }
+.dirFeatured { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+
+.dirHeader { display: flex; align-items: center; gap: 12px; }
+.dirAvatar {
+  width: 52px; height: 52px; flex-shrink: 0;
+  border-radius: 14px;
+  display: grid; place-items: center;
+  background: #FFE500; color: #0A1628;
+  font-family: var(--font-serif), Georgia, serif; font-weight: 700; font-size: 20px;
+}
+.dirNameRole { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.dirName {
+  font-family: var(--font-serif), Georgia, serif; font-weight: 700; font-size: 18px; line-height: 1.15; color: #0f172a;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dirRole { font-size: 13.5px; color: #64748b; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.dirMeta { font-size: 13px; color: #64748b; display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+
+/* Light pills on the white card (override the navy translucent .badge from employer mode). */
+.cardDirectory .badge { color: #334155; background: #f1f5f9; border-color: #e2e8f0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.cardDirectory .availBadge { border-color: #e2e8f0; }
+.cardDirectory .cvTag { color: #92400e; border-color: #fde68a; background: #fffbeb; }
+.cardDirectory .cvTag:hover { background: #fef3c7; }
+.cardDirectory .cvTagEmpty { color: #94a3b8; border-color: #e2e8f0; background: #f8fafc; }

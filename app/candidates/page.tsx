@@ -682,7 +682,7 @@ function CandidatesContent() {
                 <CandidateCard
                   key={candidate.id}
                   candidate={candidate}
-                  mode="employer"
+                  mode="directory"
                   matchScore={matchScores[candidate.id] || undefined}
                   featured={boostedProfileIds.has(candidate.id)}
                   onOpen={() => selectCandidate(candidate)}
