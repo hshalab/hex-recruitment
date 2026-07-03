@@ -130,3 +130,11 @@ export const exampleQuestions: string[] = [
   'The role needs strong cash and card reconciliation. Tell me about a time a till didn\'t balance and how you resolved it.',
   'This venue is known for its regulars. How do you build rapport so customers come back and ask for you?',
 ]
+
+// ── Job-card photo guidance (candidates notice the image first) ─────────────
+export const exampleImageTips: string[] = [
+  'Use a bright, high-resolution photo — at least 1200px wide and landscape.',
+  'Show your venue, your food or your team — something candidates will recognise.',
+  'Avoid dark, blurry or heavily-filtered shots, and keep text off the image.',
+  'No pro photo? A clean shot on a phone in good daylight works great.',
+]

@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
-  exampleJob, exampleApplicants, EXAMPLE_PIPELINE_STAGES, exampleInterview, exampleOffer, exampleQuestions,
+  exampleJob, exampleApplicants, EXAMPLE_PIPELINE_STAGES, exampleInterview, exampleOffer, exampleQuestions, exampleImageTips,
 } from '@/lib/example-data'
 import styles from './ExampleShowcase.module.css'
 
@@ -88,6 +88,36 @@ export default function ExampleShowcase() {
           {field(4, 'Description', exampleJob.description, 'A short summary of the role…', 'ex-desc')}
         </div>
         <Link href="/post-job" className={styles.cta}>Post your first job →</Link>
+      </div>
+
+      {/* Photos — the bit people get wrong */}
+      <div className={styles.card} data-tour="example-photo">
+        <div className={styles.cardTop}>
+          <span className={styles.cardKicker}>Add a great photo</span>
+          <Badge />
+        </div>
+        <p className={styles.aiIntro}>
+          Candidates notice your photo first — a strong image gets far more applicants. Here&apos;s the difference:
+        </p>
+        <div className={styles.photoCompare}>
+          <div className={styles.photoGood}>
+            <div className={styles.photoGoodImg}>
+              <span className={styles.photoTitle}>{exampleJob.title}</span>
+              <span className={styles.photoCompany}>Your Company · {exampleJob.location}</span>
+            </div>
+            <span className={styles.photoTag}>✓ Bright, sharp, landscape</span>
+          </div>
+          <div className={styles.photoBad}>
+            <div className={styles.photoBadImg}>?</div>
+            <span className={styles.photoTagBad}>✕ Dark / blurry / no photo</span>
+          </div>
+        </div>
+        <ul className={styles.tipList}>
+          {exampleImageTips.map((t, i) => (
+            <li key={i} className={styles.tipItem}><span className={styles.tipDot}>•</span>{t}</li>
+          ))}
+        </ul>
+        <Link href="/post-job" className={styles.ctaGhost}>Add your job photo →</Link>
       </div>
 
       {/* Example pipeline */}
