@@ -6,6 +6,8 @@ import Link from 'next/link'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { getCurrentEmployerOwnerId } from '@/lib/employer'
+import ExampleShowcase from '@/components/onboarding/ExampleShowcase'
+import EmployerTour from '@/components/onboarding/EmployerTour'
 import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import { useMessages } from '@/lib/MessagesContext'
@@ -995,7 +997,7 @@ export default function EmployerDashboardPage() {
         </div>
 
         {/* ── STATS STRIP ── */}
-        <div className={styles.statsStrip}>
+        <div className={styles.statsStrip} data-tour="stats">
           <button className={styles.statPill} onClick={() => router.push('/my-jobs')}>
             <span className={styles.statPillNum}>{activeJobs}</span>
             <span className={styles.statPillLabel}>Active Jobs</span>
@@ -1025,6 +1027,11 @@ export default function EmployerDashboardPage() {
             <span className={styles.statPillNum}>{totalViews}</span>
             <span className={styles.statPillLabel}>Views</span>
           </button>
+        </div>
+
+        {/* ── ONBOARDING TOUR TRIGGER (also auto-starts once for a new empty account) ── */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '0.5rem 0 0' }}>
+          <EmployerTour isEmpty={totalJobs === 0} />
         </div>
 
         {/* ── GETTING STARTED CHECKLIST ───────────────── */}
@@ -1066,6 +1073,11 @@ export default function EmployerDashboardPage() {
             </div>
           )
         })()}
+
+        {/* ── EXAMPLE SHOWCASE (display-only) — teaches the empty dashboard.
+            Rendered ONLY when the account has no jobs; never for a real,
+            populated employer. All data is fake and never touches the DB. ── */}
+        {totalJobs === 0 && <ExampleShowcase />}
 
         {/* ── STALE APPLICATIONS NUDGE ────────────────── */}
         {/* Whole banner links to /applied (the "New Applications" awaiting-review

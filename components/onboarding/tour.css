@@ -1,0 +1,57 @@
+/* On-brand overrides for the driver.js popover (global — driver renders the
+   popover at the document root, outside any CSS-module scope). */
+.driver-popover.thrive-tour {
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
+  max-width: 320px;
+}
+.driver-popover.thrive-tour .driver-popover-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.driver-popover.thrive-tour .driver-popover-description {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #475569;
+}
+.driver-popover.thrive-tour .driver-popover-progress-text {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+.driver-popover.thrive-tour .driver-popover-next-btn {
+  background: #ffe500;
+  color: #0f172a;
+  text-shadow: none;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  padding: 6px 14px;
+}
+.driver-popover.thrive-tour .driver-popover-next-btn:hover { filter: brightness(0.95); }
+.driver-popover.thrive-tour .driver-popover-prev-btn {
+  border-radius: 8px;
+  font-weight: 600;
+  color: #475569;
+  text-shadow: none;
+}
+
+/* "Take the tour" replay trigger. */
+.thrive-tour-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  background: #fff;
+  border: 1px solid #d9dde3;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.thrive-tour-trigger:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
