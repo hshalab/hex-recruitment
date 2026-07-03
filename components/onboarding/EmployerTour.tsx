@@ -15,6 +15,11 @@ import 'driver.js/dist/driver.css'
 import { supabase } from '@/lib/supabase'
 import './tour.css'
 
+// Show/hide the example showcase so it appears ONLY while the tour runs — the
+// dashboard listens for these and mounts/unmounts <ExampleShowcase/>.
+const showExamples = () => window.dispatchEvent(new Event('thrive-tour:show'))
+const hideExamples = () => window.dispatchEvent(new Event('thrive-tour:hide'))
+
 // Tell the ExampleShowcase how much of the example job to reveal.
 const jobReset = () => window.dispatchEvent(new Event('thrive-tour:job-reset'))
 const jobDone = () => window.dispatchEvent(new Event('thrive-tour:job-done'))
@@ -77,23 +82,28 @@ export default function EmployerTour({ isEmpty }: { isEmpty: boolean }) {
   }, [])
 
   const startTour = useCallback(() => {
-    const steps = buildSteps()
-    if (steps.length === 0) return
+    // Reveal the example showcase, then wait a beat for it to mount so the
+    // step anchors exist before driver.js resolves them.
+    showExamples()
     jobReset() // start the example job blank so it fills in during the tour
-    const d = driver({
-      showProgress: true,
-      allowClose: true, // Esc / overlay closes
-      overlayColor: 'rgba(15,23,42,0.6)',
-      popoverClass: 'thrive-tour',
-      nextBtnText: 'Next',
-      prevBtnText: 'Back',
-      doneBtnText: 'Done',
-      steps,
-      // Fires on finish AND on skip/close — leave the example complete and mark
-      // done either way so we don't re-nag.
-      onDestroyed: () => { jobDone(); persistCompleted() },
-    })
-    d.drive()
+    setTimeout(() => {
+      const steps = buildSteps()
+      if (steps.length === 0) { hideExamples(); return }
+      const d = driver({
+        showProgress: true,
+        allowClose: true, // Esc / overlay closes
+        overlayColor: 'rgba(15,23,42,0.6)',
+        popoverClass: 'thrive-tour',
+        nextBtnText: 'Next',
+        prevBtnText: 'Back',
+        doneBtnText: 'Done',
+        steps,
+        // Fires on finish AND on skip/close — mark done either way (no re-nag)
+        // and hide the examples so the dashboard is clean again.
+        onDestroyed: () => { persistCompleted(); hideExamples() },
+      })
+      d.drive()
+    }, 240)
   }, [persistCompleted])
 
   // Auto-start once for a new, unflagged, empty employer.

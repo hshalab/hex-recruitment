@@ -567,6 +567,9 @@ export default function EmployerDashboardPage() {
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null)
   const [freeUntil, setFreeUntil] = useState<string | null>(null)
   const [dismissChecklist, setDismissChecklist] = useState(false)
+  // Onboarding example showcase is shown ONLY while the tour is running, so the
+  // dashboard stays clean before and after (EmployerTour dispatches show/hide).
+  const [showTourExamples, setShowTourExamples] = useState(false)
 
   // Stats
   const [totalJobs, setTotalJobs] = useState(0)
@@ -582,6 +585,18 @@ export default function EmployerDashboardPage() {
   // Data
   const [applications, setApplications] = useState<any[]>([])
   const [jobsData, setJobsData] = useState<any[]>([])
+
+  // Show the onboarding example showcase only while the tour is running.
+  useEffect(() => {
+    const show = () => setShowTourExamples(true)
+    const hide = () => setShowTourExamples(false)
+    window.addEventListener('thrive-tour:show', show)
+    window.addEventListener('thrive-tour:hide', hide)
+    return () => {
+      window.removeEventListener('thrive-tour:show', show)
+      window.removeEventListener('thrive-tour:hide', hide)
+    }
+  }, [])
 
   // ── Load data ───────────────────────────────────────────
   useEffect(() => {
@@ -1075,9 +1090,10 @@ export default function EmployerDashboardPage() {
         })()}
 
         {/* ── EXAMPLE SHOWCASE (display-only) — teaches the empty dashboard.
-            Rendered ONLY when the account has no jobs; never for a real,
-            populated employer. All data is fake and never touches the DB. ── */}
-        {totalJobs === 0 && <ExampleShowcase />}
+            Shown ONLY while the guided tour is running (and only for an account
+            with no jobs), so the dashboard stays clean before/after. All data is
+            fake and never touches the DB. ── */}
+        {totalJobs === 0 && showTourExamples && <ExampleShowcase />}
 
         {/* ── STALE APPLICATIONS NUDGE ────────────────── */}
         {/* Whole banner links to /applied (the "New Applications" awaiting-review
