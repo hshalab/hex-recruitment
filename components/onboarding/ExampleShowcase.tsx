@@ -4,18 +4,55 @@
 // from/to the DB) so a brand-new employer's empty dashboard teaches instead of
 // looking broken. Pure presentation — no Supabase, no writes; every CTA is real
 // navigation. Rendered by the employer dashboard only when the account is empty.
+//
+// The example "job" is a mini form-preview whose fields fill in one at a time as
+// the guided tour advances (via window events dispatched by EmployerTour), so a
+// new employer sees how a posting comes together. Outside the tour it just shows
+// the completed example.
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   exampleJob, exampleApplicants, EXAMPLE_PIPELINE_STAGES, exampleInterview, exampleOffer,
 } from '@/lib/example-data'
 import styles from './ExampleShowcase.module.css'
 
+const JOB_FIELDS = 4 // title, pay, location, description
+
 function Badge() {
   return <span className={styles.badge}>Example</span>
 }
 
 export default function ExampleShowcase() {
+  // How many job fields are revealed. Full by default; the tour resets to 0 and
+  // reveals them step by step, then marks done.
+  const [jobReveal, setJobReveal] = useState(JOB_FIELDS)
+
+  useEffect(() => {
+    const onReset = () => setJobReveal(0)
+    const onReveal = (e: Event) => setJobReveal((e as CustomEvent).detail as number)
+    const onDone = () => setJobReveal(JOB_FIELDS)
+    window.addEventListener('thrive-tour:job-reset', onReset)
+    window.addEventListener('thrive-tour:job-reveal', onReveal as EventListener)
+    window.addEventListener('thrive-tour:job-done', onDone)
+    return () => {
+      window.removeEventListener('thrive-tour:job-reset', onReset)
+      window.removeEventListener('thrive-tour:job-reveal', onReveal as EventListener)
+      window.removeEventListener('thrive-tour:job-done', onDone)
+    }
+  }, [])
+
+  const field = (revealAt: number, label: string, value: string, placeholder: string, anchor: string) => (
+    <div className={styles.field} data-tour={anchor}>
+      <span className={styles.fieldLabel}>{label}</span>
+      <div className={styles.fieldBox}>
+        {jobReveal >= revealAt
+          ? <span className={styles.fieldVal}>{value}</span>
+          : <span className={styles.fieldGhost}>{placeholder}</span>}
+      </div>
+    </div>
+  )
+
   return (
     <section className={styles.wrap} aria-label="Example preview of your dashboard">
       <div className={styles.header}>
@@ -25,24 +62,17 @@ export default function ExampleShowcase() {
         </p>
       </div>
 
-      {/* Example job */}
-      <div className={styles.card} data-tour="example-job">
+      {/* Example job — a mini form preview that fills in during the tour */}
+      <div className={styles.card}>
         <div className={styles.cardTop}>
-          <span className={styles.cardKicker}>Your job listing</span>
+          <span className={styles.cardKicker}>Post a job</span>
           <Badge />
         </div>
-        <div className={styles.jobRow}>
-          <div className={styles.jobLogo}>{exampleJob.title.charAt(0)}</div>
-          <div className={styles.jobMeta}>
-            <div className={styles.jobTitle}>{exampleJob.title}</div>
-            <div className={styles.jobSub}>
-              {exampleJob.location} · £{exampleJob.salaryMin}–£{exampleJob.salaryMax}/{exampleJob.salaryPeriod}
-            </div>
-          </div>
-          <div className={styles.jobStats}>
-            <span><strong>{exampleJob.viewCount}</strong> views</span>
-            <span><strong>{exampleJob.applicationCount}</strong> applicants</span>
-          </div>
+        <div className={styles.form}>
+          {field(1, 'Job title', exampleJob.title, 'e.g. Bartender', 'ex-title')}
+          {field(2, 'Pay', `£${exampleJob.salaryMin}–£${exampleJob.salaryMax}/${exampleJob.salaryPeriod}`, 'e.g. £12–£14/hour', 'ex-pay')}
+          {field(3, 'Location', `${exampleJob.location} · ${exampleJob.area}`, 'e.g. London', 'ex-location')}
+          {field(4, 'Description', exampleJob.description, 'A short summary of the role…', 'ex-desc')}
         </div>
         <Link href="/post-job" className={styles.cta}>Post your first job →</Link>
       </div>

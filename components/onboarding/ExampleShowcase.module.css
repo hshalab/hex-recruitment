@@ -56,19 +56,35 @@
   border-radius: 999px;
 }
 
-/* Job row */
-.jobRow { display: flex; align-items: center; gap: 0.85rem; }
-.jobLogo {
-  width: 44px; height: 44px; border-radius: 10px;
-  background: #ffe500; color: #0f172a;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 1.1rem; flex-shrink: 0;
+/* Job "form" — faux fields that fill in during the tour */
+.form { display: flex; flex-direction: column; gap: 0.7rem; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; }
+.fieldLabel {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: #94a3b8;
 }
-.jobMeta { flex: 1; min-width: 0; }
-.jobTitle { font-weight: 700; color: #0f172a; font-size: 0.98rem; }
-.jobSub { font-size: 0.82rem; color: #64748b; }
-.jobStats { display: flex; gap: 1rem; font-size: 0.8rem; color: #64748b; flex-shrink: 0; }
-.jobStats strong { color: #0f172a; }
+.fieldBox {
+  min-height: 40px;
+  display: flex; align-items: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #fff;
+}
+.fieldVal {
+  font-size: 0.92rem;
+  color: #0f172a;
+  font-weight: 500;
+  animation: fieldFill 0.35s ease;
+}
+.fieldGhost { font-size: 0.9rem; color: #cbd5e1; }
+@keyframes fieldFill {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fieldVal { animation: none; }
+}
 
 .cta {
   display: inline-block;
