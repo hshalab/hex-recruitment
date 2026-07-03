@@ -26,7 +26,8 @@ const jobDone = () => window.dispatchEvent(new Event('thrive-tour:job-done'))
 const jobReveal = (n: number) => window.dispatchEvent(new CustomEvent('thrive-tour:job-reveal', { detail: n }))
 
 type Side = 'top' | 'bottom' | 'left' | 'right'
-type StepDef = { el?: string; title: string; description: string; onHi?: () => void; noInteract?: boolean; side?: Side }
+type Align = 'start' | 'center' | 'end'
+type StepDef = { el?: string; title: string; description: string; onHi?: () => void; noInteract?: boolean; side?: Side; align?: Align }
 
 // The example-* anchors only exist when the account is empty (ExampleShowcase
 // rendered); we filter to present anchors at run time, so a replay on a
@@ -37,7 +38,7 @@ const STEP_DEFS: StepDef[] = [
   { el: '[data-tour="ex-pay"]', title: '2. Pay', description: 'Add an hourly or annual rate so candidates know what to expect.', noInteract: true, onHi: () => jobReveal(2) },
   { el: '[data-tour="ex-location"]', title: '3. Location', description: 'Where is the role based? Candidates filter by area.', noInteract: true, onHi: () => jobReveal(3) },
   { el: '[data-tour="ex-desc"]', title: '4. Description', description: 'A short summary of the role — and that\'s the essentials. Posting your own takes under a minute.', noInteract: true, onHi: () => jobReveal(4) },
-  { el: '[data-tour="example-photo"]', title: 'Add a great photo', description: 'The bit people get wrong — a bright, sharp, landscape photo of your venue, food or team gets far more applicants.', onHi: jobDone, side: 'top' },
+  { el: '[data-tour="example-photo"]', title: 'Add a great photo', description: 'The bit people get wrong — a bright, sharp, landscape photo of your venue, food or team gets far more applicants.', onHi: jobDone, side: 'bottom', align: 'end' },
   { el: '[data-tour="example-pipeline"]', title: 'Track your pipeline', description: 'Every applicant moves through your stages — from Applied to Offered — with a simple drag.' },
   { el: '[data-tour="example-ai"]', title: 'AI interview questions', description: 'Thrive reads each CV and application, compares them to your job and must-haves, and suggests tailored questions to ask.' },
   { el: '[data-tour="example-interview"]', title: 'Schedule interviews', description: 'Propose times or let candidates pick a slot — with a friendly reminder before the interview.' },
@@ -58,7 +59,7 @@ function buildSteps(): DriveStep[] {
   for (const s of STEP_DEFS) {
     if (s.el && typeof document !== 'undefined' && !document.querySelector(s.el)) continue
     const step: DriveStep = {
-      popover: { title: s.title, description: s.description, side: s.side || 'bottom', align: 'center' },
+      popover: { title: s.title, description: s.description, side: s.side || 'bottom', align: s.align || 'center' },
     }
     if (s.el) step.element = s.el
     if (s.noInteract) step.disableActiveInteraction = true
