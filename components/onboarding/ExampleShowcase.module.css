@@ -185,7 +185,7 @@
 .photoGood, .photoBad { display: flex; flex-direction: column; gap: 0.4rem; }
 .photoGoodImg {
   position: relative;
-  height: 128px;
+  height: 96px;
   border-radius: 11px;
   /* stand-in for a bright, well-shot venue photo */
   background: linear-gradient(135deg, #fbbf24 0%, #f97316 45%, #b45309 100%);
@@ -205,7 +205,7 @@
 .photoTag { font-size: 0.72rem; font-weight: 700; color: #15803d; }
 
 .photoBadImg {
-  height: 128px;
+  height: 96px;
   border-radius: 11px;
   background: repeating-linear-gradient(45deg, #334155, #334155 10px, #2b3648 10px, #2b3648 20px);
   filter: blur(1px);

@@ -25,7 +25,8 @@ const jobReset = () => window.dispatchEvent(new Event('thrive-tour:job-reset'))
 const jobDone = () => window.dispatchEvent(new Event('thrive-tour:job-done'))
 const jobReveal = (n: number) => window.dispatchEvent(new CustomEvent('thrive-tour:job-reveal', { detail: n }))
 
-type StepDef = { el?: string; title: string; description: string; onHi?: () => void; noInteract?: boolean }
+type Side = 'top' | 'bottom' | 'left' | 'right'
+type StepDef = { el?: string; title: string; description: string; onHi?: () => void; noInteract?: boolean; side?: Side }
 
 // The example-* anchors only exist when the account is empty (ExampleShowcase
 // rendered); we filter to present anchors at run time, so a replay on a
@@ -57,7 +58,7 @@ function buildSteps(): DriveStep[] {
   for (const s of STEP_DEFS) {
     if (s.el && typeof document !== 'undefined' && !document.querySelector(s.el)) continue
     const step: DriveStep = {
-      popover: { title: s.title, description: s.description },
+      popover: { title: s.title, description: s.description, side: s.side || 'bottom', align: 'center' },
     }
     if (s.el) step.element = s.el
     if (s.noInteract) step.disableActiveInteraction = true
