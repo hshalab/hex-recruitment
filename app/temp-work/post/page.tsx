@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getCurrentEmployerOwnerId, getEmployerCapabilities } from '@/lib/employer'
-import { TEMP_CATEGORIES, RATE_TYPES, DISCLAIMER } from '@/lib/tempWork'
+import { ROLE_GROUPS, RATE_TYPES, DISCLAIMER } from '@/lib/tempWork'
 
 const C = { border: '#e2e8f0', sub: '#64748b', ink: '#0f172a', yellow: '#ffe500' }
 const label: React.CSSProperties = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }
@@ -17,6 +17,8 @@ export default function PostTempWorkPage() {
   const router = useRouter()
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ready'>('loading')
   const [ownerId, setOwnerId] = useState<string | null>(null)
+  const [companyName, setCompanyName] = useState<string | null>(null)
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null)
 
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
@@ -46,7 +48,13 @@ export default function PostTempWorkPage() {
       if (session.user.user_metadata?.role !== 'employer') { router.push('/dashboard'); return }
       const caps = await getEmployerCapabilities(supabase)
       if (!caps.manage_jobs) { setPhase('denied'); return }
-      setOwnerId((await getCurrentEmployerOwnerId(supabase)) ?? session.user.id)
+      const oid = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
+      setOwnerId(oid)
+      // Denormalise poster identity so the public feed can show it without
+      // reading employer_profiles (which isn't publicly readable).
+      const { data: prof } = await supabase.from('employer_profiles').select('company_name, logo_url').eq('user_id', oid).maybeSingle()
+      setCompanyName(prof?.company_name || session.user.user_metadata?.company_name || null)
+      setCompanyLogo(prof?.logo_url || null)
       setPhase('ready')
     }
     init()
@@ -91,6 +99,8 @@ export default function PostTempWorkPage() {
       headcount: Math.max(1, Number(headcount) || 1),
       image_url: imageUrl || null,
       external_link: externalLink.trim() || null,
+      company_name: companyName,
+      company_logo: companyLogo,
       status: 'open',
     }).select('id').maybeSingle()
     setBusy(false)
@@ -123,10 +133,14 @@ export default function PostTempWorkPage() {
         </div>
 
         <div style={group}>
-          <label style={label}>Category</label>
+          <label style={label}>Role</label>
           <select style={input} value={category} onChange={e => setCategory(e.target.value)}>
-            <option value="">Choose a category…</option>
-            {TEMP_CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.icon} {c.label}</option>)}
+            <option value="">Choose a role…</option>
+            {ROLE_GROUPS.map(g => (
+              <optgroup key={g.key} label={`${g.icon} ${g.label}`}>
+                {g.roles.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
+              </optgroup>
+            ))}
           </select>
         </div>
 

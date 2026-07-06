@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getCurrentEmployerOwnerId, getEmployerCapabilities } from '@/lib/employer'
-import { categoryMeta, formatWhen, formatRate, timeAgo, type TempPost, type TempInterest } from '@/lib/tempWork'
+import { roleMeta, formatWhen, formatRate, timeAgo, type TempPost, type TempInterest } from '@/lib/tempWork'
 
 const C = { border: '#e2e8f0', sub: '#64748b', ink: '#0f172a', yellow: '#ffe500' }
 
@@ -97,7 +97,7 @@ export default function ManageTempWorkPage() {
           </div>
         ) : posts.map(post => {
           const rows = interests[post.id] || []
-          const meta = categoryMeta(post.category)
+          const meta = roleMeta(post.category)
           const rate = formatRate(post)
           return (
             <div key={post.id} style={{ border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: '1rem', overflow: 'hidden' }}>
