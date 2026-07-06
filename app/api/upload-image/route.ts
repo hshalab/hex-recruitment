@@ -27,6 +27,10 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get('image') as File | null
+    // Optional target bucket (allowlisted). Defaults to job banners so the
+    // existing post-job flow is unchanged; the Temp Work composer passes 'temp-posts'.
+    const bucketParam = (formData.get('bucket') as string) || ''
+    const targetBucket = bucketParam === 'temp-posts' ? 'temp-posts' : BANNER_BUCKET
 
     if (!file) {
       return NextResponse.json(
@@ -102,10 +106,10 @@ export async function POST(request: NextRequest) {
       )
       const path = `${randomUUID()}.webp`
       const { error: upErr } = await admin.storage
-        .from(BANNER_BUCKET)
+        .from(targetBucket)
         .upload(path, processedBuffer, { contentType: 'image/webp', upsert: false })
       if (upErr) throw upErr
-      url = admin.storage.from(BANNER_BUCKET).getPublicUrl(path).data.publicUrl
+      url = admin.storage.from(targetBucket).getPublicUrl(path).data.publicUrl
     } catch (e: any) {
       console.error('[upload-image] Storage upload failed, falling back to base64:', e?.message)
     }
