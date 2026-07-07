@@ -12,14 +12,11 @@ import {
 import { EXAMPLE_TEMP_POSTS } from '@/lib/tempExamples'
 import styles from './page.module.css'
 
-interface Me { name: string; avatar: string | null }
-
 export default function TempWorkPage() {
   const router = useRouter()
   const [posts, setPosts] = useState<TempPost[]>([])
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
-  const [me, setMe] = useState<Me>({ name: '', avatar: null })
   const [canPost, setCanPost] = useState(false)
 
   const [myLikes, setMyLikes] = useState<Set<string>>(new Set())
@@ -51,18 +48,9 @@ export default function TempWorkPage() {
       setCanPost(session?.user?.user_metadata?.role === 'employer')
       await load()
       if (uid) {
-        // Which posts I've already liked.
+        // Which posts I've already liked (comment identity is resolved server-side).
         const { data: likes } = await supabase.from('temp_post_likes').select('post_id').eq('user_id', uid)
         setMyLikes(new Set((likes || []).map((r: { post_id: string }) => r.post_id)))
-        // My display identity for comments — candidate name (shown as initials, no
-        // stored photo by design), else employer company + logo, else metadata.
-        const [{ data: cand }, { data: emp }] = await Promise.all([
-          supabase.from('candidate_profiles').select('full_name').eq('user_id', uid).maybeSingle(),
-          supabase.from('employer_profiles').select('company_name, logo_url').eq('user_id', uid).maybeSingle(),
-        ])
-        const name = cand?.full_name || emp?.company_name || session?.user?.user_metadata?.full_name || session?.user?.email?.split('@')[0] || 'You'
-        const avatar = emp?.logo_url || null
-        setMe({ name, avatar })
       }
     }
     init()
@@ -127,8 +115,11 @@ export default function TempWorkPage() {
     const body = draft.trim()
     if (!body) return
     setBusyComment(true)
+    // author_name/author_avatar are set server-side (BEFORE INSERT trigger) from
+    // the commenter's own profile — never trusted from the client — so we don't
+    // send them. The returned row carries the authoritative identity.
     const { data, error } = await supabase.from('temp_post_comments').insert({
-      post_id: post.id, user_id: userId, body, author_name: me.name, author_avatar: me.avatar,
+      post_id: post.id, user_id: userId, body,
     }).select('*').single()
     if (!error && data) {
       setComments(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), data as TempComment] }))
