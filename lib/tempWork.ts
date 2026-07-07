@@ -65,7 +65,8 @@ export interface TempPost {
   title: string
   category: string // granular role key (see roleMeta)
   description: string | null
-  shift_date: string | null
+  date_from: string | null
+  date_to: string | null
   start_time: string | null
   end_time: string | null
   is_ongoing: boolean
@@ -78,32 +79,48 @@ export interface TempPost {
   external_link: string | null
   company_name: string | null
   company_logo: string | null
-  interest_count: number
+  like_count: number
+  comment_count: number
   status: 'open' | 'filled' | 'closed' | 'expired'
   created_at: string
   isExample?: boolean
 }
 
-export interface TempInterest {
+// A public, LinkedIn-style comment on a post. Author identity is denormalised on
+// the row so the public feed can render it without cross-table profile reads.
+export interface TempComment {
   id: string
-  temp_post_id: string
-  candidate_user_id: string
-  message: string | null
-  status: 'interested' | 'shortlisted' | 'booked' | 'declined'
+  post_id: string
+  user_id: string
+  body: string
+  author_name: string | null
+  author_avatar: string | null
+  hidden: boolean
   created_at: string
 }
 
 export const DISCLAIMER =
   'Thrive connects workers and employers. Bookings, pay and compliance are arranged directly between you — Thrive is not the employer or agency.'
 
-export function formatWhen(p: Pick<TempPost, 'is_ongoing' | 'shift_date' | 'start_time' | 'end_time'>): string {
+export function formatWhen(p: Pick<TempPost, 'is_ongoing' | 'date_from' | 'date_to' | 'start_time' | 'end_time'>): string {
   if (p.is_ongoing) return 'Ongoing · flexible'
-  if (!p.shift_date) return 'Flexible dates'
-  const d = new Date(`${p.shift_date}T00:00:00`)
-  const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+  if (!p.date_from) return 'Flexible dates'
+  const from = new Date(`${p.date_from}T00:00:00`)
+  const to = p.date_to && p.date_to !== p.date_from ? new Date(`${p.date_to}T00:00:00`) : null
   const t = (s?: string | null) => (s ? s.slice(0, 5) : null)
   const times = [t(p.start_time), t(p.end_time)].filter(Boolean).join('–')
-  return times ? `${date} · ${times}` : date
+
+  let datePart: string
+  if (to) {
+    // Multi-day: "14–16 Jul" within a month, else "30 Jul – 2 Aug".
+    const sameMonth = from.getMonth() === to.getMonth() && from.getFullYear() === to.getFullYear()
+    const fromLbl = from.toLocaleDateString('en-GB', sameMonth ? { day: 'numeric' } : { day: 'numeric', month: 'short' })
+    const toLbl = to.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    datePart = sameMonth ? `${fromLbl}–${toLbl}` : `${fromLbl} – ${toLbl}`
+  } else {
+    datePart = from.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+  }
+  return times ? `${datePart} · ${times}` : datePart
 }
 
 export function formatRate(p: Pick<TempPost, 'hourly_rate' | 'rate_type'>): string | null {

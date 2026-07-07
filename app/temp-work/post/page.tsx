@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getCurrentEmployerOwnerId, getEmployerCapabilities } from '@/lib/employer'
 import { ROLE_GROUPS, RATE_TYPES, DISCLAIMER } from '@/lib/tempWork'
+import TempImagePicker from '@/components/TempImagePicker'
 
 const C = { border: '#e2e8f0', sub: '#64748b', ink: '#0f172a', yellow: '#ffe500' }
 const label: React.CSSProperties = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }
@@ -24,7 +25,8 @@ export default function PostTempWorkPage() {
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
   const [isOngoing, setIsOngoing] = useState(false)
-  const [shiftDate, setShiftDate] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [locationArea, setLocationArea] = useState('')
@@ -35,8 +37,6 @@ export default function PostTempWorkPage() {
   const [externalLink, setExternalLink] = useState('')
 
   const [imageUrl, setImageUrl] = useState('')
-  const [imgUploading, setImgUploading] = useState(false)
-  const [imgError, setImgError] = useState('')
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -60,22 +60,6 @@ export default function PostTempWorkPage() {
     init()
   }, [router])
 
-  const onImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setImgUploading(true); setImgError('')
-    try {
-      const fd = new FormData()
-      fd.append('image', file)
-      fd.append('bucket', 'temp-posts')
-      const res = await fetch('/api/upload-image', { method: 'POST', body: fd })
-      const json = await res.json()
-      if (!res.ok) { setImgError(json.error || 'Upload failed'); return }
-      setImageUrl(json.url || json.dataUrl || '')
-    } catch { setImgError('Upload failed. Please try again.') }
-    finally { setImgUploading(false) }
-  }
-
   const submit = async () => {
     setError('')
     if (!title.trim()) { setError('Add a title.'); return }
@@ -89,7 +73,9 @@ export default function PostTempWorkPage() {
       category,
       description: description.trim() || null,
       is_ongoing: isOngoing,
-      shift_date: isOngoing || !shiftDate ? null : shiftDate,
+      date_from: isOngoing || !dateFrom ? null : dateFrom,
+      // Single-day when "to" is blank or equals "from".
+      date_to: isOngoing || !dateTo || dateTo === dateFrom ? null : dateTo,
       start_time: isOngoing || !startTime ? null : startTime,
       end_time: isOngoing || !endTime ? null : endTime,
       location_area: locationArea.trim(),
@@ -152,11 +138,22 @@ export default function PostTempWorkPage() {
         </div>
 
         {!isOngoing && (
-          <div style={{ display: 'flex', gap: '0.75rem', ...group }}>
-            <div style={{ flex: 1 }}><label style={label}>Date</label><input style={input} type="date" value={shiftDate} onChange={e => setShiftDate(e.target.value)} /></div>
-            <div style={{ flex: 1 }}><label style={label}>Start</label><input style={input} type="time" value={startTime} onChange={e => setStartTime(e.target.value)} /></div>
-            <div style={{ flex: 1 }}><label style={label}>End</label><input style={input} type="time" value={endTime} onChange={e => setEndTime(e.target.value)} /></div>
-          </div>
+          <>
+            <div style={{ display: 'flex', gap: '0.75rem', ...group }}>
+              <div style={{ flex: 1 }}><label style={label}>Date from</label><input style={input} type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} /></div>
+              <div style={{ flex: 1 }}>
+                <label style={label}>Date to <span style={{ fontWeight: 400, color: '#94a3b8' }}>· optional</span></label>
+                <input style={input} type="date" min={dateFrom || undefined} value={dateTo} onChange={e => setDateTo(e.target.value)} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', ...group }}>
+              <div style={{ flex: 1 }}><label style={label}>Start time</label><input style={input} type="time" value={startTime} onChange={e => setStartTime(e.target.value)} /></div>
+              <div style={{ flex: 1 }}><label style={label}>End time</label><input style={input} type="time" value={endTime} onChange={e => setEndTime(e.target.value)} /></div>
+            </div>
+            <p style={{ margin: '-0.4rem 0 1rem', fontSize: '0.78rem', color: '#94a3b8' }}>
+              Single day? Leave “Date to” blank. Multi-day event? Set both.
+            </p>
+          </>
         )}
 
         <div style={{ display: 'flex', gap: '0.75rem', ...group }}>
@@ -180,11 +177,8 @@ export default function PostTempWorkPage() {
         </div>
 
         <div style={group}>
-          <label style={label}>Image (optional)</label>
-          {imageUrl && <img src={imageUrl} alt="" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 10, marginBottom: 8, display: 'block' }} />}
-          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={onImage} disabled={imgUploading} />
-          {imgUploading && <span style={{ marginLeft: 8, color: C.sub, fontSize: '0.82rem' }}>Uploading…</span>}
-          {imgError && <p style={{ color: '#b91c1c', fontSize: '0.82rem', margin: '0.3rem 0 0' }}>{imgError}</p>}
+          <label style={label}>Photo <span style={{ fontWeight: 400, color: '#94a3b8' }}>· optional</span></label>
+          <TempImagePicker value={imageUrl} onChange={setImageUrl} disabled={busy} />
         </div>
 
         <div style={group}>

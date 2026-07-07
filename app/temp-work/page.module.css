@@ -59,19 +59,41 @@
 .extLink { display: inline-block; font-size: 0.85rem; font-weight: 600; color: #334155; text-decoration: none; margin-bottom: 0.6rem; }
 .extLink:hover { text-decoration: underline; }
 
-.cardFoot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; border-top: 1px solid #f1f5f9; padding-top: 0.7rem; margin-top: 0.4rem; }
-.count { font-size: 0.82rem; font-weight: 600; color: #64748b; }
-.availBtn { padding: 0.5rem 1.1rem; background: #ffe500; color: #0f172a; font-weight: 700; font-size: 0.88rem; border: none; border-radius: 9px; cursor: pointer; }
-.availBtn:hover:not(:disabled) { filter: brightness(0.95); }
-.availBtn:disabled { opacity: 0.5; cursor: not-allowed; }
-.interested { display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 700; font-size: 0.88rem; color: #166534; }
+/* engagement summary (likes / comment count) */
+.engRow { display: flex; align-items: center; gap: 0.9rem; font-size: 0.8rem; color: #64748b; padding: 0.5rem 0 0; margin-top: 0.2rem; }
+.engCount { background: none; border: none; padding: 0; font-size: 0.8rem; color: #64748b; cursor: pointer; }
+.engCount:hover:not(:disabled) { color: #0f172a; text-decoration: underline; }
+.engCount:disabled { cursor: default; }
 
-.noteBox { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
-.noteInput { width: 100%; padding: 0.55rem 0.7rem; border: 1px solid #e2e8f0; border-radius: 9px; font-size: 0.88rem; resize: vertical; box-sizing: border-box; }
-.noteBtns { display: flex; gap: 0.5rem; }
-.sendBtn { padding: 0.5rem 1rem; background: #ffe500; color: #0f172a; font-weight: 700; font-size: 0.86rem; border: none; border-radius: 9px; cursor: pointer; }
-.sendBtn:disabled { opacity: 0.6; }
-.cancelBtn { padding: 0.5rem 0.9rem; background: #fff; color: #64748b; font-weight: 600; font-size: 0.86rem; border: 1px solid #e2e8f0; border-radius: 9px; cursor: pointer; }
+/* action bar (Like / Comment) */
+.actionBar { display: flex; gap: 0.4rem; border-top: 1px solid #f1f5f9; margin-top: 0.5rem; padding-top: 0.4rem; }
+.actionBtn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.55rem 0.5rem; background: transparent; color: #475569; font-weight: 700; font-size: 0.86rem;
+  border: none; border-radius: 9px; cursor: pointer;
+}
+.actionBtn:hover:not(:disabled) { background: #f1f5f9; }
+.actionBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.actionBtnOn { color: #0f172a; }
+
+/* comment thread */
+.thread { border-top: 1px solid #f1f5f9; margin-top: 0.4rem; padding-top: 0.8rem; display: flex; flex-direction: column; gap: 0.7rem; }
+.threadEmpty { font-size: 0.85rem; color: #94a3b8; margin: 0 0 0.2rem; }
+.comment { display: flex; gap: 0.55rem; align-items: flex-start; }
+.cAvatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: #ffe500; display: grid; place-items: center; }
+.cInitials { font-weight: 800; color: #0f172a; font-size: 0.75rem; }
+.cBubble { background: #f1f5f9; border-radius: 12px; padding: 0.5rem 0.75rem; min-width: 0; flex: 1; }
+.cHead { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+.cName { font-size: 0.84rem; font-weight: 700; color: #0f172a; }
+.cTime { font-size: 0.72rem; color: #94a3b8; }
+.cBody { font-size: 0.88rem; line-height: 1.45; color: #334155; margin: 0.15rem 0 0; white-space: pre-wrap; word-break: break-word; }
+.cDelete { background: none; border: none; padding: 0.2rem 0 0; font-size: 0.74rem; font-weight: 600; color: #94a3b8; cursor: pointer; }
+.cDelete:hover { color: #b91c1c; }
+
+.commentBox { display: flex; gap: 0.5rem; align-items: flex-end; margin-top: 0.2rem; }
+.commentInput { flex: 1; padding: 0.55rem 0.7rem; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.88rem; resize: vertical; box-sizing: border-box; font-family: inherit; }
+.commentSend { padding: 0.55rem 1rem; background: #ffe500; color: #0f172a; font-weight: 700; font-size: 0.85rem; border: none; border-radius: 9px; cursor: pointer; flex-shrink: 0; }
+.commentSend:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .disclaimer { margin-top: 1.5rem; font-size: 0.78rem; line-height: 1.5; color: #94a3b8; text-align: center; }
 

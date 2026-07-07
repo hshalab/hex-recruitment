@@ -39,7 +39,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    const isTempPost = targetBucket === 'temp-posts'
+    // Temp Work accepts any common photo (incl. phone HEIC); banners stay strict.
+    const allowedTypes = isTempPost
+      ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif']
+      : ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: 'Invalid file type. Please upload a JPEG, PNG, WebP, or GIF image.' },
@@ -66,7 +70,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (metadata.width < MIN_WIDTH || metadata.height < MIN_HEIGHT) {
+    // Banners must meet a minimum so the fixed job-card slot stays crisp. Temp
+    // Work posts have no size requirement — any photo works, the card uses
+    // object-fit: cover — so we skip the check there.
+    if (!isTempPost && (metadata.width < MIN_WIDTH || metadata.height < MIN_HEIGHT)) {
       return NextResponse.json(
         {
           error: `Image is too small (${metadata.width}x${metadata.height}px). Minimum size is ${MIN_WIDTH}x${MIN_HEIGHT}px — smaller images will look blurry.`
@@ -75,23 +82,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Always crop to an exact 16:11 landscape, at the largest size that fits the
-    // source without upscaling (capped at TARGET_WIDTH). Computing the box from
-    // the source — rather than relying on fit:'cover' + withoutEnlargement, which
-    // skips the crop when the source is smaller than the target — guarantees the
-    // stored banner is exactly 16:11, so the card shows it uncropped and the
-    // post-job preview is an exact match.
-    const fitW = Math.min(TARGET_WIDTH, metadata.width, Math.floor((metadata.height * TARGET_WIDTH) / TARGET_HEIGHT))
-    const outW = Math.max(1, fitW)
-    const outH = Math.max(1, Math.round((outW * TARGET_HEIGHT) / TARGET_WIDTH))
-
-    const processedBuffer = await sharp(buffer)
-      .resize(outW, outH, {
-        fit: 'cover',
-        position: 'attention',
-      })
-      .webp({ quality: WEBP_QUALITY })
-      .toBuffer()
+    let processedBuffer: Buffer
+    if (isTempPost) {
+      // Preserve the photo's own aspect ratio: cap the long edge, never enlarge,
+      // re-encode to WebP. The feed/manage cards frame it with object-fit: cover,
+      // so any shape looks fine and the poster never has to crop.
+      processedBuffer = await sharp(buffer)
+        .rotate() // honour EXIF orientation from phone photos
+        .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: WEBP_QUALITY })
+        .toBuffer()
+    } else {
+      // Banners: always crop to an exact 16:11 landscape, at the largest size that
+      // fits the source without upscaling (capped at TARGET_WIDTH). Computing the
+      // box from the source — rather than relying on fit:'cover' +
+      // withoutEnlargement, which skips the crop when the source is smaller than
+      // the target — guarantees the stored banner is exactly 16:11, so the card
+      // shows it uncropped and the post-job preview is an exact match.
+      const fitW = Math.min(TARGET_WIDTH, metadata.width, Math.floor((metadata.height * TARGET_WIDTH) / TARGET_HEIGHT))
+      const outW = Math.max(1, fitW)
+      const outH = Math.max(1, Math.round((outW * TARGET_HEIGHT) / TARGET_WIDTH))
+      processedBuffer = await sharp(buffer)
+        .resize(outW, outH, { fit: 'cover', position: 'attention' })
+        .webp({ quality: WEBP_QUALITY })
+        .toBuffer()
+    }
 
     // Store the processed banner as a file in the public 'job-banners' bucket and
     // return its public URL. Falls back to an inline base64 data URL if Storage
