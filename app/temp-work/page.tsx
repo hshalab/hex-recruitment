@@ -32,7 +32,10 @@ export default function TempWorkPage() {
   const [role, setRole] = useState('')
   const [loc, setLoc] = useState('')
   const [date, setDate] = useState('')
+  const [minRate, setMinRate] = useState(0) // min £/hr; only applies to hourly posts
   const [toast, setToast] = useState('')
+
+  const RATE_PRESETS = [12, 15, 18, 20]
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -73,8 +76,11 @@ export default function TempWorkPage() {
     if (!role && group && !rolesInGroup(group).includes(p.category)) return false
     if (loc && !(`${p.location_area} ${p.postcode || ''}`.toLowerCase().includes(loc.toLowerCase()))) return false
     if (!matchesDate(p)) return false
+    // Min £/hr is an hourly-only filter: a per-shift/day rate can't be compared to
+    // an hourly minimum, so applying a minimum hides non-hourly posts entirely.
+    if (minRate > 0 && !(p.rate_type === 'hour' && p.hourly_rate != null && p.hourly_rate >= minRate)) return false
     return true
-  }), [visible, usingExamples, group, role, loc, date]) // eslint-disable-line react-hooks/exhaustive-deps
+  }), [visible, usingExamples, group, role, loc, date, minRate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(''), 3000) }
   const requireLogin = () => router.push(`/login/employee?redirect=${encodeURIComponent('/temp-work')}`)
@@ -140,7 +146,7 @@ export default function TempWorkPage() {
     } else flash('Could not remove the comment.')
   }
 
-  const anyFilter = !!(group || role || loc || date)
+  const anyFilter = !!(group || role || loc || date || minRate)
 
   return (
     <main>
@@ -171,7 +177,18 @@ export default function TempWorkPage() {
             <div className={styles.filterTitle} style={{ marginTop: '1rem' }}>Where & when</div>
             <input className={styles.filterInput} placeholder="Location or postcode" value={loc} onChange={e => setLoc(e.target.value)} />
             <input className={styles.filterInput} type="date" value={date} onChange={e => setDate(e.target.value)} />
-            {anyFilter && <button className={styles.clearBtn} onClick={() => { setGroup(''); setRole(''); setLoc(''); setDate('') }}>Clear filters</button>}
+
+            <div className={styles.filterTitle} style={{ marginTop: '1rem' }}>Min pay (£/hr)</div>
+            <div className={styles.rateChips}>
+              {RATE_PRESETS.map(r => (
+                <button key={r} className={`${styles.roleChip} ${minRate === r ? styles.roleChipOn : ''}`} onClick={() => setMinRate(minRate === r ? 0 : r)}>
+                  £{r}+
+                </button>
+              ))}
+            </div>
+            <p className={styles.rateHint}>Hourly shifts only</p>
+
+            {anyFilter && <button className={styles.clearBtn} onClick={() => { setGroup(''); setRole(''); setLoc(''); setDate(''); setMinRate(0) }}>Clear filters</button>}
           </aside>
 
           {/* Centre feed */}

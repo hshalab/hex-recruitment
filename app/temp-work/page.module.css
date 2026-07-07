@@ -17,6 +17,8 @@
 .roleChipOn { background: #ffe500; border-color: #ffe500; color: #0f172a; }
 
 .filterInput { width: 100%; padding: 0.5rem 0.65rem; border: 1px solid #e2e8f0; border-radius: 9px; font-size: 0.85rem; margin-bottom: 0.5rem; box-sizing: border-box; }
+.rateChips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.rateHint { font-size: 0.72rem; color: #94a3b8; margin: 0.4rem 0 0; }
 .clearBtn { width: 100%; padding: 0.45rem; border: 1px solid #e2e8f0; background: #fff; border-radius: 9px; font-size: 0.82rem; font-weight: 600; color: #64748b; cursor: pointer; }
 
 .rightRail { }
