@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
+import { ThumbsUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
   ROLE_GROUPS, roleMeta, rolesInGroup, formatWhen, formatRate, timeAgo, initialsOf, DISCLAIMER,
@@ -154,7 +155,7 @@ export default function TempWorkPage() {
               {ROLE_GROUPS.map(g => (
                 <div key={g.key}>
                   <button className={`${styles.catBtn} ${group === g.key ? styles.catBtnOn : ''}`} onClick={() => { setGroup(group === g.key ? '' : g.key); setRole('') }}>
-                    <span aria-hidden>{g.icon}</span> {g.label}
+                    {g.label}
                   </button>
                   {group === g.key && (
                     <div className={styles.roleChips}>
@@ -232,7 +233,9 @@ export default function TempWorkPage() {
                   {/* engagement summary */}
                   {(post.like_count > 0 || post.comment_count > 0) && (
                     <div className={styles.engRow}>
-                      {post.like_count > 0 && <span>❤️ {post.like_count}</span>}
+                      {post.like_count > 0 && (
+                        <span className={styles.engLikes}><ThumbsUp size={13} strokeWidth={2.4} /> {post.like_count}</span>
+                      )}
                       {post.comment_count > 0 && (
                         <button className={styles.engCount} onClick={() => openComments(post)} disabled={isEx}>
                           {post.comment_count} comment{post.comment_count === 1 ? '' : 's'}
@@ -248,7 +251,7 @@ export default function TempWorkPage() {
                       disabled={isEx || busyLike === post.id}
                       title={isEx ? 'This is an example post' : liked ? 'Unlike' : 'Like'}
                     >
-                      {liked ? '❤️' : '🤍'} Like
+                      <ThumbsUp size={16} strokeWidth={2.2} fill={liked ? 'currentColor' : 'none'} /> Like
                     </button>
                     <button
                       className={`${styles.actionBtn} ${threadOpen ? styles.actionBtnOn : ''}`}
@@ -263,26 +266,35 @@ export default function TempWorkPage() {
                   {threadOpen && !isEx && (
                     <div className={styles.thread}>
                       {thread.length === 0 && <p className={styles.threadEmpty}>Be the first to comment — say when you’re free.</p>}
-                      {thread.map(c => (
-                        <div key={c.id} className={styles.comment}>
-                          <span className={styles.cAvatar}>
-                            {c.author_avatar
-                              // eslint-disable-next-line @next/next/no-img-element
-                              ? <img src={c.author_avatar} alt="" className={styles.avatarImg} />
-                              : <span className={styles.cInitials}>{initialsOf(c.author_name || '?')}</span>}
-                          </span>
-                          <div className={styles.cBubble}>
-                            <div className={styles.cHead}>
-                              <span className={styles.cName}>{c.author_name || 'Someone'}{c.hidden ? ' · hidden' : ''}</span>
-                              <span className={styles.cTime}>{timeAgo(c.created_at)}</span>
+                      {thread.map(c => {
+                        // Only candidates have a profile page; the route enforces the
+                        // app's existing employer-only gate, so we just link to it.
+                        const profileHref = c.author_role === 'candidate' ? `/candidates/${c.user_id}` : null
+                        const avatarInner = c.author_avatar
+                          // eslint-disable-next-line @next/next/no-img-element
+                          ? <img src={c.author_avatar} alt="" className={styles.avatarImg} />
+                          : <span className={styles.cInitials}>{initialsOf(c.author_name || '?')}</span>
+                        return (
+                          <div key={c.id} className={styles.comment}>
+                            {profileHref
+                              ? <Link href={profileHref} className={styles.cAvatar} title={`View ${c.author_name || 'profile'}`}>{avatarInner}</Link>
+                              : <span className={styles.cAvatar}>{avatarInner}</span>}
+                            <div className={styles.cBubble}>
+                              <div className={styles.cHead}>
+                                {profileHref
+                                  ? <Link href={profileHref} className={styles.cNameLink}>{c.author_name || 'Someone'}</Link>
+                                  : <span className={styles.cName}>{c.author_name || 'Someone'}</span>}
+                                {c.hidden && <span className={styles.cName}> · hidden</span>}
+                                <span className={styles.cTime}>{timeAgo(c.created_at)}</span>
+                              </div>
+                              <p className={styles.cBody}>{c.body}</p>
+                              {c.user_id === userId && (
+                                <button className={styles.cDelete} onClick={() => deleteComment(post, c)}>Delete</button>
+                              )}
                             </div>
-                            <p className={styles.cBody}>{c.body}</p>
-                            {c.user_id === userId && (
-                              <button className={styles.cDelete} onClick={() => deleteComment(post, c)}>Delete</button>
-                            )}
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
 
                       <div className={styles.commentBox}>
                         <textarea

@@ -95,6 +95,7 @@ export interface TempComment {
   body: string
   author_name: string | null
   author_avatar: string | null
+  author_role: 'candidate' | 'employer' | null
   hidden: boolean
   created_at: string
 }

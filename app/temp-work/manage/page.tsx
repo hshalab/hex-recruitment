@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
+import { ThumbsUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getCurrentEmployerOwnerId, getEmployerCapabilities } from '@/lib/employer'
 import { roleMeta, formatWhen, formatRate, timeAgo, initialsOf, type TempPost, type TempComment } from '@/lib/tempWork'
@@ -105,8 +106,8 @@ export default function ManageTempWorkPage() {
                     <div style={{ fontSize: '0.82rem', color: C.sub, marginTop: 2 }}>
                       {formatWhen(post)} · {post.location_area}{rate ? ` · ${rate}` : ''} · posted {timeAgo(post.created_at)}
                     </div>
-                    <div style={{ fontSize: '0.82rem', color: C.sub, marginTop: 4 }}>
-                      ❤️ {post.like_count} like{post.like_count === 1 ? '' : 's'} · 💬 {post.comment_count} comment{post.comment_count === 1 ? '' : 's'}
+                    <div style={{ fontSize: '0.82rem', color: C.sub, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <ThumbsUp size={13} strokeWidth={2.4} style={{ color: '#2563eb' }} /> {post.like_count} like{post.like_count === 1 ? '' : 's'} · 💬 {post.comment_count} comment{post.comment_count === 1 ? '' : 's'}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
@@ -128,17 +129,24 @@ export default function ManageTempWorkPage() {
                   <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>No comments yet — sit tight.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-                    {rows.map(c => (
+                    {rows.map(c => {
+                      // Candidates have a profile page (route enforces the employer gate); employers don't.
+                      const profileHref = c.author_role === 'candidate' ? `/candidates/${c.user_id}` : null
+                      const avatarBox: React.CSSProperties = { width: 34, height: 34, borderRadius: '50%', background: C.yellow, display: 'grid', placeItems: 'center', flexShrink: 0, overflow: 'hidden' }
+                      const avatarInner = c.author_avatar
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={c.author_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <span style={{ fontWeight: 800, color: C.ink, fontSize: '0.72rem' }}>{initialsOf(c.author_name || '?')}</span>
+                      return (
                       <div key={c.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', borderTop: `1px solid #f1f5f9`, paddingTop: '0.6rem', opacity: c.hidden ? 0.55 : 1 }}>
-                        <span style={{ width: 34, height: 34, borderRadius: '50%', background: C.yellow, display: 'grid', placeItems: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                          {c.author_avatar
-                            // eslint-disable-next-line @next/next/no-img-element
-                            ? <img src={c.author_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : <span style={{ fontWeight: 800, color: C.ink, fontSize: '0.72rem' }}>{initialsOf(c.author_name || '?')}</span>}
-                        </span>
+                        {profileHref
+                          ? <Link href={profileHref} style={avatarBox} title={`View ${c.author_name || 'profile'}`}>{avatarInner}</Link>
+                          : <span style={avatarBox}>{avatarInner}</span>}
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                            <span style={{ fontWeight: 700, color: C.ink, fontSize: '0.88rem' }}>{c.author_name || 'Someone'}</span>
+                            {profileHref
+                              ? <Link href={profileHref} style={{ fontWeight: 700, color: C.ink, fontSize: '0.88rem', textDecoration: 'none' }}>{c.author_name || 'Someone'}</Link>
+                              : <span style={{ fontWeight: 700, color: C.ink, fontSize: '0.88rem' }}>{c.author_name || 'Someone'}</span>}
                             <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{timeAgo(c.created_at)}</span>
                             {c.hidden && <span style={pill('#f1f5f9', '#475569')}>Hidden</span>}
                           </div>
@@ -153,7 +161,8 @@ export default function ManageTempWorkPage() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
