@@ -626,10 +626,20 @@ function ReviewModal({ companyName, employerId, reviewerId, onClose, onSubmit }:
     setSubmitting(true)
     setError('')
 
+    // Denormalise the reviewer's display identity onto the review (own-row read,
+    // allowed) so the public reviews page can show it without candidate_profiles.
+    const { data: me } = await supabase
+      .from('candidate_profiles')
+      .select('full_name, profile_picture_url')
+      .eq('user_id', reviewerId)
+      .maybeSingle()
+
     const { data, error: dbError } = await supabase
       .from('company_reviews')
       .insert({
         reviewer_id: reviewerId,
+        reviewer_name: me?.full_name ?? null,
+        reviewer_avatar: me?.profile_picture_url ?? null,
         company_name: companyName,
         employer_id: employerId,
         overall_rating: rating,

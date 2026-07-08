@@ -198,8 +198,18 @@ export default function WriteReviewPage() {
     setSubmitting(true)
     setGlobalError('')
 
+    // Denormalise the reviewer's display identity onto the review (own-row read,
+    // allowed) so the public reviews page can show it without candidate_profiles.
+    const { data: me } = await supabase
+      .from('candidate_profiles')
+      .select('full_name, profile_picture_url')
+      .eq('user_id', userId)
+      .maybeSingle()
+
     const payload = {
       reviewer_id: userId,
+      reviewer_name: me?.full_name ?? null,
+      reviewer_avatar: me?.profile_picture_url ?? null,
       company_name: companyName,
       overall_rating: overallRating,
       pros: pros.trim(),

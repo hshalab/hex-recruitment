@@ -39,26 +39,15 @@ export default function CompanyReviewsPage() {
       .order('created_at', { ascending: false })
 
     if (!error && data) {
-      setReviews(data as CompanyReview[])
-
-      // Fetch reviewer profiles
-      const reviewerIds = data.map((r: any) => r.reviewer_id).filter(Boolean)
-      if (reviewerIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('candidate_profiles')
-          .select('user_id, full_name, profile_picture_url')
-          .in('user_id', reviewerIds)
-
-        if (profiles) {
-          const profileMap = new Map(
-            profiles.map((p: any) => [p.user_id, { full_name: p.full_name, avatar_url: p.profile_picture_url }])
-          )
-          setReviews(prev => prev.map(r => ({
-            ...r,
-            reviewer: profileMap.get(r.reviewer_id) || undefined,
-          })))
-        }
-      }
+      // Reviewer identity is denormalised onto the review at write time, so the
+      // public page shows who wrote it without reading candidate_profiles (which
+      // is locked to approved employers + the candidate's own row).
+      setReviews((data as any[]).map(r => ({
+        ...r,
+        reviewer: (r.reviewer_name || r.reviewer_avatar)
+          ? { full_name: r.reviewer_name ?? null, avatar_url: r.reviewer_avatar ?? null }
+          : undefined,
+      })) as CompanyReview[])
     }
 
     setLoading(false)
