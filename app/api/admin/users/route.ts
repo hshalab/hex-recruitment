@@ -3,6 +3,13 @@ import { verifyAdmin, createAdminClient } from '@/lib/admin'
 
 const PAGE_SIZE = 20
 
+// The app stores the candidate role in user_metadata as 'employee' (and some
+// legacy rows have no role at all). Everything that isn't an employer is a
+// candidate — normalise here so the admin role filter and enrichment match.
+function normalizeRole(u: { user_metadata?: { role?: string } | null }): 'employer' | 'candidate' {
+  return u.user_metadata?.role === 'employer' ? 'employer' : 'candidate'
+}
+
 export async function GET(req: Request) {
   const { authorized, token } = await verifyAdmin(req)
   if (!authorized) {
@@ -28,7 +35,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
 
-      const userRole = authUser.user_metadata?.role || 'candidate'
+      const userRole = normalizeRole(authUser)
 
       if (userRole === 'candidate') {
         const { data: candidate } = await db
@@ -123,12 +130,8 @@ export async function GET(req: Request) {
 
     const authUsers = authResult?.users || []
 
-    // Filter by role
-    let filtered = authUsers.filter(u => {
-      const userRole = u.user_metadata?.role || 'candidate'
-      if (role === 'all') return true
-      return userRole === role
-    })
+    // Filter by role (normalised: 'employee'/legacy null both count as candidate)
+    let filtered = authUsers.filter(u => role === 'all' || normalizeRole(u) === role)
 
     // Filter by search
     if (search) {
@@ -142,10 +145,10 @@ export async function GET(req: Request) {
 
     // Fetch profile data for enrichment
     const candidateIds = filtered
-      .filter(u => (u.user_metadata?.role || 'candidate') === 'candidate')
+      .filter(u => normalizeRole(u) === 'candidate')
       .map(u => u.id)
     const employerIds = filtered
-      .filter(u => u.user_metadata?.role === 'employer')
+      .filter(u => normalizeRole(u) === 'employer')
       .map(u => u.id)
 
     // Parallel profile + subscription lookups
@@ -175,7 +178,7 @@ export async function GET(req: Request) {
 
     // Build user list
     const users = filtered.map(u => {
-      const userRole = u.user_metadata?.role || 'candidate'
+      const userRole = normalizeRole(u)
 
       if (userRole === 'candidate') {
         const profile = candidateMap[u.id]
