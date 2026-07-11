@@ -127,12 +127,10 @@ async function fetchKPI(db: any, startDate: string, granularity: 'day' | 'week' 
   const prevMonthStart = new Date(now.getTime() - 60 * 86400000).toISOString()
   const prevMonthEnd = new Date(now.getTime() - 30 * 86400000).toISOString()
 
-  // 12 sparkline periods
-  const sparkKeys = generatePeriodKeys(
-    new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString(),
-    'month'
-  )
-  const sparkStart = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString()
+  // Sparkline periods follow the SELECTED range/granularity (fixes the range
+  // toggle being ignored — e.g. "30 Days" was rendering a full 12 months).
+  const sparkKeys = generatePeriodKeys(startDate, granularity)
+  const sparkStart = startDate
 
   const [
     candidatesAll, employersAll,
@@ -250,18 +248,29 @@ async function fetchKPI(db: any, startDate: string, granularity: 'day' | 'week' 
 
   const avgAppsPerJob = totalActiveJobsCount > 0 ? Math.round((totalAppsCount / totalActiveJobsCount) * 10) / 10 : 0
 
-  // Build sparklines
-  const candSpark = groupByPeriod(candidatesSpark.data, 'created_at', 'month', sparkKeys)
-  const empSpark = groupByPeriod(employersSpark.data, 'created_at', 'month', sparkKeys)
-  const userSparkline = candSpark.map((c, i) => ({ period: c.period, value: c.count + (empSpark[i]?.count || 0) }))
-  const jobSparkline = groupByPeriod(jobsSpark.data, 'posted_at', 'month', sparkKeys).map(j => ({ period: j.period, value: j.count }))
-  const appSparkline = groupByPeriod(appsSpark.data, 'applied_at', 'month', sparkKeys).map(a => ({ period: a.period, value: a.count }))
+  // Build sparklines at the selected granularity.
+  const candSpark = groupByPeriod(candidatesSpark.data, 'created_at', granularity, sparkKeys)
+  const empSpark = groupByPeriod(employersSpark.data, 'created_at', granularity, sparkKeys)
+  const newPerBucket = candSpark.map((c, i) => c.count + (empSpark[i]?.count || 0))
+  // "Total Users" must be a CUMULATIVE running total — a total can't fall, so it
+  // never dips on the current partial bucket. Seed with the count that existed
+  // before the window so the series ends exactly at totalUsers.
+  const totalNewInWindow = newPerBucket.reduce((a, b) => a + b, 0)
+  let runningTotal = totalUsers - totalNewInWindow
+  const totalUsersSparkline = sparkKeys.map((k, i) => {
+    runningTotal += newPerBucket[i]
+    return { period: k, value: runningTotal }
+  })
+  // Per-period NEW signups — correct for the signups cards (a per-period series).
+  const newUsersSparkline = sparkKeys.map((k, i) => ({ period: k, value: newPerBucket[i] }))
+  const jobSparkline = groupByPeriod(jobsSpark.data, 'posted_at', granularity, sparkKeys).map(j => ({ period: j.period, value: j.count }))
+  const appSparkline = groupByPeriod(appsSpark.data, 'applied_at', granularity, sparkKeys).map(a => ({ period: a.period, value: a.count }))
 
   return {
-    totalUsers: { value: totalUsers, change: pctChange(totalUsers, prevTotalUsers), sparkline: userSparkline },
-    activeUsers30d: { value: activeUsers30d, change: pctChange(activeUsers30d, prevActiveUsers), sparkline: userSparkline },
-    newSignupsWeek: { value: newSignupsWeek, change: pctChange(newSignupsWeek, prevSignupsWeek), sparkline: userSparkline },
-    newSignupsMonth: { value: newSignupsMonth, change: pctChange(newSignupsMonth, prevSignupsMonth), sparkline: userSparkline },
+    totalUsers: { value: totalUsers, change: pctChange(totalUsers, prevTotalUsers), sparkline: totalUsersSparkline },
+    activeUsers30d: { value: activeUsers30d, change: pctChange(activeUsers30d, prevActiveUsers), sparkline: newUsersSparkline },
+    newSignupsWeek: { value: newSignupsWeek, change: pctChange(newSignupsWeek, prevSignupsWeek), sparkline: newUsersSparkline },
+    newSignupsMonth: { value: newSignupsMonth, change: pctChange(newSignupsMonth, prevSignupsMonth), sparkline: newUsersSparkline },
     totalActiveJobs: { value: totalActiveJobsCount, change: pctChange(totalActiveJobsCount, prevActiveJobs.count || 0), sparkline: jobSparkline },
     totalApplications: { value: totalAppsCount, change: pctChange(newApps30d, Math.max(prevAppsCount, 1)), sparkline: appSparkline },
     conversionRate: { value: conversionRate, change: pctChange(conversionRate, prevConversion), sparkline: appSparkline },
