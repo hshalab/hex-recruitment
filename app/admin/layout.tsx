@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
   LayoutDashboard, Users, Briefcase, FileText, CreditCard,
-  MessageSquare, Star, BarChart3, Mail, MessageCircle, ListChecks, Settings, ArrowLeft,
+  MessageSquare, Star, BarChart3, Mail, ListChecks, Settings, ArrowLeft,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { ADMIN_EMAILS } from '@/lib/admin-client'
@@ -22,7 +22,6 @@ const NAV_ITEMS = [
   { href: '/admin/reviews', label: 'Reviews', icon: Star },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/emails', label: 'Emails', icon: Mail },
-  { href: '/admin/feedback', label: 'Feedback', icon: MessageCircle },
   { href: '/admin/waitlist', label: 'Waitlist', icon: ListChecks },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
