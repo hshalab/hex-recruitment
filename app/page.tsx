@@ -151,7 +151,7 @@ export default function Home() {
       <section className={styles.seeItSection}>
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>See Thrive in action</h2>
-          <p className={styles.sectionSubtitle}>The whole hire in one place — not just a job ad.</p>
+          <p className={styles.sectionSubtitle}>From job ad to signed offer without leaving the page — no spreadsheets, no CV black holes, no per-post fees.</p>
           <div className={styles.demoRows}>
             <div className={styles.demoRow}>
               <div className={styles.demoVideoWrap}>
@@ -215,12 +215,11 @@ export default function Home() {
             <div className={styles.benefitCard}>
               <div className={styles.benefitIcon}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
               </div>
-              <h3 className={styles.benefitTitle}>Manage your full pipeline</h3>
-              <p className={styles.stepText}>Track applications, schedule interviews, send offers, and hire — all from one dashboard. No spreadsheets.</p>
+              <h3 className={styles.benefitTitle}>Easy onboarding</h3>
+              <p className={styles.stepText}>Send us your live roles and we&apos;ll build your account and load them for you — in minutes. Optional premium job imagery, free.</p>
             </div>
             <div className={styles.benefitCard}>
               <div className={styles.benefitIcon}>
@@ -232,30 +231,6 @@ export default function Home() {
               </div>
               <h3 className={styles.benefitTitle}>Analytics that show what works</h3>
               <p className={styles.stepText}>See which jobs get views, where candidates come from, and how your hiring funnel performs.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Objection Handling */}
-      <section className={`${styles.howItWorks}`}>
-        <div className={styles.sectionInner}>
-          <h2 className={styles.sectionTitle}>Why employers switch to Thrive</h2>
-          <div className={`${styles.stepsGrid}`}>
-            <div className={styles.step}>
-              <div className={styles.stepNumber} style={{ background: '#16a34a' }}>✓</div>
-              <h3 className={styles.stepTitle}>Everything in one place</h3>
-              <p className={styles.stepText}>Post, interview, offer and hire from a single dashboard — no juggling emails, calendars and job boards.</p>
-            </div>
-            <div className={styles.step}>
-              <div className={styles.stepNumber} style={{ background: '#16a34a' }}>✓</div>
-              <h3 className={styles.stepTitle}>Easy onboarding</h3>
-              <p className={styles.stepText}>Send us your live roles and we&apos;ll build your account and load them for you — in minutes. Optional premium job imagery included, at no extra cost.</p>
-            </div>
-            <div className={styles.step}>
-              <div className={styles.stepNumber} style={{ background: '#16a34a' }}>✓</div>
-              <h3 className={styles.stepTitle}>Unlimited job posts</h3>
-              <p className={styles.stepText}>Post as many roles as you need — all included in your account, with no per-listing fees.</p>
             </div>
           </div>
         </div>
