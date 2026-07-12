@@ -96,18 +96,6 @@
 }
 @media (prefers-reduced-motion: reduce) { .heroLiveDot { animation: none; } }
 
-/* Done-for-you onboarding hook — the pitch to recruiters with no imagery of their own. */
-.heroConcierge {
-  max-width: 560px;
-  margin: 1.5rem auto 0;
-  padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 10px;
-  font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.75);
-  line-height: 1.5;
-}
-.heroConcierge strong { color: var(--primary-yellow); font-weight: 600; }
 
 /* Three proof points sitting between sub-copy and CTAs.
    auto-fit + min 150px → wraps to 2 cards then 1 on narrower viewports

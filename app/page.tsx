@@ -133,11 +133,6 @@ export default function Home() {
             </Link>
           </div>
 
-          <p className={styles.heroConcierge}>
-            <strong>Already advertising elsewhere?</strong> Send us your live roles and we&apos;ll build your
-            account and load them for you — in minutes. Optional premium job imagery included, at no extra cost.
-          </p>
-
           <p className={styles.heroBottomStrip}>
             {spotsRemaining !== null
               ? `${spotsRemaining} of ${EMPLOYER_COHORT_CAP} founding spots left · ${foundingPhraseShort()} · no card needed`
@@ -239,9 +234,9 @@ export default function Home() {
               <p className={styles.stepText}>Stop juggling emails, calendars and job boards. Thrive handles your entire hiring pipeline in one place — post, interview, offer, hire.</p>
             </div>
             <div className={styles.step}>
-              <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
-              <h3 className={styles.stepTitle}>No CV black holes</h3>
-              <p className={styles.stepText}>On Indeed and Reed, candidates apply and never hear back. On Thrive, you manage every application with a clear pipeline and direct messaging.</p>
+              <div className={styles.stepNumber} style={{ background: '#16a34a' }}>✓</div>
+              <h3 className={styles.stepTitle}>Easy onboarding</h3>
+              <p className={styles.stepText}>Send us your live roles and we&apos;ll build your account and load them for you — in minutes. Optional premium job imagery included, at no extra cost.</p>
             </div>
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
