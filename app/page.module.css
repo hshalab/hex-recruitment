@@ -655,3 +655,38 @@
     padding: 0 1rem;
   }
 }
+
+/* See it in action — product demo clips */
+.seeItSection {
+  padding: 4rem 1.5rem;
+  background: #ffffff;
+}
+.demoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  max-width: 980px;
+  margin: 2rem auto 0;
+}
+.demoCard {
+  margin: 0;
+  background: #0f172a;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
+}
+.demoVideo {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #0f172a;
+}
+.demoCaption {
+  padding: 0.9rem 1.1rem 1.1rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.45;
+  text-align: left;
+}
+.demoCaption strong { color: #fff; font-weight: 700; display: block; margin-bottom: 2px; }

@@ -12,6 +12,9 @@ import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/constants/brand'
 import { foundingPhraseShort } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
+// Product demo clips (muted screen-captures) hosted in Supabase storage.
+const DEMO_BASE = 'https://aaljufxcniacfggqiuls.supabase.co/storage/v1/object/public/job-banners/site'
+
 export default function Home() {
   const router = useRouter()
   const [authRedirecting, setAuthRedirecting] = useState(false)
@@ -143,6 +146,38 @@ export default function Home() {
 
       {/* Live roles strip — candidate funnel + proof of real inventory */}
       <FeaturedJobs />
+
+      {/* See it in action — real product demos (pipeline + offer signing) */}
+      <section className={styles.seeItSection}>
+        <div className={styles.sectionInner}>
+          <h2 className={styles.sectionTitle}>See Thrive in action</h2>
+          <p className={styles.sectionSubtitle}>The whole hire in one place — not just a job ad.</p>
+          <div className={styles.demoGrid}>
+            <figure className={styles.demoCard}>
+              <video
+                className={styles.demoVideo}
+                src={`${DEMO_BASE}/pipeline.mp4`}
+                poster={`${DEMO_BASE}/pipeline-poster.jpg`}
+                autoPlay muted loop playsInline preload="metadata"
+              />
+              <figcaption className={styles.demoCaption}>
+                <strong>Manage every applicant.</strong> Drag candidates through your pipeline and book interviews in a click.
+              </figcaption>
+            </figure>
+            <figure className={styles.demoCard}>
+              <video
+                className={styles.demoVideo}
+                src={`${DEMO_BASE}/offer.mp4`}
+                poster={`${DEMO_BASE}/offer-poster.jpg`}
+                autoPlay muted loop playsInline preload="metadata"
+              />
+              <figcaption className={styles.demoCaption}>
+                <strong>Make an offer in seconds.</strong> Generate a branded offer letter and sign it in-platform.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
 
       {/* How It Works — employer focused */}
       <section className={`${styles.howItWorks}`}>
