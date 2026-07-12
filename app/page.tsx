@@ -248,7 +248,7 @@ export default function Home() {
               Hire on Thrive →
             </Link>
             <Link href="/jobs" className={styles.ctaSecondary}>
-              Or browse jobs as a candidate
+              Find a job
             </Link>
           </div>
         </div>
