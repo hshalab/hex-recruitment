@@ -70,23 +70,29 @@
   line-height: 1.55;
 }
 
-/* Live inventory proof — real roles on the board right now. */
+/* Live inventory proof — real roles on the board right now. Rendered as centred
+   text (not inline-flex) so it wraps cleanly on mobile with the dot inline before
+   the number, instead of the dot/number floating out of line with the wrapped text. */
 .heroLiveCount {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: block;
+  max-width: 440px;
   margin: 0 auto 1.75rem;
   font-size: 0.92rem;
   color: rgba(255, 255, 255, 0.82);
-  line-height: 1.4;
+  line-height: 1.5;
+  text-align: center;
 }
 .heroLiveCount strong { color: #FFE500; font-weight: 800; }
 .heroLiveDot {
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #22c55e;
-  flex-shrink: 0;
+  margin-right: 0.45rem;
   animation: heroLivePulse 2s infinite;
 }
 @keyframes heroLivePulse {
