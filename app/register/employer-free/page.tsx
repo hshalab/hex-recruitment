@@ -9,6 +9,7 @@ import GoogleSignInButton from '@/components/GoogleSignInButton'
 import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import { supabase } from '@/lib/supabase'
 import { isValidEmail } from '@/lib/validateEmail'
+import { getStoredAttribution, HEARD_FROM_OPTIONS } from '@/lib/attribution'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { foundingPhraseShort } from '@/lib/trialUtils'
 import loginStyles from '../../login/page.module.css'
@@ -22,6 +23,7 @@ export default function RegisterEmployerFreePage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [agreeAll, setAgreeAll] = useState(false)
+  const [heardFrom, setHeardFrom] = useState('') // "How did you hear about us?" (optional)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
@@ -90,7 +92,12 @@ export default function RegisterEmployerFreePage() {
       const res = await fetch('/api/auth/employer-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, companyName, contactName }),
+        body: JSON.stringify({
+          email, password, companyName, contactName,
+          // Signup source attribution — stamped into user_metadata server-side,
+          // then persisted onto employer_profiles at provisioning (authCallback).
+          attribution: { ...getStoredAttribution(), heard_from: heardFrom || null },
+        }),
       })
       const data = await res.json().catch(() => ({}))
 
@@ -197,6 +204,19 @@ export default function RegisterEmployerFreePage() {
                 placeholder="At least 6 characters"
                 autoComplete="new-password"
               />
+            </div>
+
+            <div className={loginStyles.formGroup}>
+              <label htmlFor="heardFrom">How did you hear about us? <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional)</span></label>
+              <select
+                id="heardFrom"
+                className={loginStyles.input}
+                value={heardFrom}
+                onChange={e => setHeardFrom(e.target.value)}
+              >
+                <option value="">Prefer not to say</option>
+                {HEARD_FROM_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
 
             <div className={styles.checkboxGroup}>

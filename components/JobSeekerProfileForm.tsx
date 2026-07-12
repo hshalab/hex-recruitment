@@ -11,6 +11,7 @@ import PostcodeLookup, { type AddressData } from './PostcodeLookup'
 import PasswordInput from './PasswordInput'
 import LanguageAutocomplete from './LanguageAutocomplete'
 import { isValidEmail } from '@/lib/validateEmail'
+import { getStoredAttribution, attributionColumns, HEARD_FROM_OPTIONS } from '@/lib/attribution'
 import styles from './JobSeekerProfileForm.module.css'
 
 // Normalize URL to ensure it has https:// prefix
@@ -336,6 +337,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [heardFrom, setHeardFrom] = useState('') // "How did you hear about us?" (optional)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [nationalitySearch, setNationalitySearch] = useState('')
   const [nationalityOpen, setNationalityOpen] = useState(false)
@@ -867,6 +869,8 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             account_status: 'trial',
             trial_start_date: now.toISOString(),
             trial_expires_at: trialExpiresAt.toISOString(),
+            // Signup source attribution (first-touch ref/utm + self-reported dropdown).
+            ...attributionColumns({ ...getStoredAttribution(), heard_from: heardFrom || null }),
         }
 
         // Use the server endpoint to create the profile with the service-role
@@ -2358,6 +2362,22 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
                 {passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
               </div>
             )}
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label} htmlFor="heardFrom">
+              How did you hear about us? <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional)</span>
+            </label>
+            <select
+              id="heardFrom"
+              name="heardFrom"
+              value={heardFrom}
+              onChange={(e) => setHeardFrom(e.target.value)}
+              className={styles.input}
+            >
+              <option value="">Prefer not to say</option>
+              {HEARD_FROM_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
           </div>
         </div>
       )}
