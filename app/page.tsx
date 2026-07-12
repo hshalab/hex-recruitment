@@ -229,9 +229,9 @@ export default function Home() {
           <h2 className={styles.sectionTitle}>Why employers switch to Thrive</h2>
           <div className={`${styles.stepsGrid}`}>
             <div className={styles.step}>
-              <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
-              <h3 className={styles.stepTitle}>No more spreadsheets</h3>
-              <p className={styles.stepText}>Stop juggling emails, calendars and job boards. Thrive handles your entire hiring pipeline in one place — post, interview, offer, hire.</p>
+              <div className={styles.stepNumber} style={{ background: '#16a34a' }}>✓</div>
+              <h3 className={styles.stepTitle}>Everything in one place</h3>
+              <p className={styles.stepText}>Post, interview, offer and hire from a single dashboard — no juggling emails, calendars and job boards.</p>
             </div>
             <div className={styles.step}>
               <div className={styles.stepNumber} style={{ background: '#16a34a' }}>✓</div>
@@ -239,9 +239,9 @@ export default function Home() {
               <p className={styles.stepText}>Send us your live roles and we&apos;ll build your account and load them for you — in minutes. Optional premium job imagery included, at no extra cost.</p>
             </div>
             <div className={styles.step}>
-              <div className={styles.stepNumber} style={{ background: '#dc2626' }}>✕</div>
-              <h3 className={styles.stepTitle}>No per-listing costs</h3>
-              <p className={styles.stepText}>Other boards charge per job post. On Thrive, post as many jobs as you need — included in your account.</p>
+              <div className={styles.stepNumber} style={{ background: '#16a34a' }}>✓</div>
+              <h3 className={styles.stepTitle}>Unlimited job posts</h3>
+              <p className={styles.stepText}>Post as many roles as you need — all included in your account, with no per-listing fees.</p>
             </div>
           </div>
         </div>
