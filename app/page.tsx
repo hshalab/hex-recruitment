@@ -16,6 +16,7 @@ export default function Home() {
   const router = useRouter()
   const [authRedirecting, setAuthRedirecting] = useState(false)
   const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null)
+  const [liveJobs, setLiveJobs] = useState<number | null>(null)
 
   // Redirect logged-in users to their dashboard (non-blocking — page renders immediately)
   useEffect(() => {
@@ -43,6 +44,13 @@ export default function Home() {
       .catch(() => {})
   }, [])
 
+  // Live inventory proof — count of active roles on the board. Active jobs are
+  // publicly readable, so the anon client can count them. Fail-soft (hidden on error).
+  useEffect(() => {
+    supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'active')
+      .then(({ count }) => { if (typeof count === 'number') setLiveJobs(count) })
+  }, [])
+
   // If a logged-in session was found, show minimal UI while redirecting
   if (authRedirecting) {
     return (
@@ -66,6 +74,13 @@ export default function Home() {
           <p className={styles.heroSubtitle}>
             A modern UK recruitment platform that handles the whole hire.
           </p>
+
+          {liveJobs !== null && liveJobs > 0 && (
+            <p className={styles.heroLiveCount}>
+              <span className={styles.heroLiveDot} aria-hidden="true" />
+              <strong>{liveJobs.toLocaleString()}</strong> live hospitality roles on Thrive right now — and growing every week
+            </p>
+          )}
 
           <div className={styles.heroProofGrid}>
             <div className={styles.heroProofCard}>
@@ -117,6 +132,11 @@ export default function Home() {
               Find a job
             </Link>
           </div>
+
+          <p className={styles.heroConcierge}>
+            <strong>Already advertising elsewhere?</strong> Send us your live roles and we&apos;ll build your
+            account and load them for you — in minutes. Optional premium job imagery included, at no extra cost.
+          </p>
 
           <p className={styles.heroBottomStrip}>
             {spotsRemaining !== null
