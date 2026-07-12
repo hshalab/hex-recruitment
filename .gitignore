@@ -32,3 +32,6 @@ tsconfig.tsbuildinfo
 .claude/settings.local.json
 .claude/credentials.local.json
 .claude/scheduled_tasks.lock
+
+# Goldenkeys import scratch (scraped data cache)
+scripts/.goldenkeys/
