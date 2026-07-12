@@ -11,7 +11,7 @@ import {
   TrendingUp, TrendingDown, Users, UserCheck, UserPlus,
   Briefcase, FileText, Target, Clock, PoundSterling,
   MessageSquare, BarChart3, Award, Lock,
-  Download, Image, X,
+  Download, Image, X, Share2,
 } from 'lucide-react'
 import styles from './page.module.css'
 
@@ -91,11 +91,14 @@ interface BenchmarksData {
   costPerHire: null
 }
 
+interface SourceRow { source: string; count: number; refs: { ref: string; count: number }[] }
+interface SourcesData { candidates: SourceRow[]; employers: SourceRow[] }
+
 // ============================================================
 // Constants
 // ============================================================
 
-type TabKey = 'kpi' | 'users' | 'jobs' | 'applications' | 'revenue' | 'engagement' | 'benchmarks'
+type TabKey = 'kpi' | 'users' | 'jobs' | 'applications' | 'revenue' | 'engagement' | 'benchmarks' | 'sources'
 type RangeKey = '7d' | '30d' | '90d' | '12m' | 'all'
 
 const TABS: { key: TabKey; label: string; icon: any }[] = [
@@ -106,6 +109,7 @@ const TABS: { key: TabKey; label: string; icon: any }[] = [
   { key: 'revenue', label: 'Revenue', icon: PoundSterling },
   { key: 'engagement', label: 'Engagement', icon: MessageSquare },
   { key: 'benchmarks', label: 'Benchmarks', icon: Target },
+  { key: 'sources', label: 'Source', icon: Share2 },
 ]
 
 const RANGES: { key: RangeKey; label: string }[] = [
@@ -570,6 +574,7 @@ export default function AdminAnalyticsPage() {
   const [revenueData, setRevenueData] = useState<RevenueData | null>(null)
   const [engagementData, setEngagementData] = useState<EngagementData | null>(null)
   const [benchmarksData, setBenchmarksData] = useState<BenchmarksData | null>(null)
+  const [sourcesData, setSourcesData] = useState<SourcesData | null>(null)
 
   // Track which sections have been fetched for this range
   const [fetchedSections, setFetchedSections] = useState<Record<string, string>>({})
@@ -596,6 +601,7 @@ export default function AdminAnalyticsPage() {
         case 'revenue': setRevenueData(data); break
         case 'engagement': setEngagementData(data); break
         case 'benchmarks': setBenchmarksData(data); break
+        case 'sources': setSourcesData(data); break
       }
       setFetchedSections(prev => ({ ...prev, [`${section}-${range}`]: 'done' }))
     } catch (err) {
@@ -1410,6 +1416,52 @@ export default function AdminAnalyticsPage() {
     )
   }
 
+  function renderSources() {
+    const l = isLoading('sources')
+    const d = sourcesData
+
+    const column = (title: string, rows: SourceRow[] | undefined) => {
+      const total = (rows || []).reduce((s, r) => s + r.count, 0)
+      const max = Math.max(...(rows || []).map(r => r.count), 1)
+      return (
+        <ChartCard title={title} subtitle={`${total} signup${total === 1 ? '' : 's'} in range`} loading={l && !d}>
+          {rows && rows.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.5rem' }}>
+              {rows.map(r => (
+                <div key={r.source}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem', fontWeight: 700, color: COLORS.navy, marginBottom: 3 }}>
+                    <span>{r.source}</span><span>{r.count}</span>
+                  </div>
+                  <div style={{ height: 8, background: '#f1f5f9', borderRadius: 5, overflow: 'hidden' }}>
+                    <div style={{ width: `${(r.count / max) * 100}%`, height: '100%', background: COLORS.primary }} />
+                  </div>
+                  {r.refs.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: 5 }}>
+                      {r.refs.map(rf => (
+                        <span key={rf.ref} style={{ fontSize: '0.72rem', color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 999, padding: '0.1rem 0.5rem' }}>
+                          {rf.ref} · {rf.count}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.noData}><div className={styles.noDataText}>No signups in this range yet</div></div>
+          )}
+        </ChartCard>
+      )
+    }
+
+    return (
+      <div className={styles.chartsGrid}>
+        {column('Candidate sources', d?.candidates)}
+        {column('Employer sources', d?.employers)}
+      </div>
+    )
+  }
+
   // ============================================================
   // Main Render
   // ============================================================
@@ -1460,6 +1512,7 @@ export default function AdminAnalyticsPage() {
       {activeTab === 'revenue' && renderRevenue()}
       {activeTab === 'engagement' && renderEngagement()}
       {activeTab === 'benchmarks' && renderBenchmarks()}
+      {activeTab === 'sources' && renderSources()}
     </div>
   )
 }

@@ -840,6 +840,38 @@ async function fetchBenchmarks(db: any) {
   }
 }
 
+// Signup source breakdown — count per normalized signup_source with a raw-ref
+// drill-down (fb-chefsuk vs fb-hospolondon). null signup_source reads as 'unknown'.
+function aggregateSources(rows: any[] | null) {
+  const bySource: Record<string, { source: string; count: number; refs: Record<string, number> }> = {}
+  ;(rows || []).forEach((r: any) => {
+    const source = (r.signup_source || 'unknown') as string
+    if (!bySource[source]) bySource[source] = { source, count: 0, refs: {} }
+    bySource[source].count++
+    const ref = (r.signup_ref || r.utm_source) as string | null
+    if (ref) bySource[source].refs[ref] = (bySource[source].refs[ref] || 0) + 1
+  })
+  return Object.values(bySource)
+    .map(s => ({
+      source: s.source,
+      count: s.count,
+      refs: Object.entries(s.refs).map(([ref, count]) => ({ ref, count })).sort((a, b) => b.count - a.count),
+    }))
+    .sort((a, b) => b.count - a.count)
+}
+
+async function fetchSources(db: any, startDate: string) {
+  const cols = 'signup_source, signup_ref, utm_source, created_at'
+  const [cands, emps] = await Promise.all([
+    db.from('candidate_profiles').select(cols).gte('created_at', startDate),
+    db.from('employer_profiles').select(cols).gte('created_at', startDate),
+  ])
+  return {
+    candidates: aggregateSources(cands.data),
+    employers: aggregateSources(emps.data),
+  }
+}
+
 // ============================================================
 // Route Handler
 // ============================================================
@@ -882,6 +914,9 @@ export async function GET(req: Request) {
         break
       case 'benchmarks':
         data = await fetchBenchmarks(db)
+        break
+      case 'sources':
+        data = await fetchSources(db, startDate)
         break
       default:
         return NextResponse.json({ error: `Unknown section: ${section}` }, { status: 400 })
