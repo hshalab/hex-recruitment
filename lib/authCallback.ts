@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { FREE_FOUNDING_MODE } from '@/lib/constants/cohort'
 import { provisionFoundingEmployer } from '@/lib/foundingSignup'
 import type { EmailClass } from '@/lib/emailDomains'
+import { parseAttrCookie, attributionColumns, type Attribution } from '@/lib/attribution'
 
 // Shared OAuth callback logic. Used by:
 // - /auth/callback (email flow — reads role from ?role= query param)
@@ -211,6 +212,31 @@ export async function handleAuthCallback(
   // edited row — e.g. an employer who edited their company_name in
   // Settings shouldn't have it reset to the email-derived default on
   // their next sign-in.
+  // Signup source attribution: prefer what was stamped into user_metadata at
+  // signUp; fall back to the first-party thrive_attr cookie (covers OAuth signups
+  // that never passed through our metadata-stamping route). Written at row
+  // creation only — never overwrites a returning user's row.
+  const attrFromMeta: Attribution = {
+    signup_ref: (user.user_metadata?.signup_ref as string) || null,
+    utm_source: (user.user_metadata?.utm_source as string) || null,
+    utm_medium: (user.user_metadata?.utm_medium as string) || null,
+    utm_campaign: (user.user_metadata?.utm_campaign as string) || null,
+    heard_from: (user.user_metadata?.heard_from as string) || null,
+  }
+  const attrFromCookie = parseAttrCookie(req.headers.get('cookie'))
+  const attr: Attribution = {
+    signup_ref: attrFromMeta.signup_ref || attrFromCookie?.signup_ref || null,
+    utm_source: attrFromMeta.utm_source || attrFromCookie?.utm_source || null,
+    utm_medium: attrFromMeta.utm_medium || attrFromCookie?.utm_medium || null,
+    utm_campaign: attrFromMeta.utm_campaign || attrFromCookie?.utm_campaign || null,
+    heard_from: attrFromMeta.heard_from || attrFromCookie?.heard_from || null,
+  }
+  // Only write attribution when we actually captured something — never force
+  // 'unknown' onto an existing row (e.g. a returning employer re-provisioning).
+  // Reporting COALESCEs null -> 'unknown', so organic signups still read as such.
+  const hasAttr = !!(attr.signup_ref || attr.utm_source || attr.utm_medium || attr.utm_campaign || attr.heard_from)
+  const attrCols = hasAttr ? attributionColumns(attr) : {}
+
   if (role === 'employer') {
     // Confirmation-time founding-row provisioning. Runs on EVERY callback
     // hit (not just !existingRole) because email signups stamp the role
@@ -238,6 +264,7 @@ export async function handleAuthCallback(
         contactName: displayName,
         metadataClass,
         siteUrl: siteUrlForProvision,
+        attribution: attrCols,
       })
     } else {
       // Pre-pivot path preserved for the flag-off future.
@@ -261,7 +288,7 @@ export async function handleAuthCallback(
     const { error: profileErr } = await admin
       .from('candidate_profiles')
       .upsert(
-        { user_id: user.id, full_name: displayName, email: user.email || '' },
+        { user_id: user.id, full_name: displayName, email: user.email || '', ...attrCols },
         { onConflict: 'user_id', ignoreDuplicates: true }
       )
     if (profileErr) console.error('[auth/callback] candidate_profiles defensive upsert failed', profileErr)

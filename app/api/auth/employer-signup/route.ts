@@ -24,6 +24,9 @@ export async function POST(req: NextRequest) {
     const password = body.password || ''
     const companyName = (body.companyName || '').trim()
     const contactName = (body.contactName || '').trim()
+    // Signup source attribution (first-party ref/utm + self-reported dropdown).
+    // Stamped into user_metadata so lib/authCallback persists it at provisioning.
+    const attr = body.attribution && typeof body.attribution === 'object' ? body.attribution : {}
 
     if (!email || !isValidEmail(email)) {
       return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 })
@@ -71,6 +74,11 @@ export async function POST(req: NextRequest) {
           company_name: companyName,
           role: 'employer',
           email_domain_class: classification, // 'business' | 'freemail' — set server-side, tamper-proof
+          signup_ref: attr.signup_ref || null,
+          utm_source: attr.utm_source || null,
+          utm_medium: attr.utm_medium || null,
+          utm_campaign: attr.utm_campaign || null,
+          heard_from: attr.heard_from || null,
         },
         emailRedirectTo: `${siteUrl}/auth/confirm?role=employer`,
       },

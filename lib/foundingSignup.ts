@@ -66,6 +66,7 @@ export async function provisionFoundingEmployer({
   contactName,
   metadataClass,
   siteUrl,
+  attribution,
 }: {
   admin: SupabaseClient
   userId: string
@@ -74,7 +75,10 @@ export async function provisionFoundingEmployer({
   contactName: string
   metadataClass: EmailClass | undefined
   siteUrl: string
+  // Signup source columns (already normalized). Empty object for organic/returning.
+  attribution?: Record<string, string | null>
 }): Promise<ProvisionResult> {
+  const attr = attribution || {}
   if (!FREE_FOUNDING_MODE) {
     return { status: 'noop_legacy_mode', classification: 'unknown' }
   }
@@ -97,6 +101,7 @@ export async function provisionFoundingEmployer({
           contact_name: contactName,
           email: email || '',
           approval_status: 'approved',
+          ...attr,
         },
         { onConflict: 'user_id' },
       )
@@ -124,6 +129,7 @@ export async function provisionFoundingEmployer({
         contact_name: contactName,
         email: email || '',
         approval_status: 'pending',
+        ...attr,
       },
       { onConflict: 'user_id' },
     )

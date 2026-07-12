@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic'
 const FeedbackWidget = dynamic(() => import('@/components/FeedbackWidget'), { ssr: false })
 import ScrollToTop from '@/components/ScrollToTop'
+import AttributionCapture from '@/components/AttributionCapture'
 import SessionGuard from '@/components/SessionGuard'
 import { MessagesProvider } from '@/lib/MessagesContext'
 import type { Metadata } from 'next'
@@ -113,6 +114,7 @@ export default function RootLayout({
         <Providers>
           <MessagesProvider>
             <ScrollToTop />
+            <AttributionCapture />
             <SessionGuard />
             {children}
             <FeedbackWidget />
