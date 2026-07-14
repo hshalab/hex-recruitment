@@ -26,7 +26,10 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      # npm install (not `npm ci`) — tolerant of the lockfile drift that only
+      # strict `npm ci` rejects across npm major versions; matches how Vercel
+      # builds this repo. A scraper cron doesn't need ci's exact pinning.
+      - run: npm install --no-audit --no-fund
       - name: Run Goldenkeys importer (--all)
         env:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
