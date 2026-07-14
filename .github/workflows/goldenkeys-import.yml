@@ -1,0 +1,35 @@
+name: Goldenkeys weekly import
+
+# Weekly re-scrape of Goldenkeys hospitality vacancies: imports new roles,
+# updates existing in place, and reconciles gone roles to `filled`. Keeps the
+# public job board AND the /feed/jobs.xml aggregator feed fresh with no manual run.
+#
+# Requires three repo secrets (Settings -> Secrets and variables -> Actions):
+#   FIRECRAWL_API_KEY, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays 06:00 UTC
+  workflow_dispatch: {}    # manual "Run workflow" button in the Actions tab
+
+concurrency:
+  group: goldenkeys-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Run Goldenkeys importer (--all)
+        env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/import-goldenkeys.mjs --all

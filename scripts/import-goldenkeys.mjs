@@ -28,12 +28,19 @@ const DRY = args.has('--dry-run')
 
 // ── env ──
 function loadEnv() {
-  const f = fs.existsSync('.env.local') ? '.env.local' : '.env'
   const env = {}
-  for (const line of fs.readFileSync(f, 'utf8').split(/\r?\n/)) {
-    if (!line || line.startsWith('#') || !line.includes('=')) continue
-    const i = line.indexOf('=')
-    env[line.slice(0, i).trim()] = line.slice(i + 1).trim().replace(/^["']|["']$/g, '')
+  // Local dev reads .env.local (or .env). In CI (GitHub Actions) there is no such
+  // file — the secrets arrive via process.env — so overlay those on top.
+  const f = fs.existsSync('.env.local') ? '.env.local' : fs.existsSync('.env') ? '.env' : null
+  if (f) {
+    for (const line of fs.readFileSync(f, 'utf8').split(/\r?\n/)) {
+      if (!line || line.startsWith('#') || !line.includes('=')) continue
+      const i = line.indexOf('=')
+      env[line.slice(0, i).trim()] = line.slice(i + 1).trim().replace(/^["']|["']$/g, '')
+    }
+  }
+  for (const k of ['FIRECRAWL_API_KEY', 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']) {
+    if (process.env[k]) env[k] = process.env[k]
   }
   return env
 }
