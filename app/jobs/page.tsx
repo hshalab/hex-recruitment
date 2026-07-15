@@ -172,7 +172,7 @@ const getJobSector = (job: { title: string; category?: string }): string => {
 }
 
 function JobsPageContent() {
-  const { jobs } = useJobs()
+  const { jobs, loading } = useJobs()
   const { addConversation, refreshConversations } = useMessages()
   const { isSaved, toggleSave } = useSavedJobs()
   const { trackJobView, trackClickEvent, trackImpression } = useAnalyticsTracking()
@@ -1126,7 +1126,20 @@ function JobsPageContent() {
 
       {/* Job Card Grid */}
       <div className={styles.jobsContainer}>
-        {filteredJobs.length > 0 ? (
+        {/* Loading state — only while the first fetch is in flight (jobs still
+            empty). Prevents the "No jobs match your search" empty state from
+            flashing during load; a background refresh keeps the current list. */}
+        {loading && jobs.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            </div>
+            <h2 className={styles.emptyTitle}>Loading roles…</h2>
+          </div>
+        ) : filteredJobs.length > 0 ? (
           <div className={styles.jobsGrid} ref={listRef}>
             {filteredJobs.map(job => {
               const banner = resolveJobBanner({ id: job.id, companyBanner: job.companyBanner, company: job.company, category: job.category })
