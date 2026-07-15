@@ -49,13 +49,13 @@ function authShell(opts: {
             </td>
           </tr>
           <tr>
-            <td style="padding:32px;background-color:#ffffff;">
+            <td style="padding:32px;background-color:#ffffff;text-align:center;">
               <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#0f172a;">${heading}</h1>
               ${bodyHtml}
-              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:26px 0;">
+              <table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:26px auto;">
                 <tr>
                   <td style="background-color:#FFE500;border-radius:9px;">
-                    <a href="${ctaVar}" style="display:inline-block;padding:14px 30px;color:#0f172a;font-size:15px;font-weight:700;text-decoration:none;border-radius:9px;">${ctaText}</a>
+                    <a href="${ctaVar}" style="display:inline-block;padding:13px 30px;color:#0f172a;font-size:15px;font-weight:700;text-decoration:none;border-radius:9px;">${ctaText}</a>
                   </td>
                 </tr>
               </table>
@@ -102,7 +102,7 @@ export const CONFIRM_SIGNUP_LINK =
 export const confirmSignupTemplate = authShell({
   preheader: 'Confirm your email to finish setting up your Thrive account.',
   heading: 'Confirm your email',
-  bodyHtml: `<p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">Welcome to Thrive! Confirm this email address to activate your account and start hiring.</p>`,
+  bodyHtml: `<p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">Welcome to Thrive! Confirm this email address to activate your account and get started.</p>`,
   ctaText: 'Confirm email address',
   ctaVar: CONFIRM_SIGNUP_LINK,
   footnoteHtml: 'This link expires in 24 hours. If you didn\'t create a Thrive account, you can safely ignore this email.',
