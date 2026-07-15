@@ -132,7 +132,7 @@ export default function Home() {
               Hire on Thrive →
             </Link>
             <Link href="/jobs" className={styles.ctaSecondary}>
-              Find a job
+              Browse jobs
             </Link>
           </div>
 
@@ -248,7 +248,7 @@ export default function Home() {
               Hire on Thrive →
             </Link>
             <Link href="/jobs" className={styles.ctaSecondary}>
-              Find a job
+              Browse jobs
             </Link>
           </div>
         </div>
