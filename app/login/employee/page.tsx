@@ -20,6 +20,11 @@ function EmployeeLoginPageContent() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
+  // If the visitor just signed up (unconfirmed) and hit the apply-gate, their
+  // email was stashed in localStorage at sign-up — show a "confirm your email to
+  // apply" prompt here instead of a bare login they can't complete yet.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
+  const [resend, setResend] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
   // Check if user just registered or is redirecting from a job
   const justRegistered = searchParams.get('registered') === 'true'
@@ -57,6 +62,30 @@ function EmployeeLoginPageContent() {
     checkExistingSession()
   }, [router, justRegistered, postLoginRedirect])
 
+  // Surface a pending unconfirmed sign-up (stashed at sign-up time).
+  useEffect(() => {
+    try {
+      const pending = localStorage.getItem('thrive_pending_confirm')
+      if (pending) setPendingEmail(pending)
+    } catch { /* ignore */ }
+  }, [])
+
+  const handleResend = async () => {
+    if (!pendingEmail) return
+    setResend('sending')
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+      const nextQS = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+        ? `&next=${encodeURIComponent(redirectTo)}` : ''
+      const { error: resendErr } = await supabase.auth.resend({
+        type: 'signup',
+        email: pendingEmail,
+        options: { emailRedirectTo: `${siteUrl}/auth/confirm?role=employee${nextQS}` },
+      })
+      setResend(resendErr ? 'error' : 'sent')
+    } catch { setResend('error') }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -74,7 +103,15 @@ function EmployeeLoginPageContent() {
     })
 
     if (loginError) {
-      setError(loginError.message)
+      // Unconfirmed accounts can't sign in yet — steer them to confirm-email
+      // (with the resend prompt) rather than showing a bare error.
+      if (/not confirmed|confirm/i.test(loginError.message)) {
+        setPendingEmail(email)
+        try { localStorage.setItem('thrive_pending_confirm', email) } catch { /* ignore */ }
+        setError('Please confirm your email first — check your inbox for the link (or resend below).')
+      } else {
+        setError(loginError.message)
+      }
       setLoading(false)
       return
     }
@@ -122,6 +159,7 @@ function EmployeeLoginPageContent() {
       return
     }
 
+    try { localStorage.removeItem('thrive_pending_confirm') } catch { /* ignore */ }
     router.push(postLoginRedirect)
   }
 
@@ -136,6 +174,19 @@ function EmployeeLoginPageContent() {
           </div>
           <p className={styles.subtitle}>Find your next opportunity</p>
           <LiveJobCount style={{ margin: '0 0 1rem', color: '#374151' }} />
+
+          {pendingEmail && (
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '0.9rem 1rem', margin: '0 0 1rem', textAlign: 'left' }}>
+              <p style={{ margin: '0 0 0.35rem', fontWeight: 700, color: '#1e3a8a' }}>Confirm your email to apply</p>
+              <p style={{ margin: '0 0 0.7rem', fontSize: '0.9rem', color: '#334155', lineHeight: 1.5 }}>
+                You signed up as <strong>{pendingEmail}</strong>. Click the link we emailed you to start applying for roles.
+              </p>
+              <button type="button" onClick={handleResend} disabled={resend === 'sending'} style={{ border: '1px solid #93c5fd', background: '#fff', color: '#1e3a8a', padding: '0.5rem 1rem', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>
+                {resend === 'sending' ? 'Sending…' : resend === 'sent' ? 'Email sent ✓' : 'Resend email'}
+              </button>
+              <p style={{ margin: '0.6rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>Already confirmed? Log in below.</p>
+            </div>
+          )}
 
           {roleNotice && (
             <div className={styles.roleNotice}>

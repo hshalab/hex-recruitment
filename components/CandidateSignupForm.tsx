@@ -88,6 +88,10 @@ export default function CandidateSignupForm() {
         }),
       }).catch(() => {})
 
+      // Remember the pending confirmation so the apply-gate / login page can show
+      // a "confirm your email to apply" prompt instead of a bare login they can't
+      // complete yet. Cleared on successful login.
+      try { localStorage.setItem('thrive_pending_confirm', email.trim()) } catch { /* ignore */ }
       setSubmitted(true)
     } catch (err: any) {
       setError(err?.message || 'Something went wrong. Please try again.')
