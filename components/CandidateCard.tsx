@@ -19,7 +19,7 @@ function availClass(availability: string | undefined) {
   return styles.availGrey
 }
 
-export interface MissingPrompt { key: string; label: string; onAdd: () => void }
+export interface MissingPrompt { key: string; label: string; onAdd: () => void; benefit?: string }
 
 /**
  * One candidate card, two modes from one data source (candidate_profiles).
@@ -220,7 +220,7 @@ export default function CandidateCard(props: {
           {props.missingFields && props.missingFields.length > 0 && (
             <div className={styles.dashPrompts}>
               {props.missingFields.map(f => (
-                <button key={f.key} type="button" className={styles.dashPrompt} onClick={f.onAdd}>+ {f.label}</button>
+                <button key={f.key} type="button" className={styles.dashPrompt} onClick={f.onAdd} title={f.benefit ? `Add ${f.label} — ${f.benefit}` : undefined}>+ {f.label}{f.benefit && <span style={{ opacity: 0.6, fontWeight: 400 }}> → {f.benefit}</span>}</button>
               ))}
             </div>
           )}

@@ -8,6 +8,7 @@ import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 import LinkedInSignInButton from '@/components/LinkedInSignInButton'
+import LiveJobCount from '@/components/LiveJobCount'
 import styles from '../page.module.css'
 
 function EmployeeLoginPageContent() {
@@ -134,6 +135,7 @@ function EmployeeLoginPageContent() {
             <h1 className={styles.title}>Job Seeker Login</h1>
           </div>
           <p className={styles.subtitle}>Find your next opportunity</p>
+          <LiveJobCount style={{ margin: '0 0 1rem', color: '#374151' }} />
 
           {roleNotice && (
             <div className={styles.roleNotice}>
