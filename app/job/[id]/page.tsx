@@ -251,6 +251,12 @@ export default function JobDetailPage() {
 
         {/* Job Header */}
         <div className={styles.jobHeader}>
+          {job.companyBanner && (
+            <div className={styles.jobBanner}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={job.companyBanner} alt={job.company} />
+            </div>
+          )}
           <div className={styles.headerContent}>
             <div className={styles.companyLogo}>
               <CompanyLogo src={job.companyLogo} alt={job.company} />

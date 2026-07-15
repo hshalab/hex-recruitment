@@ -96,6 +96,23 @@
   color: #fff;
 }
 
+/* Image-led banner at the top of the header — matches the in-platform /jobs
+   modal so external (aggregator/Google) landers get the same nice look.
+   Negative margins make it full-bleed inside the padded header. */
+.jobBanner {
+  margin: -2rem -2rem 1.5rem;
+  border-radius: var(--ds-radius-card-lg) var(--ds-radius-card-lg) 0 0;
+  overflow: hidden;
+  height: 220px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.jobBanner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .headerContent {
   display: flex;
   gap: 1.5rem;
@@ -906,6 +923,11 @@
 
   .jobHeader {
     padding: 1.5rem 1.25rem;
+  }
+
+  .jobBanner {
+    margin: -1.5rem -1.25rem 1.25rem;
+    height: 150px;
   }
 
   .headerContent {
