@@ -128,12 +128,12 @@ export default function Home() {
           </div>
 
           <div className={styles.heroCtas}>
-            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', alignSelf: 'center', whiteSpace: 'nowrap' }}>Already have an account? →</span>
+            <span className="hideOnMobile" style={{ fontSize: '0.9rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', alignSelf: 'center', whiteSpace: 'nowrap' }}>Already have an account? →</span>
             <Link href="/login/employer" className={styles.ctaPrimary}>
               Hire on Thrive →
             </Link>
             <Link href="/login/employee" className={styles.ctaSecondary}>
-              Browse jobs
+              Job seeker login
             </Link>
           </div>
 
@@ -248,8 +248,8 @@ export default function Home() {
             <Link href="/register/employer-free" className={styles.ctaPrimary}>
               Hire on Thrive →
             </Link>
-            <Link href="/jobs" className={styles.ctaSecondary}>
-              Browse jobs
+            <Link href="/register/employee" className={styles.ctaSecondary}>
+              Find a job
             </Link>
           </div>
         </div>

@@ -591,3 +591,9 @@ body[data-sidebar="expanded"] [data-sidebar-logo] {
   }
 }
 
+/* Desktop-only nicety labels (e.g. the "Sign up →" / "Already have an account?"
+   hints next to the CTAs) — hidden on mobile so the header/hero don't crowd. */
+@media (max-width: 768px) {
+  .hideOnMobile { display: none !important; }
+}
+
