@@ -68,7 +68,7 @@ export default function FeaturedJobs() {
                 </div>
               ))
             : jobs.map((job) => (
-                <JobCardLink key={job.id} job={job} className={styles.item} />
+                <JobCardLink key={job.id} job={job} href={`/jobs?id=${job.id}`} className={styles.item} />
               ))}
         </div>
       </div>
