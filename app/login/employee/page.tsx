@@ -210,23 +210,15 @@ function EmployeeLoginPageContent() {
           </div>
 
           <div className={styles.signupSection}>
-            <p className={styles.signupText}>New here?</p>
-            <Link
-              href={redirectTo ? `/register/employee?redirect=${encodeURIComponent(redirectTo)}` : '/register/employee'}
-              className={styles.signupBtn}
-            >
-              Create your profile
-            </Link>
-          </div>
-
-          <div className={styles.benefits}>
-            <h3 className={styles.benefitsTitle}>Why Join?</h3>
-            <ul className={styles.benefitsList}>
-              <li>Browse thousands of jobs</li>
-              <li>Apply instantly</li>
-              <li>Get noticed by employers</li>
-              <li>100% free</li>
-            </ul>
+            <p className={styles.signupText}>
+              New here?{' '}
+              <Link
+                href={redirectTo ? `/register/employee?redirect=${encodeURIComponent(redirectTo)}` : '/register/employee'}
+                className={styles.switchLink}
+              >
+                Create an account
+              </Link>
+            </p>
           </div>
 
           <div className={styles.switchLogin}>
