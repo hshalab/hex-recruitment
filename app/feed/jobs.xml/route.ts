@@ -11,7 +11,8 @@ import { buildJobsFeedXml, type FeedJobRow } from '@/lib/jobsFeed'
 export const revalidate = 3600
 
 const FIELDS =
-  'id,title,description,full_description,company,location,area,full_location,' +
+  'id,title,description,full_description,responsibilities,requirements,benefits,' +
+  'company,location,area,full_location,' +
   'salary_min,salary_max,salary_type,employment_type,category,posted_at,' +
   'expires_at,job_reference,source_url'
 
