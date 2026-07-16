@@ -11,6 +11,9 @@ export interface FeedJobRow {
   title?: string | null
   description?: string | null
   full_description?: string | null
+  responsibilities?: string[] | string | null
+  requirements?: string[] | string | null
+  benefits?: string[] | string | null
   company?: string | null
   location?: string | null
   area?: string | null
@@ -71,6 +74,21 @@ export function markdownToHtml(input?: string | null): string {
   return out.join('')
 }
 
+// Render a labelled bullet section (Responsibilities / Requirements / Benefits)
+// for the feed description. The importer stores each of these as an array whose
+// elements are ';'-joined runs of items, so flatten + split on ';'/newlines into
+// clean <li> bullets. Empty → '' so the section is omitted entirely.
+export function listSection(title: string, value?: string[] | string | null): string {
+  const arr = Array.isArray(value) ? value : value ? [value] : []
+  const items = arr
+    .flatMap(el => String(el ?? '').split(/\s*;\s*|\r?\n/))
+    .map(s => s.trim())
+    .filter(Boolean)
+  if (!items.length) return ''
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return `<p><strong>${esc(title)}</strong></p><ul>${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>`
+}
+
 // £-formatted range/single, or null when there's no usable salary (omit the tag).
 export function formatSalary(min: unknown, max: unknown, type?: string | null): string | null {
   const lo = Number(min); const hi = Number(max)
@@ -123,7 +141,15 @@ export function jobToXml(job: FeedJobRow, siteUrl: string): string {
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
   const jobtype = mapJobType(job.employment_type)
   const ref = job.job_reference || job.source_url || job.id
-  const desc = markdownToHtml(job.full_description || job.description)
+  // Full <description> mirrors the job page: the main copy plus the
+  // Responsibilities / Requirements / Benefits sections. Jooble (and others)
+  // reject feeds whose descriptions are thinner than the on-site pages.
+  const desc = [
+    markdownToHtml(job.full_description || job.description),
+    listSection('Responsibilities', job.responsibilities),
+    listSection('Requirements', job.requirements),
+    listSection('Benefits', job.benefits),
+  ].filter(Boolean).join('')
 
   const parts: string[] = []
   parts.push(`<title>${cdata(job.title)}</title>`)
