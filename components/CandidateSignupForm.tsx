@@ -94,7 +94,20 @@ export default function CandidateSignupForm() {
       try { localStorage.setItem('thrive_pending_confirm', email.trim()) } catch { /* ignore */ }
       setSubmitted(true)
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.')
+      // Supabase's leaked-password protection (HaveIBeenPwned) rejects any
+      // password found in a breach corpus with a blunt "weak and easy to guess"
+      // message. To someone who just typed a long password that reads as broken,
+      // so they retry variants of the same breached pattern and give up. Replace
+      // it with an honest explanation + the one-tap escape hatch.
+      const code = err?.code || ''
+      const msg = err?.message || ''
+      if (code === 'weak_password' || /weak and easy to guess|pwned|leaked|data breach/i.test(msg)) {
+        setError(
+          "That password has turned up in an online data breach, so it can't be used here — even though it looks strong. Try a longer passphrase (three random words like copper-anvil-mango7 works well), or tap 'Sign up with LinkedIn' above for one-tap access, no password needed."
+        )
+      } else {
+        setError(msg || 'Something went wrong. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -199,6 +212,7 @@ export default function CandidateSignupForm() {
           autoComplete="new-password"
           required
         />
+        <p className="pwHint">Tip: three random words make a password that's strong and easy to remember.</p>
       </div>
 
       <button type="submit" disabled={loading} className="submit">
@@ -223,6 +237,7 @@ export default function CandidateSignupForm() {
         .submit:disabled { opacity: 0.65; cursor: default; }
         .err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; padding: 0.7rem 0.85rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; }
         .tiny { text-align: center; color: #6b7280; font-size: 0.85rem; margin: 0.9rem 0 0; }
+        .pwHint { margin: 0.4rem 0 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; }
       `}</style>
     </form>
   )

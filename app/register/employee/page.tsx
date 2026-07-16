@@ -26,11 +26,16 @@ function RegisterEmployeePageContent() {
           <LiveJobCount style={{ marginTop: '0.75rem', color: '#374151' }} />
         </div>
 
-        {/* OAuth is the hero path — one tap, already verified, straight in. */}
+        {/* OAuth is the hero path — one tap, already verified, straight in.
+            LinkedIn leads: it's how most candidates join, and it sidesteps the
+            leaked-password check that trips people up on the email path. */}
         <div style={{ maxWidth: 480, margin: '0 auto 1.5rem' }}>
-          <GoogleSignInButton role="employee" className={loginStyles.googleBtn} label="Sign up with Google" next={redirectTo || undefined} />
+          <p style={{ textAlign: 'center', margin: '0 0 0.5rem', fontSize: '0.85rem', color: '#6b7280', fontWeight: 600 }}>
+            Fastest way in — one tap, no password
+          </p>
+          <LinkedInSignInButton role="employee" className={loginStyles.googleBtn} label="Sign up with LinkedIn" next={redirectTo || undefined} />
           <div style={{ marginTop: '0.6rem' }}>
-            <LinkedInSignInButton role="employee" className={loginStyles.googleBtn} label="Sign up with LinkedIn" next={redirectTo || undefined} />
+            <GoogleSignInButton role="employee" className={loginStyles.googleBtn} label="Sign up with Google" next={redirectTo || undefined} />
           </div>
           <div className={loginStyles.divider}><span>or sign up with email</span></div>
         </div>
