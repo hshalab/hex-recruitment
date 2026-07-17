@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyAdmin, createAdminClient } from '@/lib/admin'
+import { computeCompleteness, signupSource } from '@/lib/profileCompleteness'
 
 const PAGE_SIZE = 20
 
@@ -69,6 +70,8 @@ export async function GET(req: Request) {
             role: 'candidate',
             application_count: appCount || 0,
             message_count: msgCount || 0,
+            signup_source: signupSource(authUser, candidate),
+            completeness: computeCompleteness(candidate, 'candidate'),
           },
         })
       }
@@ -108,6 +111,8 @@ export async function GET(req: Request) {
           job_count: jobsResult.count || 0,
           message_count: msgResult.count || 0,
           review_count: reviewResult.count || 0,
+          signup_source: signupSource(authUser, employer),
+          completeness: computeCompleteness(employer, 'employer'),
         },
       })
     } catch (error: any) {
@@ -151,18 +156,37 @@ export async function GET(req: Request) {
       .filter(u => normalizeRole(u) === 'employer')
       .map(u => u.id)
 
-    // Parallel profile + subscription lookups
-    const [candResult, empResult, subsResult] = await Promise.all([
+    // Parallel profile + subscription + activity lookups. The profile selects
+    // pull every field the completeness score and the CV/photo flags need.
+    const [candResult, empResult, subsResult, appRows, jobRows] = await Promise.all([
       candidateIds.length > 0
-        ? db.from('candidate_profiles').select('user_id, full_name, email, phone, location, job_title').in('user_id', candidateIds)
+        ? db.from('candidate_profiles').select(
+            'user_id, full_name, email, phone, location, city, postcode, job_title, headline, ' +
+            'bio, personal_bio, years_experience, skills, cv_url, profile_picture_url, ' +
+            'dashboard_photo_url, work_history, desired_salary, salary_min, signup_source, utm_source'
+          ).in('user_id', candidateIds)
         : { data: [] },
       employerIds.length > 0
-        ? db.from('employer_profiles').select('user_id, company_name, email, phone, location, industry').in('user_id', employerIds)
+        ? db.from('employer_profiles').select(
+            'user_id, company_name, email, phone, location, industry, website, description, logo_url'
+          ).in('user_id', employerIds)
         : { data: [] },
       employerIds.length > 0
         ? db.from('employer_subscriptions').select('user_id, subscription_tier, subscription_status').in('user_id', employerIds)
         : { data: [] },
+      candidateIds.length > 0
+        ? db.from('job_applications').select('candidate_id').in('candidate_id', candidateIds)
+        : { data: [] },
+      employerIds.length > 0
+        ? db.from('jobs').select('employer_id').in('employer_id', employerIds)
+        : { data: [] },
     ])
+
+    // Tally activity counts in-memory (avoids one count query per user).
+    const appCountMap: Record<string, number> = {}
+    ;((appRows as any).data || []).forEach((r: any) => { appCountMap[r.candidate_id] = (appCountMap[r.candidate_id] || 0) + 1 })
+    const jobCountMap: Record<string, number> = {}
+    ;((jobRows as any).data || []).forEach((r: any) => { jobCountMap[r.employer_id] = (jobCountMap[r.employer_id] || 0) + 1 })
 
     // Build lookup maps
     const candidateMap: Record<string, any> = {}
@@ -182,6 +206,7 @@ export async function GET(req: Request) {
 
       if (userRole === 'candidate') {
         const profile = candidateMap[u.id]
+        const comp = computeCompleteness(profile, 'candidate')
         return {
           id: u.id,
           name: profile?.full_name || u.user_metadata?.full_name || 'N/A',
@@ -193,12 +218,18 @@ export async function GET(req: Request) {
           job_title: profile?.job_title || '',
           tier: null,
           status: u.banned_until ? 'suspended' : 'active',
+          completeness: comp.percent,
+          has_cv: comp.signals.find(s => s.key === 'cv')?.filled || false,
+          has_photo: comp.signals.find(s => s.key === 'photo')?.filled || false,
+          activity_count: appCountMap[u.id] || 0,
+          signup_source: signupSource(u, profile),
         }
       }
 
       // Employer
       const profile = employerMap[u.id]
       const sub = subsMap[u.id]
+      const comp = computeCompleteness(profile, 'employer')
       return {
         id: u.id,
         name: profile?.company_name || u.user_metadata?.company_name || 'N/A',
@@ -211,16 +242,28 @@ export async function GET(req: Request) {
         tier: sub?.tier || null,
         sub_status: sub?.status || 'inactive',
         status: u.banned_until ? 'suspended' : 'active',
+        completeness: comp.percent,
+        has_cv: false,
+        has_photo: false,
+        activity_count: jobCountMap[u.id] || 0,
+        signup_source: signupSource(u, profile),
       }
     })
 
-    // Sort
+    // Sort — numeric for the completeness / activity columns, string otherwise.
     users.sort((a, b) => {
-      let aVal: string, bVal: string
-      if (sort === 'name') { aVal = a.name; bVal = b.name }
-      else if (sort === 'email') { aVal = a.email; bVal = b.email }
-      else { aVal = a.joined || ''; bVal = b.joined || '' }
-      const cmp = String(aVal || '').localeCompare(String(bVal || ''))
+      let cmp: number
+      if (sort === 'completeness') {
+        cmp = (a.completeness || 0) - (b.completeness || 0)
+      } else if (sort === 'activity_count') {
+        cmp = (a.activity_count || 0) - (b.activity_count || 0)
+      } else {
+        let aVal: string, bVal: string
+        if (sort === 'name') { aVal = a.name; bVal = b.name }
+        else if (sort === 'email') { aVal = a.email; bVal = b.email }
+        else { aVal = a.joined || ''; bVal = b.joined || '' }
+        cmp = String(aVal || '').localeCompare(String(bVal || ''))
+      }
       return dir === 'asc' ? cmp : -cmp
     })
 
