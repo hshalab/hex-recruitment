@@ -5,6 +5,7 @@ import { useAdminToken } from '@/lib/admin-context'
 import AdminTable, { Column, exportToCSV } from '@/components/admin/AdminTable'
 import DetailPanel, { DetailRow, DetailSection, DetailBadge } from '@/components/admin/DetailPanel'
 import SignedLink from '@/components/SignedLink'
+import type { Completeness } from '@/lib/profileCompleteness'
 import styles from './page.module.css'
 
 interface User {
@@ -20,6 +21,11 @@ interface User {
   status: string
   job_title?: string
   industry?: string
+  completeness: number
+  has_cv: boolean
+  has_photo: boolean
+  activity_count: number
+  signup_source: string
 }
 
 interface UserDetail {
@@ -42,6 +48,8 @@ interface UserDetail {
   message_count?: number
   job_count?: number
   review_count?: number
+  signup_source?: string
+  completeness?: Completeness
   subscription?: {
     subscription_tier: string
     subscription_status: string
@@ -164,7 +172,19 @@ export default function AdminUsersPage() {
         </div>
       ),
     },
-    { key: 'email', label: 'Email', sortable: true },
+    {
+      key: 'email',
+      label: 'Contact',
+      sortable: true,
+      render: (val: string, row: User) => (
+        <div>
+          <span className={styles.contactEmail}>{val}</span>
+          {row.phone
+            ? <span className={styles.userSub}>{row.phone}</span>
+            : <span className={styles.contactMuted}>no phone</span>}
+        </div>
+      ),
+    },
     {
       key: 'role',
       label: 'Role',
@@ -173,6 +193,46 @@ export default function AdminUsersPage() {
           {val}
         </span>
       ),
+    },
+    {
+      key: 'completeness',
+      label: 'Profile',
+      sortable: true,
+      render: (val: number, row: User) => {
+        const pct = val || 0
+        const tone = pct >= 70 ? styles.barStrong : pct >= 40 ? styles.barMid : styles.barLow
+        return (
+          <div className={styles.profileCell}>
+            <div className={styles.barRow}>
+              <div className={styles.barTrack}>
+                <div className={`${styles.barFill} ${tone}`} style={{ width: `${pct}%` }} />
+              </div>
+              <span className={styles.barPct}>{pct}%</span>
+            </div>
+            {row.role === 'candidate' && (
+              <div className={styles.flags}>
+                <span className={row.has_cv ? styles.flagOn : styles.flagOff}>{row.has_cv ? '✓' : '✗'} CV</span>
+                <span className={row.has_photo ? styles.flagOn : styles.flagOff}>{row.has_photo ? '✓' : '✗'} Photo</span>
+              </div>
+            )}
+          </div>
+        )
+      },
+    },
+    {
+      key: 'activity_count',
+      label: 'Apps',
+      sortable: true,
+      render: (val: number, row: User) => (
+        <span title={row.role === 'employer' ? 'Jobs posted' : 'Applications'}>
+          {val || 0}{row.role === 'employer' ? ' jobs' : ''}
+        </span>
+      ),
+    },
+    {
+      key: 'signup_source',
+      label: 'Source',
+      render: (val: string) => <span className={styles.sourceBadge}>{val || 'Email'}</span>,
     },
     { key: 'location', label: 'Location' },
     {
@@ -301,8 +361,27 @@ export default function AdminUsersPage() {
                   <DetailRow label="Description" value={detailUser.description} />
                 </>
               )}
+              <DetailRow label="Signup source" value={detailUser.signup_source} />
               <DetailRow label="Joined" value={detailUser.created_at ? new Date(detailUser.created_at).toLocaleDateString('en-GB') : '—'} />
             </DetailSection>
+
+            {detailUser.completeness && (
+              <DetailSection title={`Profile completeness — ${detailUser.completeness.percent}%`}>
+                <div className={styles.detailBarTrack}>
+                  <div
+                    className={`${styles.barFill} ${detailUser.completeness.percent >= 70 ? styles.barStrong : detailUser.completeness.percent >= 40 ? styles.barMid : styles.barLow}`}
+                    style={{ width: `${detailUser.completeness.percent}%` }}
+                  />
+                </div>
+                <div className={styles.checklist}>
+                  {detailUser.completeness.signals.map(s => (
+                    <div key={s.key} className={s.filled ? styles.checkOn : styles.checkOff}>
+                      <span className={styles.checkMark}>{s.filled ? '✓' : '✗'}</span> {s.label}
+                    </div>
+                  ))}
+                </div>
+              </DetailSection>
+            )}
 
             {detailUser.role === 'employer' && detailUser.subscription && (
               <DetailSection title="Subscription">

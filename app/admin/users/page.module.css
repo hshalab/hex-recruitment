@@ -38,6 +38,111 @@
   display: block;
 }
 
+.contactEmail {
+  display: block;
+  color: #334155;
+  font-size: 0.8rem;
+}
+
+.contactMuted {
+  display: block;
+  font-size: 0.72rem;
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+/* Profile completeness cell (list) */
+.profileCell {
+  min-width: 128px;
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.barTrack {
+  flex: 1;
+  height: 6px;
+  background: #eef2f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.barStrong { background: #16a34a; }
+.barMid { background: #f59e0b; }
+.barLow { background: #ef4444; }
+
+.barPct {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #475569;
+  min-width: 30px;
+  text-align: right;
+}
+
+.flags {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.flagOn { color: #16a34a; }
+.flagOff { color: #cbd5e1; }
+
+/* Signup source badge */
+.sourceBadge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Detail-panel completeness checklist */
+.detailBarTrack {
+  height: 8px;
+  background: #eef2f6;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.25rem 0 0.9rem;
+}
+
+.checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 0.75rem;
+}
+
+.checkOn, .checkOff {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.checkOn { color: #334155; }
+.checkOff { color: #cbd5e1; }
+
+.checkMark {
+  font-weight: 800;
+}
+
+.checkOn .checkMark { color: #16a34a; }
+.checkOff .checkMark { color: #ef4444; }
+
 /* Badges */
 .badge {
   display: inline-block;
