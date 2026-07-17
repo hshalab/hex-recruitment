@@ -8,6 +8,7 @@ import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import PostcodeLookup, { type AddressData } from '@/components/PostcodeLookup'
 import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
+import { isDisposableEmail } from '@/lib/validateEmail'
 import styles from '../../login/page.module.css'
 import registerStyles from './page.module.css'
 
@@ -87,6 +88,11 @@ function RegisterEmployerPageContent() {
 
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters')
+      return
+    }
+
+    if (isDisposableEmail(formData.email)) {
+      setError('Please use a permanent work email — temporary/disposable inboxes aren’t accepted.')
       return
     }
 

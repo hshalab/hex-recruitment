@@ -8,7 +8,7 @@ import PasswordInput from '@/components/PasswordInput'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import { supabase } from '@/lib/supabase'
-import { isValidEmail } from '@/lib/validateEmail'
+import { isValidEmail, isDisposableEmail } from '@/lib/validateEmail'
 import { getStoredAttribution, HEARD_FROM_OPTIONS } from '@/lib/attribution'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { foundingPhraseShort } from '@/lib/trialUtils'
@@ -59,6 +59,11 @@ export default function RegisterEmployerFreePage() {
 
     if (!isValidEmail(email)) {
       setError('Please enter a valid email address (e.g. you@company.com).')
+      return
+    }
+
+    if (isDisposableEmail(email)) {
+      setError('Please use a permanent work email — temporary/disposable inboxes aren’t accepted.')
       return
     }
 
