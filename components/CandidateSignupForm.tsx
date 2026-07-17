@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { calculateTrialExpiry } from '@/lib/trialUtils'
 import { getStoredAttribution, attributionColumns } from '@/lib/attribution'
-import { isValidEmail } from '@/lib/validateEmail'
+import { isValidEmail, isDisposableEmail } from '@/lib/validateEmail'
 import PasswordInput from './PasswordInput'
 import LiveJobCount from './LiveJobCount'
 
@@ -45,6 +45,7 @@ export default function CandidateSignupForm() {
 
     if (!fullName.trim()) return setError('Please enter your name')
     if (!isValidEmail(email)) return setError('Please enter a valid email address')
+    if (isDisposableEmail(email)) return setError('Please use a permanent email address — temporary/disposable inboxes aren’t accepted.')
     if (password.length < 8) return setError('Password must be at least 8 characters')
 
     setLoading(true)
