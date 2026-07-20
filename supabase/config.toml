@@ -1,0 +1,10 @@
+# Supabase CLI project config.
+#
+# project_id is the production project ref. It is NOT a secret — it appears in
+# the public API URL (https://<ref>.supabase.co) and in NEXT_PUBLIC_SUPABASE_URL.
+#
+# Nothing else belongs in this file. The database password and access token are
+# supplied interactively at `supabase link` time and are stored outside the repo
+# (supabase/.temp/, which is gitignored by the CLI's own defaults).
+
+project_id = "aaljufxcniacfggqiuls"
