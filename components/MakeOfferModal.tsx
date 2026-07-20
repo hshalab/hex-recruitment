@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import ReviewAndSign from './ReviewAndSign'
 import type { SignatureSlot } from '@/lib/buildOfferPdf'
 import styles from './MakeOfferModal.module.css'
@@ -333,12 +334,21 @@ export default function MakeOfferModal({
 
       // Create job_offers record. Store the letter text so we can run AI
       // summarisation / tag detection without having to re-extract from PDF.
+      //
+      // employer_id MUST be the employer OWNER's user id, not the raw session
+      // user — a team member sending an offer still keys it to the account.
+      // Every reader resolves the owner (app/offers/page.tsx:115,
+      // app/pipeline/page.tsx:188, api/offers/[offerId]/withdraw:51), so a
+      // raw session id here made offers sent by non-owner members invisible
+      // on /offers and 404 on withdraw. See app/offers/page.tsx:114.
+      const offerEmployerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id
+
       const { data: inserted, error: insertError } = await supabase
         .from('job_offers')
         .insert({
           application_id: applicationId,
           job_id: jobId,
-          employer_id: session.user.id,
+          employer_id: offerEmployerId,
           candidate_id: candidateId,
           salary: salary.trim(),
           start_date: startDate,
