@@ -35,3 +35,10 @@ tsconfig.tsbuildinfo
 
 # Goldenkeys import scratch (scraped data cache)
 scripts/.goldenkeys/
+
+# OAuth client secrets and tokens — must never be committed. Keep these
+# outside the repo entirely.
+*client_secret*.json
+credentials.json
+gcp-oauth.keys.json
+token.json
