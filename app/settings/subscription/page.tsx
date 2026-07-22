@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getEmployerCapabilities } from '@/lib/employer'
 import { DEV_MODE, getMockUserType, getSubscriptionStatus, getTrialExpiryDate } from '@/lib/mockAuth'
+import { employerLoginPath } from '@/lib/loginRedirect'
 import {
   EMPLOYER_SUBSCRIPTION_PRICE,
   TRIAL_DURATION_DAYS,
@@ -108,7 +109,7 @@ export default function SubscriptionSettingsPage() {
       // Production: Supabase session check
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/login/employer')
+        router.push(employerLoginPath())
         return
       }
 

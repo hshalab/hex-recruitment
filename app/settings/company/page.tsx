@@ -8,6 +8,7 @@ import PostcodeLookup, { type AddressData } from '@/components/PostcodeLookup'
 import { supabase } from '@/lib/supabase'
 import { getEmployerCapabilities } from '@/lib/employer'
 import { DEV_MODE, getMockUserType } from '@/lib/mockAuth'
+import { employerLoginPath } from '@/lib/loginRedirect'
 import styles from './page.module.css'
 
 const INDUSTRY_OPTIONS = [
@@ -231,7 +232,7 @@ export default function CompanySettingsPage() {
       }
 
       if (!session) {
-        router.push('/login/employer')
+        router.push(employerLoginPath())
         return
       }
 

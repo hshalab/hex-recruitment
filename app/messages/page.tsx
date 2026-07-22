@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import SignedImage from '@/components/SignedImage'
 import { supabase } from '@/lib/supabase'
+import { chooserLoginPath } from '@/lib/loginRedirect'
 import styles from './page.module.css'
 import {
   formatRelativeTime,
@@ -219,7 +220,7 @@ export default function MessagesPage() {
         const session = sessionResult?.data?.session
 
         if (!session) {
-          router.push('/login')
+          router.push(chooserLoginPath())
           return
         }
 

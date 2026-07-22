@@ -12,6 +12,7 @@ import { getTagsByCategory, TAG_CATEGORIES, getTagCategory, type TagCategory } f
 import { categories } from '@/lib/categories'
 import { isEmployerEntitled } from '@/lib/foundingEntitlement'
 import { PHOTO_TIPS } from '@/lib/photoTips'
+import { employerLoginPath } from '@/lib/loginRedirect'
 import styles from './page.module.css'
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false })
@@ -105,7 +106,7 @@ function PostJobContent() {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/login/employer')
+        router.push(employerLoginPath())
         return
       }
 
