@@ -186,7 +186,7 @@ export default function CompanySettingsPage() {
       if (DEV_MODE) {
         const type = getMockUserType()
         if (!type || type !== 'employer') {
-          router.push('/login')
+          router.push('/login/employer')
           return
         }
 
@@ -226,19 +226,19 @@ export default function CompanySettingsPage() {
 
       if (sessionError) {
         console.error('Session error:', sessionError)
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
 
       if (!session) {
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
 
       // Check user role
       const userRole = session.user.user_metadata?.role
       if (userRole !== 'employer') {
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
 

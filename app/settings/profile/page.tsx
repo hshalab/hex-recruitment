@@ -127,7 +127,7 @@ export default function ProfileVisibilityPage() {
       if (DEV_MODE) {
         const type = getMockUserType()
         if (!type || type !== 'employee') {
-          router.push('/login')
+          router.push('/login/employee')
           return
         }
 
@@ -143,7 +143,7 @@ export default function ProfileVisibilityPage() {
 
       const { data: { session } } = await supabase.auth.getSession()
       if (!session || session.user.user_metadata?.role !== 'employee') {
-        router.push('/login')
+        router.push('/login/employee')
         return
       }
 

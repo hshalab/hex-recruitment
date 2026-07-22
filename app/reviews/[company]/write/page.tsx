@@ -105,7 +105,7 @@ export default function WriteReviewPage() {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push(`/login?redirect=${encodeURIComponent(`/reviews/${encodeURIComponent(companySlug)}/write`)}`)
+        router.push(`/login/employee?redirect=${encodeURIComponent(`/reviews/${encodeURIComponent(companySlug)}/write`)}`)
         return
       }
 

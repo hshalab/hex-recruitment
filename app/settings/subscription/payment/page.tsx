@@ -80,7 +80,7 @@ export default function PaymentMethodPage() {
       if (DEV_MODE) {
         const type = getMockUserType()
         if (!type || type !== 'employer') {
-          router.push('/login')
+          router.push('/login/employer')
           return
         }
 
@@ -108,13 +108,13 @@ export default function PaymentMethodPage() {
 
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
 
       const role = session.user.user_metadata?.role
       if (role !== 'employer') {
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
 

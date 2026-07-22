@@ -173,7 +173,7 @@ export default function AnalyticsContent() {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session || session.user.user_metadata?.role !== 'employer') {
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
 
