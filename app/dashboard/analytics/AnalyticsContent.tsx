@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getCategoryLabel } from '@/lib/categories'
 import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
+import { employerLoginPath } from '@/lib/loginRedirect'
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
@@ -173,7 +174,7 @@ export default function AnalyticsContent() {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session || session.user.user_metadata?.role !== 'employer') {
-        router.push('/login/employer')
+        router.push(employerLoginPath())
         return
       }
 

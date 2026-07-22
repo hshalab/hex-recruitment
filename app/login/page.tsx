@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
+import { safeInternalPath } from '@/lib/safeRedirect'
 import styles from './page.module.css'
 
 // Server-rendered role chooser. /login used to be a client stub that painted a
@@ -8,7 +9,19 @@ import styles from './page.module.css'
 // the server (no client redirect, no flash) and routes people to the real login
 // pages that already exist: /login/employee and /login/employer. Mirrors the
 // header's two paths — "Hire People" / "Find a Job".
-export default function LoginChooserPage() {
+export default function LoginChooserPage({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined }
+}) {
+  // Routes that can't tell which role you are send you here WITH a ?redirect=.
+  // Forward it to both cards, otherwise the returnTo dies at the chooser and
+  // the whole point of the redirect is lost. Validated here so a hostile value
+  // is dropped before it's ever rendered into an href.
+  const raw = searchParams?.redirect
+  const redirect = safeInternalPath(Array.isArray(raw) ? raw[0] : raw)
+  const qs = redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''
+
   return (
     <main>
       <Header />
@@ -18,7 +31,7 @@ export default function LoginChooserPage() {
           <p className={styles.subtitle}>How would you like to continue?</p>
 
           <div className={styles.loginChoices}>
-            <Link href="/login/employer" className={styles.choiceCard}>
+            <Link href={`/login/employer${qs}`} className={styles.choiceCard}>
               <span className={styles.choiceIcon}>
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
@@ -29,7 +42,7 @@ export default function LoginChooserPage() {
               <span className={styles.choiceDesc}>Log in to your employer account</span>
             </Link>
 
-            <Link href="/login/employee" className={styles.choiceCard}>
+            <Link href={`/login/employee${qs}`} className={styles.choiceCard}>
               <span className={styles.choiceIcon}>
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />

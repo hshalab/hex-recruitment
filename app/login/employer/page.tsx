@@ -10,6 +10,7 @@ import GoogleSignInButton from '@/components/GoogleSignInButton'
 import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { foundingPhraseShort } from '@/lib/trialUtils'
+import { safeInternalPath } from '@/lib/safeRedirect'
 import styles from '../page.module.css'
 
 function EmployerLoginPageContent() {
@@ -25,6 +26,13 @@ function EmployerLoginPageContent() {
   // tone, not a scary red error. Fires for OAuth sign-ins (error=wrong-role)
   // AND email confirmation (error=wrong_account), keyed on `have`. Provider-
   // agnostic (Google / LinkedIn / email).
+  // Where to return the employer after login (e.g. they were bounced off
+  // /post-job). Raw and untrusted — every navigation below resolves it through
+  // safeInternalPath at the point of navigation, and falls back to the
+  // dashboard. Mirrors /login/employee.
+  const redirectTo = searchParams.get('redirect')
+  const safeRedirect = safeInternalPath(redirectTo)
+
   const authErr = searchParams.get('error')
   const have = searchParams.get('have')
   const roleNotice =
@@ -41,11 +49,11 @@ function EmployerLoginPageContent() {
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session && session.user.user_metadata?.role === 'employer') {
-        router.push('/employer/dashboard')
+        router.push(safeInternalPath(redirectTo) || '/employer/dashboard')
       }
     }
     checkExistingSession()
-  }, [router])
+  }, [router, redirectTo])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -126,7 +134,7 @@ function EmployerLoginPageContent() {
       return
     }
 
-    router.push('/employer/dashboard')
+    router.push(safeInternalPath(redirectTo) || '/employer/dashboard')
   }
 
   return (
@@ -146,9 +154,9 @@ function EmployerLoginPageContent() {
             </div>
           )}
 
-          <GoogleSignInButton role="employer" className={styles.googleBtn} />
+          <GoogleSignInButton role="employer" className={styles.googleBtn} next={safeRedirect || undefined} />
           <div style={{ marginTop: '0.6rem' }}>
-            <LinkedInSignInButton role="employer" className={styles.googleBtn} />
+            <LinkedInSignInButton role="employer" className={styles.googleBtn} next={safeRedirect || undefined} />
           </div>
           <div className={styles.divider}><span>or</span></div>
 

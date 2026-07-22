@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FREE_FOUNDING_MODE } from '@/lib/constants/cohort'
 import { provisionFoundingEmployer } from '@/lib/foundingSignup'
 import type { EmailClass } from '@/lib/emailDomains'
+import { safeInternalPath } from '@/lib/safeRedirect'
 
 function getOrigin(req: NextRequest): string {
   const proto = req.headers.get('x-forwarded-proto') || 'https'
@@ -33,6 +34,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
+  // Same-origin return path carried from the employer login page's OAuth
+  // buttons (e.g. they were bounced off /post-job). Honoured only at the final
+  // dashboard destination, and only for returning employers — see below.
+  const safeNext = safeInternalPath(searchParams.get('next'))
 
   console.log('[employer-callback] GET', { origin, hasCode: Boolean(code), error })
 
@@ -163,6 +168,17 @@ export async function GET(request: NextRequest) {
     response.cookies.getAll().forEach(c => pendingRedirect.cookies.set(c))
     console.log('[employer-callback] new pending employer → under-review', { userId: user.id })
     return pendingRedirect
+  }
+
+  // Honour ?next= only for RETURNING employers, and only once every gating
+  // state above (pending approval, payment) has been cleared — those must not
+  // be skipped by a deep link. Mirrors the rule in lib/authCallback.ts: a
+  // brand-new employer gets the standard first-run landing instead.
+  if (existingRole && safeNext) {
+    const nextRedirect = NextResponse.redirect(`${origin}${safeNext}`)
+    response.cookies.getAll().forEach(c => nextRedirect.cookies.set(c))
+    console.log('[employer-callback] employer → next', { userId: user.id, safeNext })
+    return nextRedirect
   }
 
   console.log('[employer-callback] employer → dashboard', { userId: user.id, isNew: !existingRole, status: provision?.status })

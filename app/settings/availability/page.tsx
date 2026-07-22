@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getCurrentEmployerOwnerId } from '@/lib/employer'
+import { employerLoginPath } from '@/lib/loginRedirect'
 import DatePicker from '@/components/DatePicker'
 import styles from './page.module.css'
 
@@ -123,7 +124,7 @@ function AvailabilitySettingsContent() {
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login/employer'); return }
+      if (!session) { router.push(employerLoginPath()); return }
       if (session.user.user_metadata?.role !== 'employer') { router.push('/login/employer'); return }
       // Multi-user: availability is keyed employer_id = owner user_id; scope
       // every read/write on this page to the owner of the active employer.
