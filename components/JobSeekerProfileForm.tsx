@@ -11,6 +11,7 @@ import PostcodeLookup, { type AddressData } from './PostcodeLookup'
 import PasswordInput from './PasswordInput'
 import LanguageAutocomplete from './LanguageAutocomplete'
 import { isValidEmail } from '@/lib/validateEmail'
+import { safeInternalPath } from '@/lib/safeRedirect'
 import { getStoredAttribution, attributionColumns, HEARD_FROM_OPTIONS } from '@/lib/attribution'
 import styles from './JobSeekerProfileForm.module.css'
 
@@ -756,7 +757,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
 
           setSuccess(true)
           setTimeout(() => {
-            const applyRedirect = searchParams.get('redirect')
+            const applyRedirect = safeInternalPath(searchParams.get('redirect'))
             router.push(`/login/employee?registered=true${applyRedirect ? `&redirect=${encodeURIComponent(applyRedirect)}` : ''}`)
           }, 2000)
           return
@@ -767,10 +768,8 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         // If the candidate arrived from an Apply gate (?redirect=/job/<id>?apply=1),
         // carry that return path through the confirmation email so that clicking
         // the link lands them back on the job ready to apply — not the dashboard.
-        const applyRedirect = searchParams.get('redirect')
-        const nextQS = applyRedirect && applyRedirect.startsWith('/') && !applyRedirect.startsWith('//')
-          ? `&next=${encodeURIComponent(applyRedirect)}`
-          : ''
+        const applyRedirect = safeInternalPath(searchParams.get('redirect'))
+        const nextQS = applyRedirect ? `&next=${encodeURIComponent(applyRedirect)}` : ''
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,

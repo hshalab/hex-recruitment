@@ -5,6 +5,7 @@ import { FREE_FOUNDING_MODE } from '@/lib/constants/cohort'
 import { provisionFoundingEmployer } from '@/lib/foundingSignup'
 import type { EmailClass } from '@/lib/emailDomains'
 import { parseAttrCookie, attributionColumns, type Attribution } from '@/lib/attribution'
+import { safeInternalPath } from '@/lib/safeRedirect'
 
 // Shared OAuth callback logic. Used by:
 // - /auth/callback (email flow — reads role from ?role= query param)
@@ -303,8 +304,9 @@ export async function handleAuthCallback(
   // Honor ?next= only for returning users with an existing role —
   // same-origin paths only.
   let destination = '/dashboard'
-  if (existingRole && nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')) {
-    destination = nextParam
+  const safeNext = safeInternalPath(nextParam)
+  if (existingRole && safeNext) {
+    destination = safeNext
   } else if (role === 'employer') {
     if (FREE_FOUNDING_MODE) {
       const { data: profile } = await admin

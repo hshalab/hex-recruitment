@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { safeInternalPath } from '@/lib/safeRedirect'
 
 interface LinkedInSignInButtonProps {
   role: 'employer' | 'employee'
@@ -33,7 +34,7 @@ export default function LinkedInSignInButton({ role, className, label, next }: L
     setLoading(true)
     try {
       const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-      const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : ''
+      const safeNext = safeInternalPath(next) || ''
       const redirectTo = `${siteUrl}/auth/callback/${role}${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`
       // Mirror the Google flow so SessionGuard can recover the intended role on
       // whichever page the user lands on after OAuth.

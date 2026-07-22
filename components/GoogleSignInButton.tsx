@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { safeInternalPath } from '@/lib/safeRedirect'
 
 interface GoogleSignInButtonProps {
   role: 'employer' | 'employee'
@@ -34,7 +35,7 @@ export default function GoogleSignInButton({ role, className, label, next }: Goo
       const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       // Carry a same-origin return path through the callback (?next=) so the
       // user lands back where they started (e.g. a job's apply page).
-      const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : ''
+      const safeNext = safeInternalPath(next) || ''
       const redirectTo = `${siteUrl}/auth/callback/${role}${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`
       console.log('[GoogleSignIn] redirectTo:', redirectTo)
       // Store intended role in a cookie so SessionGuard can pick it up

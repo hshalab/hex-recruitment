@@ -9,6 +9,7 @@ import PasswordInput from '@/components/PasswordInput'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import LiveJobCount from '@/components/LiveJobCount'
+import { safeInternalPath } from '@/lib/safeRedirect'
 import styles from '../page.module.css'
 
 function EmployeeLoginPageContent() {
@@ -28,8 +29,12 @@ function EmployeeLoginPageContent() {
 
   // Check if user just registered or is redirecting from a job
   const justRegistered = searchParams.get('registered') === 'true'
+  // Raw, untrusted. Used directly ONLY for UI hints. Every navigation and every
+  // URL we thread it into resolves it through safeInternalPath first — an
+  // unvalidated `?redirect=//evil.com` was a live open redirect here.
   const redirectTo = searchParams.get('redirect')
-  const postLoginRedirect = redirectTo || '/dashboard'
+  // Same-origin path or null. Recomputed at each point of navigation below.
+  const safeRedirect = safeInternalPath(redirectTo)
 
   // Friendly "you used the wrong login for this account" notice — amber info
   // tone, not a scary red error. Fires for OAuth sign-ins (error=wrong-role)
@@ -51,7 +56,7 @@ function EmployeeLoginPageContent() {
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        router.push(postLoginRedirect)
+        router.push(safeInternalPath(redirectTo) || '/dashboard')
         return
       }
       // Show success message if just registered
@@ -60,7 +65,7 @@ function EmployeeLoginPageContent() {
       }
     }
     checkExistingSession()
-  }, [router, justRegistered, postLoginRedirect])
+  }, [router, justRegistered, redirectTo])
 
   // Surface a pending unconfirmed sign-up (stashed at sign-up time).
   useEffect(() => {
@@ -75,8 +80,7 @@ function EmployeeLoginPageContent() {
     setResend('sending')
     try {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-      const nextQS = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
-        ? `&next=${encodeURIComponent(redirectTo)}` : ''
+      const nextQS = safeRedirect ? `&next=${encodeURIComponent(safeRedirect)}` : ''
       const { error: resendErr } = await supabase.auth.resend({
         type: 'signup',
         email: pendingEmail,
@@ -160,7 +164,7 @@ function EmployeeLoginPageContent() {
     }
 
     try { localStorage.removeItem('thrive_pending_confirm') } catch { /* ignore */ }
-    router.push(postLoginRedirect)
+    router.push(safeInternalPath(redirectTo) || '/dashboard')
   }
 
   return (
@@ -194,14 +198,14 @@ function EmployeeLoginPageContent() {
             </div>
           )}
 
-          <GoogleSignInButton role="employee" className={styles.googleBtn} next={redirectTo || undefined} />
+          <GoogleSignInButton role="employee" className={styles.googleBtn} next={safeRedirect || undefined} />
           <div style={{ marginTop: '0.6rem' }}>
-            <LinkedInSignInButton role="employee" className={styles.googleBtn} next={redirectTo || undefined} />
+            <LinkedInSignInButton role="employee" className={styles.googleBtn} next={safeRedirect || undefined} />
           </div>
           <div className={styles.divider}><span>or</span></div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
-            {redirectTo && !successMessage && (
+            {safeRedirect && !successMessage && (
               <div className={styles.info}>Sign in to view job details and apply</div>
             )}
             {successMessage && <div className={styles.success}>{successMessage}</div>}
@@ -264,7 +268,7 @@ function EmployeeLoginPageContent() {
             <p className={styles.signupText}>
               New here?{' '}
               <Link
-                href={redirectTo ? `/register/employee?redirect=${encodeURIComponent(redirectTo)}` : '/register/employee'}
+                href={safeRedirect ? `/register/employee?redirect=${encodeURIComponent(safeRedirect)}` : '/register/employee'}
                 className={styles.switchLink}
               >
                 Create an account

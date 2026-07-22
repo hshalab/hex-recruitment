@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { safeInternalPath } from '@/lib/safeRedirect'
 
 function getOrigin(req: NextRequest): string {
   const proto = req.headers.get('x-forwarded-proto') || 'https'
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
   // Same-origin return path (e.g. a job's apply page) carried from the Google
   // button so an Apply-initiated sign-in lands back on the job, not /dashboard.
   const nextParam = searchParams.get('next')
-  const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : null
+  const safeNext = safeInternalPath(nextParam)
 
   if (error) {
     return NextResponse.redirect(`${origin}/login/employee?error=${encodeURIComponent(error)}`)
