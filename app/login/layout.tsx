@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Log In - Access Your Thrive Account',
-  description: 'Log in to your Thrive account to browse jobs, manage applications or post vacancies.',
+  title: 'Log In to Thrive — Job Seekers & Employers',
+  description: 'Log in to Thrive. Job seekers browse jobs and manage applications; employers manage vacancies and candidates. Choose your account type to continue.',
   alternates: {
     canonical: '/login',
   },
