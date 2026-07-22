@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { calculateTrialExpiry } from '@/lib/trialUtils'
 import { getStoredAttribution, attributionColumns } from '@/lib/attribution'
 import { isValidEmail, isDisposableEmail } from '@/lib/validateEmail'
+import { safeInternalPath } from '@/lib/safeRedirect'
 import PasswordInput from './PasswordInput'
 import LiveJobCount from './LiveJobCount'
 
@@ -29,11 +30,8 @@ export default function CandidateSignupForm() {
 
   // Carry an Apply-gate return path (?redirect=/job/<id>?apply=1) through the
   // confirmation email as ?next, so the link lands them back on the job.
-  const applyRedirect = searchParams.get('redirect')
-  const nextQS =
-    applyRedirect && applyRedirect.startsWith('/') && !applyRedirect.startsWith('//')
-      ? `&next=${encodeURIComponent(applyRedirect)}`
-      : ''
+  const applyRedirect = safeInternalPath(searchParams.get('redirect'))
+  const nextQS = applyRedirect ? `&next=${encodeURIComponent(applyRedirect)}` : ''
   const confirmRedirect = () => {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
     return `${siteUrl}/auth/confirm?role=employee${nextQS}`
