@@ -123,8 +123,8 @@ function AvailabilitySettingsContent() {
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login'); return }
-      if (session.user.user_metadata?.role !== 'employer') { router.push('/login'); return }
+      if (!session) { router.push('/login/employer'); return }
+      if (session.user.user_metadata?.role !== 'employer') { router.push('/login/employer'); return }
       // Multi-user: availability is keyed employer_id = owner user_id; scope
       // every read/write on this page to the owner of the active employer.
       const ownerId = (await getCurrentEmployerOwnerId(supabase)) ?? session.user.id

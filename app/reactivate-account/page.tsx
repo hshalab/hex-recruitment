@@ -33,7 +33,7 @@ export default function ReactivateAccountPage() {
     const loadData = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/login')
+        router.push('/login/employee')
         return
       }
 

@@ -34,11 +34,11 @@ export default function RenewSubscriptionPage() {
     const loadData = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
       if (session.user.user_metadata?.role !== 'employer') {
-        router.push('/login')
+        router.push('/login/employer')
         return
       }
 

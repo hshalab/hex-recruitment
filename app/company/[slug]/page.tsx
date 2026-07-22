@@ -281,7 +281,7 @@ export default function CompanyPage() {
               </button>
             )}
             {!currentUserId && (
-              <Link href="/login" className={styles.writeReviewBtn} style={{ textDecoration: 'none' }}>
+              <Link href={`/login/employee?redirect=${encodeURIComponent(`/reviews/${encodeURIComponent(slug)}/write`)}`} className={styles.writeReviewBtn} style={{ textDecoration: 'none' }}>
                 Sign in to Review
               </Link>
             )}
