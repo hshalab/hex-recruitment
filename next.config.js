@@ -15,8 +15,15 @@ const nextConfig = {
   // /renew-subscription still render "£99/month" and card-collection UI.
   // 307 them to the free signup so the price isn't reachable by URL,
   // without deleting any Stripe code. permanent: false (not 308) so
-  // browsers don't cache hard — when Stripe is revived later, just remove
-  // these entries and the originals come back instantly.
+  // browsers don't cache hard.
+  //
+  // ⚠️ These four redirects are one half of a switch. The other half is
+  // FREE_FOUNDING_MODE in lib/constants/cohort.ts. Removing these entries
+  // alone does NOT revive paid signup, and setting that flag to false
+  // alone silently breaks card collection — the code would send employers
+  // to /register/employer/payment and this block would bounce them
+  // straight back out to the free signup. Change both together, in the
+  // same commit. The full explanation is in the comment above that flag.
   redirects: async () => [
     { source: '/register', destination: '/register/employer-free', permanent: false },
     { source: '/subscribe', destination: '/register/employer-free', permanent: false },

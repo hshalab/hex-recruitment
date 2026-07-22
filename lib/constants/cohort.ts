@@ -25,4 +25,32 @@ export const EMPLOYER_COHORT_CAP = 100
 
 export const FOUNDING_PERIOD_MONTHS = 12
 
+/**
+ * ⚠️ READ THIS BEFORE SETTING THIS TO false.
+ *
+ * Turning this flag off does NOT, on its own, switch paid signup back on.
+ * It re-activates code that sends employers to /register/employer/payment —
+ * but that URL is currently redirected away in next.config.js. So the
+ * employer would be sent to the payment page, immediately bounced to the
+ * free signup instead, and no card would ever be collected. Signup would
+ * appear to work perfectly while quietly taking no money. Nothing would
+ * error, and nothing would show up in logs.
+ *
+ * So if you set this to false, you MUST also delete these four redirects
+ * from next.config.js in the SAME change:
+ *   /register, /subscribe, /register/employer/payment, /renew-subscription
+ *
+ * The three code paths that wake up when this becomes false, all of which
+ * lead to the payment page:
+ *   - lib/authCallback.ts:324
+ *   - lib/authCallback.ts:338
+ *   - app/auth/callback/employer/route.ts:149
+ *
+ * Also check app/robots.ts:28 — it tells search engines not to index
+ * /register/employer/payment. If that page is meant to be live again,
+ * that line probably needs to go too.
+ *
+ * Short version: this flag and those redirects are two halves of one
+ * switch. Move both together, or paid signup breaks silently.
+ */
 export const FREE_FOUNDING_MODE = true
