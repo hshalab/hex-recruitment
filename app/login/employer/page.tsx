@@ -11,6 +11,7 @@ import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { foundingPhraseShort } from '@/lib/trialUtils'
 import { safeInternalPath } from '@/lib/safeRedirect'
+import { repairSessionCookie, repairJustAttempted, clearRepairMark, abandonBrokenSession } from '@/lib/repairSessionCookie'
 import styles from '../page.module.css'
 
 function EmployerLoginPageContent() {
@@ -48,9 +49,42 @@ function EmployerLoginPageContent() {
   useEffect(() => {
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (session && session.user.user_metadata?.role === 'employer') {
-        router.push(safeInternalPath(redirectTo) || '/employer/dashboard')
+
+      if (!session) {
+        // Genuinely signed out — the two sides agree. Reset the loop guard so a
+        // later, legitimate sign-in isn't mistaken for a repair loop.
+        clearRepairMark()
+        return
       }
+
+      if (session.user.user_metadata?.role !== 'employer') return
+
+      // We hold a valid client session. The server may not: if the SSR cookie
+      // has drifted, the layout guard bounced us here and pushing straight back
+      // would loop. Repair the cookie from this session first.
+      if (repairJustAttempted()) {
+        // We already bridged moments ago and are back here anyway, so the
+        // repair didn't take. Dead-end into a clean signed-out state instead of
+        // spinning.
+        await abandonBrokenSession()
+        setError('Your session has expired. Please sign in again.')
+        return
+      }
+
+      const repaired = await repairSessionCookie(session)
+      if (!repaired) {
+        await abandonBrokenSession()
+        setError('Your session has expired. Please sign in again.')
+        return
+      }
+
+      // HARD navigation, deliberately. router.push is a soft navigation: the
+      // App Router serves the destination's RSC payload from its client cache,
+      // so the server layout is NOT re-evaluated and never sees the cookies we
+      // just repaired — it keeps returning the cached redirect and the loop
+      // continues. A full load forces the server to re-read them. Same reason
+      // SessionGuard.tsx uses window.location.href on its cookie-hydration path.
+      window.location.href = safeInternalPath(redirectTo) || '/employer/dashboard'
     }
     checkExistingSession()
   }, [router, redirectTo])

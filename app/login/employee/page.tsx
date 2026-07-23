@@ -10,6 +10,7 @@ import GoogleSignInButton from '@/components/GoogleSignInButton'
 import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import LiveJobCount from '@/components/LiveJobCount'
 import { safeInternalPath } from '@/lib/safeRedirect'
+import { repairSessionCookie, repairJustAttempted, clearRepairMark, abandonBrokenSession } from '@/lib/repairSessionCookie'
 import styles from '../page.module.css'
 
 function EmployeeLoginPageContent() {
@@ -56,9 +57,29 @@ function EmployeeLoginPageContent() {
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        router.push(safeInternalPath(redirectTo) || '/dashboard')
+        // Repair a drifted SSR cookie from this valid client session before
+        // navigating — see lib/repairSessionCookie.ts. Candidate routes have no
+        // server guard today, so this is prevention rather than a live fix, but
+        // the moment one is added the same loop would appear here.
+        if (repairJustAttempted()) {
+          await abandonBrokenSession()
+          setError('Your session has expired. Please sign in again.')
+          return
+        }
+        const repaired = await repairSessionCookie(session)
+        if (!repaired) {
+          await abandonBrokenSession()
+          setError('Your session has expired. Please sign in again.')
+          return
+        }
+        // HARD navigation — see the note on the employer login page. A soft
+        // push serves a cached RSC payload and the server never re-reads the
+        // cookies we just repaired.
+        window.location.href = safeInternalPath(redirectTo) || '/dashboard'
         return
       }
+      // Genuinely signed out — reset the loop guard.
+      clearRepairMark()
       // Show success message if just registered
       if (justRegistered) {
         setSuccessMessage('Registration complete! Please log in with your credentials.')
