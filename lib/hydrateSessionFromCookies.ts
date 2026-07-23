@@ -101,6 +101,26 @@ export async function hydrateSessionFromCookies(): Promise<Session | null> {
   const cookieSession = readChunkedCookie()
   if (!cookieSession?.refresh_token) return null
 
+  // NEVER overwrite a session the client already holds.
+  //
+  // setSession() below replaces the browser client's localStorage session. This
+  // function exists for the post-OAuth case where the client has NOTHING and the
+  // server has just written the cookies — but it is also called from both
+  // dashboards on every load, where that assumption does not hold. In the
+  // returning-user case the cookie has drifted while localStorage is still
+  // valid, so installing the cookie's tokens replaces a good live session with a
+  // dead one. The login page's repair then bridges those dead tokens and is
+  // correctly rejected with a 401, and the user is bounced out.
+  //
+  // For a signed-in user the live client session is the source of truth; the
+  // cookie is a shadow of it, never the authority. So if the client already has
+  // a session, hand that back untouched and leave the cookie alone.
+  const { data: { session: existing } } = await supabase.auth.getSession()
+  if (existing) {
+    console.log('[hydrate] client already has a session — not overwriting it from cookies')
+    return existing
+  }
+
   if (cookieSession.access_token) {
     console.log('[hydrate] installing session from chunked cookies via setSession')
     const { data, error } = await supabase.auth.setSession({
