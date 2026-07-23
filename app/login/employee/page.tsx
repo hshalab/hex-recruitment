@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -10,7 +10,7 @@ import GoogleSignInButton from '@/components/GoogleSignInButton'
 import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import LiveJobCount from '@/components/LiveJobCount'
 import { safeInternalPath } from '@/lib/safeRedirect'
-import { repairSessionCookie, repairJustAttempted, clearRepairMark, abandonBrokenSession } from '@/lib/repairSessionCookie'
+import { bouncedRecently, markPush, clearBounceMark, endBounceLoop } from '@/lib/loginBounceGuard'
 import styles from '../page.module.css'
 
 function EmployeeLoginPageContent() {
@@ -52,34 +52,34 @@ function EmployeeLoginPageContent() {
         : null
       : null
 
+  // Runs the on-mount session check at most ONCE per mount — React StrictMode
+  // double-invokes effects in development, and the second invocation would see
+  // the mark left by the first and mistake it for a bounce. See the matching
+  // note on the employer login page.
+  const checkedRef = useRef(false)
+
   // If already authenticated, redirect immediately
   useEffect(() => {
+    if (checkedRef.current) return
+    checkedRef.current = true
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        // Repair a drifted SSR cookie from this valid client session before
-        // navigating — see lib/repairSessionCookie.ts. Candidate routes have no
-        // server guard today, so this is prevention rather than a live fix, but
-        // the moment one is added the same loop would appear here.
-        if (repairJustAttempted()) {
-          await abandonBrokenSession()
+        // Candidate routes have no server-side guard today, so this loop can't
+        // currently occur here — but the moment one is added it would, exactly
+        // as it does on the employer side. Guarding both keeps the two login
+        // pages consistent. See lib/loginBounceGuard.ts.
+        if (bouncedRecently()) {
+          await endBounceLoop()
           setError('Your session has expired. Please sign in again.')
           return
         }
-        const repaired = await repairSessionCookie(session)
-        if (!repaired) {
-          await abandonBrokenSession()
-          setError('Your session has expired. Please sign in again.')
-          return
-        }
-        // HARD navigation — see the note on the employer login page. A soft
-        // push serves a cached RSC payload and the server never re-reads the
-        // cookies we just repaired.
-        window.location.href = safeInternalPath(redirectTo) || '/dashboard'
+        markPush()
+        router.push(safeInternalPath(redirectTo) || '/dashboard')
         return
       }
       // Genuinely signed out — reset the loop guard.
-      clearRepairMark()
+      clearBounceMark()
       // Show success message if just registered
       if (justRegistered) {
         setSuccessMessage('Registration complete! Please log in with your credentials.')

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -11,7 +11,7 @@ import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { foundingPhraseShort } from '@/lib/trialUtils'
 import { safeInternalPath } from '@/lib/safeRedirect'
-import { repairSessionCookie, repairJustAttempted, clearRepairMark, abandonBrokenSession } from '@/lib/repairSessionCookie'
+import { bouncedRecently, markPush, clearBounceMark, endBounceLoop } from '@/lib/loginBounceGuard'
 import styles from '../page.module.css'
 
 function EmployerLoginPageContent() {
@@ -45,46 +45,41 @@ function EmployerLoginPageContent() {
         : null
       : null
 
+  // Runs the on-mount session check at most ONCE per mount. React StrictMode
+  // (next.config.js sets reactStrictMode: true) deliberately double-invokes
+  // effects in development. Without this, the second invocation sees the mark
+  // left by the first, concludes we have bounced, and signs the user out — the
+  // guard mistaking its own echo for the loop.
+  const checkedRef = useRef(false)
+
   // If already authenticated as employer, redirect
   useEffect(() => {
+    if (checkedRef.current) return
+    checkedRef.current = true
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
         // Genuinely signed out — the two sides agree. Reset the loop guard so a
         // later, legitimate sign-in isn't mistaken for a repair loop.
-        clearRepairMark()
+        clearBounceMark()
         return
       }
 
       if (session.user.user_metadata?.role !== 'employer') return
 
-      // We hold a valid client session. The server may not: if the SSR cookie
-      // has drifted, the layout guard bounced us here and pushing straight back
-      // would loop. Repair the cookie from this session first.
-      if (repairJustAttempted()) {
-        // We already bridged moments ago and are back here anyway, so the
-        // repair didn't take. Dead-end into a clean signed-out state instead of
-        // spinning.
-        await abandonBrokenSession()
+      // We hold a valid client session, but the server may disagree if the SSR
+      // cookie has drifted — in which case the layout guard bounced us here and
+      // pushing straight back would loop indefinitely. If we already pushed
+      // moments ago and are back anyway, stop rather than push again.
+      if (bouncedRecently()) {
+        await endBounceLoop()
         setError('Your session has expired. Please sign in again.')
         return
       }
 
-      const repaired = await repairSessionCookie(session)
-      if (!repaired) {
-        await abandonBrokenSession()
-        setError('Your session has expired. Please sign in again.')
-        return
-      }
-
-      // HARD navigation, deliberately. router.push is a soft navigation: the
-      // App Router serves the destination's RSC payload from its client cache,
-      // so the server layout is NOT re-evaluated and never sees the cookies we
-      // just repaired — it keeps returning the cached redirect and the loop
-      // continues. A full load forces the server to re-read them. Same reason
-      // SessionGuard.tsx uses window.location.href on its cookie-hydration path.
-      window.location.href = safeInternalPath(redirectTo) || '/employer/dashboard'
+      markPush()
+      router.push(safeInternalPath(redirectTo) || '/employer/dashboard')
     }
     checkExistingSession()
   }, [router, redirectTo])
