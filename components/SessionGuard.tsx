@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
@@ -107,31 +106,9 @@ export default function SessionGuard() {
         return
       }
 
-      // 2. No localStorage session — try to hydrate from chunked SSR cookies
-      const hydrated = await hydrateSessionFromCookies()
-      if (hydrated?.user) {
-        const role = hydrated.user.user_metadata?.role as string | undefined
-        console.log('[SessionGuard] Session hydrated, role:', role)
-
-        if (role) {
-          handled.current = true
-          redirecting.current = true
-          // Cookie-hydration path (immediately after OAuth): a HARD
-          // navigation is kept deliberately so the destination re-reads the
-          // freshly written SSR cookies server-side. Single destination per
-          // role — the server guard decides approval/entitlement.
-          window.location.href = role === 'employer' ? '/employer/dashboard' : '/dashboard'
-          return
-        }
-
-        // New user — check intended role cookie
-        const intendedRole = getCookie('oauth_intended_role') as 'employer' | 'employee' | null
-        if (intendedRole) {
-          handled.current = true
-          await routeNewUser(hydrated.user, intendedRole)
-          return
-        }
-      }
+      // No session. Client and server now share one cookie-backed store, so
+      // getSession() above already reflects the post-OAuth cookie session that
+      // used to require a separate hydration step here — nothing more to do.
     }
 
     handleAuth()

@@ -81,18 +81,11 @@ function AcceptInviteContent() {
     }
 
     // Role was set to 'employer' server-side. Refresh the session so the new
-    // metadata is in the token, then bridge it to the SSR cookies the employer
-    // layout reads — otherwise the guard sees the stale role and bounces.
+    // metadata is in the token. refreshSession() writes the rotated session to
+    // the shared cookie store the employer layout reads, so no separate bridge
+    // is needed.
     try {
-      const { data: refreshed } = await supabase.auth.refreshSession()
-      const s = refreshed?.session
-      if (s?.access_token && s?.refresh_token) {
-        await fetch('/api/auth/set-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ access_token: s.access_token, refresh_token: s.refresh_token }),
-        })
-      }
+      await supabase.auth.refreshSession()
     } catch { /* best effort */ }
 
     setPhase('done')

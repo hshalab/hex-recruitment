@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -11,7 +11,6 @@ import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { foundingPhraseShort } from '@/lib/trialUtils'
 import { safeInternalPath } from '@/lib/safeRedirect'
-import { bouncedRecently, markPush, clearBounceMark, endBounceLoop } from '@/lib/loginBounceGuard'
 import styles from '../page.module.css'
 
 function EmployerLoginPageContent() {
@@ -45,41 +44,16 @@ function EmployerLoginPageContent() {
         : null
       : null
 
-  // Runs the on-mount session check at most ONCE per mount. React StrictMode
-  // (next.config.js sets reactStrictMode: true) deliberately double-invokes
-  // effects in development. Without this, the second invocation sees the mark
-  // left by the first, concludes we have bounced, and signs the user out — the
-  // guard mistaking its own echo for the loop.
-  const checkedRef = useRef(false)
-
-  // If already authenticated as employer, redirect
+  // If already authenticated as employer, redirect. Client and server now share
+  // one cookie-backed session store, so getSession() sees exactly what the
+  // server's layout guard sees — the login<->dashboard bounce loop the old
+  // bounce guard contained can no longer occur, and the guard is gone.
   useEffect(() => {
-    if (checkedRef.current) return
-    checkedRef.current = true
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-
-      if (!session) {
-        // Genuinely signed out — the two sides agree. Reset the loop guard so a
-        // later, legitimate sign-in isn't mistaken for a repair loop.
-        clearBounceMark()
-        return
+      if (session && session.user.user_metadata?.role === 'employer') {
+        router.push(safeInternalPath(redirectTo) || '/employer/dashboard')
       }
-
-      if (session.user.user_metadata?.role !== 'employer') return
-
-      // We hold a valid client session, but the server may disagree if the SSR
-      // cookie has drifted — in which case the layout guard bounced us here and
-      // pushing straight back would loop indefinitely. If we already pushed
-      // moments ago and are back anyway, stop rather than push again.
-      if (bouncedRecently()) {
-        await endBounceLoop()
-        setError('Your session has expired. Please sign in again.')
-        return
-      }
-
-      markPush()
-      router.push(safeInternalPath(redirectTo) || '/employer/dashboard')
     }
     checkExistingSession()
   }, [router, redirectTo])
@@ -134,35 +108,9 @@ function EmployerLoginPageContent() {
       localStorage.removeItem('hex_prev_volatile')
     }
 
-    // Bridge the just-minted session into the @supabase/ssr cookies so
-    // the server-side employer-layout guard sees the session on the
-    // next navigation. signInWithPassword only writes localStorage —
-    // without this POST the layout's getUser() returns null and bounces
-    // back to /login/employer, causing an infinite client↔server loop.
-    // AWAIT before navigating: the dashboard request must not fire
-    // before the cookies are set on the response.
-    try {
-      const bridgeRes = await fetch('/api/auth/set-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          access_token: data.session?.access_token,
-          refresh_token: data.session?.refresh_token,
-        }),
-      })
-      if (!bridgeRes.ok) {
-        setError('Could not establish session. Please try again.')
-        await supabase.auth.signOut()
-        setLoading(false)
-        return
-      }
-    } catch {
-      setError('Could not establish session. Please try again.')
-      await supabase.auth.signOut()
-      setLoading(false)
-      return
-    }
-
+    // signInWithPassword has already written the session to the shared
+    // cookie store (createBrowserClient), which the server-side employer-layout
+    // guard reads directly. The old set-session bridge is no longer needed.
     router.push(safeInternalPath(redirectTo) || '/employer/dashboard')
   }
 

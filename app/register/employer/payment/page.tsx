@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { supabase } from '@/lib/supabase'
-import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 import Header from '@/components/Header'
 import { EMPLOYER_SUBSCRIPTION_PRICE, TRIAL_DURATION_DAYS, TRIAL_MONTHS } from '@/lib/trialUtils'
 
@@ -125,12 +124,10 @@ export default function EmployerPaymentPage() {
 
   useEffect(() => {
     const init = async () => {
-      // Get session — try localStorage first, then hydrate from SSR cookies
-      // (after OAuth redirect, localStorage is empty but cookies are set)
-      let session = (await supabase.auth.getSession()).data.session
-      if (!session) {
-        session = await hydrateSessionFromCookies()
-      }
+      // Client and server share one cookie-backed session store, so
+      // getSession() reads what the server wrote (including right after an OAuth
+      // redirect) — no separate cookie hydration needed.
+      const session = (await supabase.auth.getSession()).data.session
       if (!session?.user) {
         router.push('/login/employer')
         return
