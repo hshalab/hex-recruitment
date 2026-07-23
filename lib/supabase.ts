@@ -1,41 +1,28 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import Cookies from 'js-cookie'
+import { createBrowserClient } from '@supabase/ssr'
+import { type SupabaseClient } from '@supabase/supabase-js'
 
-// Browser-side Supabase client (PKCE auth flow, persisted session,
-// auto-refresh). Lazy — the env read used to happen at module scope
-// and would throw "supabaseUrl is required" during Next.js page-data
-// collection on any Preview env that didn't have NEXT_PUBLIC_*
-// configured. See lib/supabase-admin.ts for the parallel fix on the
-// service-role client. Browser-vs-admin clients stay separate per
-// the brief — different env vars, different security posture.
-
-const isBrowser = typeof window !== 'undefined'
-
-// code-verifier values for PKCE are stored as cookies so they survive
-// the OAuth redirect back from the provider; everything else stays in
-// localStorage. SSR contexts get no storage at all (storage:undefined).
-const hybridStorage = {
-  getItem: (key: string): string | null => {
-    if (key.includes('code-verifier')) {
-      return Cookies.get(key) ?? null
-    }
-    return localStorage.getItem(key)
-  },
-  setItem: (key: string, value: string): void => {
-    if (key.includes('code-verifier')) {
-      Cookies.set(key, value, { sameSite: 'lax', secure: true, path: '/' })
-    } else {
-      localStorage.setItem(key, value)
-    }
-  },
-  removeItem: (key: string): void => {
-    if (key.includes('code-verifier')) {
-      Cookies.remove(key, { path: '/' })
-    } else {
-      localStorage.removeItem(key)
-    }
-  },
-}
+// Browser-side Supabase client. PHASE E1 of the dual-store removal.
+//
+// This client now stores its session in COOKIES via @supabase/ssr's
+// createBrowserClient, instead of the previous createClient + custom
+// hybridStorage (localStorage for the session, cookies only for the PKCE
+// code-verifier). The server already reads that same cookie via
+// createServerClient, so client and server now share ONE store — which is what
+// removes the drift/poisoning/repair-race class of bug the interim only
+// contained. createBrowserClient writes the standard chunked
+// `sb-<ref>-auth-token` cookie in base64url, matching what the server writes.
+//
+// Still lazy: the env read used to happen at module scope and would throw
+// "supabaseUrl is required" during Next.js page-data collection on any Preview
+// env without NEXT_PUBLIC_* set. See lib/supabase-admin.ts for the parallel
+// service-role client. createBrowserClient gates autoRefreshToken /
+// detectSessionInUrl on its own isBrowser() check, so an SSR-context call
+// degrades safely rather than touching document.cookie.
+//
+// NOTE: the old cookie-bridge machinery (hydrateSessionFromCookies, the
+// set-session route, repair/guard helpers) is now redundant but left in place
+// deliberately — it is removed in a separate step once this store change is
+// proven. See the accompanying report.
 
 let _supabase: SupabaseClient | null = null
 
@@ -48,14 +35,8 @@ function getSupabase(): SupabaseClient {
       'Supabase browser client: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set at request time',
     )
   }
-  _supabase = createClient(url, key, {
-    auth: {
-      flowType: 'pkce',
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-      storage: isBrowser ? hybridStorage : undefined,
-    },
+  _supabase = createBrowserClient(url, key, {
+    cookieOptions: { sameSite: 'lax', secure: true, path: '/' },
   })
   return _supabase
 }
