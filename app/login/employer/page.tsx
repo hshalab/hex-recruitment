@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -11,6 +11,7 @@ import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { foundingPhraseShort } from '@/lib/trialUtils'
 import { safeInternalPath } from '@/lib/safeRedirect'
+import { bouncedRecently, markPush, clearBounceMark, endBounceLoop } from '@/lib/loginBounceGuard'
 import styles from '../page.module.css'
 
 function EmployerLoginPageContent() {
@@ -44,13 +45,41 @@ function EmployerLoginPageContent() {
         : null
       : null
 
+  // Runs the on-mount session check at most ONCE per mount. React StrictMode
+  // (next.config.js sets reactStrictMode: true) deliberately double-invokes
+  // effects in development. Without this, the second invocation sees the mark
+  // left by the first, concludes we have bounced, and signs the user out — the
+  // guard mistaking its own echo for the loop.
+  const checkedRef = useRef(false)
+
   // If already authenticated as employer, redirect
   useEffect(() => {
+    if (checkedRef.current) return
+    checkedRef.current = true
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (session && session.user.user_metadata?.role === 'employer') {
-        router.push(safeInternalPath(redirectTo) || '/employer/dashboard')
+
+      if (!session) {
+        // Genuinely signed out — the two sides agree. Reset the loop guard so a
+        // later, legitimate sign-in isn't mistaken for a repair loop.
+        clearBounceMark()
+        return
       }
+
+      if (session.user.user_metadata?.role !== 'employer') return
+
+      // We hold a valid client session, but the server may disagree if the SSR
+      // cookie has drifted — in which case the layout guard bounced us here and
+      // pushing straight back would loop indefinitely. If we already pushed
+      // moments ago and are back anyway, stop rather than push again.
+      if (bouncedRecently()) {
+        await endBounceLoop()
+        setError('Your session has expired. Please sign in again.')
+        return
+      }
+
+      markPush()
+      router.push(safeInternalPath(redirectTo) || '/employer/dashboard')
     }
     checkExistingSession()
   }, [router, redirectTo])
