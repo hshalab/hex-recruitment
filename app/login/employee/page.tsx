@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -10,7 +10,6 @@ import GoogleSignInButton from '@/components/GoogleSignInButton'
 import LinkedInSignInButton from '@/components/LinkedInSignInButton'
 import LiveJobCount from '@/components/LiveJobCount'
 import { safeInternalPath } from '@/lib/safeRedirect'
-import { bouncedRecently, markPush, clearBounceMark, endBounceLoop } from '@/lib/loginBounceGuard'
 import styles from '../page.module.css'
 
 function EmployeeLoginPageContent() {
@@ -52,34 +51,17 @@ function EmployeeLoginPageContent() {
         : null
       : null
 
-  // Runs the on-mount session check at most ONCE per mount — React StrictMode
-  // double-invokes effects in development, and the second invocation would see
-  // the mark left by the first and mistake it for a bounce. See the matching
-  // note on the employer login page.
-  const checkedRef = useRef(false)
-
-  // If already authenticated, redirect immediately
+  // If already authenticated, redirect immediately. Client and server now share
+  // one cookie-backed session store, so getSession() sees exactly what the
+  // server sees — the login<->dashboard bounce loop the old bounce guard
+  // contained can no longer occur, and the guard is gone.
   useEffect(() => {
-    if (checkedRef.current) return
-    checkedRef.current = true
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        // Candidate routes have no server-side guard today, so this loop can't
-        // currently occur here — but the moment one is added it would, exactly
-        // as it does on the employer side. Guarding both keeps the two login
-        // pages consistent. See lib/loginBounceGuard.ts.
-        if (bouncedRecently()) {
-          await endBounceLoop()
-          setError('Your session has expired. Please sign in again.')
-          return
-        }
-        markPush()
         router.push(safeInternalPath(redirectTo) || '/dashboard')
         return
       }
-      // Genuinely signed out — reset the loop guard.
-      clearBounceMark()
       // Show success message if just registered
       if (justRegistered) {
         setSuccessMessage('Registration complete! Please log in with your credentials.')
@@ -157,33 +139,9 @@ function EmployeeLoginPageContent() {
       localStorage.removeItem('hex_prev_volatile')
     }
 
-    // Bridge the session into SSR cookies before navigating. Candidate
-    // routes don't currently have a server-side guard, but the same
-    // disagreement (client localStorage vs server cookie) would bite
-    // the day one is added; mirror the employer flow now so the fix
-    // is uniform. See app/api/auth/set-session/route.ts.
-    try {
-      const bridgeRes = await fetch('/api/auth/set-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          access_token: data.session?.access_token,
-          refresh_token: data.session?.refresh_token,
-        }),
-      })
-      if (!bridgeRes.ok) {
-        setError('Could not establish session. Please try again.')
-        await supabase.auth.signOut()
-        setLoading(false)
-        return
-      }
-    } catch {
-      setError('Could not establish session. Please try again.')
-      await supabase.auth.signOut()
-      setLoading(false)
-      return
-    }
-
+    // signInWithPassword has already written the session to the shared
+    // cookie store (createBrowserClient), which the server reads directly.
+    // No cookie bridge is needed any more.
     try { localStorage.removeItem('thrive_pending_confirm') } catch { /* ignore */ }
     router.push(safeInternalPath(redirectTo) || '/dashboard')
   }

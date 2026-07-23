@@ -8,7 +8,6 @@ import { supabase } from '@/lib/supabase'
 import { getCurrentEmployerOwnerId } from '@/lib/employer'
 import ExampleShowcase from '@/components/onboarding/ExampleShowcase'
 import EmployerTour from '@/components/onboarding/EmployerTour'
-import { hydrateSessionFromCookies } from '@/lib/hydrateSessionFromCookies'
 import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import { useMessages } from '@/lib/MessagesContext'
 import Header from '@/components/Header'
@@ -832,28 +831,18 @@ export default function EmployerDashboardPage() {
       }
 
       // PRODUCTION MODE
-      const { data: { session } } = await supabase.auth.getSession()
-
+      // Client and server share one cookie-backed session store, so
+      // getSession() reads what the server wrote.
+      let { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        // The server layout just rendered this page, so a valid session DOES
+        // exist server-side. Right after an OAuth redirect the cookie can be
+        // momentarily unreadable for a tick — retry once before bouncing.
+        await new Promise((r) => setTimeout(r, 400))
+        session = (await supabase.auth.getSession()).data.session
+      }
       if (session) {
         await loadDashboardData(session)
-        return
-      }
-
-      // No localStorage session — try to hydrate from the chunked cookies
-      // written by the server OAuth callback. This is the common case on the
-      // first load after an OAuth sign-in: server cookies are present but
-      // localStorage is empty until we install the session.
-      let hydrated = await hydrateSessionFromCookies()
-      if (!hydrated) {
-        // The server layout just rendered this page, so a valid session DOES
-        // exist server-side. A momentarily-null client hydration (cookies not
-        // yet readable for a tick after the OAuth redirect) should not bounce
-        // the user — retry once before giving up.
-        await new Promise((r) => setTimeout(r, 400))
-        hydrated = await hydrateSessionFromCookies()
-      }
-      if (hydrated) {
-        await loadDashboardData(hydrated)
         return
       }
 
