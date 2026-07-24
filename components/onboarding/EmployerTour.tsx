@@ -35,7 +35,10 @@ type StepDef = { el?: string; title: string; description: string; onHi?: () => v
 const STEP_DEFS: StepDef[] = [
   { el: '[data-tour="stats"]', title: 'Your dashboard at a glance', description: 'Live jobs, applications, interviews and views — your key numbers always sit here.', onHi: jobReset },
   { el: '[data-tour="ex-title"]', title: 'Posting a job — 1. Title', description: 'Start with the role you\'re hiring for, like “Bartender”. Watch the example fill in as we go.', noInteract: true, onHi: () => jobReveal(1) },
-  { el: '[data-tour="ex-pay"]', title: '2. Pay', description: 'Add an hourly or annual rate so candidates know what to expect.', noInteract: true, onHi: () => jobReveal(2) },
+  // Pinned below-left: the pay field is full-width, so driver.js's default
+  // centred popover lands on top of it (~25% cover). Anchoring below + start
+  // points the arrow up at the field and keeps the popover clear of it.
+  { el: '[data-tour="ex-pay"]', title: '2. Pay', description: 'Add an hourly or annual rate so candidates know what to expect.', noInteract: true, onHi: () => jobReveal(2), side: 'bottom', align: 'start' },
   { el: '[data-tour="ex-location"]', title: '3. Location', description: 'Where is the role based? Candidates filter by area.', noInteract: true, onHi: () => jobReveal(3) },
   { el: '[data-tour="ex-desc"]', title: '4. Description', description: 'A short summary of the role — and that\'s the essentials. Posting your own takes under a minute.', noInteract: true, onHi: () => jobReveal(4) },
   { el: '[data-tour="photo-example-bad"]', title: 'Add a great photo', description: 'The bit people get wrong — a bright, sharp, landscape photo of your venue, food or team gets far more applicants than a dark or blurry one.', onHi: jobDone, side: 'bottom', align: 'end' },
@@ -54,7 +57,13 @@ const STEP_DEFS: StepDef[] = [
   { el: '[data-tour="feat-analytics"]', title: 'See your analytics', description: 'Views, applications and conversion for every job — so you can see what\'s working and adjust.' },
   { el: '[data-tour="feat-boost"]', title: 'Boost a listing', description: 'Need more applicants fast? Boost a job to rank higher in search with a Featured badge.' },
   { el: '[data-tour="feat-candidates"]', title: 'Search candidates', description: 'Don\'t wait to be found — browse candidates and reach out to the ones you like.' },
-  { el: '[data-tour="feat-message"]', title: 'Message candidates', description: 'Chat with candidates in real time inside Thrive — ask a question or arrange a call.' },
+  // Pinned above-left: feat-message is the bottom-LEFT tile in the 4-col grid,
+  // so driver.js can't place its popover below (section ends) or centred (would
+  // overflow the container's left edge) and flings it ~575px to the right,
+  // pointing at nothing. Anchoring top + start seats it above the tile with the
+  // arrow pointing down at it. (The other bottom-row tiles have room to their
+  // right, so they place fine on the default.)
+  { el: '[data-tour="feat-message"]', title: 'Message candidates', description: 'Chat with candidates in real time inside Thrive — ask a question or arrange a call.', side: 'top', align: 'start' },
   { el: '[data-tour="feat-email"]', title: 'Email candidates', description: 'Branded emails go out automatically at each stage — customise the wording to sound like you.' },
   { el: '[data-tour="feat-jobs"]', title: 'Browse other jobs', description: 'See what other venues are hiring for and how they pitch their roles.' },
   { el: '[data-tour="feat-team"]', title: 'Invite your team', description: 'Add colleagues with the right permissions so hiring is a team effort.' },
@@ -109,6 +118,16 @@ export default function EmployerTour({ isEmpty }: { isEmpty: boolean }) {
         prevBtnText: 'Back',
         doneBtnText: 'Done',
         steps,
+        // driver.js computes the popover position WHILE the smooth scroll is
+        // still animating, so a step that scrolls a fair distance (or a tile at
+        // the very bottom of the page) can anchor to the target's mid-scroll
+        // position — landing off to one side. Once the scroll has settled,
+        // refresh() re-runs the positioning against the element's final rect.
+        // refresh() re-renders in place: no re-scroll, no re-animation, and it
+        // does NOT re-fire onHighlighted, so this can't loop.
+        onHighlighted: (_el, _step, opts) => {
+          setTimeout(() => { try { opts.driver.refresh() } catch { /* step moved on */ } }, 400)
+        },
         // Fires on finish AND on skip/close — mark done either way (no re-nag)
         // and hide the examples so the dashboard is clean again.
         onDestroyed: () => { persistCompleted(); hideExamples() },
