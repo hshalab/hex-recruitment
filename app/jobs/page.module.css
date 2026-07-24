@@ -1,3 +1,11 @@
+/* SHARED COLUMN WIDTH — 1320px, widened from 1200px for the 3-up layout (3
+   cards ~412px wide, less side whitespace on wide monitors). The grid AND the
+   controls above it (filter strip, filter panel, active chips, prefs banner)
+   all use this SAME value so the cards and controls line up. A CSS variable
+   would be cleaner, but this project's CSS-modules config rejects the :root
+   selector needed to define one, so the value is repeated — keep all five
+   `max-width` values below in sync if you change it. */
+
 /* ═══ Search Section (dark banner) ═════════════════════════════ */
 .searchSection { background: var(--dark-gray); padding: 0.8rem 0 0.7rem; }
 .searchInner { max-width: 980px; margin: 0 auto; padding: 0 1.5rem; }
@@ -23,7 +31,7 @@
    :has matches solely when expanded) — the compact pill bar stays sticky when
    collapsed, and the strip + open panel scroll normally with the page. */
 .filterStrip:has(.filterPanel) { position: static; }
-.filterStripInner { max-width: 1200px; margin: 0 auto; padding: 0.5rem 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.filterStripInner { max-width: 1320px; margin: 0 auto; padding: 0.5rem 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
 .filterStripLeft { display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .filterStripLeft::-webkit-scrollbar { display: none; }
 .filterStripRight { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
@@ -39,13 +47,13 @@
 
 /* Filter Panels (sectors + more filters) */
 .filterPanel { background: #f9fafb; border-bottom: 1px solid #e5e7eb; padding: 1rem 0; }
-.filterPanelInner { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.filterPanelInner { max-width: 1320px; margin: 0 auto; padding: 0 1.5rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .filterGroup { width: 100%; margin-bottom: 0.5rem; }
 .filterGroupTitle { font-size: 0.78rem; font-weight: 600; color: #374151; margin: 0 0 0.35rem; }
 .filterGroupOptions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 
 /* Active filter chips (removable, beneath the one-line strip) */
-.activeChips { max-width: 1200px; margin: 0 auto; padding: 0.4rem 1.5rem 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.activeChips { max-width: 1320px; margin: 0 auto; padding: 0.4rem 1.5rem 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .activeChip { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.74rem; font-weight: 500; color: #0A1628; background: #eef2f6; border: 1px solid #dbe2ea; border-radius: 999px; padding: 0.2rem 0.6rem; cursor: pointer; }
 .activeChip:hover { background: #e2e8f0; }
 .activeChip span { font-size: 0.7rem; opacity: 0.55; }
@@ -81,13 +89,13 @@
 @media (prefers-reduced-motion: reduce) { .filterBackdrop, .filterOverlay { animation: none; } }
 
 /* ═══ Personalisation Banner ══════════════════════════════════ */
-.prefsBanner { max-width: 1200px; margin: 0.75rem auto 0; padding: 0.5rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.82rem; color: #6b7280; }
+.prefsBanner { max-width: 1320px; margin: 0.75rem auto 0; padding: 0.5rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.82rem; color: #6b7280; }
 .prefsBannerLink { color: #2563eb; text-decoration: none; font-weight: 500; }
 .prefsBannerLink:hover { text-decoration: underline; }
 .prefsBannerClose { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 0.9rem; padding: 0; margin-left: auto; }
 
 /* ═══ Job Card Grid ═══════════════════════════════════════════ */
-.jobsContainer { max-width: 1200px; margin: 0 auto; padding: 1.25rem 1.5rem 1.5rem; }
+.jobsContainer { max-width: 1320px; margin: 0 auto; padding: 1.25rem 1.5rem 1.5rem; }
 /* Column count is a mobile-first min-width ladder: 1 col by default, 2 from
    tablet (>=768), 3 on wide desktop (>=1280). The container stays capped at
    1200px, so 3-up cards are ~372px wide. Gaps are still tuned by the
