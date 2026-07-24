@@ -88,8 +88,14 @@
 
 /* ═══ Job Card Grid ═══════════════════════════════════════════ */
 .jobsContainer { max-width: 1200px; margin: 0 auto; padding: 1.25rem 1.5rem 1.5rem; }
-.jobsGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.1rem; }
-@media (max-width: 720px) { .jobsGrid { grid-template-columns: 1fr; gap: 0.9rem; } }
+/* Column count is a mobile-first min-width ladder: 1 col by default, 2 from
+   tablet (>=768), 3 on wide desktop (>=1280). The container stays capped at
+   1200px, so 3-up cards are ~372px wide. Gaps are still tuned by the
+   max-width rules further down (Responsive section) — those set gap/overflow
+   only, never columns, so the two don't fight. */
+.jobsGrid { display: grid; grid-template-columns: 1fr; gap: 1.1rem; }
+@media (min-width: 768px)  { .jobsGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1280px) { .jobsGrid { grid-template-columns: repeat(3, 1fr); } }
 
 /* ── Image-led job card ──────────────────────────────────────── */
 .jobCard {
@@ -267,7 +273,10 @@
   .searchBar { flex-direction: column; }
   .searchInner { padding: 0 1rem; }
   .jobsContainer { padding: 1rem 1rem 3rem; }
-  .jobsGrid { grid-template-columns: 1fr; gap: 0.75rem; max-width: 100%; overflow: hidden; }
+  /* Columns come from the min-width ladder above (1 col here anyway). Keep the
+     mobile overflow safety and gap only — don't set columns, to avoid fighting
+     the ladder. */
+  .jobsGrid { gap: 0.75rem; max-width: 100%; overflow: hidden; }
   .jobCard { max-width: 100%; overflow: hidden; padding: 0.875rem 1rem; }
   .filterStripInner { padding: 0.5rem 1rem; }
   .filterStripRight { display: none; }
