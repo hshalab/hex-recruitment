@@ -112,6 +112,13 @@
 /* Main content */
 .main {
   flex: 1;
+  /* Flex items default to min-width:auto, which refuses to shrink below the
+     content's intrinsic width. A wide admin table then forces .main past the
+     viewport and its right edge (Actions column, Export button) gets clipped by
+     AdminTable's .wrapper{overflow:hidden}. min-width:0 lets .main shrink so the
+     table's own .tableContainer{overflow-x:auto} engages and the table scrolls
+     within the content area instead. Fixes every admin table (shared component). */
+  min-width: 0;
   margin-left: 240px;
   background: #f1f5f9;
   min-height: 100vh;
