@@ -112,13 +112,24 @@ export interface ExampleOffer {
   status: string
 }
 
+// A near-future start date for the example offer, formatted like "Mon 14 Jul".
+// Computed at READ time (getter below) rather than hardcoded, so the demo never
+// shows a date in the past. Picks the coming Monday (1–7 days out).
+function nextMondayLabel(): string {
+  const d = new Date()
+  const daysUntilMon = ((8 - d.getDay()) % 7) || 7
+  d.setDate(d.getDate() + daysUntilMon)
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
 export const exampleOffer: ExampleOffer = {
   isExample: true,
   id: 'example-offer-1',
   candidate: 'Nadia Khan',
   role: 'Bartender',
   salary: '£13/hr',
-  start: 'Mon 14 Jul',
+  // Getter so it recomputes on each render — never a stale past date.
+  get start() { return nextMondayLabel() },
   status: 'Awaiting signature',
 }
 

@@ -42,8 +42,15 @@ const STEP_DEFS: StepDef[] = [
   { el: '[data-tour="example-pipeline"]', title: 'Track your pipeline', description: 'Every applicant moves through your stages — from Applied to Offered — with a simple drag.' },
   { el: '[data-tour="example-ai"]', title: 'AI interview questions', description: 'Thrive reads each CV and application, compares them to your job and must-haves, and suggests tailored questions to ask.' },
   { el: '[data-tour="example-interview"]', title: 'Schedule interviews', description: 'Propose times or let candidates pick a slot — with a friendly reminder before the interview.' },
-  { el: '[data-tour="feat-calendar"]', title: 'Sync your calendar', description: 'Connect Google Calendar so booked interviews land straight in your diary — no double-booking.' },
+  // Ordered to match the on-page (DOM) layout: the example cards run top-to-
+  // bottom (…interview → offer), THEN the "More you can do" feature tiles as a
+  // group. Interleaving a tile (which sits lower on the page) between two cards
+  // forced driver.js to scroll down-then-back-up, and with smoothScroll the
+  // popover anchored to the target's pre-scroll position — overlapping the card
+  // or pointing at the wrong one. Keeping the sequence in DOM order means the
+  // tour only ever scrolls forward, so every popover anchors correctly.
   { el: '[data-tour="example-offer"]', title: 'Make an offer', description: 'Send a branded offer letter and the candidate signs it online, right here on Thrive.' },
+  { el: '[data-tour="feat-calendar"]', title: 'Sync your calendar', description: 'Connect Google Calendar so booked interviews land straight in your diary — no double-booking.' },
   { el: '[data-tour="feat-analytics"]', title: 'See your analytics', description: 'Views, applications and conversion for every job — so you can see what\'s working and adjust.' },
   { el: '[data-tour="feat-boost"]', title: 'Boost a listing', description: 'Need more applicants fast? Boost a job to rank higher in search with a Featured badge.' },
   { el: '[data-tour="feat-candidates"]', title: 'Search candidates', description: 'Don\'t wait to be found — browse candidates and reach out to the ones you like.' },
