@@ -7,7 +7,8 @@ import { supabase } from '@/lib/supabase'
 import { ukCities } from '@/lib/ukCities'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
 import { useSavedJobs } from '@/lib/useSavedJobs'
-import { Bot } from 'lucide-react'
+import { isAdmin } from '@/lib/admin-client'
+import { Bot, ShieldCheck } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const NotificationBell = dynamic(() => import('./NotificationBell'), { ssr: false })
 import ThriveMark from './ThriveMark'
@@ -356,6 +357,19 @@ export default function Header() {
             <Bot className={styles.dropdownIcon} size={20} color="#FFE500" strokeWidth={2} />
             Ask Thrive
           </button>
+          {isAdmin(user?.email) && (
+            <>
+              <div className={styles.dropdownDivider} />
+              <Link
+                href="/admin"
+                className={styles.dropdownItem}
+                onClick={(e) => { e.preventDefault(); setShowProfileMenu(false); router.push('/admin') }}
+              >
+                <ShieldCheck className={styles.dropdownIcon} size={20} color="#FFE500" strokeWidth={2} />
+                Admin
+              </Link>
+            </>
+          )}
           <div className={styles.dropdownDivider} />
           <button
             className={styles.dropdownItemLogout}
