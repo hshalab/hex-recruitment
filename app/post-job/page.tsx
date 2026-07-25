@@ -623,8 +623,18 @@ function PostJobContent() {
               },
               body: JSON.stringify({ jobId: newJob.id }),
             })
+            // Geocode the new job's location for travel-radius filtering
+            // (non-blocking; null coords are fine and never hide the job).
+            await fetch('/api/geocode', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ target: 'job', jobId: newJob.id }),
+            })
           } catch (err) {
-            console.error('[PostJob] Alert matching failed (non-blocking):', err)
+            console.error('[PostJob] Alert matching / geocode failed (non-blocking):', err)
           }
         })()
       }

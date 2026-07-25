@@ -8,8 +8,12 @@
 -- basis — see lib/recommendations.ts).
 
 alter table public.jobs
-  add column if not exists latitude  double precision,
-  add column if not exists longitude double precision;
+  add column if not exists latitude      double precision,
+  add column if not exists longitude     double precision,
+  add column if not exists geo_precision text;  -- 'exact' | 'approximate' | null
+
+comment on column public.jobs.geo_precision is
+  'How the job coords were derived: exact (full postcode) or approximate (outcode/town centroid). NULL coords = un-geocodable (county/region/bare-London) and are never hidden by the radius filter.';
 
 alter table public.candidate_profiles
   add column if not exists latitude           double precision,

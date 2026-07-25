@@ -30,6 +30,40 @@ const FULL_POSTCODE = /\b(GIR ?0AA|[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2})\b/i
 // Outward code only, e.g. "SW10", "EC1A", "OX1".
 const OUTCODE_ONLY = /^[A-Z]{1,2}\d[A-Z\d]?$/i
 
+// County / region / nation names (and bare "London") are AREAS, not points —
+// too big to pin to a trustworthy coordinate. We deliberately refuse to geocode
+// them so they stay NULL and are always shown (never filtered by the radius),
+// rather than landing on a misleading centroid or, worse, a same-named settlement
+// (e.g. "Northumberland" → a London suburb called Northumberland Heath, ~250mi
+// wrong). "London" is here because a bare "London" job spans ~30mi of Greater
+// London; London jobs that carry an outcode (E14, SW7, …) resolve via the outcode
+// path BEFORE this guard, so they keep their coords.
+const AREA_ONLY = new Set<string>([
+  // English ceremonial counties
+  'bedfordshire', 'berkshire', 'buckinghamshire', 'cambridgeshire', 'cheshire',
+  'cornwall', 'cumbria', 'derbyshire', 'devon', 'dorset', 'durham', 'county durham',
+  'east riding of yorkshire', 'east sussex', 'essex', 'gloucestershire',
+  'greater london', 'greater manchester', 'hampshire', 'herefordshire',
+  'hertfordshire', 'isle of wight', 'kent', 'lancashire', 'leicestershire',
+  'lincolnshire', 'merseyside', 'norfolk', 'north yorkshire', 'northamptonshire',
+  'northumberland', 'nottinghamshire', 'oxfordshire', 'rutland', 'shropshire',
+  'somerset', 'south yorkshire', 'staffordshire', 'suffolk', 'surrey',
+  'tyne and wear', 'warwickshire', 'west midlands', 'west sussex',
+  'west yorkshire', 'wiltshire', 'worcestershire',
+  // Welsh / Scottish counties & areas
+  'anglesey', 'ceredigion', 'gwynedd', 'monmouthshire', 'pembrokeshire',
+  'powys', 'aberdeenshire', 'argyll', 'ayrshire', 'fife', 'highlands',
+  'highland', 'loch ness', 'perthshire', 'scottish borders', 'the borders',
+  // Regions / nations / vague
+  'north east', 'north west', 'yorkshire', 'yorkshire and the humber',
+  'east midlands', 'the midlands', 'midlands', 'east of england', 'east anglia',
+  'south east', 'south west', 'home counties', 'england', 'scotland', 'wales',
+  'north wales', 'south wales', 'mid wales', 'west wales', 'northern ireland',
+  'united kingdom', 'great britain', 'uk', 'gb', 'nationwide', 'remote',
+  // Bare Greater-London (outcode-tagged London jobs resolve earlier and keep coords)
+  'london',
+])
+
 async function getJson(url: string): Promise<any | null> {
   // Small retry for transient 429/5xx; returns null on hard failure so callers
   // fall through the resolution chain rather than throwing.
@@ -179,8 +213,14 @@ export async function geocodeJobLocation(job: {
     }
   }
 
-  if (job.location && job.location.trim()) {
-    const r = await geocodePlace(job.location)
+  // Guard: refuse to place county/region/nation names (and bare "London") — they
+  // are areas, not points. Leaving them NULL keeps them in the always-shown
+  // bucket instead of mis-geocoding to a centroid or a same-named settlement.
+  const loc = (job.location || '').trim()
+  if (loc && AREA_ONLY.has(loc.toLowerCase())) return null
+
+  if (loc) {
+    const r = await geocodePlace(loc)
     if (r) return r
   }
 
