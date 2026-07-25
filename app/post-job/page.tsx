@@ -623,18 +623,19 @@ function PostJobContent() {
               },
               body: JSON.stringify({ jobId: newJob.id }),
             })
-            // Geocode the new job's location for travel-radius filtering
-            // (non-blocking; null coords are fine and never hide the job).
-            await fetch('/api/geocode', {
+            // Resolve the new job's location to a canonical area (region +
+            // county) for preferred-areas matching (non-blocking; a null area is
+            // fine and never hides the job).
+            await fetch('/api/jobs/resolve-area', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify({ target: 'job', jobId: newJob.id }),
+              body: JSON.stringify({ jobId: newJob.id }),
             })
           } catch (err) {
-            console.error('[PostJob] Alert matching / geocode failed (non-blocking):', err)
+            console.error('[PostJob] Alert matching / area resolve failed (non-blocking):', err)
           }
         })()
       }
