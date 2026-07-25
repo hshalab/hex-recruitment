@@ -5,80 +5,74 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
-import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
+import { DEV_MODE, getMockUserType } from '@/lib/mockAuth'
+import {
+  type Role, type NotificationPrefs, type NotificationFrequency,
+  defaultsFor, normalisePrefs,
+} from '@/lib/notificationPrefs'
 import styles from './page.module.css'
 
-interface NotificationPreferences {
-  // Email notifications
-  email_job_matches: boolean
-  email_application_updates: boolean
-  email_new_messages: boolean
-  email_job_posting_updates: boolean
-  email_weekly_digest: boolean
-  email_marketing: boolean
+// UI config — maps each canonical nested key to its label/description, per role.
+// The toggle rows are rendered from these, so the UI can never drift from the
+// stored schema (lib/notificationPrefs.ts) again.
+type Row = { key: string; name: string; desc: string }
 
-  // SMS notifications
-  sms_new_messages: boolean
-  sms_application_updates: boolean
-  sms_job_alerts: boolean
+const CANDIDATE_EMAIL: Row[] = [
+  { key: 'job_matches', name: 'New job matches', desc: 'Get emailed when new jobs match your profile' },
+  { key: 'job_digest', name: 'Job digest', desc: 'Receive a periodic summary of new job opportunities' },
+  { key: 'application_updates', name: 'Application updates', desc: 'Get notified when your application status changes' },
+  { key: 'new_messages', name: 'New messages', desc: 'Get notified when you receive a new message' },
+  { key: 'marketing', name: 'Marketing emails', desc: 'Receive tips, news, and product updates' },
+]
+const CANDIDATE_SMS: Row[] = [
+  { key: 'new_messages', name: 'New messages', desc: 'Get a text when you receive an important message' },
+  { key: 'job_alerts', name: 'Job alerts', desc: 'Get a text for urgent job opportunities' },
+]
+const EMPLOYER_EMAIL: Row[] = [
+  { key: 'new_applications', name: 'New applications', desc: 'Get notified when candidates apply to your jobs' },
+  { key: 'application_updates', name: 'Application updates', desc: 'Get notified when an application status changes' },
+  { key: 'new_messages', name: 'New messages', desc: 'Get notified when you receive a new message' },
+  { key: 'job_views', name: 'Job views & saves', desc: 'Get notified when your jobs are viewed or saved' },
+  { key: 'marketing', name: 'Marketing emails', desc: 'Receive tips, news, and product updates' },
+]
+const EMPLOYER_SMS: Row[] = [
+  { key: 'new_messages', name: 'New messages', desc: 'Get a text when you receive an important message' },
+  { key: 'urgent_applications', name: 'Urgent applications', desc: 'Get a text for urgent applications' },
+]
 
-  // Frequency
-  notification_frequency: 'instant' | 'daily' | 'weekly'
-}
-
-const defaultPreferences: NotificationPreferences = {
-  email_job_matches: true,
-  email_application_updates: true,
-  email_new_messages: true,
-  email_job_posting_updates: true,
-  email_weekly_digest: false,
-  email_marketing: false,
-  sms_new_messages: false,
-  sms_application_updates: false,
-  sms_job_alerts: false,
-  notification_frequency: 'instant',
+function sectionsFor(role: Role) {
+  return role === 'employer'
+    ? { email: EMPLOYER_EMAIL, sms: EMPLOYER_SMS }
+    : { email: CANDIDATE_EMAIL, sms: CANDIDATE_SMS }
 }
 
 export default function NotificationsSettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [userType, setUserType] = useState<'employer' | 'employee' | null>(null)
+  const [userType, setUserType] = useState<Role | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences)
+  const [preferences, setPreferences] = useState<NotificationPrefs>(defaultsFor('employee'))
 
   useEffect(() => {
     const loadPreferences = async () => {
       if (DEV_MODE) {
         const type = getMockUserType()
-        if (!type) {
-          router.push('/login')
-          return
-        }
-        setUserType(type)
-
-        // Load from localStorage
-        const savedPrefs = localStorage.getItem('notificationPreferences')
-        if (savedPrefs) {
-          setPreferences({ ...defaultPreferences, ...JSON.parse(savedPrefs) })
-        }
-
+        if (!type) { router.push('/login'); return }
+        const role: Role = type === 'employer' ? 'employer' : 'employee'
+        setUserType(role)
+        const saved = localStorage.getItem('notificationPreferences')
+        setPreferences(normalisePrefs(role, saved ? JSON.parse(saved) : null))
         setLoading(false)
         return
       }
 
-      // Non-dev mode: Check Supabase session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) { router.push('/login'); return }
 
-      if (sessionError || !session) {
-        router.push('/login')
-        return
-      }
+      const role: Role = session.user.user_metadata?.role === 'employer' ? 'employer' : 'employee'
+      setUserType(role)
 
-      const role = session.user.user_metadata?.role
-      setUserType(role === 'employer' ? 'employer' : 'employee')
-
-      // Fetch preferences from appropriate table
       try {
         const tableName = role === 'employer' ? 'employer_profiles' : 'candidate_profiles'
         const { data: profile, error } = await supabase
@@ -86,52 +80,45 @@ export default function NotificationsSettingsPage() {
           .select('notification_preferences')
           .eq('user_id', session.user.id)
           .maybeSingle()
-
-        if (!error && profile?.notification_preferences) {
-          setPreferences({ ...defaultPreferences, ...profile.notification_preferences })
-        }
+        // normalisePrefs reads the user's REAL nested opt-ins and ignores any
+        // legacy flat keys, so the toggles reflect what's actually saved.
+        if (!error) setPreferences(normalisePrefs(role, profile?.notification_preferences))
       } catch (err) {
         console.error('Error loading preferences:', err)
       }
-
       setLoading(false)
     }
-
     loadPreferences()
   }, [router])
 
-  const handleToggle = (key: keyof NotificationPreferences) => {
+  const toggle = (channel: 'email' | 'sms', key: string) => {
     setPreferences(prev => ({
       ...prev,
-      [key]: !prev[key]
+      [channel]: { ...(prev as any)[channel], [key]: !(prev as any)[channel][key] },
     }))
     setMessage(null)
   }
 
-  const handleFrequencyChange = (frequency: 'instant' | 'daily' | 'weekly') => {
-    setPreferences(prev => ({
-      ...prev,
-      notification_frequency: frequency
-    }))
+  const setFrequency = (frequency: NotificationFrequency) => {
+    setPreferences(prev => ({ ...prev, frequency }))
     setMessage(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!userType) return
     setSaving(true)
     setMessage(null)
-
     try {
+      // Always persist a clean canonical object — never stray keys.
+      const toSave = normalisePrefs(userType, preferences)
       if (DEV_MODE) {
-        localStorage.setItem('notificationPreferences', JSON.stringify(preferences))
+        localStorage.setItem('notificationPreferences', JSON.stringify(toSave))
         setMessage({ type: 'success', text: 'Notification preferences saved!' })
       } else {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) throw new Error('No session found')
-
         const tableName = userType === 'employer' ? 'employer_profiles' : 'candidate_profiles'
-
-        // Check if profile exists
         const { data: existingProfile } = await supabase
           .from(tableName)
           .select('id')
@@ -142,27 +129,21 @@ export default function NotificationsSettingsPage() {
         if (existingProfile) {
           const result = await supabase
             .from(tableName)
-            .update({
-              notification_preferences: preferences,
-              updated_at: new Date().toISOString()
-            })
+            .update({ notification_preferences: toSave, updated_at: new Date().toISOString() })
             .eq('user_id', session.user.id)
           error = result.error
         } else {
-          // Create minimal profile with preferences
           const result = await supabase
             .from(tableName)
             .insert({
               user_id: session.user.id,
-              notification_preferences: preferences,
+              notification_preferences: toSave,
               ...(userType === 'employer'
                 ? { company_name: session.user.user_metadata?.company_name || 'My Company' }
-                : { full_name: session.user.user_metadata?.full_name || 'User' }
-              )
+                : { full_name: session.user.user_metadata?.full_name || 'User' }),
             })
           error = result.error
         }
-
         if (error) throw error
         setMessage({ type: 'success', text: 'Notification preferences saved!' })
       }
@@ -174,20 +155,19 @@ export default function NotificationsSettingsPage() {
     }
   }
 
-  const Toggle = ({ checked, onChange, disabled = false }: { checked: boolean; onChange: () => void; disabled?: boolean }) => (
+  const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      className={`${styles.toggle} ${checked ? styles.toggleOn : styles.toggleOff} ${disabled ? styles.toggleDisabled : ''}`}
+      className={`${styles.toggle} ${checked ? styles.toggleOn : styles.toggleOff}`}
       onClick={onChange}
-      disabled={disabled}
     >
       <span className={styles.toggleThumb} />
     </button>
   )
 
-  if (loading) {
+  if (loading || !userType) {
     return (
       <main>
         <Header />
@@ -201,6 +181,10 @@ export default function NotificationsSettingsPage() {
     )
   }
 
+  const sections = sectionsFor(userType)
+  const email = (preferences as any).email as Record<string, boolean>
+  const sms = (preferences as any).sms as Record<string, boolean>
+
   return (
     <main>
       <Header />
@@ -209,7 +193,6 @@ export default function NotificationsSettingsPage() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
           Back to Settings
         </button>
-        {/* Breadcrumb Navigation */}
         <nav className={styles.breadcrumb} aria-label="Breadcrumb">
           <Link href="/settings" className={styles.breadcrumbLink}>Settings</Link>
           <span className={styles.breadcrumbSeparator}>›</span>
@@ -242,93 +225,16 @@ export default function NotificationsSettingsPage() {
               <span className={styles.sectionIcon}>📧</span>
               <h2 className={styles.sectionTitle}>Email Notifications</h2>
             </div>
-
             <div className={styles.settingsList}>
-              {userType === 'employee' && (
-                <div className={styles.settingItem}>
+              {sections.email.map(row => (
+                <div className={styles.settingItem} key={`email-${row.key}`}>
                   <div className={styles.settingInfo}>
-                    <span className={styles.settingName}>New job matches</span>
-                    <span className={styles.settingDescription}>
-                      Get notified when new jobs match your profile
-                    </span>
+                    <span className={styles.settingName}>{row.name}</span>
+                    <span className={styles.settingDescription}>{row.desc}</span>
                   </div>
-                  <Toggle
-                    checked={preferences.email_job_matches}
-                    onChange={() => handleToggle('email_job_matches')}
-                  />
+                  <Toggle checked={!!email[row.key]} onChange={() => toggle('email', row.key)} />
                 </div>
-              )}
-
-              <div className={styles.settingItem}>
-                <div className={styles.settingInfo}>
-                  <span className={styles.settingName}>Application updates</span>
-                  <span className={styles.settingDescription}>
-                    {userType === 'employer'
-                      ? 'Get notified when candidates apply to your jobs'
-                      : 'Get notified when your application status changes'}
-                  </span>
-                </div>
-                <Toggle
-                  checked={preferences.email_application_updates}
-                  onChange={() => handleToggle('email_application_updates')}
-                />
-              </div>
-
-              <div className={styles.settingItem}>
-                <div className={styles.settingInfo}>
-                  <span className={styles.settingName}>New messages</span>
-                  <span className={styles.settingDescription}>
-                    Get notified when you receive a new message
-                  </span>
-                </div>
-                <Toggle
-                  checked={preferences.email_new_messages}
-                  onChange={() => handleToggle('email_new_messages')}
-                />
-              </div>
-
-              {userType === 'employer' && (
-                <div className={styles.settingItem}>
-                  <div className={styles.settingInfo}>
-                    <span className={styles.settingName}>Job posting updates</span>
-                    <span className={styles.settingDescription}>
-                      Get notified when your jobs are viewed or saved
-                    </span>
-                  </div>
-                  <Toggle
-                    checked={preferences.email_job_posting_updates}
-                    onChange={() => handleToggle('email_job_posting_updates')}
-                  />
-                </div>
-              )}
-
-              {userType === 'employee' && (
-                <div className={styles.settingItem}>
-                  <div className={styles.settingInfo}>
-                    <span className={styles.settingName}>Weekly job digest</span>
-                    <span className={styles.settingDescription}>
-                      Receive a weekly summary of new job opportunities
-                    </span>
-                  </div>
-                  <Toggle
-                    checked={preferences.email_weekly_digest}
-                    onChange={() => handleToggle('email_weekly_digest')}
-                  />
-                </div>
-              )}
-
-              <div className={styles.settingItem}>
-                <div className={styles.settingInfo}>
-                  <span className={styles.settingName}>Marketing emails</span>
-                  <span className={styles.settingDescription}>
-                    Receive tips, news, and product updates
-                  </span>
-                </div>
-                <Toggle
-                  checked={preferences.email_marketing}
-                  onChange={() => handleToggle('email_marketing')}
-                />
-              </div>
+              ))}
             </div>
           </div>
 
@@ -338,145 +244,57 @@ export default function NotificationsSettingsPage() {
               <span className={styles.sectionIcon}>📱</span>
               <h2 className={styles.sectionTitle}>SMS Notifications</h2>
             </div>
-            <p className={styles.sectionDescription}>
-              Standard messaging rates may apply
-            </p>
-
+            <p className={styles.sectionDescription}>Standard messaging rates may apply</p>
             <div className={styles.settingsList}>
-              <div className={styles.settingItem}>
-                <div className={styles.settingInfo}>
-                  <span className={styles.settingName}>New messages</span>
-                  <span className={styles.settingDescription}>
-                    Get a text when you receive an important message
-                  </span>
-                </div>
-                <Toggle
-                  checked={preferences.sms_new_messages}
-                  onChange={() => handleToggle('sms_new_messages')}
-                />
-              </div>
-
-              <div className={styles.settingItem}>
-                <div className={styles.settingInfo}>
-                  <span className={styles.settingName}>Application updates</span>
-                  <span className={styles.settingDescription}>
-                    {userType === 'employer'
-                      ? 'Get a text when you receive a new application'
-                      : 'Get a text when your application status changes'}
-                  </span>
-                </div>
-                <Toggle
-                  checked={preferences.sms_application_updates}
-                  onChange={() => handleToggle('sms_application_updates')}
-                />
-              </div>
-
-              {userType === 'employee' && (
-                <div className={styles.settingItem}>
+              {sections.sms.map(row => (
+                <div className={styles.settingItem} key={`sms-${row.key}`}>
                   <div className={styles.settingInfo}>
-                    <span className={styles.settingName}>Job alerts</span>
-                    <span className={styles.settingDescription}>
-                      Get a text for urgent job opportunities
-                    </span>
+                    <span className={styles.settingName}>{row.name}</span>
+                    <span className={styles.settingDescription}>{row.desc}</span>
                   </div>
-                  <Toggle
-                    checked={preferences.sms_job_alerts}
-                    onChange={() => handleToggle('sms_job_alerts')}
-                  />
+                  <Toggle checked={!!sms[row.key]} onChange={() => toggle('sms', row.key)} />
                 </div>
-              )}
+              ))}
             </div>
           </div>
 
-          {/* Notification Frequency */}
+          {/* Email Frequency */}
           <div className={styles.section}>
             <div className={styles.sectionHeader}>
               <span className={styles.sectionIcon}>⏰</span>
               <h2 className={styles.sectionTitle}>Email Frequency</h2>
             </div>
-            <p className={styles.sectionDescription}>
-              Choose how often you want to receive email notifications
-            </p>
-
+            <p className={styles.sectionDescription}>Choose how often you want to receive email notifications</p>
             <div className={styles.frequencyOptions}>
-              <label className={styles.frequencyOption}>
-                <input
-                  type="radio"
-                  id="frequency-instant"
-                  name="frequency"
-                  value="instant"
-                  checked={preferences.notification_frequency === 'instant'}
-                  onChange={() => handleFrequencyChange('instant')}
-                  className={styles.radioInput}
-                />
-                <div className={styles.frequencyContent}>
-                  <span className={styles.frequencyName}>Instant</span>
-                  <span className={styles.frequencyDescription}>
-                    Receive notifications as they happen
-                  </span>
-                </div>
-                <span className={`${styles.radioIndicator} ${preferences.notification_frequency === 'instant' ? styles.radioChecked : ''}`} />
-              </label>
-
-              <label className={styles.frequencyOption}>
-                <input
-                  type="radio"
-                  id="frequency-daily"
-                  name="frequency"
-                  value="daily"
-                  checked={preferences.notification_frequency === 'daily'}
-                  onChange={() => handleFrequencyChange('daily')}
-                  className={styles.radioInput}
-                />
-                <div className={styles.frequencyContent}>
-                  <span className={styles.frequencyName}>Daily digest</span>
-                  <span className={styles.frequencyDescription}>
-                    Receive a daily summary at 9am
-                  </span>
-                </div>
-                <span className={`${styles.radioIndicator} ${preferences.notification_frequency === 'daily' ? styles.radioChecked : ''}`} />
-              </label>
-
-              <label className={styles.frequencyOption}>
-                <input
-                  type="radio"
-                  id="frequency-weekly"
-                  name="frequency"
-                  value="weekly"
-                  checked={preferences.notification_frequency === 'weekly'}
-                  onChange={() => handleFrequencyChange('weekly')}
-                  className={styles.radioInput}
-                />
-                <div className={styles.frequencyContent}>
-                  <span className={styles.frequencyName}>Weekly digest</span>
-                  <span className={styles.frequencyDescription}>
-                    Receive a weekly summary every Monday
-                  </span>
-                </div>
-                <span className={`${styles.radioIndicator} ${preferences.notification_frequency === 'weekly' ? styles.radioChecked : ''}`} />
-              </label>
+              {([
+                { value: 'instant', name: 'Instant', desc: 'Receive notifications as they happen' },
+                { value: 'daily', name: 'Daily digest', desc: 'Receive a daily summary at 9am' },
+                { value: 'weekly', name: 'Weekly digest', desc: 'Receive a weekly summary every Monday' },
+              ] as { value: NotificationFrequency; name: string; desc: string }[]).map(opt => (
+                <label className={styles.frequencyOption} key={opt.value}>
+                  <input
+                    type="radio"
+                    id={`frequency-${opt.value}`}
+                    name="frequency"
+                    value={opt.value}
+                    checked={preferences.frequency === opt.value}
+                    onChange={() => setFrequency(opt.value)}
+                    className={styles.radioInput}
+                  />
+                  <div className={styles.frequencyContent}>
+                    <span className={styles.frequencyName}>{opt.name}</span>
+                    <span className={styles.frequencyDescription}>{opt.desc}</span>
+                  </div>
+                  <span className={`${styles.radioIndicator} ${preferences.frequency === opt.value ? styles.radioChecked : ''}`} />
+                </label>
+              ))}
             </div>
           </div>
 
-          {/* Form Actions */}
           <div className={styles.actions}>
-            <Link href="/settings" className={styles.cancelBtn}>
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              className={styles.saveBtn}
-              disabled={saving}
-              aria-busy={saving}
-            >
-              {saving ? (
-                <>
-                  <span className={styles.savingSpinner}></span>
-                  Saving...
-                </>
-              ) : (
-                'Save Preferences'
-              )}
+            <Link href="/settings" className={styles.cancelBtn}>Cancel</Link>
+            <button type="submit" className={styles.saveBtn} disabled={saving} aria-busy={saving}>
+              {saving ? (<><span className={styles.savingSpinner}></span>Saving...</>) : 'Save Preferences'}
             </button>
           </div>
         </form>
