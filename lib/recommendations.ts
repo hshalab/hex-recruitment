@@ -1,10 +1,17 @@
 import { Job } from './mockJobs'
 import { Candidate } from './mockCandidates'
+import { parsePreferredAreas, jobMatchesPreferredAreas } from './areas'
 
 export interface RecommendedJob extends Job {
   matchPercentage: number
   matchReasons: string[]
 }
+
+// Points added when a job sits explicitly inside one of the candidate's chosen
+// areas. Small on purpose: area is a filter first (see AREA FILTER below), and
+// this only breaks ties between an in-area job and a job whose location we
+// couldn't resolve (those are shown to everyone and earn no boost).
+const AREA_MATCH_BONUS = 10
 
 interface JobView {
   job_id: string
@@ -31,21 +38,56 @@ export function scoreAndRankJobs(
     salaryPeriod: candidate.salaryPeriod ?? '(not set)',
     location:    candidate.location      || '(empty)',
     preferredLocations:       candidate.preferredLocations       || '(empty)',
+    preferredAreas:          candidate.preferredAreas?.length
+                               ? candidate.preferredAreas
+                               : '(none — no area filter)',
     preferredJobTypes:        candidate.preferredJobTypes        || [],
     workLocationPreferences:  candidate.workLocationPreferences  || [],
     workHistoryTitles: (candidate.workHistory || []).map(w => w.title).filter(Boolean),
   })
 
   // Filter out jobs the candidate already applied to
-  const eligibleJobs = jobs.filter(j => !appliedJobIds.has(j.id))
+  const appliedFiltered = jobs.filter(j => !appliedJobIds.has(j.id))
+
+  // ── AREA FILTER (Phase 2, preferred areas) ────────────────────
+  // Applied as a filter rather than folded into the score, because "I won't
+  // travel there" is a hard no, not a weak signal. Three guarantees:
+  //   • no preferred areas set  → nothing is filtered (the feature is opt-in)
+  //   • job with no resolved area → shown to everyone, never hidden
+  //   • picking a region covers all its counties, and picking a county still
+  //     surfaces region-only jobs in that region
+  const prefs = parsePreferredAreas(candidate.preferredAreas)
+  const eligibleJobs = prefs.isEmpty
+    ? appliedFiltered
+    : appliedFiltered.filter(j => jobMatchesPreferredAreas(j, prefs))
+
+  if (!prefs.isEmpty) {
+    console.log('[recommendations] area filter:', {
+      regions: Array.from(prefs.regions),
+      counties: Array.from(prefs.counties),
+      before: appliedFiltered.length,
+      after: eligibleJobs.length,
+      unresolvedShown: eligibleJobs.filter(j => !j.areaRegion && !j.areaCounty).length,
+    })
+  }
 
   const scored = eligibleJobs.map(job => {
     const { score, reasons, breakdown } = calculateMatchScore(job, candidate, viewedJobs, jobs)
+
+    // Rank an explicit area match above a job we couldn't place. Stated in
+    // full rather than inferred from "it survived the filter", so it stays
+    // correct if the filter above ever changes.
+    const inPickedArea =
+      !prefs.isEmpty &&
+      !!(job.areaRegion || job.areaCounty) &&
+      jobMatchesPreferredAreas(job, prefs)
+    const areaBonus = inPickedArea ? AREA_MATCH_BONUS : 0
+
     return {
       ...job,
-      matchPercentage: Math.min(Math.round(score), 99),
-      matchReasons: reasons,
-      _breakdown: breakdown,
+      matchPercentage: Math.min(Math.round(score + areaBonus), 99),
+      matchReasons: inPickedArea ? [...reasons, 'In your preferred area'] : reasons,
+      _breakdown: { ...breakdown, area: areaBonus },
     }
   })
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { resolveJobArea } from '@/lib/areas'
+import { resolveAndStoreJobArea } from '@/lib/jobAreaSync'
 
 // Resolve a job's text location to a canonical area (region + county) and store
 // it, for preferred-areas matching (Phase 2). Called on post and by the backfill.
@@ -33,19 +33,18 @@ export async function POST(request: NextRequest) {
 
     const { data: job, error: jobErr } = await admin
       .from('jobs')
-      .select('id, employer_id, location, area')
+      .select('id, employer_id')
       .eq('id', jobId)
       .single()
     if (jobErr || !job) return NextResponse.json({ error: 'Job not found' }, { status: 404 })
     if (!isCron && job.employer_id !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const area = await resolveJobArea(job)
-    await admin
-      .from('jobs')
-      .update({ area_region: area.region, area_county: area.county })
-      .eq('id', jobId)
+    const result = await resolveAndStoreJobArea(admin, jobId)
+    if (!result.ok && result.reason === 'job-not-found') {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+    }
 
-    return NextResponse.json({ region: area.region, county: area.county, method: area.method })
+    return NextResponse.json({ region: result.region, county: result.county, method: result.method })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

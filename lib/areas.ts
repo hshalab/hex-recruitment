@@ -109,6 +109,15 @@ export function countyName(countyId: string): string | null {
 export function regionName(regionId: string): string | null {
   return REGION_BY_ID.get(regionId as RegionId)?.name ?? null
 }
+export function countiesOfRegion(regionId: string): { id: string; name: string }[] {
+  return COUNTIES.filter(c => c.region === regionId).map(({ id, name }) => ({ id, name }))
+}
+export function isRegionId(id: string): boolean {
+  return REGION_BY_ID.has(id as RegionId)
+}
+export function isCountyId(id: string): boolean {
+  return COUNTY_BY_ID.has(id)
+}
 
 // Region-label aliases people/data use.
 const REGION_ALIASES: Record<string, RegionId> = {
@@ -251,4 +260,240 @@ export async function resolveJobArea(job: { location?: string | null; area?: str
   }
 
   return { region: null, county: null, method: 'unresolved', matched: lc || area }
+}
+
+// ─── Candidate-side area search (town type-ahead) ───────────────────
+//
+// Deliberately NOT the same as resolveJobArea. A job posts one specific place
+// and we take the exact-name match; a candidate types a fragment and means the
+// well-known place. "Henley" exact-matches nine hamlets before it reaches
+// Henley-on-Thames, so an exact-first rule silently lands them in Shropshire.
+// Here we rank real towns and cities above hamlets and return the shortlist, so
+// an ambiguous query (there are three notable Henleys) is a choice the
+// candidate makes rather than a guess we make badly on their behalf.
+
+const PLACE_TYPE_RANK: Record<string, number> = {
+  City: 0,
+  Town: 1,
+  'Other Settlement': 2,
+  'Suburban Area': 3,
+  Village: 4,
+  Hamlet: 5,
+}
+
+export interface AreaSuggestion {
+  /** Token to store in preferred_areas. */
+  token: string
+  /** Area label, e.g. "Surrey · South East". */
+  label: string
+  /** The place that produced it, e.g. "Henley-on-Thames". Null for a direct
+   *  region/county name match. */
+  place: string | null
+  region: RegionId
+  county: string | null
+  source: 'region-name' | 'county-name' | 'place' | 'outcode'
+}
+
+/**
+ * Suggest canonical areas for a candidate's free-text query — a town they know
+ * ("Guildford", "Henley"), a county, a region, or an outcode. Best match first.
+ * The candidate never needs to know which county a town sits in.
+ */
+export async function searchAreaSuggestions(
+  query: string,
+  limit = 6,
+  /** Optional tie-break: how many active jobs does this area have? Between two
+   *  places of equal significance and equal name-exactness ("Henley-in-Arden",
+   *  1 job, vs "Henley-on-Thames", 28), the busier one is far likelier to be
+   *  the one a jobseeker means. Injected so this module stays free of database
+   *  concerns. */
+  areaJobCount?: (token: string) => number
+): Promise<AreaSuggestion[]> {
+  const q = (query || '').trim()
+  if (q.length < 2) return []
+
+  const out: AreaSuggestion[] = []
+  const seen = new Set<string>()
+
+  const push = (s: AreaSuggestion) => {
+    if (seen.has(s.token)) return
+    seen.add(s.token)
+    out.push(s)
+  }
+
+  const areaLabel = (region: RegionId, county: string | null) =>
+    county ? `${countyName(county)} · ${regionName(region)}` : (regionName(region) || region)
+
+  // 1. The query is itself a region or county name — that's the strongest signal.
+  const asRegion = normaliseRegion(q)
+  if (asRegion) {
+    push({
+      token: regionToken(asRegion), label: areaLabel(asRegion, null),
+      place: null, region: asRegion, county: null, source: 'region-name',
+    })
+  }
+  const asCounty = normaliseCounty(q)
+  if (asCounty) {
+    const region = regionOfCounty(asCounty)!
+    push({
+      token: countyToken(asCounty), label: areaLabel(region, asCounty),
+      place: null, region, county: asCounty, source: 'county-name',
+    })
+  }
+
+  // 2. Place search, ranked so towns and cities beat hamlets.
+  const data = await getJson(`${BASE}/places?q=${encodeURIComponent(q)}&limit=100`)
+  const places: any[] = data?.result || []
+  const lc = q.toLowerCase()
+
+  const ranked = places
+    .map(p => {
+      const name = p.name_1 || ''
+      const county = normaliseCounty(p.county_unitary)
+      const region = normaliseRegion(p.region) || (county ? regionOfCounty(county) : null)
+      const token = county ? countyToken(county) : region ? regionToken(region) : ''
+      return {
+        name,
+        county,
+        region,
+        typeRank: PLACE_TYPE_RANK[p.local_type] ?? 6,
+        exact: name.toLowerCase() === lc ? 0 : 1,
+        // Only ever consulted after place type and name-exactness, so an exact
+        // match in a quiet county still beats a partial one in a busy county.
+        jobCount: areaJobCount && token ? areaJobCount(token) : 0,
+        length: name.length,
+      }
+    })
+    .filter(p => !!p.region)
+    .sort((a, b) =>
+      a.typeRank - b.typeRank ||
+      a.exact - b.exact ||
+      b.jobCount - a.jobCount ||
+      a.length - b.length ||
+      a.name.localeCompare(b.name)
+    )
+
+  for (const p of ranked) {
+    if (out.length >= limit) break
+    const region = p.region as RegionId
+    push({
+      token: p.county ? countyToken(p.county) : regionToken(region),
+      label: areaLabel(region, p.county),
+      place: p.name,
+      region,
+      county: p.county,
+      source: 'place',
+    })
+  }
+
+  // 3. Outcode, for anyone who thinks in postcodes.
+  if (out.length === 0 && OUTCODE_ONLY.test(q)) {
+    const oc = await resolveOutcode(q)
+    if (oc?.region) {
+      push({
+        token: oc.county ? countyToken(oc.county) : regionToken(oc.region),
+        label: areaLabel(oc.region, oc.county),
+        place: q.toUpperCase(),
+        region: oc.region,
+        county: oc.county,
+        source: 'outcode',
+      })
+    }
+  }
+
+  return out.slice(0, limit)
+}
+
+// ─── Candidate preferred areas ──────────────────────────────────────
+//
+// Stored in candidate_profiles.preferred_areas as prefixed tokens —
+// 'region:south-east' / 'county:surrey' — so a region id can never be confused
+// with a county id. Bare ids are also accepted on read, so anything written by
+// hand (or by an older client) still matches.
+
+export function regionToken(regionId: string): string { return `region:${regionId}` }
+export function countyToken(countyId: string): string { return `county:${countyId}` }
+
+export interface PreferredAreas {
+  regions: Set<string>
+  counties: Set<string>
+  /** True when the candidate has expressed no preference — everything shows. */
+  isEmpty: boolean
+}
+
+/**
+ * Parse preferred_areas tokens into region/county sets. Tolerant by design:
+ * accepts 'region:x' / 'county:y' and bare ids, ignores anything unrecognised
+ * (an unknown token must never silently hide every job).
+ */
+export function parsePreferredAreas(tokens: string[] | null | undefined): PreferredAreas {
+  const regions = new Set<string>()
+  const counties = new Set<string>()
+
+  for (const raw of tokens || []) {
+    const t = (raw || '').trim().toLowerCase()
+    if (!t) continue
+    if (t.startsWith('region:')) {
+      const id = t.slice(7)
+      if (isRegionId(id)) regions.add(id)
+    } else if (t.startsWith('county:')) {
+      const id = t.slice(7)
+      if (isCountyId(id)) counties.add(id)
+    } else if (isRegionId(t)) {
+      regions.add(t)
+    } else if (isCountyId(t)) {
+      counties.add(t)
+    }
+  }
+
+  return { regions, counties, isEmpty: regions.size === 0 && counties.size === 0 }
+}
+
+/**
+ * Does a job's resolved area satisfy a candidate's preferred areas?
+ * Deliberately generous — the cost of hiding a job the candidate would have
+ * wanted is far higher than showing one slightly outside their picks.
+ *
+ *  - no preferences set          → everything matches (the feature is opt-in)
+ *  - job has no resolved area    → matches EVERYONE, never hidden
+ *  - job county ∈ picked counties            → match
+ *  - job region ∈ picked regions             → match (a region includes all its
+ *                                              counties, since every job's
+ *                                              area_region is its county's region)
+ *  - region-only job in a picked county's    → match (picking Surrey shows
+ *    region                                    region-only "South East" jobs)
+ */
+export function jobMatchesPreferredAreas(
+  job: { areaRegion?: string | null; areaCounty?: string | null },
+  prefs: PreferredAreas
+): boolean {
+  if (prefs.isEmpty) return true
+
+  const county = job.areaCounty || null
+  const region = job.areaRegion || (county ? regionOfCounty(county) : null)
+
+  // Un-resolvable location — never hidden by an area filter.
+  if (!region && !county) return true
+
+  if (county && prefs.counties.has(county)) return true
+  if (region && prefs.regions.has(region)) return true
+
+  // Picked a county, job only knows its region: show it if the region is the
+  // one that county sits in.
+  if (!county && region) {
+    for (const c of Array.from(prefs.counties)) {
+      if (regionOfCounty(c) === region) return true
+    }
+  }
+
+  return false
+}
+
+/** Human-readable summary of stored tokens, for chips and email copy. */
+export function describePreferredAreas(tokens: string[] | null | undefined): string[] {
+  const { regions, counties } = parsePreferredAreas(tokens)
+  return [
+    ...Array.from(regions).map(r => regionName(r) || r),
+    ...Array.from(counties).map(c => countyName(c) || c),
+  ]
 }
