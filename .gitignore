@@ -33,6 +33,11 @@ tsconfig.tsbuildinfo
 .claude/credentials.local.json
 .claude/scheduled_tasks.lock
 
+# Claude Code's own config. It normally lives in the home directory, but it
+# holds MCP server definitions which can carry access tokens — so if one is
+# ever created inside the repo it must not be committable.
+.claude.json
+
 # Goldenkeys import scratch (scraped data cache)
 scripts/.goldenkeys/
 
