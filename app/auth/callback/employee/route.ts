@@ -78,8 +78,24 @@ export async function GET(request: NextRequest) {
     user_metadata: { ...user.user_metadata, role: 'employee', full_name: displayName },
   })
 
+  // This upsert runs on EVERY OAuth login, not just the first, so anything
+  // defaulted here has to be insert-only — otherwise a candidate who hid
+  // themselves would be made visible again the next time they signed in.
+  const { data: existingProfile } = await admin
+    .from('candidate_profiles')
+    .select('user_id, job_title, job_sector, preferred_areas')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
   await admin.from('candidate_profiles').upsert(
-    { user_id: user.id, full_name: displayName, email: user.email || '' },
+    {
+      user_id: user.id,
+      full_name: displayName,
+      email: user.email || '',
+      // New candidates are discoverable by default, and are told so on the
+      // welcome screen they land on next.
+      ...(existingProfile ? {} : { is_discoverable: true }),
+    },
     { onConflict: 'user_id', ignoreDuplicates: false }
   )
 
@@ -88,6 +104,20 @@ export async function GET(request: NextRequest) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ to: user.email, type: 'candidate_welcome', data: { candidateName: displayName } }),
   }).catch(() => {})
+
+  // Brand-new candidate → the three-field welcome step, then straight into
+  // jobs. This is the whole point of the change: OAuth used to create an empty
+  // profile row and drop the candidate on a dashboard with nothing to act on.
+  // Returning candidates never see it (they exit at the existingRole check
+  // above), and an apply-gate return path is carried through so finishing the
+  // step still lands them on the job they came for.
+  if (!existingProfile) {
+    const welcome = `${origin}/welcome${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`
+    const welcomeResponse = NextResponse.redirect(welcome)
+    // Carry the session cookies set during the code exchange.
+    for (const cookie of response.cookies.getAll()) welcomeResponse.cookies.set(cookie)
+    return welcomeResponse
+  }
 
   return response
 }

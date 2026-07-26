@@ -18,10 +18,26 @@ export async function POST(req: NextRequest) {
 
     const tableName = table === 'employer_profiles' ? 'employer_profiles' : 'candidate_profiles'
 
+    // New candidates are discoverable by default — being invisible to every
+    // employer was the silent default that left 22 of 25 candidates unfindable.
+    // Set ONLY on first insert: this is an upsert, and forcing it on every call
+    // would flip a candidate who deliberately hid themselves back to visible.
+    // The candidate is told plainly at signup and can switch it off with the
+    // "Hide my profile" toggle.
+    let defaults: Record<string, unknown> = {}
+    if (tableName === 'candidate_profiles') {
+      const { data: existing } = await supabaseAdmin
+        .from('candidate_profiles')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (!existing) defaults = { is_discoverable: true }
+    }
+
     const { data, error } = await supabaseAdmin
       .from(tableName)
       .upsert(
-        { user_id: userId, ...profile },
+        { user_id: userId, ...defaults, ...profile },
         { onConflict: 'user_id' }
       )
       .select('user_id')
