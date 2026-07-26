@@ -1,0 +1,158 @@
+/* Three-field welcome step. Mobile-first single column — this is the first
+   screen a new candidate sees, and most arrive on a phone. */
+
+.page {
+  min-height: 100vh;
+  background: var(--light-gray);
+}
+
+.wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.title {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--black);
+  margin: 0;
+  line-height: 1.15;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--text-gray);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--white);
+  border: 2px solid var(--border-gray);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  color: var(--black);
+  font-size: 0.95rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-gray);
+  border-radius: 8px;
+  /* 16px so iOS doesn't zoom the page when the field is focused. */
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--black);
+  background: var(--white);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-yellow);
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--text-gray);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.notice {
+  background: color-mix(in srgb, var(--primary-yellow) 16%, transparent);
+  border: 2px solid color-mix(in srgb, var(--primary-yellow) 55%, transparent);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.noticeTitle {
+  font-size: 0.9rem;
+  color: var(--black);
+}
+
+.noticeBody {
+  font-size: 0.85rem;
+  color: var(--black);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.error {
+  font-size: 0.875rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.primary {
+  width: 100%;
+  min-height: 50px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary-yellow);
+  color: var(--black);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .primary:hover:not(:disabled) { background: var(--hover-yellow); }
+}
+
+.primary:disabled { opacity: 0.6; cursor: default; }
+
+.skip {
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  background: none;
+  color: var(--text-gray);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .skip:hover { color: var(--black); }
+}
+
+.skip:disabled { opacity: 0.6; cursor: default; }

@@ -547,6 +547,15 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     setError('')
 
     switch (step) {
+      // These gates used to be the real reason profiles stayed empty. Saving
+      // ran validateStep on whatever step you were on, so a candidate who
+      // followed "Add your photo" from the dashboard was told to supply a date
+      // of birth and nationality first; "Add desired work location" demanded a
+      // full home address and phone number. Every add-field prompt led to a
+      // wall of unrelated personal questions, and most people stopped there.
+      //
+      // Only genuinely required things block now. Everything else is optional
+      // and can be filled whenever the candidate sees the point of it.
       case 1: // Personal Details
         if (!formData.firstName.trim()) {
           setError('First name is required')
@@ -556,34 +565,12 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           setError('Last name is required')
           return false
         }
-        if (!formData.dateOfBirth) {
-          setError('Date of birth is required')
-          return false
-        }
-        if (!formData.nationality.trim()) {
-          setError('Nationality is required')
-          return false
-        }
         return true
 
       case 2: // Contact Info
-        if (!formData.addressLine1.trim()) {
-          setError('Address line 1 is required')
-          return false
-        }
-        if (!formData.city.trim()) {
-          setError('City is required')
-          return false
-        }
-        if (!formData.postcode.trim()) {
-          setError('Postcode is required')
-          return false
-        }
-        if (!formData.phone.trim()) {
-          setError('Phone number is required')
-          return false
-        }
-        if (!/^(\+44|0)[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
+        // Address, phone and postcode are all optional. Phone is still
+        // validated when present — a wrong number is worse than none.
+        if (formData.phone.trim() && !/^(\+44|0)[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
           setError('Please enter a valid UK phone number')
           return false
         }
@@ -598,12 +585,9 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         return true
 
       case 3: // Professional
+        // Salary is no longer a gate: it stopped people saving a job title.
         if (!formData.currentPosition.trim()) {
           setError('Current/desired position is required')
-          return false
-        }
-        if (!formData.salaryMin.trim() && !formData.salaryMax.trim()) {
-          setError('Desired salary range is required')
           return false
         }
         return true
@@ -1177,7 +1161,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
 
       <div className={styles.formRow}>
         <div className={styles.formGroup}>
-          <label className={styles.label}>Date of Birth *</label>
+          <label className={styles.label}>Date of Birth</label>
           <div className={styles.dobRow}>
             <select
               aria-label="Day"
@@ -1226,7 +1210,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           </div>
         </div>
         <div className={styles.formGroup}>
-          <label className={styles.label} htmlFor="nationality">Nationality *</label>
+          <label className={styles.label} htmlFor="nationality">Nationality</label>
           <div className={styles.nationalityDropdown} ref={nationalityRef}>
             <button
               type="button"
@@ -1406,7 +1390,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       {addressFound && (
         <>
           <div className={styles.formGroup}>
-            <label className={styles.label} htmlFor="addressLine1">Address Line 1 *</label>
+            <label className={styles.label} htmlFor="addressLine1">Address Line 1</label>
             <input
               type="text"
               id="addressLine1"
@@ -1435,7 +1419,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label className={styles.label} htmlFor="city">City *</label>
+              <label className={styles.label} htmlFor="city">City</label>
               <input
                 type="text"
                 id="city"
@@ -1462,7 +1446,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           </div>
 
           <div className={styles.formGroup}>
-            <label className={styles.label} htmlFor="postcode">Postcode *</label>
+            <label className={styles.label} htmlFor="postcode">Postcode</label>
             <input
               type="text"
               id="postcode"
@@ -1503,7 +1487,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
 
       <div className={styles.formRow}>
         <div className={styles.formGroup}>
-          <label className={styles.label} htmlFor="phone">UK Phone Number *</label>
+          <label className={styles.label} htmlFor="phone">UK Phone Number</label>
           <input
             type="tel"
             id="phone"
@@ -1726,7 +1710,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       <p className={styles.stepDescription}>Tell us about your experience and goals</p>
 
       <div className={styles.formGroup}>
-        <label className={styles.label} htmlFor="jobSector">Job Sector *</label>
+        <label className={styles.label} htmlFor="jobSector">Job Sector</label>
         <select
           id="jobSector"
           name="jobSector"
@@ -1755,7 +1739,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       </div>
 
       <div className={styles.formGroup}>
-        <label className={styles.label} htmlFor="yearsExperience">Years of Experience *</label>
+        <label className={styles.label} htmlFor="yearsExperience">Years of Experience</label>
         <select
           id="yearsExperience"
           name="yearsExperience"
@@ -1772,7 +1756,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
 
       <div id="job-preferences">
       <div className={styles.formGroup}>
-        <label className={styles.label}>Preferred Job Types *</label>
+        <label className={styles.label}>Preferred Job Types</label>
         <div className={styles.skillsGrid}>
           {['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'].map(type => (
             <button
@@ -1795,7 +1779,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       </div>
 
       <div className={styles.formGroup}>
-        <label className={styles.label}>Work Location Preference *</label>
+        <label className={styles.label}>Work Location Preference</label>
         <div className={styles.skillsGrid}>
           {['On-site', 'Remote', 'Hybrid'].map(loc => (
             <button
@@ -1817,7 +1801,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       </div>
 
       <div className={styles.formGroup}>
-        <label className={styles.label}>Salary Range *</label>
+        <label className={styles.label}>Salary Range</label>
         <div className={styles.formRow}>
           <div className={styles.salaryInput}>
             <span className={styles.currencyPrefix}>£</span>
@@ -1864,7 +1848,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       </div>
 
       <div className={styles.formGroup}>
-        <label className={styles.label} htmlFor="availability">Availability *</label>
+        <label className={styles.label} htmlFor="availability">Availability</label>
         <select
           id="availability"
           name="availability"

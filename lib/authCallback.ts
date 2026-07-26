@@ -289,7 +289,17 @@ export async function handleAuthCallback(
     const { error: profileErr } = await admin
       .from('candidate_profiles')
       .upsert(
-        { user_id: user.id, full_name: displayName, email: user.email || '', ...attrCols },
+        {
+          user_id: user.id,
+          full_name: displayName,
+          email: user.email || '',
+          // New candidates are discoverable by default — they're told so on the
+          // welcome screen and can switch it off with "Hide my profile".
+          // ignoreDuplicates below means this only ever lands on insert, so a
+          // candidate who hid themselves is never flipped back on.
+          is_discoverable: true,
+          ...attrCols,
+        },
         { onConflict: 'user_id', ignoreDuplicates: true }
       )
     if (profileErr) console.error('[auth/callback] candidate_profiles defensive upsert failed', profileErr)
@@ -307,6 +317,13 @@ export async function handleAuthCallback(
   const safeNext = safeInternalPath(nextParam)
   if (existingRole && safeNext) {
     destination = safeNext
+  } else if (role === 'employee') {
+    // A candidate reaching this route is confirming their email — a one-time,
+    // single-use link — so this is their first way in. Send them to the
+    // three-field welcome step rather than a dashboard with an empty profile,
+    // which is what left most candidates at name-only. Any apply-gate return
+    // path is carried through so they still land on the job afterwards.
+    destination = safeNext ? `/welcome?next=${encodeURIComponent(safeNext)}` : '/welcome'
   } else if (role === 'employer') {
     if (FREE_FOUNDING_MODE) {
       const { data: profile } = await admin
