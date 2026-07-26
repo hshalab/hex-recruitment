@@ -68,7 +68,6 @@ export default function ProfilePage() {
             email: profile.email || '',
             jobSector: profile.jobSector || '',
             currentPosition: profile.currentPosition || '',
-            aboutMe: profile.aboutMe || '',
             personalBio: profile.personalBio || '',
             professionalSkills: profile.professionalSkills || [],
             headline: profile.headline || '',
@@ -164,7 +163,6 @@ export default function ProfilePage() {
           // from the edit payload entirely. Show the true stored value.
           jobSector: profile.job_sector || '',
           currentPosition: profile.job_title || '',
-          aboutMe: profile.bio || '',
           personalBio: profile.personal_bio || '',
           professionalSkills: profile.skills || [],
           headline: profile.headline || '',
@@ -338,11 +336,12 @@ export default function ProfilePage() {
         <div className={styles.profileGrid}>
           {/* Left Column */}
           <div className={styles.mainCol}>
-            {/* About */}
-            {profileData?.aboutMe && (
+            {/* About — reads personalBio, the one box that actually exists in
+                the editor. Was reading aboutMe, which had no input anywhere. */}
+            {profileData?.personalBio && (
               <div className={styles.section}>
                 <h2 className={styles.sectionTitle}>About</h2>
-                <p className={styles.sectionText}>{profileData.aboutMe}</p>
+                <p className={styles.sectionText}>{profileData.personalBio}</p>
               </div>
             )}
 

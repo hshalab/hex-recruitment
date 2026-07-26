@@ -275,7 +275,6 @@ interface ProfileFormData {
   jobSector: string
   currentPosition: string
   headline: string
-  aboutMe: string
   personalBio: string
   professionalSkills: string[]
   specialties: string[]
@@ -423,7 +422,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     jobSector: (existingData as any)?.jobSector || '',
     currentPosition: existingData?.currentPosition || '',
     headline: (existingData as any)?.headline || '',
-    aboutMe: (existingData as any)?.aboutMe || '',
     personalBio: (existingData as any)?.personalBio || '',
     professionalSkills: (existingData as any)?.professionalSkills || [],
     specialties: (existingData as any)?.specialties || [],
@@ -730,7 +728,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             phone: formData.phone,
             jobSector: formData.jobSector,
             currentPosition: formData.currentPosition,
-            aboutMe: formData.aboutMe,
             personalBio: formData.personalBio,
             professionalSkills: formData.professionalSkills,
             workExperience: formData.workExperience.filter(exp => exp.company || exp.role),
@@ -847,7 +844,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             job_sector: formData.jobSector || null,
             location: `${formData.city}, ${formData.postcode}`.replace(/^, |, $/g, ''),
             years_experience: Number(formData.yearsExperience) || 0,
-            bio: formData.aboutMe || '',
             personal_bio: formData.personalBio || '',
             skills: formData.professionalSkills || [],
             headline: formData.headline || null,
@@ -936,7 +932,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             phone: formData.phone,
             jobSector: formData.jobSector,
             currentPosition: formData.currentPosition,
-            aboutMe: formData.aboutMe,
             personalBio: formData.personalBio,
             professionalSkills: formData.professionalSkills,
             workExperience: formData.workExperience.filter(exp => exp.company || exp.role),
@@ -1014,7 +1009,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           job_sector: formData.jobSector || null,
           location: `${formData.city}, ${formData.postcode}`.replace(/^, |, $/g, ''),
           years_experience: Number(formData.yearsExperience) || 0,
-          bio: formData.aboutMe || '',
           personal_bio: formData.personalBio || '',
           skills: formData.professionalSkills || [],
           headline: formData.headline || null,

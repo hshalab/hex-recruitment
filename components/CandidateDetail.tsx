@@ -131,10 +131,13 @@ export default function CandidateDetail({
       )}
 
       {/* ── About ────────────────────────────────────── */}
-      {c.bio && (
+      {/* Reads personal_bio — the box candidates actually fill in. This section
+          previously rendered the `bio` column, which had no input anywhere in
+          the UI, so it could never display anything for anyone. */}
+      {c.personalBio && (
         <div className={styles.section}>
           <div className={styles.sectionHead}><User size={18} className={styles.sectionIcon} /><h2 className={styles.sectionTitle}>About</h2></div>
-          <p className={styles.bio}>{c.bio}</p>
+          <p className={styles.bio}>{c.personalBio}</p>
         </div>
       )}
 

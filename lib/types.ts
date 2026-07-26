@@ -205,7 +205,12 @@ export function supabaseProfileToCandidate(row: any): Candidate {
     // as unknown instead of matching on a placeholder.
     location: row.location || [row.city, row.county].filter(Boolean).join(', ') || '',
     yearsExperience: row.years_experience || 0,
-    bio: row.bio || '',
+    // personal_bio is the SINGLE SOURCE for a candidate's written intro — it's
+    // the column the one visible "About Me" box writes. `bio` is kept only as a
+    // read alias so the older surfaces that reference it (candidate search,
+    // employer dashboard) show the same text instead of nothing; the legacy
+    // bio column is still read as a fallback but nothing writes it any more.
+    bio: row.personal_bio || row.bio || '',
     personalBio: row.personal_bio || '',
     skills: row.skills || [],
     specialties: row.specialties || [],

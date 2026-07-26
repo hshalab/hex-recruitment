@@ -122,7 +122,7 @@ const PROFILE_FIELDS: ProfileField[] = [
   { key: 'jobTitle', label: 'Job title', check: c => !!c.jobTitle, link: '/profile?section=job-title', benefit: 'match the right roles' },
   { key: 'experience', label: 'Years of experience', check: c => c.yearsExperience > 0, link: '/profile?section=experience', benefit: 'match your level' },
   { key: 'skills', label: 'Skills (at least 3)', check: c => (c.skills || []).length >= 3, link: '/profile?section=skills', benefit: 'see roles that match' },
-  { key: 'bio', label: 'About me bio', check: c => !!(c.bio || c.personalBio), link: '/profile?section=bio', benefit: 'stand out to employers' },
+  { key: 'bio', label: 'About me bio', check: c => !!c.personalBio, link: '/profile?section=bio', benefit: 'stand out to employers' },
   { key: 'cvUrl', label: 'Upload CV', check: c => !!c.cvUrl, link: '/profile?section=cv', benefit: 'apply in one tap' },
   { key: 'photo', label: 'Profile photo', check: c => !!c.profilePictureUrl, link: '/profile?section=photo', benefit: 'get noticed' },
   { key: 'jobSector', label: 'Job sector', check: c => !!c.jobSector, link: '/profile?section=job-sector', benefit: 'see roles that match' },
