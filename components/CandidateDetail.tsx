@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import SignedImage from '@/components/SignedImage'
 import SignedLink from '@/components/SignedLink'
-import { FaLinkedinIn, FaInstagram, FaFacebookF } from 'react-icons/fa'
+import { FaLinkedinIn } from 'react-icons/fa'
 import {
   MapPin, Clock, Briefcase, GraduationCap, User, Wrench,
   Award, Heart, Globe, MessageSquare, FileDown, Mail, Sliders,
@@ -239,14 +239,15 @@ export default function CandidateDetail({
         </div>
       )}
 
-      {/* ── Social links ──────────────────────────────── */}
-      {v.show_social_links && (c.linkedinUrl || c.instagramUrl || c.facebookUrl) && (
+      {/* ── LinkedIn ──────────────────────────────────── */}
+      {/* LinkedIn only. Facebook/Instagram are personal accounts that tell an
+          employer nothing about someone's work — surfacing them to employers
+          invited judgement on things that aren't the job. */}
+      {v.show_social_links && c.linkedinUrl && (
         <div className={styles.section}>
           <div className={styles.sectionHead}><Globe size={18} className={styles.sectionIcon} /><h2 className={styles.sectionTitle}>Links</h2></div>
           <div className={styles.socialRow}>
-            {c.linkedinUrl && <a href={normalizeUrl(c.linkedinUrl)} target="_blank" rel="noopener noreferrer" className={styles.socialLink} aria-label="LinkedIn"><FaLinkedinIn /></a>}
-            {c.instagramUrl && <a href={normalizeUrl(c.instagramUrl)} target="_blank" rel="noopener noreferrer" className={styles.socialLink} aria-label="Instagram"><FaInstagram /></a>}
-            {c.facebookUrl && <a href={normalizeUrl(c.facebookUrl)} target="_blank" rel="noopener noreferrer" className={styles.socialLink} aria-label="Facebook"><FaFacebookF /></a>}
+            <a href={normalizeUrl(c.linkedinUrl)} target="_blank" rel="noopener noreferrer" className={styles.socialLink} aria-label="LinkedIn"><FaLinkedinIn /></a>
           </div>
         </div>
       )}

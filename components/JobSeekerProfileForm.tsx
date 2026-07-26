@@ -46,12 +46,17 @@ const SECTION_TARGETS: Record<string, { step: number; elementId: string }> = {
   photo: { step: 1, elementId: 'photo-upload' },
   phone: { step: 2, elementId: 'phone' },
   location: { step: 2, elementId: 'addressLine1' },
+  areas: { step: 2, elementId: 'preferred-areas-section' },
   'job-title': { step: 3, elementId: 'currentPosition' },
   experience: { step: 3, elementId: 'yearsExperience' },
   'job-sector': { step: 3, elementId: 'jobSector' },
   skills: { step: 3, elementId: 'skills-section' },
   cv: { step: 3, elementId: 'cv-upload' },
   'job-preferences': { step: 3, elementId: 'job-preferences' },
+}
+
+function isFocusable(el: HTMLElement): boolean {
+  return ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(el.tagName)
 }
 
 // Work experience entry interface
@@ -287,8 +292,6 @@ interface ProfileFormData {
   workLocationPreferences: string[]
   availability: string
   linkedinUrl: string
-  facebookUrl: string
-  instagramUrl: string
   cv: File | null
   cvFileName: string
   education: EducationEntry[]
@@ -338,6 +341,23 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       // Briefly flash the control so it's obvious where the user landed.
       el.classList.add(styles.deepLinkFlash)
       setTimeout(() => el.classList.remove(styles.deepLinkFlash), 1600)
+
+      // Put the cursor IN the field. Scrolling alone left the user looking at
+      // the right area but still having to tap the input; several targets are
+      // section wrappers rather than inputs, so find the first real control
+      // inside them. preventScroll keeps focus from fighting the smooth scroll.
+      const focusable = isFocusable(el)
+        ? el
+        : el.querySelector<HTMLElement>(
+            'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])'
+          )
+      if (focusable) {
+        try {
+          focusable.focus({ preventScroll: true })
+        } catch {
+          focusable.focus()
+        }
+      }
     }, 140)
     return () => clearTimeout(t)
   }, [searchParams])
@@ -420,8 +440,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     workLocationPreferences: (existingData as any)?.workLocationPreferences || [],
     availability: (existingData as any)?.availability || 'Available immediately',
     linkedinUrl: existingData?.linkedinUrl || '',
-    facebookUrl: (existingData as any)?.facebookUrl || '',
-    instagramUrl: existingData?.instagramUrl || '',
     cv: null,
     cvFileName: existingData?.cvFileName || '',
     education: (existingData as any)?.education || [{ institution: '', qualification: '', fieldOfStudy: '', startDate: '', endDate: '', inProgress: false, grade: '' }],
@@ -728,8 +746,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             preferredLocations: formData.preferredLocations,
             availability: formData.availability,
             linkedinUrl: normalizeUrl(formData.linkedinUrl),
-            facebookUrl: normalizeUrl(formData.facebookUrl),
-            instagramUrl: normalizeUrl(formData.instagramUrl),
             cvFileName: formData.cvFileName,
             hasNiNumber: formData.hasNiNumber,
             hasRightToWork: formData.hasRightToWork,
@@ -871,8 +887,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             preferred_job_types: formData.preferredJobTypes || [],
             work_location_preferences: formData.workLocationPreferences || [],
             linkedin_url: normalizeUrl(formData.linkedinUrl) || null,
-            instagram_url: normalizeUrl(formData.instagramUrl) || null,
-            ...(formData.facebookUrl ? { facebook_url: normalizeUrl(formData.facebookUrl) } : {}),
             has_ni_number: formData.hasNiNumber,
             has_right_to_work: formData.hasRightToWork,
             has_p45: formData.hasP45,
@@ -938,8 +952,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             preferredLocations: formData.preferredLocations,
             availability: formData.availability,
             linkedinUrl: normalizeUrl(formData.linkedinUrl),
-            facebookUrl: normalizeUrl(formData.facebookUrl),
-            instagramUrl: normalizeUrl(formData.instagramUrl),
             cvFileName: formData.cvFileName,
             hasNiNumber: formData.hasNiNumber,
             hasRightToWork: formData.hasRightToWork,
@@ -996,6 +1008,10 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         const updateData: any = {
           full_name: `${formData.firstName} ${formData.lastName}`.trim(),
           job_title: formData.currentPosition,
+          // Was missing from this payload while being present in the signup
+          // payload, so a sector chosen after signup silently never persisted
+          // and the dashboard prompted for it forever.
+          job_sector: formData.jobSector || null,
           location: `${formData.city}, ${formData.postcode}`.replace(/^, |, $/g, ''),
           years_experience: Number(formData.yearsExperience) || 0,
           bio: formData.aboutMe || '',
@@ -1031,8 +1047,6 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           preferred_job_types: formData.preferredJobTypes || [],
           work_location_preferences: formData.workLocationPreferences || [],
           linkedin_url: normalizeUrl(formData.linkedinUrl) || null,
-          instagram_url: normalizeUrl(formData.instagramUrl) || null,
-          ...(formData.facebookUrl ? { facebook_url: normalizeUrl(formData.facebookUrl) } : {}),
           cv_file_name: formData.cvFileName || null,
           has_ni_number: formData.hasNiNumber,
           has_right_to_work: formData.hasRightToWork,
@@ -1539,35 +1553,9 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             placeholder="https://linkedin.com/in/yourprofile"
           />
         </div>
-        <div className={styles.formGroup}>
-          <label className={styles.label} htmlFor="facebookUrl">Facebook Profile</label>
-          <input
-            type="text"
-            inputMode="url"
-            id="facebookUrl"
-            name="facebookUrl"
-            value={formData.facebookUrl}
-            onChange={handleInputChange}
-            className={styles.input}
-            placeholder="https://facebook.com/yourprofile"
-          />
-        </div>
-      </div>
-
-      <div className={styles.formRow}>
-        <div className={styles.formGroup}>
-          <label className={styles.label} htmlFor="instagramUrl">Instagram Profile</label>
-          <input
-            type="text"
-            inputMode="url"
-            id="instagramUrl"
-            name="instagramUrl"
-            value={formData.instagramUrl}
-            onChange={handleInputChange}
-            className={styles.input}
-            placeholder="https://instagram.com/yourprofile"
-          />
-        </div>
+        {/* Facebook and Instagram removed — personal accounts that say nothing
+            about someone's work. LinkedIn only, which also pairs with
+            Continue-with-LinkedIn. */}
         <div className={styles.formGroup} />
       </div>
     </div>

@@ -56,6 +56,13 @@
 .dashChip:disabled { cursor: default; }
 .dashChipImg { width: 100%; height: 100%; object-fit: cover; }
 .dashChipInitials { width: 100%; height: 100%; display: grid; place-items: center; font-family: var(--font-serif), Georgia, serif; font-weight: 700; font-size: 28px; color: #0A1628; }
+/* No photo anywhere (not uploaded, not from OAuth): prompt for one rather than
+   showing initials, which read as a finished state and hide the fact that this
+   square is a button at all. */
+.dashChipEmpty { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #0A1628; font-size: 10px; font-weight: 700; line-height: 1; text-align: center; padding: 0 4px; }
+/* Persistent LinkedIn-style affordance — the hover overlay never fires on
+   touch, so without this there is nothing on a phone saying it's editable. */
+.dashChipEdit { position: absolute; right: 3px; bottom: 3px; width: 20px; height: 20px; border-radius: 50%; background: #0A1628; color: #fff; display: grid; place-items: center; box-shadow: 0 0 0 2px #fff; z-index: 2; pointer-events: none; }
 .dashChipOverlay { position: absolute; inset: 0; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: rgba(10,22,40,.55); color: #fff; opacity: 0; transition: opacity .15s ease; }
 .dashChip:hover .dashChipOverlay, .dashChip:focus-visible .dashChipOverlay, .dashChip:disabled .dashChipOverlay { opacity: 1; }
 .dashChipRemove { position: absolute; top: -7px; right: -7px; width: 21px; height: 21px; border-radius: 50%; border: 2px solid #fff; background: #ef4444; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; z-index: 3; }
@@ -81,16 +88,40 @@
 .cardDashboard .availBadge { border-color: #e2e8f0; }
 
 /* Dashboard-only "Add" to-dos — pipeline green (emerald) soft-tint pills. */
-.dashPrompts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 1px; }
-.dashPrompt { font-size: 11px; font-weight: 600; color: #047857; background: color-mix(in srgb, #10b981 12%, transparent); border: 1px dashed color-mix(in srgb, #10b981 45%, transparent); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
-.dashPrompt:hover { background: color-mix(in srgb, #10b981 20%, transparent); border-color: #10b981; color: #065f46; }
+/* Add-field prompts as equal-sized tiles in a grid. Previously thin 3px-tall
+   pills: hard to hit on a phone, and the benefit text was crushed onto the same
+   line as the label. auto-fill gives 2 per row on a narrow card and 3-4 on a
+   wide one without a media query per breakpoint. */
+.dashPrompts { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin-top: 2px; }
+.dashPrompt {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  min-height: 64px; padding: 9px 10px; text-align: left; font-family: inherit;
+  color: #047857; background: color-mix(in srgb, #10b981 10%, transparent);
+  border: 1px dashed color-mix(in srgb, #10b981 45%, transparent);
+  border-radius: 10px; cursor: pointer; transition: background .15s ease, border-color .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: hover) {
+  .dashPrompt:hover { background: color-mix(in srgb, #10b981 20%, transparent); border-color: #10b981; color: #065f46; }
+}
+.dashPrompt:focus-visible { outline: 2px solid #FFE500; outline-offset: 2px; }
+.dashPromptPlus { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: color-mix(in srgb, #10b981 22%, transparent); color: #047857; flex-shrink: 0; }
+.dashPromptLabel { font-size: 12px; font-weight: 700; line-height: 1.2; }
+.dashPromptBenefit { font-size: 10.5px; font-weight: 500; line-height: 1.25; opacity: .72; }
+
+/* Same tile treatment, laid out in a row — used for the role slot so "Job
+   title" matches every other add-field button instead of being a bare heading. */
+.dashPromptInline { flex-direction: row; align-items: center; gap: 8px; min-height: 44px; width: auto; align-self: flex-start; }
+.dashPromptInline .dashPromptBenefit { opacity: .65; }
 
 /* Compact visibility toggle (top-right of the top row). */
 .dashToggleCompact { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 999px; padding: 4px 9px 4px 6px; }
 .dashToggleCompact input { position: absolute; opacity: 0; width: 0; height: 0; }
 .dashToggleTrack { flex-shrink: 0; width: 30px; height: 17px; border-radius: 999px; background: #cbd5e1; position: relative; transition: background .15s ease; }
 .dashToggleThumb { position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; transition: transform .15s ease; }
-.dashToggleCompact input:checked + .dashToggleTrack { background: #22c55e; }
+/* Checked now means "hidden", so it must not read as the green all-good state
+   it used to when checked meant "visible". */
+.dashToggleCompact input:checked + .dashToggleTrack { background: #f59e0b; }
 .dashToggleCompact input:checked + .dashToggleTrack .dashToggleThumb { transform: translateX(13px); }
 .dashToggleCompact input:focus-visible + .dashToggleTrack { outline: 2px solid #FFE500; outline-offset: 2px; }
 
