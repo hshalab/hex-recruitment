@@ -752,7 +752,7 @@ export default function EmployerDashboardPage() {
                           jobTitle: p.job_title || null,
                           sector: p.job_sector || null,
                           skills: p.skills || [],
-                          bio: p.bio || null,
+                          bio: p.personal_bio || p.bio || null,
                           cvUrl: p.cv_url || null,
                         }
                       })

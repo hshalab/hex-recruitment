@@ -9,7 +9,7 @@ import SignedLink from '@/components/SignedLink'
 import JobSeekerProfileForm from '@/components/JobSeekerProfileForm'
 import { supabase } from '@/lib/supabase'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
-import { FaLinkedinIn, FaInstagram, FaFacebookF } from 'react-icons/fa'
+import { FaLinkedinIn } from 'react-icons/fa'
 import styles from './page.module.css'
 
 // Normalize URL to ensure it has https:// prefix
@@ -68,7 +68,6 @@ export default function ProfilePage() {
             email: profile.email || '',
             jobSector: profile.jobSector || '',
             currentPosition: profile.currentPosition || '',
-            aboutMe: profile.aboutMe || '',
             personalBio: profile.personalBio || '',
             professionalSkills: profile.professionalSkills || [],
             headline: profile.headline || '',
@@ -90,8 +89,6 @@ export default function ProfilePage() {
             preferredAreas: profile.preferredAreas || [],
             availability: profile.availability || 'Available immediately',
             linkedinUrl: profile.linkedinUrl || '',
-            instagramUrl: profile.instagramUrl || '',
-            facebookUrl: profile.facebookUrl || '',
             cvFileName: profile.cvFileName || '',
             cvUrl: profile.cvUrl || '',
             hasNiNumber: profile.hasNiNumber || false,
@@ -159,9 +156,13 @@ export default function ProfilePage() {
           postcode: profile.postcode || postcode,
           phone: profile.phone || '',
           email: profile.email || session.user.email || '',
-          jobSector: profile.job_sector || 'hospitality',
+          // No default here. Defaulting to 'hospitality' made the form and the
+          // profile card display a sector the database had never stored, so the
+          // dashboard kept prompting "+ Job sector" for a field that looked
+          // filled in — and saving didn't help, because job_sector was missing
+          // from the edit payload entirely. Show the true stored value.
+          jobSector: profile.job_sector || '',
           currentPosition: profile.job_title || '',
-          aboutMe: profile.bio || '',
           personalBio: profile.personal_bio || '',
           professionalSkills: profile.skills || [],
           headline: profile.headline || '',
@@ -190,8 +191,6 @@ export default function ProfilePage() {
           preferredAreas: profile.preferred_areas || [],
           availability: profile.availability || 'Available immediately',
           linkedinUrl: profile.linkedin_url || '',
-          instagramUrl: profile.instagram_url || '',
-          facebookUrl: profile.facebook_url || '',
           cvFileName: profile.cv_file_name || (profile.cv_url ? 'CV uploaded' : ''),
           cvUrl: profile.cv_url || '',
           hasNiNumber: profile.has_ni_number || false,
@@ -337,11 +336,12 @@ export default function ProfilePage() {
         <div className={styles.profileGrid}>
           {/* Left Column */}
           <div className={styles.mainCol}>
-            {/* About */}
-            {profileData?.aboutMe && (
+            {/* About — reads personalBio, the one box that actually exists in
+                the editor. Was reading aboutMe, which had no input anywhere. */}
+            {profileData?.personalBio && (
               <div className={styles.section}>
                 <h2 className={styles.sectionTitle}>About</h2>
-                <p className={styles.sectionText}>{profileData.aboutMe}</p>
+                <p className={styles.sectionText}>{profileData.personalBio}</p>
               </div>
             )}
 
@@ -511,44 +511,25 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Social Links */}
-            {(profileData?.linkedinUrl || profileData?.instagramUrl || profileData?.facebookUrl) && (
+            {/* LinkedIn only. Facebook and Instagram were removed from the
+                candidate profile — they're personal accounts that tell an
+                employer nothing about someone's work, and inviting them
+                encourages sharing more than a job application needs.
+                LinkedIn stays because it's professional and lines up with
+                Continue-with-LinkedIn. */}
+            {profileData?.linkedinUrl && (
               <div className={styles.sideCard}>
-                <h3 className={styles.sideCardTitle}>Social Links</h3>
+                <h3 className={styles.sideCardTitle}>LinkedIn</h3>
                 <div className={styles.socialLinks}>
-                  {profileData.linkedinUrl && (
-                    <a
-                      href={normalizeUrl(profileData.linkedinUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.socialLink}
-                    >
-                      <span className={`${styles.socialIcon} ${styles.linkedinIcon}`}><FaLinkedinIn /></span>
-                      LinkedIn Profile
-                    </a>
-                  )}
-                  {profileData.facebookUrl && (
-                    <a
-                      href={normalizeUrl(profileData.facebookUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.socialLink}
-                    >
-                      <span className={`${styles.socialIcon} ${styles.facebookIcon}`}><FaFacebookF /></span>
-                      Facebook Profile
-                    </a>
-                  )}
-                  {profileData.instagramUrl && (
-                    <a
-                      href={normalizeUrl(profileData.instagramUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.socialLink}
-                    >
-                      <span className={`${styles.socialIcon} ${styles.instagramIcon}`}><FaInstagram /></span>
-                      Instagram Profile
-                    </a>
-                  )}
+                  <a
+                    href={normalizeUrl(profileData.linkedinUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.socialLink}
+                  >
+                    <span className={`${styles.socialIcon} ${styles.linkedinIcon}`}><FaLinkedinIn /></span>
+                    LinkedIn Profile
+                  </a>
                 </div>
               </div>
             )}

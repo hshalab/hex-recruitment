@@ -3,7 +3,7 @@
 import type { CSSProperties } from 'react'
 import SignedImage from '@/components/SignedImage'
 import SignedLink from '@/components/SignedLink'
-import { FileDown, Camera, X } from 'lucide-react'
+import { FileDown, Camera, X, Plus } from 'lucide-react'
 import { Candidate } from '@/lib/mockCandidates'
 import { fallbackVariant } from '@/lib/jobBanner'
 import styles from './CandidateCard.module.css'
@@ -38,6 +38,9 @@ export default function CandidateCard(props: {
   onOpen?: () => void
   // dashboard
   dashboardPhotoUrl?: string | null
+  /** False when the displayed photo came from OAuth rather than an upload —
+   *  there's nothing of ours to delete, so no remove control is offered. */
+  photoRemovable?: boolean
   photoUploading?: boolean
   onPhotoClick?: () => void
   onPhotoRemove?: () => void
@@ -45,6 +48,10 @@ export default function CandidateCard(props: {
   fieldsComplete?: number
   fieldsTotal?: number
   missingFields?: MissingPrompt[]
+  /** Job title has its own slot in the card (the role heading), so it's kept
+   *  out of the prompt grid and rendered there instead — same button format,
+   *  no duplicate prompt for one field. */
+  onAddJobTitle?: () => void
   isDiscoverable?: boolean
   onToggleDiscoverable?: (next: boolean) => void
 }) {
@@ -182,29 +189,52 @@ export default function CandidateCard(props: {
                 title={props.dashboardPhotoUrl ? 'Change your profile photo' : 'Add a profile photo'}
               >
                 {props.dashboardPhotoUrl ? (
-                  <SignedImage src={props.dashboardPhotoUrl} alt={c.fullName} className={styles.dashChipImg} />
+                  <SignedImage
+                    src={props.dashboardPhotoUrl}
+                    alt={c.fullName}
+                    className={styles.dashChipImg}
+                    // If the photo 404s, prompt rather than silently showing
+                    // initials the candidate can't act on.
+                    fallback={<span className={styles.dashChipEmpty}><Camera size={20} /><span>Add photo</span></span>}
+                  />
                 ) : (
-                  <span className={styles.dashChipInitials}>{initials}</span>
+                  // Deliberately NOT initials: initials look like a finished
+                  // state, so nobody realises a photo is missing or that this
+                  // is the control for adding one.
+                  <span className={styles.dashChipEmpty}>
+                    <Camera size={20} />
+                    <span>Add photo</span>
+                  </span>
                 )}
                 <span className={styles.dashChipOverlay} aria-hidden="true">
                   {props.photoUploading ? <span className={styles.dashSpinner} /> : <Camera size={24} />}
                 </span>
+                {/* Persistent affordance, LinkedIn-style. The hover overlay
+                    above never appears on a touch screen, so on mobile this
+                    badge is the only thing saying "you can change this". */}
+                {!props.photoUploading && (
+                  <span className={styles.dashChipEdit} aria-hidden="true"><Plus size={14} /></span>
+                )}
               </button>
-              {props.dashboardPhotoUrl && !props.photoUploading && (
+              {props.dashboardPhotoUrl && props.photoRemovable && !props.photoUploading && (
                 <button type="button" className={styles.dashChipRemove} onClick={props.onPhotoRemove} aria-label="Remove your profile photo" title="Remove photo"><X size={12} /></button>
               )}
             </span>
             <span className={styles.identityName}>{c.fullName}</span>
           </div>
 
-          <label className={styles.dashToggleCompact} title="When on, employers can find your profile in candidate search and contact you.">
+          {/* Reads as the action it performs. The switch is ON when the profile
+              is hidden, so the label stays true in both positions instead of
+              flipping between two different statements. It hides you from ALL
+              employers, not just recruiters — the copy says so. */}
+          <label className={styles.dashToggleCompact} title="When on, your profile is hidden from every employer — nobody can find you in candidate search or contact you.">
             <input
               type="checkbox"
-              checked={!!props.isDiscoverable}
-              onChange={(e) => props.onToggleDiscoverable?.(e.target.checked)}
+              checked={!props.isDiscoverable}
+              onChange={(e) => props.onToggleDiscoverable?.(!e.target.checked)}
             />
             <span className={styles.dashToggleTrack}><span className={styles.dashToggleThumb} /></span>
-            <span className={styles.dashToggleLabel}>{props.isDiscoverable ? 'Visible to employers' : 'Hidden from employers'}</span>
+            <span className={styles.dashToggleLabel}>Hide my profile</span>
           </label>
         </div>
 
@@ -217,10 +247,23 @@ export default function CandidateCard(props: {
               {showCount && <span className={styles.dashProgressCount}>{props.fieldsComplete} of {props.fieldsTotal} fields</span>}
             </div>
           </div>
+          {/* Tiles in a grid rather than thin inline pills: each is a proper
+              tap target on a phone, all the same size, and the benefit line has
+              room to be read instead of being squeezed onto one line. */}
           {props.missingFields && props.missingFields.length > 0 && (
             <div className={styles.dashPrompts}>
               {props.missingFields.map(f => (
-                <button key={f.key} type="button" className={styles.dashPrompt} onClick={f.onAdd} title={f.benefit ? `Add ${f.label} — ${f.benefit}` : undefined}>+ {f.label}{f.benefit && <span style={{ opacity: 0.6, fontWeight: 400 }}> → {f.benefit}</span>}</button>
+                <button
+                  key={f.key}
+                  type="button"
+                  className={styles.dashPrompt}
+                  onClick={f.onAdd}
+                  title={f.benefit ? `Add ${f.label} — ${f.benefit}` : `Add ${f.label}`}
+                >
+                  <span className={styles.dashPromptPlus} aria-hidden="true"><Plus size={14} /></span>
+                  <span className={styles.dashPromptLabel}>{f.label}</span>
+                  {f.benefit && <span className={styles.dashPromptBenefit}>{f.benefit}</span>}
+                </button>
               ))}
             </div>
           )}
@@ -228,7 +271,22 @@ export default function CandidateCard(props: {
 
         {/* Bottom: employer-style data */}
         <div className={styles.dashBottom}>
-          <h3 className={styles.dashRole}>{c.jobTitle || 'Add your job title'}</h3>
+          {c.jobTitle ? (
+            <h3 className={styles.dashRole}>{c.jobTitle}</h3>
+          ) : props.onAddJobTitle ? (
+            <button
+              type="button"
+              className={`${styles.dashPrompt} ${styles.dashPromptInline}`}
+              onClick={props.onAddJobTitle}
+              title="Add Job title — match the right roles"
+            >
+              <span className={styles.dashPromptPlus} aria-hidden="true"><Plus size={14} /></span>
+              <span className={styles.dashPromptLabel}>Job title</span>
+              <span className={styles.dashPromptBenefit}>match the right roles</span>
+            </button>
+          ) : (
+            <h3 className={styles.dashRole}>Add your job title</h3>
+          )}
           <div className={styles.dashMeta}>
             {c.location && <span>{c.location}</span>}
             {c.location && <span className={styles.dot}>·</span>}

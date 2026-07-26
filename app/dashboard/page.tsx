@@ -122,10 +122,11 @@ const PROFILE_FIELDS: ProfileField[] = [
   { key: 'jobTitle', label: 'Job title', check: c => !!c.jobTitle, link: '/profile?section=job-title', benefit: 'match the right roles' },
   { key: 'experience', label: 'Years of experience', check: c => c.yearsExperience > 0, link: '/profile?section=experience', benefit: 'match your level' },
   { key: 'skills', label: 'Skills (at least 3)', check: c => (c.skills || []).length >= 3, link: '/profile?section=skills', benefit: 'see roles that match' },
-  { key: 'bio', label: 'About me bio', check: c => !!(c.bio || c.personalBio), link: '/profile?section=bio', benefit: 'stand out to employers' },
+  { key: 'bio', label: 'About me bio', check: c => !!c.personalBio, link: '/profile?section=bio', benefit: 'stand out to employers' },
   { key: 'cvUrl', label: 'Upload CV', check: c => !!c.cvUrl, link: '/profile?section=cv', benefit: 'apply in one tap' },
   { key: 'photo', label: 'Profile photo', check: c => !!c.profilePictureUrl, link: '/profile?section=photo', benefit: 'get noticed' },
   { key: 'jobSector', label: 'Job sector', check: c => !!c.jobSector, link: '/profile?section=job-sector', benefit: 'see roles that match' },
+  { key: 'areas', label: 'Desired work location', check: c => (c.preferredAreas || []).length > 0, link: '/profile?section=areas', benefit: 'only see jobs you can get to' },
   { key: 'salary', label: 'Salary expectations', check: c => !!(c.salaryMin || c.salaryMax || c.desiredSalary), link: '/profile?section=job-preferences', benefit: 'filter to roles that pay' },
   { key: 'jobTypes', label: 'Preferred job type', check: c => !!(c.preferredJobTypes && c.preferredJobTypes.length > 0), link: '/profile?section=job-preferences', benefit: 'see roles that fit' },
   { key: 'workStyle', label: 'Work style (remote/hybrid/on-site)', check: c => !!(c.workLocationPreferences && c.workLocationPreferences.length > 0), link: '/profile?section=job-preferences', benefit: 'match remote or on-site' },
@@ -516,16 +517,28 @@ export default function DashboardPage() {
     })
   }
 
-  // Profile completion. The "photo" field tracks the dashboard photo
-  // (dashboard_photo_url) since that's what the candidate sets here.
+  // The photo a candidate signed in with (Google / LinkedIn OAuth) — the same
+  // one already shown in the header avatar. Using it means someone who signed
+  // up with Google is not asked for a photo they've effectively already given,
+  // and never sees bare initials where their face should be.
+  const oauthPhotoUrl: string | null =
+    user?.user_metadata?.profile_photo || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null
+
+  // What the card should actually display: an explicitly uploaded dashboard
+  // photo wins, then the saved profile picture, then the OAuth avatar.
+  const effectivePhotoUrl: string | null =
+    dashboardPhotoUrl || candidate?.profilePictureUrl || oauthPhotoUrl
+
+  // Profile completion. The "photo" field counts ANY of those sources — being
+  // prompted to "add a photo" while your face is on screen is the bug.
   const { completionPct, missingFields } = useMemo(() => {
     const check = (f: typeof PROFILE_FIELDS[number]) =>
-      f.key === 'photo' ? !!dashboardPhotoUrl : (candidate ? f.check(candidate) : false)
+      f.key === 'photo' ? !!effectivePhotoUrl : (candidate ? f.check(candidate) : false)
     if (!candidate) return { completionPct: 0, missingFields: PROFILE_FIELDS }
     const pct = Math.round((PROFILE_FIELDS.filter(check).length / PROFILE_FIELDS.length) * 100)
     const missing = PROFILE_FIELDS.filter(f => !check(f))
     return { completionPct: pct, missingFields: missing }
-  }, [candidate, dashboardPhotoUrl])
+  }, [candidate, effectivePhotoUrl])
 
   // Application counts by status
   const statusCounts = useMemo(() => {
@@ -746,12 +759,20 @@ export default function DashboardPage() {
 
   // Incomplete-field prompts for the dashboard card. Photo opens the inline
   // uploader; everything else deep-links to the right /profile section.
-  const cardMissing = missingFields.map(f => ({
-    key: f.key,
-    label: f.label.replace(/\s*\(.*\)/, ''),
-    benefit: f.benefit,
-    onAdd: f.key === 'photo' ? triggerPhotoUpload : () => router.push(f.link),
-  })).slice(0, 6)
+  // Job title is excluded here because the card renders its own prompt in the
+  // role slot — otherwise one field would be asked for twice in one card.
+  const cardMissing = missingFields
+    .filter(f => f.key !== 'jobTitle')
+    .map(f => ({
+      key: f.key,
+      label: f.label.replace(/\s*\(.*\)/, ''),
+      benefit: f.benefit,
+      onAdd: f.key === 'photo' ? triggerPhotoUpload : () => router.push(f.link),
+    }))
+    .slice(0, 6)
+
+  const jobTitleField = PROFILE_FIELDS.find(f => f.key === 'jobTitle')!
+  const needsJobTitle = missingFields.some(f => f.key === 'jobTitle')
 
   // ═════════════════════════════════════════════════════════
   // RENDER
@@ -779,7 +800,10 @@ export default function DashboardPage() {
               <CandidateCard
                 candidate={candidate}
                 mode="dashboard"
-                dashboardPhotoUrl={dashboardPhotoUrl}
+                dashboardPhotoUrl={effectivePhotoUrl}
+                // Only an uploaded dashboard photo can be removed — there's
+                // nothing of ours to delete when the picture came from Google.
+                photoRemovable={!!dashboardPhotoUrl}
                 photoUploading={photoUploading}
                 onPhotoClick={triggerPhotoUpload}
                 onPhotoRemove={handlePhotoRemove}
@@ -787,6 +811,7 @@ export default function DashboardPage() {
                 fieldsComplete={PROFILE_FIELDS.length - missingFields.length}
                 fieldsTotal={PROFILE_FIELDS.length}
                 missingFields={cardMissing}
+                onAddJobTitle={needsJobTitle ? () => router.push(jobTitleField.link) : undefined}
                 isDiscoverable={isDiscoverable}
                 onToggleDiscoverable={handleToggleDiscoverable}
               />
