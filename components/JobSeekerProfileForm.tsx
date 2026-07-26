@@ -10,6 +10,7 @@ import DatePicker from './DatePicker'
 import PostcodeLookup, { type AddressData } from './PostcodeLookup'
 import PasswordInput from './PasswordInput'
 import LanguageAutocomplete from './LanguageAutocomplete'
+import PreferredAreasPicker from './PreferredAreasPicker'
 import { isValidEmail } from '@/lib/validateEmail'
 import { safeInternalPath } from '@/lib/safeRedirect'
 import { getStoredAttribution, attributionColumns, HEARD_FROM_OPTIONS } from '@/lib/attribution'
@@ -259,6 +260,11 @@ interface ProfileFormData {
 
   // Contact Info extended
   preferredLocations: string
+  /** Canonical area tokens ('region:south-east' / 'county:surrey') driving
+   *  preferred-areas job matching. Persisted to candidate_profiles
+   *  .preferred_areas — on create via /api/profile/create, on edit via the
+   *  dedicated /api/profile/preferred-areas route. */
+  preferredAreas: string[]
 
   // Professional
   jobSector: string
@@ -393,6 +399,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     phone: existingData?.phone || '',
     email: existingData?.email || '',
     preferredLocations: (existingData as any)?.preferredLocations || '',
+    preferredAreas: (existingData as any)?.preferredAreas || [],
     jobSector: (existingData as any)?.jobSector || '',
     currentPosition: existingData?.currentPosition || '',
     headline: (existingData as any)?.headline || '',
@@ -853,6 +860,10 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             county: formData.county || null,
             postcode: formData.postcode || null,
             preferred_locations: formData.preferredLocations || null,
+            // Canonical area tokens for preferred-areas matching. Included in
+            // the initial insert because the profile row doesn't exist yet;
+            // later edits go through /api/profile/preferred-areas.
+            preferred_areas: formData.preferredAreas || [],
             desired_salary: formData.desiredSalary || null,
             salary_min: formData.salaryMin ? Number(formData.salaryMin) : null,
             salary_max: formData.salaryMax ? Number(formData.salaryMax) : null,
@@ -1040,6 +1051,28 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           .eq('user_id', userId)
 
         if (updateError) throw updateError
+
+        // Preferred areas are saved through their own route, not folded into
+        // updateData above: that column decides which jobs the candidate sees
+        // and which digest emails they get, so it has a single owned writer
+        // that validates tokens against the taxonomy.
+        const { data: { session: areaSession } } = await supabase.auth.getSession()
+        if (areaSession?.access_token) {
+          const areaRes = await fetch('/api/profile/preferred-areas', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${areaSession.access_token}`,
+            },
+            body: JSON.stringify({ areas: formData.preferredAreas || [] }),
+          })
+          if (!areaRes.ok) {
+            // The rest of the profile saved; be explicit about what didn't.
+            throw new Error(
+              'Your profile saved, but we couldn’t save your preferred work areas. Please try saving again.'
+            )
+          }
+        }
 
         // Update password if changed
         if (showChangePassword && formData.password) {
@@ -1450,6 +1483,14 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           autoComplete="off"
         />
         <p className={styles.fieldHint}>Where would you like to work? Separate multiple locations with commas.</p>
+      </div>
+
+      <div className={styles.formGroup} id="preferred-areas-section">
+        <label className={styles.label}>Where are you willing to work?</label>
+        <PreferredAreasPicker
+          value={formData.preferredAreas}
+          onChange={areas => setFormData(prev => ({ ...prev, preferredAreas: areas }))}
+        />
       </div>
 
       <div className={styles.formRow}>

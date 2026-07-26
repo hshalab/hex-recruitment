@@ -115,6 +115,8 @@ export function supabaseJobToJob(row: any): Job {
     employmentType: row.employment_type || ['Full-time'],
     location: row.location,
     area: row.area || '',
+    areaRegion: row.area_region ?? null,
+    areaCounty: row.area_county ?? null,
     venue: row.venue || undefined,
     fullLocation: row.full_location || { addressLine1: row.location, city: '', postcode: '' },
     shiftSchedule: row.shift_schedule || '',
@@ -227,6 +229,7 @@ export function supabaseProfileToCandidate(row: any): Candidate {
     preferredJobTypes: row.preferred_job_types || [],
     workLocationPreferences: row.work_location_preferences || [],
     preferredLocations: row.preferred_locations || undefined,
+    preferredAreas: row.preferred_areas || [],
     education: (row.education || []).map((edu: any) => ({
       institution: edu.institution || '',
       qualification: edu.qualification || '',

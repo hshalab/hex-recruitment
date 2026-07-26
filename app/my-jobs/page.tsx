@@ -421,9 +421,31 @@ function MyJobsContent() {
         return
       }
       setPostedJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: newStatus as PostedJob['status'] } : j))
+      if (newStatus === 'active') await ensureJobArea(jobId)
       await refreshJobs()
     } catch (err) {
       console.error('Error updating job status:', err)
+    }
+  }
+
+  // Make sure a job that has just gone live has its canonical area resolved,
+  // so preferred-areas matching can see it. Non-blocking and best-effort: a job
+  // with no area is shown to every candidate rather than hidden, so a failure
+  // here never costs the employer visibility.
+  const ensureJobArea = async (jobId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return
+      await fetch('/api/jobs/resolve-area', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ jobId }),
+      })
+    } catch (err) {
+      console.error('[my-jobs] area resolve failed (non-blocking):', err)
     }
   }
 
@@ -443,6 +465,7 @@ function MyJobsContent() {
         return
       }
 
+      await ensureJobArea(jobId)
       await refreshJobs()
     } catch (err) {
       console.error('Error reactivating job:', err)
@@ -471,7 +494,7 @@ function MyJobsContent() {
 
       // Create a copy with new status, reference, and timestamps
       const { id, created_at, updated_at, posted_at, view_count, application_count, ...jobData } = originalJob
-      const { error } = await supabase
+      const { data: reposted, error } = await supabase
         .from('jobs')
         .insert({
           ...jobData,
@@ -480,6 +503,8 @@ function MyJobsContent() {
           application_count: 0,
           job_reference: `JOB-${Date.now().toString(36).toUpperCase()}`,
         })
+        .select('id')
+        .single()
 
       if (error) {
         console.error('Error reposting job:', error)
@@ -487,6 +512,9 @@ function MyJobsContent() {
         return
       }
 
+      // The copy inherits the original's area, but resolve anyway: if the
+      // original predates preferred-areas its area columns are empty.
+      if (reposted?.id) await ensureJobArea(reposted.id)
       await refreshJobs()
       router.push('/my-jobs')
     } catch (err) {

@@ -22,6 +22,13 @@ export interface Job {
   employmentType: ('Full-time' | 'Part-time' | 'Permanent' | 'Contract' | 'Temporary' | 'Flexible')[]
   location: string
   area: string
+  /** Phase 2 (preferred areas): canonical region id resolved from the text
+   *  location (e.g. 'south-east'). Null/absent = un-resolvable — such jobs are
+   *  never hidden by the candidate's area filter. */
+  areaRegion?: string | null
+  /** Canonical ceremonial-county id (e.g. 'surrey'); null when only the region
+   *  is known (job posted at region granularity). */
+  areaCounty?: string | null
   /** Optional property/site name for multi-venue operators (e.g. "The Ember", "Ember Soho").
    *  Null for single-site operators or multi-site roles. Surfaced on /my-jobs row + card. */
   venue?: string

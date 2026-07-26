@@ -62,6 +62,9 @@ export interface Candidate {
   preferredJobTypes?: string[]
   workLocationPreferences?: string[]
   preferredLocations?: string
+  /** Phase 2 (preferred areas): canonical area tokens the candidate will work
+   *  in — 'region:south-east' / 'county:surrey'. Empty = no area filter. */
+  preferredAreas?: string[]
   linkedinUrl?: string
   instagramUrl?: string
   facebookUrl?: string

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyAdmin, createAdminClient } from '@/lib/admin'
+import { resolveAndStoreJobArea } from '@/lib/jobAreaSync'
 
 const PAGE_SIZE = 20
 
@@ -145,6 +146,15 @@ export async function POST(req: Request) {
       case 'reactivate': {
         const { error } = await db.from('jobs').update({ status: 'active' }).eq('id', jobId)
         if (error) throw error
+        // A job that was filled before preferred-areas shipped (or whose
+        // location has since become resolvable) comes back with no area, which
+        // would make it un-filterable. Resolve it now it's live again.
+        // Non-blocking: the reactivation itself has already succeeded, and a
+        // job with no area is shown to everyone rather than hidden.
+        const area = await resolveAndStoreJobArea(db, jobId).catch(() => null)
+        if (!area?.ok) {
+          console.warn('[admin/jobs] area resolve failed on reactivate', jobId, area?.reason)
+        }
         return NextResponse.json({ success: true, message: 'Job reactivated' })
       }
       case 'bulk_archive': {
