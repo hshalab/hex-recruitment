@@ -197,7 +197,13 @@ export function supabaseProfileToCandidate(row: any): Candidate {
     jobTitle: row.job_title || '',
     jobSector: row.job_sector || undefined,
     headline: row.headline || undefined,
-    location: row.location || [row.city, row.county].filter(Boolean).join(', ') || 'UK',
+    // No 'UK' fallback. It made every profile look location-complete on the
+    // dashboard (25/25) when only 6 had actually set one — the same cosmetic
+    // default that hid the job_sector bug, just in the opposite direction:
+    // falsely COMPLETE rather than falsely missing. An empty location now
+    // reads as empty, so the dashboard prompts for it and scoring treats it
+    // as unknown instead of matching on a placeholder.
+    location: row.location || [row.city, row.county].filter(Boolean).join(', ') || '',
     yearsExperience: row.years_experience || 0,
     bio: row.bio || '',
     personalBio: row.personal_bio || '',
