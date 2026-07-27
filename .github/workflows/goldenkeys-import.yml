@@ -10,17 +10,28 @@ name: Goldenkeys scheduled import
 #                             resolved; without them the run still works but
 #                             warns, and new roles match every candidate's area.
 
+# SCHEDULE TEMPORARILY REMOVED — 27 Jul 2026. Manual runs still work.
+#
+# The importer inserts rows with no company_banner_url and no company_logo_url,
+# so every run puts unbranded listings on the public board. Today's run added
+# 16, and they were only fixed because Paul spotted them on the live site. The
+# images come from a SEPARATE script (scripts/import-goldenkeys-images.mjs)
+# that this workflow has never called.
+#
+# Left scheduled, that repeats overnight with nobody watching. The board is
+# fresh as of today, so skipping a week costs nothing.
+#
+# TO RE-ENABLE, once the importer assigns a banner and logo at insert time,
+# restore under `on:`:
+#   schedule:
+#     - cron: '0 6 * * 2'   # Tuesdays 06:00 UTC, two hours before the roundup
+#
+# That 06:00/08:00 pairing is deliberate — the roundup email
+# (vercel.json: /api/cron/roles-roundup, '0 8 * * 2') must send off a board
+# collected hours earlier, not days. If one moves, move both. Normal rhythm
+# resumes Tue 4 Aug.
+
 on:
-  schedule:
-    # Tuesdays 06:00 UTC — deliberately two hours before the weekly candidate
-    # roundup email (vercel.json: /api/cron/roles-roundup, '0 8 * * 2').
-    #
-    # Weekly rather than twice-weekly on Firecrawl cost: a full run is ~250
-    # scrapes, so halving the frequency halves the spend. The ordering is what
-    # makes weekly acceptable — collecting immediately before the email means
-    # candidates get roles off a board that is hours old, not six days old. If
-    # the scrape day ever moves, move it with the email, not independently.
-    - cron: '0 6 * * 2'
   workflow_dispatch: {}    # manual "Run workflow" button in the Actions tab
 
 concurrency:
