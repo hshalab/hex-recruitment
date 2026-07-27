@@ -148,6 +148,27 @@ const CEREMONIAL: Record<string, string> = {
   'portsmouth': 'hampshire', 'southampton': 'hampshire',
   'city of london': 'greater-london',
   'kingston upon hull': 'east-riding-of-yorkshire', 'york': 'north-yorkshire',
+  // The 32 London boroughs. postcodes.io reports a London outcode's
+  // admin_district as the borough and leaves admin_county empty, so without
+  // these a London postcode resolves to no county at all — which is how
+  // "Richmond, TW9" ended up in North Yorkshire: the borough was unrecognised,
+  // the outcode yielded nothing, and the place-name match won by default.
+  'barking and dagenham': 'greater-london', 'barnet': 'greater-london',
+  'bexley': 'greater-london', 'brent': 'greater-london',
+  'bromley': 'greater-london', 'camden': 'greater-london',
+  'croydon': 'greater-london', 'ealing': 'greater-london',
+  'enfield': 'greater-london', 'greenwich': 'greater-london',
+  'hackney': 'greater-london', 'hammersmith and fulham': 'greater-london',
+  'haringey': 'greater-london', 'harrow': 'greater-london',
+  'havering': 'greater-london', 'hillingdon': 'greater-london',
+  'hounslow': 'greater-london', 'islington': 'greater-london',
+  'kensington and chelsea': 'greater-london', 'kingston upon thames': 'greater-london',
+  'lambeth': 'greater-london', 'lewisham': 'greater-london',
+  'merton': 'greater-london', 'newham': 'greater-london',
+  'redbridge': 'greater-london', 'richmond upon thames': 'greater-london',
+  'southwark': 'greater-london', 'sutton': 'greater-london',
+  'tower hamlets': 'greater-london', 'waltham forest': 'greater-london',
+  'wandsworth': 'greater-london', 'westminster': 'greater-london',
 }
 
 function normaliseCounty(rawName: string | null | undefined): string | null {
@@ -208,23 +229,52 @@ async function resolvePlace(name: string): Promise<AreaResolution | null> {
   return { region, county, method: 'place', matched: `${pick.name_1}/${pick.local_type}` }
 }
 
-// Outward code → county (+ region). Falls back to place lookup on the town when
-// the outcode's unitary has no county (e.g. RG18 → West Berkshire), so towns like
-// Thatcham/Marlborough resolve instead of dropping to null.
-async function resolveOutcode(outcode: string, townFallback?: string): Promise<AreaResolution | null> {
+/**
+ * Everywhere an outward code could plausibly be.
+ *
+ * An outcode is not a point — SN8 spans Swindon, West Berkshire and Wiltshire,
+ * RG17 spans Oxfordshire, West Berkshire and Wiltshire. Taking element [0], as
+ * this used to, picks whichever the API happened to list first: RG17 would have
+ * become Oxfordshire when Hungerford is Berkshire. So collect the whole
+ * candidate set and let the caller decide, rather than guessing from it.
+ */
+interface OutcodeAreas {
+  counties: Set<string>
+  regions: Set<RegionId>
+  /** Only set when the outcode points somewhere unambiguous. */
+  primary: AreaResolution | null
+}
+
+const asArray = (v: any): any[] => (Array.isArray(v) ? v : v ? [v] : [])
+
+async function outcodeAreas(outcode: string): Promise<OutcodeAreas | null> {
   const data = await getJson(`${BASE}/outcodes/${encodeURIComponent(outcode)}`)
   const r = data?.result
-  if (r) {
-    const rawCounty = Array.isArray(r.admin_county) ? r.admin_county[0] : r.admin_county
-    const county = normaliseCounty(rawCounty)
-    if (county) return { region: regionOfCounty(county)!, county, method: 'outcode', matched: `oc:${outcode}` }
-    // No county on the outcode (unitary) — try the district name, then the town.
-    const rawDistrict = Array.isArray(r.admin_district) ? r.admin_district[0] : r.admin_district
-    const dc = normaliseCounty(rawDistrict)
-    if (dc) return { region: regionOfCounty(dc)!, county: dc, method: 'outcode', matched: `oc:${outcode}/${rawDistrict}` }
+  if (!r) return null
+
+  const counties = new Set<string>()
+  for (const raw of [...asArray(r.admin_county), ...asArray(r.admin_district)]) {
+    const c = normaliseCounty(raw)
+    if (c) counties.add(c)
   }
-  if (townFallback) return resolvePlace(townFallback)
-  return null
+  const regions = new Set<RegionId>()
+  for (const c of Array.from(counties)) {
+    const rg = regionOfCounty(c)
+    if (rg) regions.add(rg)
+  }
+  for (const raw of asArray(r.region)) {
+    const rg = normaliseRegion(raw)
+    if (rg) regions.add(rg)
+  }
+
+  let primary: AreaResolution | null = null
+  if (counties.size === 1) {
+    const c = Array.from(counties)[0]
+    primary = { region: regionOfCounty(c)!, county: c, method: 'outcode', matched: `oc:${outcode}` }
+  } else if (counties.size === 0 && regions.size === 1) {
+    primary = { region: Array.from(regions)[0], county: null, method: 'outcode', matched: `oc:${outcode}` }
+  }
+  return { counties, regions, primary }
 }
 
 /**
@@ -245,17 +295,57 @@ export async function resolveJobArea(job: { location?: string | null; area?: str
   const asCounty = normaliseCounty(loc)
   if (asCounty) return { region: regionOfCounty(asCounty)!, county: asCounty, method: 'county-label', matched: lc }
 
-  // 3. town / place
+  // 3. Place name, CORROBORATED by the outward code when we have one.
+  //
+  // Place-name lookup alone is not safe: Britain reuses town names, so "Richmond"
+  // exact-matches Richmond in North Yorkshire before Richmond upon Thames, and a
+  // TW9 job lands 250 miles away — recommended to Yorkshire candidates, invisible
+  // to London ones.
+  //
+  // The naive fix — always prefer the outcode — is worse, because an outcode
+  // spans several areas and the API's ordering is arbitrary: it would move
+  // Hungerford RG17 from Berkshire (right) to Oxfordshire (wrong) and Marlborough
+  // SN8 from Wiltshire to Swindon. So the outcode is used to CHECK the place, not
+  // to replace it: if the place agrees with somewhere the postcode actually
+  // covers, keep it; if it contradicts the postcode outright, the place match was
+  // a same-name collision and the postcode wins.
+  const outcodeCandidate = [area, loc].find(c => c && OUTCODE_ONLY.test(c)) || null
+  const oa = outcodeCandidate ? await outcodeAreas(outcodeCandidate) : null
+  const outcodeKnowsWhere = !!oa && (oa.counties.size > 0 || oa.regions.size > 0)
+
   if (loc) {
     const place = await resolvePlace(loc)
-    if (place) return place
+    if (place) {
+      if (!outcodeKnowsWhere) return place
+      const agrees =
+        (place.county && oa!.counties.has(place.county)) ||
+        (place.region && oa!.regions.has(place.region))
+      if (agrees) return place
+
+      // Contradicted. Prefer the postcode when it points somewhere definite.
+      if (oa!.primary) {
+        return { ...oa!.primary, matched: `${oa!.primary.matched} (place "${place.matched}" rejected)` }
+      }
+      // Ambiguous outcode AND a contradicted place: we know the place match is
+      // wrong but not what's right. Leave it unresolved rather than assert a
+      // guess — an unresolved job is shown to everyone, which is the harmless
+      // direction, whereas a confidently wrong area hides it from the right
+      // people and pushes it at the wrong ones.
+      return { region: null, county: null, method: 'unresolved', matched: `${lc} (contradicted by ${outcodeCandidate})` }
+    }
   }
 
-  // 4. outcode (from area, else location), with town fallback
-  for (const cand of [area, loc]) {
-    if (cand && OUTCODE_ONLY.test(cand)) {
-      const oc = await resolveOutcode(cand, loc || undefined)
-      if (oc) return oc
+  // 4. Outward code alone — no usable place name, or the place lookup found nothing.
+  if (oa) {
+    if (oa.primary) return oa.primary
+    if (oa.counties.size > 0) {
+      // Several candidates and nothing to disambiguate with. Deterministic pick,
+      // same as the previous behaviour, so this path doesn't churn existing rows.
+      const c = Array.from(oa.counties).sort()[0]
+      return { region: regionOfCounty(c)!, county: c, method: 'outcode', matched: `oc:${outcodeCandidate}` }
+    }
+    if (oa.regions.size > 0) {
+      return { region: Array.from(oa.regions)[0], county: null, method: 'outcode', matched: `oc:${outcodeCandidate}` }
     }
   }
 
@@ -386,9 +476,12 @@ export async function searchAreaSuggestions(
     })
   }
 
-  // 3. Outcode, for anyone who thinks in postcodes.
+  // 3. Outcode, for anyone who thinks in postcodes. Only suggest when the
+  // outcode points somewhere unambiguous — offering the wrong one of three
+  // possible counties is worse than offering nothing here, because the
+  // candidate would accept it as ours.
   if (out.length === 0 && OUTCODE_ONLY.test(q)) {
-    const oc = await resolveOutcode(q)
+    const oc = (await outcodeAreas(q))?.primary ?? null
     if (oc?.region) {
       push({
         token: oc.county ? countyToken(oc.county) : regionToken(oc.region),
