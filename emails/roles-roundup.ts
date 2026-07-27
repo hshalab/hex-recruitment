@@ -83,15 +83,15 @@ export function rolesRoundupEmail(params: RolesRoundupParams): { subject: string
   const role = tidy(roleLabel)
   const subjectRole = subjectSafeRole(roleLabel)
 
+  // "Recommended for you" is the one framing that holds for BOTH match modes and
+  // whatever the state of the board. "In your areas" is wrong for the
+  // title/sector-matched candidates who never set any areas.
   const subject =
     mode === 'area'
-      ? `${count} ${count === 1 ? 'role' : 'roles'} in ${areas} for you`
-      : `${count} ${subjectRole ? `${subjectRole} ` : ''}${count === 1 ? 'role' : 'roles'} that match your profile`
+      ? `${count} ${count === 1 ? 'role' : 'roles'} recommended for you`
+      : `${count} ${subjectRole ? `${subjectRole} ` : ''}${count === 1 ? 'role' : 'roles'} recommended for you`
 
-  const heading =
-    mode === 'area'
-      ? `${count === 1 ? 'A role' : `${count} roles`} in ${esc(areas)}`
-      : `${count === 1 ? 'A role' : `${count} roles`} that match your profile`
+  const heading = `${count === 1 ? 'A role' : `${count} roles`} recommended for you`
 
   const intro =
     mode === 'area'
