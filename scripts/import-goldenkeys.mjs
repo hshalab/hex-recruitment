@@ -18,7 +18,10 @@ import { createClient } from '@supabase/supabase-js'
 const EMPLOYER_ID = '9eb99b46-2b86-454c-be37-30a34e11a3ed'
 const COMPANY = 'Goldenkeys Recruitment'
 const BASE = 'https://goldenkeys.co.uk/industry/hospitality/'
-const PAGES = 19
+// Hard ceiling only — enumerate() stops as soon as a page yields nothing new.
+// It exists so a site change (infinite pagination, a page that always echoes
+// the last one) can't spin forever, not to bound the real catalogue.
+const MAX_PAGES = 50
 const SCRATCH = process.env.GK_SCRATCH || path.join(process.cwd(), 'scripts', '.goldenkeys')
 const ENUM_FILE = path.join(SCRATCH, 'urls.json')
 const REC_FILE = path.join(SCRATCH, 'records.json')
@@ -104,7 +107,16 @@ async function enumerate() {
   fs.mkdirSync(SCRATCH, { recursive: true })
   const schema = { type: 'object', properties: { jobs: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, url: { type: 'string' } } } } } }
   const seen = new Map()
-  for (let p = 1; p <= PAGES; p++) {
+  // Walk until a page yields nothing new, rather than stopping at a fixed count.
+  //
+  // WHY THIS MATTERS MORE THAN IT LOOKS: the enumerated set is what apply()
+  // treats as "live", and anything absent from it gets reconciled to `filled`.
+  // Listings are newest-first, so under a fixed ceiling the OLDEST still-live
+  // roles are the ones that fall off the end — and we would have quietly marked
+  // them filled while they were still open. A ceiling here doesn't just miss new
+  // roles, it actively corrupts existing ones.
+  let pagesWalked = 0
+  for (let p = 1; p <= MAX_PAGES; p++) {
     const url = p === 1 ? BASE : `${BASE}page/${p}/`
     const data = await fcScrape(url, schema)
     const jobs = data?.jobs || []
@@ -113,12 +125,22 @@ async function enumerate() {
       const u = cleanUrl(j.url)
       if (u && u.includes('/vacancies/') && !seen.has(u)) { seen.set(u, j.title || ''); added++ }
     }
+    pagesWalked = p
     console.log(`page ${p}: ${jobs.length} listed, ${added} new (total ${seen.size})`)
+    // Nothing new on this page: either past the end, or the site is echoing a
+    // page we've already taken. Either way there is no more to collect.
+    if (added === 0) {
+      console.log(`stopping at page ${p} — no new vacancy URLs`)
+      break
+    }
+    if (p === MAX_PAGES) {
+      console.warn(`WARNING: hit the ${MAX_PAGES}-page ceiling and page ${p} still had new roles — the catalogue may be truncated. Raise MAX_PAGES.`)
+    }
     await sleep(500)
   }
   const list = [...seen].map(([url, title]) => ({ url, title }))
   fs.writeFileSync(ENUM_FILE, JSON.stringify(list, null, 2))
-  console.log(`\nEnumerated ${list.length} unique vacancy URLs -> ${ENUM_FILE}`)
+  console.log(`\nEnumerated ${list.length} unique vacancy URLs across ${pagesWalked} pages -> ${ENUM_FILE}`)
   return list
 }
 
