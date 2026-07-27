@@ -12,6 +12,7 @@ import {
   planFor,
   buildIdf,
   markSent,
+  dedupeByEmail,
   parseRoundupState,
   matchModeFor,
   ROLES_PER_EMAIL,
@@ -122,33 +123,39 @@ function renderPlan(plan: RoundupPlan, opts: { live: boolean }) {
 
 async function build(supabase: SupabaseClient, now: Date) {
   const { rows, columnMissing, error } = await loadCandidates(supabase)
-  if (error) return { error, columnMissing, plans: [], exclusions: EMPTY_EXCLUSIONS, rows: [], jobs: [] as JobRow[] }
+  if (error) return { error, columnMissing, plans: [] as RoundupPlan[], exclusions: EMPTY_EXCLUSIONS, rows: [] as RoundupCandidateRow[], jobs: [] as JobRow[], collapsed: 0 }
 
   const jobsResult = await supabase.from('jobs').select(JOB_SELECT).eq('status', 'active')
   if (jobsResult.error) {
-    return { error: jobsResult.error.message, columnMissing, plans: [], exclusions: EMPTY_EXCLUSIONS, rows, jobs: [] as JobRow[] }
+    return { error: jobsResult.error.message, columnMissing, plans: [] as RoundupPlan[], exclusions: EMPTY_EXCLUSIONS, rows, jobs: [] as JobRow[], collapsed: 0 }
   }
   const jobs = (jobsResult.data || []) as unknown as JobRow[]
   const idf = buildIdf(jobs)
   const confirmed = await confirmedUserIds(supabase)
 
-  const plans: RoundupPlan[] = []
+  const built: RoundupPlan[] = []
   const exclusions = { ...EMPTY_EXCLUSIONS }
   for (const row of rows) {
     const { plan, reason } = planFor(row, jobs, idf, confirmed, now)
-    if (plan) plans.push(plan)
+    if (plan) built.push(plan)
     else if (reason) exclusions[reason] += 1
   }
 
-  return { error: null, columnMissing, plans, exclusions, rows, jobs }
+  // Applied here rather than at the send site so dry-run, test and send all
+  // report and act on the same recipient list.
+  const { kept: plans, collapsed } = dedupeByEmail(built)
+
+  return { error: null, columnMissing, plans, exclusions, rows, jobs, collapsed }
 }
 
-function summarise(rows: RoundupCandidateRow[], jobs: JobRow[], plans: RoundupPlan[], exclusions: Record<ExclusionReason, number>, columnMissing: boolean) {
+function summarise(rows: RoundupCandidateRow[], jobs: JobRow[], plans: RoundupPlan[], exclusions: Record<ExclusionReason, number>, columnMissing: boolean, collapsed = 0) {
   return {
     migrationApplied: !columnMissing,
     candidatesTotal: rows.length,
     activeJobs: jobs.length,
     wouldEmailCount: plans.length,
+    /** Plans dropped because another plan targeted the same address. */
+    duplicateAddressesCollapsed: collapsed,
     audienceSplit: {
       areaMatched: plans.filter(p => p.mode === 'area').length,
       profileMatched: plans.filter(p => p.mode === 'profile').length,
@@ -190,7 +197,7 @@ export async function POST(req: NextRequest) {
 
   const now = new Date()
   const supabase = createClient(supabaseUrl, supabaseKey)
-  const { error, columnMissing, plans, exclusions, rows, jobs } = await build(supabase, now)
+  const { error, columnMissing, plans, exclusions, rows, jobs, collapsed } = await build(supabase, now)
 
   if (error) return NextResponse.json({ error: 'Failed to build roundup: ' + error }, { status: 500 })
   if (columnMissing && mode === 'send') {
@@ -204,7 +211,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const summary = { mode, ...summarise(rows, jobs, plans, exclusions, columnMissing) }
+  const summary = { mode, ...summarise(rows, jobs, plans, exclusions, columnMissing, collapsed) }
 
   // ── dry run ────────────────────────────────────────────────────────
   if (mode === 'dry-run') {
@@ -289,11 +296,11 @@ export async function GET(req: NextRequest) {
   }
   const now = new Date()
   const supabase = createClient(supabaseUrl, supabaseKey)
-  const { error, columnMissing, plans, exclusions, rows, jobs } = await build(supabase, now)
+  const { error, columnMissing, plans, exclusions, rows, jobs, collapsed } = await build(supabase, now)
   if (error) return NextResponse.json({ error }, { status: 500 })
   return NextResponse.json({
     mode: 'status',
-    ...summarise(rows, jobs, plans, exclusions, columnMissing),
+    ...summarise(rows, jobs, plans, exclusions, columnMissing, collapsed),
     sent: 0,
     note: 'Status only — this route never sends on GET.',
   })

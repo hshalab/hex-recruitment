@@ -260,4 +260,39 @@ export function planFor(
   }
 }
 
+/**
+ * Collapse plans that would mail the same address twice in one run.
+ *
+ * Defensive hygiene, not a fix for any known bug: profile rows are already
+ * UNIQUE on user_id, so one account cannot produce two plans. This guards the
+ * case where two accounts share an address — nobody should receive the same
+ * roundup twice on the same morning because of how our data happens to be
+ * shaped.
+ *
+ * NOTE it does NOT catch one person holding two accounts under two DIFFERENT
+ * addresses: each mailbox gets one email, which is the correct behaviour for a
+ * mailbox even when it's the wrong outcome for a human. Recognising a person
+ * across different addresses is identity resolution and a product decision.
+ *
+ * When two plans do collide, keep the one with more matches — the better email
+ * of the two — with user_id as a deterministic tiebreak.
+ */
+export function dedupeByEmail(plans: RoundupPlan[]): { kept: RoundupPlan[]; collapsed: number } {
+  const best = new Map<string, RoundupPlan>()
+  for (const plan of plans) {
+    const key = (plan.row.email || '').trim().toLowerCase()
+    if (!key) continue
+    const existing = best.get(key)
+    if (
+      !existing ||
+      plan.totalMatches > existing.totalMatches ||
+      (plan.totalMatches === existing.totalMatches && plan.row.user_id < existing.row.user_id)
+    ) {
+      best.set(key, plan)
+    }
+  }
+  const kept = Array.from(best.values())
+  return { kept, collapsed: plans.length - kept.length }
+}
+
 export { formatSalary }
