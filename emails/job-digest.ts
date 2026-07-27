@@ -56,18 +56,21 @@ export function jobDigestEmail(params: JobDigestParams): { subject: string; html
   const areas = listAreas(areaNames)
   const firstName = (candidateName || '').trim().split(/\s+/)[0] || 'there'
 
+  // "Recommended for you" rather than "new jobs in your areas": it stays true
+  // whatever the state of the board, where the old wording claimed both novelty
+  // and locality and could over-claim on either.
   const subject =
     count === 1
-      ? `A new job in ${areas}`
-      : `${count}${overflow > 0 ? '+' : ''} new jobs in ${areas}`
+      ? `A role recommended for you`
+      : `${count}${overflow > 0 ? '+' : ''} roles recommended for you`
 
   const body = `
     <h1 style="margin:0 0 14px;font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-0.3px;">
-      ${count === 1 ? 'A new role' : `${count} new roles`} in ${esc(areas)}
+      ${count === 1 ? 'A role' : `${count} roles`} recommended for you
     </h1>
     <p style="margin:0 0 6px;font-size:15px;line-height:1.6;color:#475569;">
-      Hi ${esc(firstName)} — ${count === 1 ? 'this went' : 'these went'} live since we last wrote to you,
-      in the ${areaNames.length === 1 ? 'area' : 'areas'} you chose.
+      Hi ${esc(firstName)} — ${count === 1 ? 'this is' : 'these are'} on the market in
+      ${esc(areas)}, the ${areaNames.length === 1 ? 'area' : 'areas'} you chose.
     </p>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 0;">
