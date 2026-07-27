@@ -89,17 +89,27 @@ async function confirmedUserIds(supabase: SupabaseClient): Promise<Set<string>> 
   return confirmed
 }
 
+/**
+ * Real, working unsubscribe link — ONLY for a genuine send. A dry run's output
+ * gets pasted into reports and a test send lands in our own inbox; in both cases
+ * a live token is one click from opting a real candidate out.
+ */
 function unsubscribeUrlFor(userId: string): string {
   return `${BASE_URL}/api/candidate/digest-unsubscribe?token=${generateDigestUnsubscribeToken(userId)}`
 }
 
-function renderPlan(plan: DigestPlan) {
+/** Inert stand-in: right shape, cannot unsubscribe anybody, needs no secret. */
+function previewUnsubscribeUrl(): string {
+  return `${BASE_URL}/api/candidate/digest-unsubscribe?token=SAMPLE_TOKEN_NOT_VALID`
+}
+
+function renderPlan(plan: DigestPlan, opts: { live: boolean }) {
   return jobDigestEmail({
     candidateName: plan.row.full_name,
     areaNames: plan.areaNames,
     jobs: plan.jobs,
     overflow: plan.overflow,
-    unsubscribeUrl: unsubscribeUrlFor(plan.row.user_id),
+    unsubscribeUrl: opts.live ? unsubscribeUrlFor(plan.row.user_id) : previewUnsubscribeUrl(),
   })
 }
 
@@ -177,7 +187,7 @@ export async function POST(req: NextRequest) {
 
   // ── dry run: decide everything, touch nothing ──────────────────────
   if (mode === 'dry-run') {
-    const sample = plans[0] ? renderPlan(plans[0]) : null
+    const sample = plans[0] ? renderPlan(plans[0], { live: false }) : null
     return NextResponse.json({
       ...summary,
       wouldEmail: plans.map(p => ({
@@ -213,7 +223,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { subject, html } = realPlan
-      ? renderPlan(realPlan)
+      ? renderPlan(realPlan, { live: false })
       : jobDigestEmail({
           candidateName: typeof body.testName === 'string' ? body.testName : 'Alex',
           areaNames: ['your areas'],
@@ -240,7 +250,7 @@ export async function POST(req: NextRequest) {
   const failed: { email: string | null; error?: string }[] = []
 
   for (const plan of plans) {
-    const { subject, html } = renderPlan(plan)
+    const { subject, html } = renderPlan(plan, { live: true })
     const result = await sendEmail(plan.row.email!, subject, html)
     if (!result.success) {
       failed.push({ email: plan.row.email, error: result.error })
@@ -313,7 +323,7 @@ export async function GET(req: NextRequest) {
   const sentTo: string[] = []
   const failed: { email: string | null; error?: string }[] = []
   for (const plan of plans) {
-    const { subject, html } = renderPlan(plan)
+    const { subject, html } = renderPlan(plan, { live: true })
     const result = await sendEmail(plan.row.email!, subject, html)
     if (!result.success) {
       failed.push({ email: plan.row.email, error: result.error })
