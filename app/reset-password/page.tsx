@@ -8,6 +8,42 @@ import Header from '@/components/Header'
 import PasswordInput from '@/components/PasswordInput'
 import styles from '../login/page.module.css'
 
+// Password reset — the "set a new password" step.
+//
+// THE BUG THIS FIXES: the page used to wait for a PASSWORD_RECOVERY event or an
+// existing session and show "Verifying your reset link…" until one arrived. If
+// neither ever did — expired link, already-consumed link, a link opened in a
+// different browser from the one that requested it, a failed code exchange — it
+// spun forever with no explanation. Every distinct failure looked identical, and
+// the user's only cue was to request another link, which failed the same way.
+// A real employer sat on that spinner today.
+//
+// Now: every failure path ends in a message that says what happened and offers
+// the way out, and the wait is bounded so "something we didn't anticipate" still
+// resolves to an honest error rather than an infinite spinner.
+
+const VERIFY_TIMEOUT_MS = 10_000
+
+type Phase = 'verifying' | 'ready' | 'failed'
+
+/** Supabase reports link problems in the query string OR the hash, depending on flow. */
+function readAuthError(): string | null {
+  if (typeof window === 'undefined') return null
+  const q = new URLSearchParams(window.location.search)
+  const h = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  const code = q.get('error_code') || h.get('error_code')
+  const desc = q.get('error_description') || h.get('error_description')
+  const err = q.get('error') || h.get('error')
+  if (!code && !desc && !err) return null
+
+  // otp_expired covers both "expired" and "already used" — Supabase does not
+  // distinguish, and neither should we, because the fix is the same.
+  if (code === 'otp_expired' || /expired|invalid/i.test(desc || '')) {
+    return 'This reset link has expired or has already been used. Reset links last one hour and only work once — please request a new one.'
+  }
+  return desc ? desc.replace(/\+/g, ' ') : 'That reset link could not be verified. Please request a new one.'
+}
+
 export default function ResetPasswordPage() {
   const router = useRouter()
   const [password, setPassword] = useState('')
@@ -15,25 +51,72 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [ready, setReady] = useState(false)
+  const [phase, setPhase] = useState<Phase>('verifying')
+  const [verifyError, setVerifyError] = useState('')
 
   useEffect(() => {
-    // Supabase automatically picks up the token from the URL hash
-    // and establishes a session via onAuthStateChange
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setReady(true)
-      }
+    let done = false
+    const finish = (next: Phase, message = '') => {
+      if (done) return
+      done = true
+      setPhase(next)
+      setVerifyError(message)
+    }
+
+    // 1. An explicit error on the URL is the clearest signal — take it first.
+    const urlError = readAuthError()
+    if (urlError) {
+      finish('failed', urlError)
+      return
+    }
+
+    // 2. The recovery event, for the implicit flow.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(event => {
+      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') finish('ready')
     })
 
-    // Also check if there's already a session (user clicked the link)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setReady(true)
-      }
-    })
+    ;(async () => {
+      // 3. Already signed in — includes arriving via /auth/confirm, which does the
+      //    verify server-side and hands us a live session cookie.
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) return finish('ready')
 
-    return () => subscription.unsubscribe()
+      // 4. PKCE: exchange the code explicitly rather than trusting implicit
+      //    detection, so a failure is something we can SEE and report.
+      const code = new URLSearchParams(window.location.search).get('code')
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+        if (!exchangeError) return finish('ready')
+
+        // The client's own detectSessionInUrl may have consumed the code first,
+        // in which case our exchange "fails" but a session now exists. Check
+        // before calling it a failure.
+        const { data: { session: after } } = await supabase.auth.getSession()
+        if (after) return finish('ready')
+
+        console.error('[reset-password] code exchange failed', exchangeError.message)
+        return finish(
+          'failed',
+          /verifier|invalid request/i.test(exchangeError.message)
+            ? 'This link was opened in a different browser or device from the one that requested it, so it can’t be verified. Please request a new link and open it on this device.'
+            : 'This reset link has expired or has already been used. Please request a new one.',
+        )
+      }
+
+      // 5. No error, no session, no code — nothing to verify against.
+      finish('failed', 'This page needs a valid reset link. Please request one and follow the link in the email.')
+    })()
+
+    // 6. Backstop. Whatever we failed to anticipate, stop spinning and say so.
+    const timer = setTimeout(() => {
+      finish('failed', 'We couldn’t verify that reset link in time. It may have expired or already been used — please request a new one.')
+    }, VERIFY_TIMEOUT_MS)
+
+    return () => {
+      done = true
+      clearTimeout(timer)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,16 +176,23 @@ export default function ResetPasswordPage() {
                 </Link>
               </div>
             </>
-          ) : !ready ? (
+          ) : phase === 'failed' ? (
             <>
-              <div className={styles.info}>
-                Verifying your reset link... If this takes too long, please request a new reset link.
-              </div>
+              <div className={styles.error}>{verifyError}</div>
               <div className={styles.links}>
                 <Link href="/forgot-password" className={styles.link}>
                   Request New Reset Link
                 </Link>
               </div>
+              <div className={styles.links}>
+                <Link href="/login" className={styles.link}>
+                  Back to Login
+                </Link>
+              </div>
+            </>
+          ) : phase === 'verifying' ? (
+            <>
+              <div className={styles.info}>Verifying your reset link…</div>
             </>
           ) : (
             <form onSubmit={handleSubmit} className={styles.form}>

@@ -95,7 +95,14 @@ export const config = {
      *   api/auth/set-session       - the password-login bridge. It writes the
      *                                cookie from tokens in the POST body;
      *                                middleware must not race it.
+     *   reset-password             - lands carrying a single-use recovery code
+     *                                and exchanges it client-side. Exactly the
+     *                                same hazard as the two callback routes
+     *                                above; it was simply missed when they were
+     *                                excluded, and a real employer was locked
+     *                                out of a reset on 27 Jul before anyone
+     *                                noticed the inconsistency.
      */
-    '/((?!_next/static|_next/image|favicon.ico|auth/callback|auth/confirm|api/auth/set-session|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|auth/callback|auth/confirm|reset-password|api/auth/set-session|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)',
   ],
 }
