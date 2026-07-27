@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { calculateTrialExpiry } from '@/lib/trialUtils'
-import { getStoredAttribution, attributionColumns } from '@/lib/attribution'
+import { getStoredAttribution, attributionColumns, HEARD_FROM_OPTIONS } from '@/lib/attribution'
 import { isValidEmail, isDisposableEmail } from '@/lib/validateEmail'
 import { safeInternalPath } from '@/lib/safeRedirect'
 import PasswordInput from './PasswordInput'
@@ -23,6 +23,11 @@ export default function CandidateSignupForm() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  // "How did you hear about us?" — OPTIONAL. The only acquisition signal we get
+  // for channels we can't tag with ?ref (word of mouth, WhatsApp groups, someone
+  // retyping the domain). Employers are already asked the same question on
+  // /register/employer-free; this mirrors it rather than inventing a second scheme.
+  const [heardFrom, setHeardFrom] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -82,7 +87,10 @@ export default function CandidateSignupForm() {
             account_status: 'trial',
             trial_start_date: now.toISOString(),
             trial_expires_at: trialExpiresAt.toISOString(),
-            ...attributionColumns(getStoredAttribution()),
+            // A tagged arrival (?ref / ?utm_*) still wins over the self-reported
+            // answer — normalizeSource ranks ref/utm above heard_from — so this
+            // only fills the gap when we have no tag.
+            ...attributionColumns({ ...getStoredAttribution(), heard_from: heardFrom || null }),
           },
         }),
       }).catch(() => {})
@@ -214,6 +222,22 @@ export default function CandidateSignupForm() {
         <p className="pwHint">Tip: three random words make a password that's strong and easy to remember.</p>
       </div>
 
+      <div className="grp">
+        <label htmlFor="heardFrom">
+          How did you hear about us? <span className="optional">(optional)</span>
+        </label>
+        <select
+          id="heardFrom"
+          name="heardFrom"
+          value={heardFrom}
+          onChange={e => setHeardFrom(e.target.value)}
+          className="authInput"
+        >
+          <option value="">Prefer not to say</option>
+          {HEARD_FROM_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      </div>
+
       <button type="submit" disabled={loading} className="submit">
         {loading ? 'Creating your account…' : 'Create account'}
       </button>
@@ -237,6 +261,7 @@ export default function CandidateSignupForm() {
         .err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; padding: 0.7rem 0.85rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; }
         .tiny { text-align: center; color: #6b7280; font-size: 0.85rem; margin: 0.9rem 0 0; }
         .pwHint { margin: 0.4rem 0 0; font-size: 0.8rem; color: #6b7280; line-height: 1.4; }
+        .optional { color: #94a3b8; font-weight: 400; }
       `}</style>
     </form>
   )
