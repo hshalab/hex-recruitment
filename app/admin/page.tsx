@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useAdminToken } from '@/lib/admin-context'
 import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
 import StatsCard from '@/components/admin/StatsCard'
@@ -35,9 +36,22 @@ interface Stats {
   }
 }
 
+// Shape returned by /api/admin/analytics?section=sources — reused as-is rather
+// than recomputed here, so the Overview card and the Source tab can never disagree.
+interface SourceRow {
+  source: string
+  count: number
+  refs: { ref: string; count: number }[]
+}
+interface SourcesData {
+  candidates: SourceRow[]
+  employers: SourceRow[]
+}
+
 export default function AdminOverviewPage() {
   const token = useAdminToken()
   const [stats, setStats] = useState<Stats | null>(null)
+  const [sources, setSources] = useState<SourcesData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -51,6 +65,18 @@ export default function AdminOverviewPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+  }, [token])
+
+  // Acquisition channels, last 30 days. Fetched separately so a failure here
+  // never blocks the rest of the dashboard from rendering.
+  useEffect(() => {
+    if (!token) return
+    fetch('/api/admin/analytics?section=sources&range=30d', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => { if (data && !data.error) setSources(data) })
+      .catch(() => {})
   }, [token])
 
   if (loading) {
@@ -137,6 +163,54 @@ export default function AdminOverviewPage() {
           </div>
         </div>
       </div>
+
+      {(() => {
+        const rows = sources?.candidates || []
+        const total = rows.reduce((s, r) => s + r.count, 0)
+        const max = Math.max(...rows.map(r => r.count), 1)
+        return (
+          <div className={styles.chartCard} style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
+              <h3 className={styles.chartTitle} style={{ marginBottom: 0 }}>
+                Where candidates came from (last 30 days)
+              </h3>
+              <Link href="/admin/analytics?tab=sources" style={{ fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>
+                Full breakdown →
+              </Link>
+            </div>
+            <p style={{ margin: '0.25rem 0 1rem', fontSize: '0.85rem', color: '#64748b' }}>
+              {total} candidate signup{total === 1 ? '' : 's'} in range
+            </p>
+            {rows.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {rows.map(r => (
+                  <div key={r.source}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem', fontWeight: 700, color: '#1e293b', marginBottom: 3 }}>
+                      <span>{r.source}</span><span>{r.count}</span>
+                    </div>
+                    <div style={{ height: 8, background: '#f1f5f9', borderRadius: 5, overflow: 'hidden' }}>
+                      <div style={{ width: `${(r.count / max) * 100}%`, height: '100%', background: '#FFE500' }} />
+                    </div>
+                    {r.refs.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: 5 }}>
+                        {r.refs.map(rf => (
+                          <span key={rf.ref} style={{ fontSize: '0.72rem', color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 999, padding: '0.1rem 0.5rem' }}>
+                            {rf.ref} · {rf.count}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyChart}>
+                {sources ? 'No candidate signups in the last 30 days' : 'Loading…'}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       <div className={styles.chartsGrid}>
         <div className={styles.chartCard}>

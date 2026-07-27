@@ -611,6 +611,17 @@ export default function AdminAnalyticsPage() {
     }
   }, [token, granularity])
 
+  // Deep link support: /admin/analytics?tab=sources opens straight on that tab
+  // (used by the Overview "Where candidates came from" card). Read from
+  // window.location rather than useSearchParams so this client page doesn't need
+  // a Suspense boundary at build time.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('tab')
+    if (requested && TABS.some(t => t.key === requested)) {
+      setActiveTab(requested as TabKey)
+    }
+  }, [])
+
   // Fetch on tab/range change (skip if already fetched)
   useEffect(() => {
     const key = `${activeTab}-${dateRange}`
