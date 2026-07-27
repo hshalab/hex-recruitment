@@ -118,14 +118,35 @@ export const magicLinkTemplate = authShell({
   footnoteHtml: 'This link expires shortly and can only be used once. If you didn\'t request it, you can safely ignore this email.',
 })
 
-/** Reset Password — only if email/password reset is used via Supabase. */
+/**
+ * Reset Password.
+ *
+ * Uses the same VERIFIED token_hash pattern as CONFIRM_SIGNUP_LINK above, and
+ * for the same reason — which the signup template learned and this one did not.
+ *
+ * {{ .ConfirmationURL }} sends the user through Supabase's /auth/v1/verify, which
+ * redirects back carrying a PKCE code that must be exchanged CLIENT-side using a
+ * verifier stored when the reset was requested. That breaks whenever the link is
+ * opened anywhere other than the browser that asked for it — a different device,
+ * a webmail preview, a corporate mail scanner that prefetches links. On 27 Jul an
+ * employer was locked out by exactly this.
+ *
+ * token_hash instead goes to /auth/confirm, which verifies SERVER-side via
+ * verifyOtp({ token_hash, type }) and writes the session cookie itself. No
+ * verifier, no device dependency, and it is excluded from middleware so nothing
+ * races the single-use token. &next=/reset-password lands the user on the
+ * set-a-new-password form already signed in.
+ */
+export const RESET_PASSWORD_LINK =
+  '{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password'
+
 export const resetPasswordTemplate = authShell({
   preheader: 'Reset your Thrive password.',
   heading: 'Reset your password',
   bodyHtml: `<p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">We received a request to reset the password for your Thrive account. Click below to choose a new one.</p>`,
   ctaText: 'Reset password',
-  ctaVar: '{{ .ConfirmationURL }}',
-  footnoteHtml: 'This link expires in 1 hour. If you didn\'t request a password reset, you can safely ignore this email — your password won\'t change.',
+  ctaVar: RESET_PASSWORD_LINK,
+  footnoteHtml: 'This link expires in 1 hour and can only be used once. If you didn\'t request a password reset, you can safely ignore this email — your password won\'t change.',
 })
 
 /** Change Email Address — confirm the new address. */
