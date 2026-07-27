@@ -42,7 +42,7 @@ function loadEnv() {
       env[line.slice(0, i).trim()] = line.slice(i + 1).trim().replace(/^["']|["']$/g, '')
     }
   }
-  for (const k of ['FIRECRAWL_API_KEY', 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']) {
+  for (const k of ['FIRECRAWL_API_KEY', 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'SITE_URL', 'NEXT_PUBLIC_SITE_URL', 'CRON_SECRET']) {
     if (process.env[k]) env[k] = process.env[k]
   }
   return env
@@ -159,6 +159,16 @@ async function scrapeDetails() {
     done++
     if (done % 20 === 0) console.log(`  scraped ${done}/${list.length}`)
     if (!d || !(d.title || item.title)) return null
+    // A listing can point at a detail page that 404s (the source leaves dangling
+    // links). Firecrawl returns the error page happily, and without this guard we
+    // import a live vacancy titled "Page Not Found" with a £0 salary — which is
+    // exactly what happened on 27 Jul. Drop it and let the reconcile step retire
+    // whatever row already exists for that URL.
+    const scrapedTitle = String(d.title || '').trim()
+    if (/^(page\s+)?not\s+found$|^404\b|page not found/i.test(scrapedTitle)) {
+      console.warn(`  skipping dead detail page: ${item.url}`)
+      return null
+    }
     const sal = parseSalary(d.salary_text)
     const et = ['Full-time']; et.push(d.permanent === false ? 'Temporary' : 'Permanent')
     return {
@@ -218,6 +228,7 @@ async function apply() {
 
   // 2) UPSERT each scraped role on source_url (update in place if known, else insert).
   let inserted = 0, updated = 0
+  const newIds = []
   for (const r of recs) {
     const row = {
       ...r,
@@ -238,11 +249,52 @@ async function apply() {
       if (!DRY) { const { error } = await supa.from('jobs').update(row).eq('id', id); if (error) throw error }
       updated++
     } else {
-      if (!DRY) { const { error } = await supa.from('jobs').insert({ ...row, posted_at: new Date().toISOString() }); if (error) throw error }
+      if (!DRY) {
+        const { data: ins, error } = await supa
+          .from('jobs').insert({ ...row, posted_at: new Date().toISOString() }).select('id').single()
+        if (error) throw error
+        if (ins?.id) newIds.push(ins.id)
+      }
       inserted++
     }
   }
   console.log(`Upsert: ${inserted} inserted, ${updated} updated in place`)
+
+  // 2b) AREA RESOLUTION for the rows we just created. Every other path that
+  // creates a listing resolves its area; this importer didn't, so a run left
+  // brand-new roles with a null area_region. That is NOT harmless: an unresolved
+  // job matches EVERY candidate's area filter (deliberately — better shown than
+  // hidden), so 17 unresolved London/Bristol/Derbyshire roles would have been
+  // recommended to candidates who chose none of those places.
+  //
+  // Done over HTTP against the deployed app rather than by importing
+  // lib/jobAreaSync directly: this script runs under plain `node` in CI, which
+  // cannot load a TypeScript module. Needs SITE_URL + CRON_SECRET; without them
+  // it says so loudly instead of leaving the gap silent.
+  if (!DRY && newIds.length) {
+    const site = ENV.SITE_URL || ENV.NEXT_PUBLIC_SITE_URL
+    const cron = ENV.CRON_SECRET
+    if (!site || !cron) {
+      console.warn(
+        `WARNING: ${newIds.length} new roles have NO area_region — SITE_URL/CRON_SECRET not set, so they were not resolved.\n` +
+        `         They will be recommended to every candidate regardless of location until resolved.`
+      )
+    } else {
+      let resolved = 0
+      for (const id of newIds) {
+        try {
+          const r = await fetch(`${site.replace(/\/$/, '')}/api/jobs/resolve-area`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cron}` },
+            body: JSON.stringify({ jobId: id }),
+          })
+          if (r.ok) resolved++
+        } catch { /* degraded-but-safe: a miss means "shown to everyone", not lost */ }
+      }
+      console.log(`Areas: resolved ${resolved}/${newIds.length} new roles`)
+      if (resolved < newIds.length) console.warn(`WARNING: ${newIds.length - resolved} new roles still have no area.`)
+    }
+  }
 
   // 3) RECONCILE: active GK jobs whose source_url is NOT in the LIVE listing -> filled.
   let filled = 0
