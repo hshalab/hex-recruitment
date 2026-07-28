@@ -638,6 +638,40 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     }
   }
 
+  // ── Unsaved changes ────────────────────────────────────────────────
+  //
+  // The profile only ever wrote to the database from the LAST step of a
+  // five-step wizard, and there was no autosave, no draft and no warning. Fill
+  // a field on step 3, close the tab, and it was gone silently. Every "Add →"
+  // prompt on the dashboard deep-links into the middle of that wizard, so the
+  // route most candidates arrive by was also the one most likely to lose their
+  // work. Only 7 of 32 have ever completed a save.
+  //
+  // Dirtiness is derived by comparing a serialised snapshot rather than by
+  // flagging each handler: there are a dozen setFormData call sites — skill
+  // pills, the areas picker, work history rows — and a rule that has to be
+  // remembered at every one of them is a rule that will be forgotten at one.
+  const savedBaselineRef = useRef<string | null>(null)
+  const [dirty, setDirty] = useState(false)
+  const serialisedForm = JSON.stringify(formData)
+  if (savedBaselineRef.current === null) savedBaselineRef.current = serialisedForm
+
+  useEffect(() => {
+    setDirty(serialisedForm !== savedBaselineRef.current)
+  }, [serialisedForm])
+
+  // The part that actually prevents the loss. The bar makes saving possible;
+  // this makes forgetting hard.
+  useEffect(() => {
+    if (!dirty || mode !== 'edit') return
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [dirty, mode])
+
   const nextStep = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, totalSteps))
@@ -1110,6 +1144,10 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
         }
 
         setSuccess(true)
+        // Everything on screen is now what's in the database, so the save bar
+        // goes quiet and the unsaved-changes guard stands down.
+        savedBaselineRef.current = JSON.stringify(formData)
+        setDirty(false)
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred')
@@ -2534,6 +2572,43 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           </button>
         )}
       </div>
+      )}
+
+      {/* ── Sticky save bar ────────────────────────────────────────────
+          Edit mode only. During registration there is no profile to save
+          yet — the final step creates the account — so a save control
+          there would promise something it cannot do.
+
+          A single bar rather than a Save button per step: there is one
+          formData and one write, so saving on step 3 also commits the
+          edits made on step 1. A per-step button would be quietly lying
+          about its scope; a persistent bar is honest — it saves the
+          profile, from wherever you are.
+
+          It also fixes the half of the problem that isn't reachability:
+          from step 3 the old save wasn't merely far away, it was
+          invisible, so there was no reason to believe it existed. */}
+      {mode === 'edit' && !success && (
+        <div className={`${styles.saveBar} ${dirty ? styles.saveBarDirty : ''}`}>
+          <span className={styles.saveBarStatus}>
+            {dirty ? (
+              <>
+                <span className={styles.saveBarDot} aria-hidden="true" />
+                Unsaved changes
+              </>
+            ) : (
+              'All changes saved'
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className={styles.saveBarBtn}
+            disabled={loading || !dirty || !isStep5Valid}
+          >
+            {loading ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
       )}
     </div>
 

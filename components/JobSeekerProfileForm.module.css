@@ -819,6 +819,90 @@
   flex: 1;
 }
 
+/* ── Sticky save bar ─────────────────────────────────────────────────
+   Sticky rather than fixed so it sits inside the form's own column and
+   can't cover the page footer or overlap content on short viewports.
+   bottom: 0 keeps it on screen from the moment a change is made,
+   whichever step the candidate is standing on. */
+.saveBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1.25rem -1rem -1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.97);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--border-gray);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+/* Quiet when there is nothing to do, obvious the moment there is. */
+.saveBarDirty {
+  border-top: 2px solid #ff6b45;
+  background: #fff7f4;
+}
+
+.saveBarStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-gray);
+}
+
+.saveBarDirty .saveBarStatus {
+  color: #7c2d12;
+}
+
+.saveBarDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff6b45;
+  flex: none;
+}
+
+.saveBarBtn {
+  padding: 0.7rem 1.6rem;
+  background: var(--primary-yellow);
+  color: var(--black);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saveBarBtn:hover:not(:disabled) {
+  background: var(--hover-yellow);
+}
+
+/* Disabled means "nothing to save", which is information, not a dead end —
+   so it stays legible rather than fading to grey. */
+.saveBarBtn:disabled {
+  background: var(--border-gray);
+  color: var(--text-gray);
+  cursor: default;
+}
+
+@media (max-width: 520px) {
+  .saveBar {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+  }
+  .saveBarBtn {
+    flex: 1;
+  }
+}
+
 .prevBtn {
   padding: 0.875rem 1.5rem;
   background: transparent;
