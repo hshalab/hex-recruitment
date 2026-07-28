@@ -14,6 +14,7 @@
 import { jobMatchesPreferredAreas, parsePreferredAreas, describePreferredAreas } from './areas'
 import { normalisePrefs, type CandidatePrefs } from './notificationPrefs'
 import { formatSalary, type DigestJobRow } from './jobDigest'
+import { isCredibleAnnualAsk } from './salaryInput'
 
 /** Roles per email. Eight stays scannable on a phone and reads curated. */
 export const ROLES_PER_EMAIL = 8
@@ -39,6 +40,9 @@ export interface RoundupCandidateRow {
   preferred_areas: string[] | null
   notification_preferences: unknown
   roundup_state: unknown
+  /** Bottom of their stated range, and its unit. Optional: most haven't set one. */
+  salary_min?: number | null
+  salary_period?: string | null
 }
 
 export interface RoundupState {
@@ -103,6 +107,23 @@ const ALIASES: Record<string, string> = {
   jnr: 'junior',
 }
 
+/**
+ * Words that describe HOW SENIOR a role is, not WHAT THE JOB IS.
+ *
+ * "Executive Head Housekeeper" ranked first for two executive chefs, purely on
+ * the words "executive" and "head". A pay penalty barely touched it — it is
+ * only 14–20% under ask — and it is a worse email than any salary mismatch,
+ * because it tells the candidate we don't know what they do.
+ *
+ * These words still count towards the SCORE once a role qualifies; a Head Chef
+ * matching "Head Chef" should rank above one matching only "Chef". They just
+ * cannot qualify a role on their own. See qualifies().
+ */
+const SENIORITY_WORDS = new Set([
+  'head', 'senior', 'junior', 'executive', 'assistant', 'deputy',
+  'lead', 'principal', 'chief', 'trainee', 'general', 'group',
+])
+
 export function tokenize(text: string | null | undefined): string[] {
   if (!text) return []
   const raw = text.toLowerCase().split(/[^a-z]+/)
@@ -135,6 +156,18 @@ export function buildIdf(jobs: DigestJobRow[]): Map<string, number> {
   return idf
 }
 
+/**
+ * Does this job match on anything more than seniority?
+ *
+ * The overlap has to contain at least one word that says what the job IS.
+ * "Head Chef" against "Head Chef" overlaps on {head, chef} and qualifies on
+ * 'chef'. "Group/Executive chef" against "Executive Head Housekeeper" overlaps
+ * only on {executive}, and does not.
+ */
+function qualifies(overlap: string[]): boolean {
+  return overlap.some(t => !SENIORITY_WORDS.has(t))
+}
+
 /** How well a job's title matches what this candidate says they do. */
 export function titleScore(
   candidateTokens: string[],
@@ -143,11 +176,89 @@ export function titleScore(
 ): number {
   if (candidateTokens.length === 0) return 0
   const jobTokens = tokenize(job.title)
+  const overlap = candidateTokens.filter(t => jobTokens.includes(t))
+  if (!qualifies(overlap)) return 0
   let score = 0
-  for (const t of candidateTokens) {
-    if (jobTokens.includes(t)) score += idf.get(t) ?? Math.log(2)
-  }
+  for (const t of overlap) score += idf.get(t) ?? Math.log(2)
   return score
+}
+
+// ── Pay ──────────────────────────────────────────────────────────────
+//
+// A stated expectation is aspirational, not a floor: people ask for more than
+// they will take, so a role a little under does no harm and a role a lot under
+// does. That makes this a soft penalty, never a filter — nothing is excluded
+// and nobody's recommendations can be emptied.
+
+/** Assumed full-time week when converting between hourly and annual. */
+export const ASSUMED_WEEKLY_HOURS = 45
+/** Within this of the ask, pay is not held against a role at all. */
+export const SALARY_TOLERANCE = 0.10
+/** Ceiling, so pay can reorder a list but never outweigh being the right job. */
+export const MAX_SALARY_PENALTY = 1.5
+/**
+ * Agency hours are not salaried money: no guaranteed hours, no paid holiday, no
+ * sick pay. Annualising the headline rate flatters it, so it is discounted
+ * before comparison rather than allowed to outrank a permanent role.
+ */
+export const AGENCY_HAIRCUT = 0.85
+
+/** What the ROLE pays, as an annual figure. salary_max is the package in both
+ *  sources: Goldenkeys stores base+service charge in both columns, Host stores
+ *  base in min and the package in max. */
+export function annualPayOf(job: DigestJobRow): number | null {
+  const top = Number(job.salary_max ?? job.salary_min)
+  if (!Number.isFinite(top) || top <= 0) return null
+  if (job.salary_type === 'hourly') return top * ASSUMED_WEEKLY_HOURS * 52 * AGENCY_HAIRCUT
+  return top
+}
+
+/** What the CANDIDATE asked for, read from the BOTTOM of their range — the
+ *  least they said they'd take, which already allows for aspiration. */
+export function annualAskOf(row: RoundupCandidateRow): number | null {
+  const v = Number(row.salary_min)
+  if (!Number.isFinite(v) || v <= 0) return null
+  if (row.salary_period === 'hour') {
+    return isCredibleAnnualAsk(v, 'hour') ? v * ASSUMED_WEEKLY_HOURS * 52 : null
+  }
+  return isCredibleAnnualAsk(v, 'year') ? v : null
+}
+
+/**
+ * Things a chef will trade money for. Derived at read time from what we already
+ * store rather than modelled as a field: live-in is expressible today on ~70
+ * roles from benefits and title, and until that earns its place a heuristic
+ * that only ever SOFTENS a penalty is the honest version — it can misjudge a
+ * role's ranking, never hide it.
+ */
+// \b, not \y. Postgres spells a word boundary \y and JavaScript spells it \b;
+// \y in a JS regex is an identity escape matching a literal "y", so the
+// live-in clause silently required the word to be preceded by one. It matched
+// nothing, and the only reason the softener appeared to work at all was
+// "accommodation" and "no late" catching some of the same roles.
+const COMPENSATING = /\blive[ -]?in\b|accommodation|no late|early finish|day-?time|mon(day)?[ -]*(to|–|-|—)[ -]*fri(day)?/i
+
+export function hasCompensatingBenefit(job: DigestJobRow & { benefits?: string[] | null }): boolean {
+  const text = [job.title || '', ...(job.benefits || [])].join(' ')
+  return COMPENSATING.test(text)
+}
+
+/**
+ * How far to push a role down for paying under what they asked. Zero for most
+ * roles and every candidate who hasn't stated a salary.
+ */
+export function salaryPenalty(
+  ask: number | null,
+  job: DigestJobRow & { benefits?: string[] | null }
+): number {
+  if (ask === null) return 0
+  const pay = annualPayOf(job)
+  if (pay === null) return 0
+  const shortfall = (ask - pay) / ask
+  if (shortfall <= SALARY_TOLERANCE) return 0
+  const raw = Math.min(MAX_SALARY_PENALTY, (shortfall - SALARY_TOLERANCE) * 4)
+  // Cheap-with-a-roof is a trade, not a bad match.
+  return hasCompensatingBenefit(job) ? raw / 2 : raw
 }
 
 function sectorBonus(row: RoundupCandidateRow, job: DigestJobRow & { category?: string | null }): number {
@@ -201,7 +312,7 @@ export interface RoundupPlan {
  */
 export function rankMatches(
   row: RoundupCandidateRow,
-  jobs: (DigestJobRow & { category?: string | null })[],
+  jobs: (DigestJobRow & { category?: string | null; benefits?: string[] | null })[],
   idf: Map<string, number>
 ): { mode: MatchMode; ranked: DigestJobRow[] } | null {
   const mode = matchModeFor(row)
@@ -209,16 +320,27 @@ export function rankMatches(
 
   const tokens = tokenize(row.job_title)
   const prefs = parsePreferredAreas(row.preferred_areas)
+  const ask = annualAskOf(row)
 
   const scored = jobs
     .map(j => ({ job: j, score: titleScore(tokens, j, idf) + sectorBonus(row, j) }))
+    // QUALIFYING happens on `score` alone.
     .filter(({ job, score }) =>
       mode === 'area'
         ? jobMatchesPreferredAreas({ areaRegion: job.area_region, areaCounty: job.area_county }, prefs)
         : score > 0
     )
+    // ORDERING happens on `rank`, which is score minus the pay penalty.
+    //
+    // The split is the whole point and must not be collapsed. Profile mode
+    // filters on score > 0; fold the penalty into `score` and a pay gap can
+    // drive a positive title match to zero and silently DELETE the role —
+    // turning a soft penalty into a hard salary filter, which is exactly what
+    // was rejected. Subtracting only after the filter means pay can move a
+    // role down the list and never off it.
+    .map(s => ({ ...s, rank: s.score - salaryPenalty(ask, s.job) }))
     .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score
+      if (b.rank !== a.rank) return b.rank - a.rank
       return new Date(b.job.created_at || 0).getTime() - new Date(a.job.created_at || 0).getTime()
     })
 
@@ -227,7 +349,7 @@ export function rankMatches(
 
 export function planFor(
   row: RoundupCandidateRow,
-  jobs: (DigestJobRow & { category?: string | null })[],
+  jobs: (DigestJobRow & { category?: string | null; benefits?: string[] | null })[],
   idf: Map<string, number>,
   confirmedEmails: Set<string>,
   now: Date = new Date()

@@ -23,9 +23,12 @@ import { missingKeys, satisfiedKeys, specFor, type NudgeCandidate } from '@/lib/
 
 interface Props {
   candidate: NudgeCandidate | null
+  /** Which field this card is asking about, so the surrounding page can avoid
+   *  asking for the same one twice. Null when nothing is showing. */
+  onNudge?: (key: NudgeKey | null) => void
 }
 
-export default function ProfileNudge({ candidate }: Props) {
+export default function ProfileNudge({ candidate, onNudge }: Props) {
   const router = useRouter()
   const [key, setKey] = useState<NudgeKey | null>(null)
   const [dismissing, setDismissing] = useState(false)
@@ -100,6 +103,7 @@ export default function ProfileNudge({ candidate }: Props) {
         if (!chosen || cancelled) return
 
         setKey(chosen)
+        onNudge?.(chosen)
         void post({ action: 'shown', key: chosen })
       } catch {
         /* never let a nudge break the dashboard */
@@ -117,6 +121,9 @@ export default function ProfileNudge({ candidate }: Props) {
     setDismissing(true)
     void post({ action: 'dismissed', key })
     setKey(null)
+    // Hand the field back: once the card is gone the completion list should
+    // show that row again, or the candidate has simply lost a prompt.
+    onNudge?.(null)
   }
 
   return (

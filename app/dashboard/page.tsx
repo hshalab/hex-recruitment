@@ -186,6 +186,9 @@ export default function DashboardPage() {
   const [dashboardPhotoUrl, setDashboardPhotoUrl] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
   const [isDiscoverable, setIsDiscoverable] = useState(false)
+  /** Field the nudge is currently asking about, so the completion card can
+   *  stand down on that one row. Null when no nudge is showing. */
+  const [nudgedKey, setNudgedKey] = useState<string | null>(null)
   // "Not interested" job ids — remembered per device via localStorage (no DB).
   const [dismissedJobIds, setDismissedJobIds] = useState<Set<string>>(new Set())
   const photoInputRef = useRef<HTMLInputElement>(null)
@@ -762,8 +765,14 @@ export default function DashboardPage() {
   // uploader; everything else deep-links to the right /profile section.
   // Job title is excluded here because the card renders its own prompt in the
   // role slot — otherwise one field would be asked for twice in one card.
+  // The nudge and the card must not ask for the same field on the same screen.
+  // The nudge wins the field it is currently asking about and the card drops
+  // that row — but ONLY from the list. fieldsComplete/fieldsTotal below still
+  // come from the full `missingFields`, so "12 of 14, 86%" cannot move just
+  // because a nudge appeared; the candidate's completeness must never change
+  // for a reason they didn't cause.
   const cardMissing = missingFields
-    .filter(f => f.key !== 'jobTitle')
+    .filter(f => f.key !== 'jobTitle' && f.key !== nudgedKey)
     .map(f => ({
       key: f.key,
       label: f.label.replace(/\s*\(.*\)/, ''),
@@ -793,7 +802,7 @@ export default function DashboardPage() {
 
         {/* At most one contextual nudge, in the flow rather than over it. Renders
             nothing unless the rules in lib/nudges.ts allow it. */}
-        <ProfileNudge candidate={candidate} />
+        <ProfileNudge candidate={candidate} onNudge={setNudgedKey} />
 
         <div className={styles.grid}>
           {/* ════════════════════ LEFT COLUMN ═════════════════ */}

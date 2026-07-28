@@ -24,6 +24,9 @@ export interface NudgeCandidate {
   jobTitle?: string | null
   jobSector?: string | null
   preferredAreas?: string[] | null
+  salaryMin?: number | string | null
+  salaryMax?: number | string | null
+  desiredSalary?: string | null
 }
 
 /**
@@ -34,10 +37,13 @@ export interface NudgeCandidate {
  *                hard exclusion there) and drives area-matched recommendations.
  *  2. jobTitle — unlocks profile-matched recommendations for candidates who
  *                haven't set areas, and sharpens ranking for those who have.
- *  3. jobSector— asked last on purpose. Today every active job on the board is
- *                'hospitality', so sector cannot discriminate between roles and
- *                changes nobody's recommendations. It earns its place only when
- *                the board carries more than one sector.
+ *  3. salary  — replaced jobSector here. Sector could not discriminate between
+ *                roles while every active job on the board is 'hospitality', so
+ *                it was asking for a field that changed nobody's results.
+ *                Salary now orders every list through the pay penalty in
+ *                lib/rolesRoundup.ts, so answering it visibly changes what the
+ *                candidate is shown. It is still third: areas and job title
+ *                decide WHICH roles they see, salary only decides the order.
  */
 export const NUDGE_FIELDS: NudgeFieldSpec[] = [
   {
@@ -57,12 +63,15 @@ export const NUDGE_FIELDS: NudgeFieldSpec[] = [
     isMissing: c => !c.jobTitle || !String(c.jobTitle).trim(),
   },
   {
-    key: 'jobSector',
-    title: 'Which part of the industry?',
-    body: 'Pick your sector so we can keep your recommendations relevant as we add more employers.',
-    cta: 'Pick my sector',
-    link: '/profile?section=job-sector',
-    isMissing: c => !c.jobSector || !String(c.jobSector).trim(),
+    key: 'salary',
+    title: 'What are you looking to earn?',
+    body: 'Tell us and we’ll put the roles that pay it at the top — we’ll still show you everything else.',
+    cta: 'Add my salary',
+    link: '/profile?section=job-preferences',
+    // Any of the three counts: the range is what matching reads, but a
+    // candidate who typed only the free-text figure has still answered.
+    isMissing: c =>
+      !c.salaryMin && !c.salaryMax && !(c.desiredSalary && String(c.desiredSalary).trim()),
   },
 ]
 

@@ -12,6 +12,7 @@ export type NudgeKey =
   | 'cv'
   | 'jobTitle'
   | 'jobSector'
+  | 'salary'
   | 'photo'
   | 'discoverable'
   | 'bio'

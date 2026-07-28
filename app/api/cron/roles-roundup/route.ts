@@ -38,13 +38,18 @@ import {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
+// salary_min/salary_period feed the pay penalty; benefits feeds the
+// compensating-benefit softener (live-in, no-lates, Mon–Fri). Without these
+// columns selected the ranking silently degrades to "no salary stated" for
+// everyone, which is a quiet failure rather than a loud one — so they are
+// listed next to the fields they exist for.
 const CANDIDATE_SELECT =
-  'user_id, email, full_name, job_title, job_sector, preferred_areas, notification_preferences, roundup_state'
+  'user_id, email, full_name, job_title, job_sector, preferred_areas, notification_preferences, roundup_state, salary_min, salary_period'
 const JOB_SELECT =
-  'id, title, company, location, salary_min, salary_max, salary_type, category, posted_at, created_at, area_region, area_county'
+  'id, title, company, location, salary_min, salary_max, salary_type, category, posted_at, created_at, area_region, area_county, benefits'
 
 type Mode = 'dry-run' | 'test' | 'send'
-type JobRow = DigestJobRow & { category?: string | null }
+type JobRow = DigestJobRow & { category?: string | null; benefits?: string[] | null }
 
 const EMPTY_EXCLUSIONS: Record<ExclusionReason, number> = {
   'no-email': 0, 'unconfirmed': 0, 'digest-off': 0, 'no-signal': 0, 'not-due': 0, 'no-matches': 0,
@@ -65,7 +70,7 @@ async function loadCandidates(supabase: SupabaseClient) {
   }
   const bare = await supabase
     .from('candidate_profiles')
-    .select('user_id, email, full_name, job_title, job_sector, preferred_areas, notification_preferences')
+    .select('user_id, email, full_name, job_title, job_sector, preferred_areas, notification_preferences, salary_min, salary_period')
   if (bare.error) return { rows: [] as RoundupCandidateRow[], columnMissing: true, error: bare.error.message }
   const rows = (bare.data || []).map(r => ({ ...(r as object), roundup_state: null })) as unknown as RoundupCandidateRow[]
   return { rows, columnMissing: true, error: null }
