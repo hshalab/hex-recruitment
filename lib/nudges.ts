@@ -28,6 +28,13 @@ export interface NudgeState {
   /** ISO timestamp of the most recent nudge of any kind. Enforces one-per-session
    *  server-side, so a new tab can't reset it. */
   lastNudgeAt: string | null
+  /** How many sessions this candidate has had, counted server-side. */
+  sessionCount: number
+  /** ISO timestamp of the last dashboard load, whichever device it came from. */
+  lastSeenAt: string | null
+  /** ISO timestamp the CURRENT session began. A nudge shown at or after this
+   *  point is "already shown this session". */
+  sessionStartedAt: string | null
 }
 
 export const EMPTY_NUDGE_STATE: NudgeState = {
@@ -35,6 +42,9 @@ export const EMPTY_NUDGE_STATE: NudgeState = {
   dismissed: {},
   completed: {},
   lastNudgeAt: null,
+  sessionCount: 0,
+  lastSeenAt: null,
+  sessionStartedAt: null,
 }
 
 // ── Rules ────────────────────────────────────────────────────────────
@@ -53,6 +63,17 @@ export const MAX_DISMISSALS = 2
  *  per-session limit. Kept below the cooldown: this throttles, the cooldown
  *  bans. */
 export const MIN_MINUTES_BETWEEN_NUDGES = 30
+/**
+ * A gap of this long between dashboard loads starts a new session.
+ *
+ * This replaces the old sessionStorage definition, which was one browser TAB.
+ * That was untestable by the obvious method — signing out and back in doesn't
+ * close a tab, so a candidate who never closes theirs was stuck on session 1
+ * forever and could never be nudged at all. Time-since-last-seen is what a
+ * person means by "came back later", it works across devices, and it can't be
+ * farmed by opening tabs or reset by clearing storage.
+ */
+export const SESSION_GAP_MINUTES = 30
 
 const DAY_MS = 86_400_000
 
@@ -66,13 +87,66 @@ export function parseNudgeState(raw: unknown): NudgeState {
   const r = raw as Record<string, unknown>
   const obj = (v: unknown): Record<string, any> =>
     v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, any>) : {}
-  const lastNudgeAt = typeof r.lastNudgeAt === 'string' ? r.lastNudgeAt : null
+  const str = (v: unknown): string | null => (typeof v === 'string' ? v : null)
+  const count = Number(r.sessionCount)
   return {
     shown: obj(r.shown),
     dismissed: obj(r.dismissed),
     completed: obj(r.completed),
-    lastNudgeAt,
+    lastNudgeAt: str(r.lastNudgeAt),
+    sessionCount: Number.isFinite(count) && count > 0 ? Math.floor(count) : 0,
+    lastSeenAt: str(r.lastSeenAt),
+    sessionStartedAt: str(r.sessionStartedAt),
   }
+}
+
+/** Milliseconds since an ISO timestamp, or null if it's absent/unparseable. */
+function elapsedSince(iso: string | null, now: Date): number | null {
+  if (!iso) return null
+  const then = new Date(iso).getTime()
+  if (!Number.isFinite(then)) return null
+  return now.getTime() - then
+}
+
+/**
+ * Record that the candidate has just loaded the dashboard, starting a new
+ * session if enough time has passed since the last load.
+ *
+ * Pure — the caller persists the result. Returns the flag too so the route can
+ * skip a write when nothing changed except a timestamp we don't need to be
+ * exact about... except we always do write, because lastSeenAt IS the clock.
+ */
+export function touchSession(
+  state: NudgeState,
+  now = new Date()
+): { state: NudgeState; isNewSession: boolean } {
+  const gap = elapsedSince(state.lastSeenAt, now)
+  const isNewSession = gap === null || gap >= SESSION_GAP_MINUTES * 60_000
+  const iso = now.toISOString()
+  return {
+    state: {
+      ...state,
+      lastSeenAt: iso,
+      sessionCount: isNewSession ? state.sessionCount + 1 : state.sessionCount,
+      sessionStartedAt: isNewSession ? iso : state.sessionStartedAt,
+    },
+    isNewSession,
+  }
+}
+
+/**
+ * The rule inputs, derived entirely from stored state — no client storage, no
+ * client-supplied counters. "Shown this session" means a nudge was recorded at
+ * or after this session began.
+ */
+export function contextFromState(state: NudgeState, now = new Date()): NudgeContext {
+  const started = state.sessionStartedAt ? new Date(state.sessionStartedAt).getTime() : null
+  const lastNudge = state.lastNudgeAt ? new Date(state.lastNudgeAt).getTime() : null
+  const shownThisSession =
+    started !== null && lastNudge !== null && Number.isFinite(started) && Number.isFinite(lastNudge)
+      ? lastNudge >= started
+      : false
+  return { sessionCount: state.sessionCount, shownThisSession, now }
 }
 
 export interface NudgeContext {

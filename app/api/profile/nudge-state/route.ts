@@ -6,6 +6,7 @@ import {
   markDismissed,
   markCompleted,
   queueSkipped,
+  touchSession,
   EMPTY_NUDGE_STATE,
   type NudgeKey,
   type NudgeState,
@@ -17,12 +18,20 @@ import {
 // the client PUT a whole state object — otherwise "you've dismissed this twice,
 // stop asking" is enforced by the same client that wants to ask again.
 //
-//   GET                                   → { nudgeState }
-//   POST { action, key }                  → applies one transition
+//   GET                                     → { nudgeState }
+//   POST { action, key }                    → applies one transition
 //     action: 'shown' | 'dismissed' | 'completed'
-//   POST { action: 'skipped', keys: [] }  → queues onboarding fields for later
+//   POST { action: 'completed', keys: [] }  → retires several fields in ONE write
+//   POST { action: 'skipped', keys: [] }    → queues onboarding fields for later
+//   POST { action: 'seen' }                 → records a dashboard load, starting
+//                                             a new session after a 30-min gap
 //
-// PHASE 2: nothing calls this to display a nudge yet. Phase 3 does.
+// 'completed' accepts either one key or an array on purpose. The client used to
+// fire one request per satisfied field; each read the same jsonb, applied its
+// own transition and wrote the whole object back, so concurrent requests
+// clobbered each other and a field was silently lost. Paul's own record showed
+// it: two fields satisfied, only one recorded, the second landing four minutes
+// later on a subsequent page load. One request, one read-modify-write.
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -70,8 +79,13 @@ export async function GET(request: NextRequest) {
   })
 }
 
-const ACTIONS = ['shown', 'dismissed', 'completed', 'skipped'] as const
+const ACTIONS = ['shown', 'dismissed', 'completed', 'skipped', 'seen'] as const
 type Action = typeof ACTIONS[number]
+
+/** Actions carrying a list of keys rather than a single one. */
+function keyList(body: Record<string, unknown>): NudgeKey[] | null {
+  return Array.isArray(body.keys) ? (body.keys.filter(k => typeof k === 'string') as NudgeKey[]) : null
+}
 
 export async function POST(request: NextRequest) {
   const { admin, userId } = await authenticate(request)
@@ -82,11 +96,13 @@ export async function POST(request: NextRequest) {
   if (!action || !ACTIONS.includes(action)) {
     return NextResponse.json({ error: `action must be one of ${ACTIONS.join(', ')}` }, { status: 400 })
   }
-  if (action !== 'skipped' && typeof body?.key !== 'string') {
-    return NextResponse.json({ error: 'key is required' }, { status: 400 })
-  }
-  if (action === 'skipped' && !Array.isArray(body?.keys)) {
+  const keys = keyList(body || {})
+  // 'seen' carries nothing; 'skipped' needs a list; 'completed' takes either.
+  if (action === 'skipped' && !keys) {
     return NextResponse.json({ error: 'keys must be an array' }, { status: 400 })
+  }
+  if (action !== 'skipped' && action !== 'seen' && typeof body?.key !== 'string' && !keys) {
+    return NextResponse.json({ error: 'key or keys is required' }, { status: 400 })
   }
 
   if (columnMissing) return NextResponse.json({ nudgeState: EMPTY_NUDGE_STATE, available: false })
@@ -109,11 +125,20 @@ export async function POST(request: NextRequest) {
 
   const current = parseNudgeState(row.nudge_state)
   let next: NudgeState
+  let isNewSession = false
   switch (action) {
     case 'shown':     next = markShown(current, body.key as NudgeKey); break
     case 'dismissed': next = markDismissed(current, body.key as NudgeKey); break
-    case 'completed': next = markCompleted(current, body.key as NudgeKey); break
-    case 'skipped':   next = queueSkipped(current, body.keys as NudgeKey[]); break
+    case 'completed':
+      next = (keys ?? [body.key as NudgeKey]).reduce((s, k) => markCompleted(s, k), current)
+      break
+    case 'skipped':   next = queueSkipped(current, keys as NudgeKey[]); break
+    case 'seen': {
+      const touched = touchSession(current)
+      next = touched.state
+      isNewSession = touched.isNewSession
+      break
+    }
   }
 
   const { error: writeError } = await admin
@@ -129,5 +154,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to save nudge state' }, { status: 500 })
   }
 
-  return NextResponse.json({ nudgeState: next, available: true })
+  return NextResponse.json({ nudgeState: next, available: true, isNewSession })
 }

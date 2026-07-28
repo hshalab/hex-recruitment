@@ -12,6 +12,7 @@ import PasswordInput from './PasswordInput'
 import LanguageAutocomplete from './LanguageAutocomplete'
 import PreferredAreasPicker from './PreferredAreasPicker'
 import { isValidEmail } from '@/lib/validateEmail'
+import { validateSalaryInput } from '@/lib/salaryInput'
 import { safeInternalPath } from '@/lib/safeRedirect'
 import { getStoredAttribution, attributionColumns, HEARD_FROM_OPTIONS } from '@/lib/attribution'
 import styles from './JobSeekerProfileForm.module.css'
@@ -586,9 +587,24 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
 
       case 3: // Professional
         // Salary is no longer a gate: it stopped people saving a job title.
+        // It IS still checked when they've typed something, which is a
+        // different thing from requiring it — a blank salary saves fine, but
+        // "£38 per year" does not, because we would go on to recommend roles
+        // against a number the candidate never meant. See lib/salaryInput.ts.
         if (!formData.currentPosition.trim()) {
           setError('Current/desired position is required')
           return false
+        }
+        {
+          const problem = validateSalaryInput({
+            min: formData.salaryMin,
+            max: formData.salaryMax,
+            period: formData.salaryPeriod,
+          })
+          if (problem) {
+            setError(problem.message)
+            return false
+          }
         }
         return true
 
@@ -671,6 +687,21 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
 
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return
+
+    // Salary is checked here as well as in step 3, because a candidate can edit
+    // the range and then save from a different step — validateStep only ever
+    // sees the step they happen to be standing on, and a bad number must not
+    // slip through on that route.
+    const salaryProblem = validateSalaryInput({
+      min: formData.salaryMin,
+      max: formData.salaryMax,
+      period: formData.salaryPeriod,
+    })
+    if (salaryProblem) {
+      setError(salaryProblem.message)
+      setCurrentStep(3)
+      return
+    }
 
     // Derive desiredSalary from salary range if not explicitly set
     if (!formData.desiredSalary.trim() && (formData.salaryMin || formData.salaryMax)) {
@@ -1800,8 +1831,28 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       </div>
       </div>
 
+      {/* Salary Period comes FIRST now. It used to sit below the range, so the
+          numbers were typed before the unit was chosen — which is how a profile
+          ended up asking for "£38 per year". Choosing the unit first also lets
+          the placeholders and bounds below describe the right kind of number. */}
       <div className={styles.formGroup}>
-        <label className={styles.label}>Salary Range</label>
+        <label className={styles.label} htmlFor="salaryPeriod">Salary Period</label>
+        <select
+          id="salaryPeriod"
+          name="salaryPeriod"
+          value={formData.salaryPeriod}
+          onChange={handleInputChange}
+          className={styles.select}
+        >
+          <option value="year">Per Year</option>
+          <option value="hour">Per Hour</option>
+        </select>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.label}>
+          Salary Range {formData.salaryPeriod === 'hour' ? '(per hour)' : '(per year)'}
+        </label>
         <div className={styles.formRow}>
           <div className={styles.salaryInput}>
             <span className={styles.currencyPrefix}>£</span>
@@ -1812,7 +1863,9 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
               value={formData.salaryMin}
               onChange={handleInputChange}
               className={styles.input}
-              placeholder="Min e.g. 25000"
+              placeholder={formData.salaryPeriod === 'hour' ? 'Min e.g. 16' : 'Min e.g. 25000'}
+              min={formData.salaryPeriod === 'hour' ? 5 : 5000}
+              step={formData.salaryPeriod === 'hour' ? 0.5 : 500}
               autoComplete="off"
             />
           </div>
@@ -1826,25 +1879,32 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
               value={formData.salaryMax}
               onChange={handleInputChange}
               className={styles.input}
-              placeholder="Max e.g. 35000"
+              placeholder={formData.salaryPeriod === 'hour' ? 'Max e.g. 24' : 'Max e.g. 35000'}
+              min={formData.salaryPeriod === 'hour' ? 5 : 5000}
+              step={formData.salaryPeriod === 'hour' ? 0.5 : 500}
               autoComplete="off"
             />
           </div>
         </div>
-      </div>
-
-      <div className={styles.formGroup}>
-        <label className={styles.label} htmlFor="salaryPeriod">Salary Period</label>
-        <select
-          id="salaryPeriod"
-          name="salaryPeriod"
-          value={formData.salaryPeriod}
-          onChange={handleInputChange}
-          className={styles.select}
-        >
-          <option value="year">Per Year</option>
-          <option value="hour">Per Hour</option>
-        </select>
+        {/* Shown as they type rather than only on save — the point is to catch a
+            slip while the number is still in front of them. */}
+        {(() => {
+          const problem = validateSalaryInput({
+            min: formData.salaryMin,
+            max: formData.salaryMax,
+            period: formData.salaryPeriod,
+          })
+          return problem ? (
+            <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', color: '#b45309' }} role="status">
+              {problem.message}
+            </p>
+          ) : (
+            <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: 'var(--text-gray)' }}>
+              Optional. We use this to rank roles, never to hide them — you&rsquo;ll still see
+              everything that matches you otherwise.
+            </p>
+          )
+        })()}
       </div>
 
       <div className={styles.formGroup}>
