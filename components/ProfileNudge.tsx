@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import {
@@ -40,8 +40,20 @@ export default function ProfileNudge({ candidate }: Props) {
     }).catch(() => null)
   }, [])
 
+  // Runs ONCE per mount, not once per render.
+  //
+  // `candidate` is rebuilt on every dashboard render, so the effect would re-run
+  // and overlap with itself. That matters because every request below is a
+  // read-modify-write on one jsonb column: a second run's 'seen' could read the
+  // state before the first run's 'shown' had landed and write it back without
+  // lastNudgeAt — losing the record that we'd just nudged, and allowing a second
+  // nudge in the same session. It is the same lost update this branch fixes for
+  // 'completed', and it would have been a poor thing to ship in a new place.
+  const ran = useRef(false)
+
   useEffect(() => {
-    if (!candidate) return
+    if (!candidate || ran.current) return
+    ran.current = true
     let cancelled = false
 
     ;(async () => {
