@@ -270,7 +270,18 @@ export async function POST(req: NextRequest) {
       )
     }
     const { subject, html } = renderPlan(realPlan, { live: false })
-    const result = await sendEmail(body.testTo, subject, html)
+    // Test subjects carry a timestamp so Gmail cannot thread them together.
+    //
+    // Repeated tests with an identical subject land in one Gmail conversation,
+    // and Gmail then TRIMS the content it considers repeated — the "…" markers,
+    // and a large collapsed gap where the body should be. That looks exactly
+    // like a broken template on a phone, and it cost us an afternoon deciding
+    // which it was. A real candidate gets one email in no thread and never sees
+    // it; only we do, because only we receive the same email repeatedly.
+    //
+    // Test mode only. The real send keeps the clean subject.
+    const testSubject = `${subject} [test ${now.toISOString().slice(11, 19)}Z]`
+    const result = await sendEmail(body.testTo, testSubject, html)
     // Same rule as the real send: a test that didn't send is not a 200. This
     // one returned "HTTP 200, sent: 0" while Resend was rejecting the key, and
     // the only reason it was caught is that somebody read the body carefully.
