@@ -56,8 +56,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # Manual runs only. A scheduled run has no inputs to type a confirmation
+      # into, so this guard cannot apply to it — see the note on CONFIRM below
+      # for what protects the scheduled path instead.
       - name: Refuse a real send without confirmation
-        if: inputs.mode == 'send' && inputs.confirm != 'SEND'
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'send' && inputs.confirm != 'SEND'
         run: |
           echo "::error::mode=send requires confirm=SEND. Refusing to mail real candidates."
           exit 1
@@ -66,9 +69,37 @@ jobs:
         env:
           SITE_URL: ${{ secrets.SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          MODE: ${{ inputs.mode }}
+          # THE INPUTS CONTEXT IS EMPTY ON A SCHEDULE.
+          #
+          # workflow_dispatch defaults are applied by GitHub only for a
+          # workflow_dispatch event. On a schedule there are no inputs at all,
+          # so `inputs.mode` evaluates to an empty string — NOT to 'dry-run'.
+          # Left as it was, a Tuesday run would have POSTed {"mode": ""}, the
+          # route would have read that as dry-run, returned 200 with sent: 0,
+          # and the workflow would have gone green having emailed nobody. That
+          # is the Vercel-GET failure in a different hat: a scheduled job that
+          # looks healthy and does nothing.
+          #
+          # So the mode is decided by the EVENT, not by an input that isn't
+          # there. Schedule means a real send; anything manual keeps the
+          # dry-run default and has to be asked for explicitly.
+          MODE: ${{ github.event_name == 'schedule' && 'send' || inputs.mode }}
           TEST_TO: ${{ inputs.testTo }}
-          CONFIRM: ${{ inputs.confirm }}
+          # The route requires confirm:'SEND' alongside mode=send. A schedule
+          # cannot type it, so it is supplied here — which does mean the token
+          # stops protecting the scheduled path, and I would rather say that
+          # than have it look like a guard when it isn't.
+          #
+          # What protects a scheduled send instead:
+          #   1. the schedule block above is COMMENTED OUT, so enabling it is a
+          #      deliberate act by a person editing this file
+          #   2. isDue() gives each candidate a 7-day cadence, so even a
+          #      misconfigured schedule firing hourly mails nobody twice in a
+          #      week — the blast radius of a mistake is one email per person
+          #   3. CRON_SECRET is still required, so nothing but this workflow can
+          #      reach the send path
+          #   4. the manual path keeps BOTH keys: mode=send AND confirm=SEND
+          CONFIRM: ${{ github.event_name == 'schedule' && 'SEND' || inputs.confirm }}
         run: |
           set -euo pipefail
 
@@ -77,18 +108,22 @@ jobs:
             exit 1
           fi
 
-          payload=$(MODE="$MODE" TEST_TO="$TEST_TO" CONFIRM="$CONFIRM" python3 -c '
-          import json, os
-          mode = os.environ["MODE"]
-          body = {"mode": mode}
-          if mode == "test":
-              body["testTo"] = os.environ["TEST_TO"]
-          if mode == "send":
-              body["confirm"] = os.environ["CONFIRM"]
-          print(json.dumps(body))
-          ')
+          # Fail on an unresolved mode rather than falling through to something
+          # harmless-looking. An empty MODE used to become {"mode": ""}, which
+          # the route reads as dry-run — a green run that sends nothing. If this
+          # is ever empty again, it should stop here and say so.
+          case "$MODE" in
+            dry-run) payload='{"mode":"dry-run"}' ;;
+            test)    payload="{\"mode\":\"test\",\"testTo\":\"${TEST_TO}\"}" ;;
+            send)    payload="{\"mode\":\"send\",\"confirm\":\"${CONFIRM}\"}" ;;
+            *)
+              echo "::error::MODE resolved to '${MODE}', which is not dry-run, test or send. Refusing to guess."
+              exit 1
+              ;;
+          esac
 
-          echo "POST ${SITE_URL}/api/cron/roles-roundup  mode=${MODE}"
+          echo "event=${{ github.event_name }}  resolved mode=${MODE}"
+          echo "POST ${SITE_URL}/api/cron/roles-roundup"
 
           # -o/-w rather than --fail: we want the BODY on a failure, because the
           # route returns the per-recipient failed[] list alongside the 500.
