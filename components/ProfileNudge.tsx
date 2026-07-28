@@ -142,24 +142,34 @@ export default function ProfileNudge({ candidate }: Props) {
       </div>
 
       <style jsx>{`
+        /* CORAL, not the old 3% yellow tint.
+           The tint was a wash of our own brand colour sitting directly above a
+           yellow-bordered profile card, so it read as furniture rather than as
+           something worth doing. Coral is warm and properly saturated, is
+           clearly not one of the yellows, and — the constraint that ruled out
+           the obvious alternative — cannot be mistaken for a validation error.
+           Red is already #dc2626 on the very page this card links to.
+           The left bar carries most of the weight; the fill stays light so the
+           text is comfortable to read. */
         .nudge {
           display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-          background: #fffdf0; border: 1px solid #ffe500; border-radius: 12px;
+          background: #fff0eb; border: 1px solid #ff8763;
+          border-left: 4px solid #ff6b45; border-radius: 12px;
           padding: 0.9rem 1rem; margin: 0 0 1.25rem;
         }
         .nudgeText { flex: 1 1 260px; min-width: 0; }
-        .nudgeTitle { margin: 0 0 0.15rem; font-size: 0.98rem; font-weight: 700; color: #0f172a; }
-        .nudgeBody { margin: 0; font-size: 0.88rem; line-height: 1.45; color: #475569; }
+        .nudgeTitle { margin: 0 0 0.15rem; font-size: 0.98rem; font-weight: 700; color: #7c2d12; }
+        .nudgeBody { margin: 0; font-size: 0.88rem; line-height: 1.45; color: #8a5340; }
         .nudgeActions { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
         .nudgeCta {
           background: #ffe500; color: #0f172a; border: none; border-radius: 8px;
           padding: 0.55rem 1rem; font-size: 0.88rem; font-weight: 700; cursor: pointer; white-space: nowrap;
         }
         .nudgeDismiss {
-          background: transparent; border: none; color: #94a3b8;
+          background: transparent; border: none; color: #c08268;
           font-size: 0.95rem; line-height: 1; padding: 0.45rem; cursor: pointer; border-radius: 6px;
         }
-        .nudgeDismiss:hover { color: #475569; background: #f1f5f9; }
+        .nudgeDismiss:hover { color: #7c2d12; background: #ffe0d6; }
         .nudgeDismiss:disabled { opacity: 0.5; cursor: default; }
         @media (max-width: 520px) {
           .nudgeActions { margin-left: 0; width: 100%; }
