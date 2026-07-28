@@ -26,6 +26,7 @@ const ProfileBoostPaymentModal = dynamic(() => import('@/components/ProfileBoost
 })
 import SignedImage from '@/components/SignedImage'
 import CandidateCard from '@/components/CandidateCard'
+import ProfileNudge from '@/components/ProfileNudge'
 import { STAGE_COLORS } from '@/lib/constants/pipelineStages'
 import styles from './page.module.css'
 
@@ -789,6 +790,10 @@ export default function DashboardPage() {
           </div>
         </div>
         <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
+
+        {/* At most one contextual nudge, in the flow rather than over it. Renders
+            nothing unless the rules in lib/nudges.ts allow it. */}
+        <ProfileNudge candidate={candidate} />
 
         <div className={styles.grid}>
           {/* ════════════════════ LEFT COLUMN ═════════════════ */}
