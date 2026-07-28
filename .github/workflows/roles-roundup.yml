@@ -56,50 +56,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      # Manual runs only. A scheduled run has no inputs to type a confirmation
-      # into, so this guard cannot apply to it — see the note on CONFIRM below
-      # for what protects the scheduled path instead.
-      - name: Refuse a real send without confirmation
-        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'send' && inputs.confirm != 'SEND'
-        run: |
-          echo "::error::mode=send requires confirm=SEND. Refusing to mail real candidates."
-          exit 1
-
+      # ONE STEP, ONE RESOLUTION, ONE READ.
+      #
+      # The confirmation used to live in a separate step whose `if:` read
+      # `inputs.confirm` directly, while the request body read a CONFIRM env var
+      # built from `${{ github.event_name == 'schedule' && 'SEND' || inputs.confirm }}`.
+      # On run #4 the guard step SKIPPED — so it saw confirm=SEND — and the POST
+      # still arrived without it, and the route rightly refused. Two reads of the
+      # same intention that could disagree, and did.
+      #
+      # I could not reproduce which of the two was wrong by reading the file, so
+      # rather than guess I removed the difference: the inputs are passed in raw,
+      # resolved ONCE in shell, and the same two variables are used by both the
+      # refusal check and the payload. There is no longer a second value to be
+      # out of step with the first.
       - name: Trigger the roundup
         env:
           SITE_URL: ${{ secrets.SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          # THE INPUTS CONTEXT IS EMPTY ON A SCHEDULE.
-          #
-          # workflow_dispatch defaults are applied by GitHub only for a
-          # workflow_dispatch event. On a schedule there are no inputs at all,
-          # so `inputs.mode` evaluates to an empty string — NOT to 'dry-run'.
-          # Left as it was, a Tuesday run would have POSTed {"mode": ""}, the
-          # route would have read that as dry-run, returned 200 with sent: 0,
-          # and the workflow would have gone green having emailed nobody. That
-          # is the Vercel-GET failure in a different hat: a scheduled job that
-          # looks healthy and does nothing.
-          #
-          # So the mode is decided by the EVENT, not by an input that isn't
-          # there. Schedule means a real send; anything manual keeps the
-          # dry-run default and has to be asked for explicitly.
-          MODE: ${{ github.event_name == 'schedule' && 'send' || inputs.mode }}
-          TEST_TO: ${{ inputs.testTo }}
-          # The route requires confirm:'SEND' alongside mode=send. A schedule
-          # cannot type it, so it is supplied here — which does mean the token
-          # stops protecting the scheduled path, and I would rather say that
-          # than have it look like a guard when it isn't.
-          #
-          # What protects a scheduled send instead:
-          #   1. the schedule block above is COMMENTED OUT, so enabling it is a
-          #      deliberate act by a person editing this file
-          #   2. isDue() gives each candidate a 7-day cadence, so even a
-          #      misconfigured schedule firing hourly mails nobody twice in a
-          #      week — the blast radius of a mistake is one email per person
-          #   3. CRON_SECRET is still required, so nothing but this workflow can
-          #      reach the send path
-          #   4. the manual path keeps BOTH keys: mode=send AND confirm=SEND
-          CONFIRM: ${{ github.event_name == 'schedule' && 'SEND' || inputs.confirm }}
+          # Raw inputs only — no expression logic in YAML. On a schedule these
+          # arrive empty, which is correct and handled below: workflow_dispatch
+          # defaults are applied by GitHub only for a workflow_dispatch event, so
+          # `inputs.mode` on a schedule is '' and NOT 'dry-run'.
+          EVENT_NAME: ${{ github.event_name }}
+          IN_MODE: ${{ inputs.mode }}
+          IN_TEST_TO: ${{ inputs.testTo }}
+          IN_CONFIRM: ${{ inputs.confirm }}
         run: |
           set -euo pipefail
 
@@ -108,13 +90,44 @@ jobs:
             exit 1
           fi
 
+          # A schedule carries no inputs, so it decides for itself: a real send,
+          # with the confirmation the route requires. Anything manual uses what
+          # was typed, defaulting to dry-run.
+          #
+          # This does mean the confirmation token stops protecting the SCHEDULED
+          # path. What protects it instead:
+          #   1. the schedule block above is COMMENTED OUT — enabling it is a
+          #      deliberate act by a person editing this file
+          #   2. isDue() gives each candidate a 7-day cadence, so even a schedule
+          #      misconfigured to fire hourly cannot mail anyone twice in a week
+          #   3. CRON_SECRET is still required to reach the send path at all
+          #   4. the manual path still needs BOTH keys
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            MODE="send"
+            CONFIRM="SEND"
+          else
+            MODE="${IN_MODE:-dry-run}"
+            CONFIRM="${IN_CONFIRM:-}"
+          fi
+
+          # Say what we hold BEFORE acting on it. Debugging the last failure blind
+          # cost a run; the confirmation is reported as present/absent rather than
+          # echoed, since it is a shared token.
+          if [ "$CONFIRM" = "SEND" ]; then confirm_state="present and correct"; else confirm_state="absent or wrong"; fi
+          echo "event=${EVENT_NAME}  resolved mode=${MODE}  confirm: ${confirm_state}"
+
+          # The refusal now reads the SAME variable the payload will use.
+          if [ "$MODE" = "send" ] && [ "$CONFIRM" != "SEND" ]; then
+            echo "::error::mode=send requires confirm=SEND. Refusing to mail real candidates."
+            exit 1
+          fi
+
           # Fail on an unresolved mode rather than falling through to something
           # harmless-looking. An empty MODE used to become {"mode": ""}, which
-          # the route reads as dry-run — a green run that sends nothing. If this
-          # is ever empty again, it should stop here and say so.
+          # the route reads as dry-run — a green run that sends nothing.
           case "$MODE" in
             dry-run) payload='{"mode":"dry-run"}' ;;
-            test)    payload="{\"mode\":\"test\",\"testTo\":\"${TEST_TO}\"}" ;;
+            test)    payload="{\"mode\":\"test\",\"testTo\":\"${IN_TEST_TO}\"}" ;;
             send)    payload="{\"mode\":\"send\",\"confirm\":\"${CONFIRM}\"}" ;;
             *)
               echo "::error::MODE resolved to '${MODE}', which is not dry-run, test or send. Refusing to guess."
@@ -122,7 +135,8 @@ jobs:
               ;;
           esac
 
-          echo "event=${{ github.event_name }}  resolved mode=${MODE}"
+          # Prove the body carries what we think, without printing the token.
+          echo "payload keys: $(echo "$payload" | tr -d '{}\"' | tr ',' '\n' | cut -d: -f1 | tr '\n' ' ')"
           echo "POST ${SITE_URL}/api/cron/roles-roundup"
 
           # -o/-w rather than --fail: we want the BODY on a failure, because the
