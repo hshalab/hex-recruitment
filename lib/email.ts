@@ -9,6 +9,15 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 const FROM_ADDRESS = 'Thrive <noreply@thrivecareer.co.uk>'
 
+/** "p****s@gmail.com" — enough to recognise a recipient without logging one. */
+function maskAddress(to: string): string {
+  const [local, domain] = String(to).split('@')
+  if (!domain) return '***'
+  const head = local.slice(0, 1)
+  const tail = local.length > 2 ? local.slice(-1) : ''
+  return `${head}${'*'.repeat(Math.max(1, local.length - 2))}${tail}@${domain}`
+}
+
 /**
  * Derive a readable plain-text alternative from the HTML body so every email
  * ships with a text/plain part (better deliverability + accessibility). This
@@ -74,6 +83,18 @@ export async function sendEmail(
       return { success: false, error: JSON.stringify(detail) }
     }
 
+    // Log the successes too, not just the failures.
+    //
+    // Until now only failures were logged, which made silence ambiguous: an
+    // empty log could mean "everything sent" or "nothing was even attempted",
+    // and there was no way to tell them apart after the fact. That ambiguity is
+    // most of the reason a broken API key could have sat unnoticed — "no errors
+    // in the logs" was reassuring and meant nothing.
+    //
+    // The recipient is masked. These logs are for answering "did it go out and
+    // when", which the subject and domain do; the full address adds little and
+    // puts candidate email addresses in a log we scroll through casually.
+    console.log('[Email] Sent:', JSON.stringify({ to: maskAddress(to), subject }))
     return { success: true }
   } catch (err: any) {
     console.error('[Email] Unexpected error:', err?.message, err?.stack?.slice(0, 300))
