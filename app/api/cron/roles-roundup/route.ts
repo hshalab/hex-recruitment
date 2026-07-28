@@ -243,7 +243,13 @@ export async function POST(req: NextRequest) {
 
   // ── test ───────────────────────────────────────────────────────────
   if (mode === 'test') {
-    const realPlan = plans[0]
+    // Prefer the plan belonging to the address we're testing to, when that
+    // address is itself a recipient. Rendering plans[0] meant the reviewer read
+    // a stranger's email: the first plan happened to belong to a candidate with
+    // no stated salary, so it showed none of the pay ranking we were reviewing.
+    // Your own list is the one you can actually judge.
+    const target = body.testTo.trim().toLowerCase()
+    const realPlan = plans.find(p => (p.row.email || '').trim().toLowerCase() === target) || plans[0]
     if (!realPlan) {
       return NextResponse.json(
         { ...summary, sent: 0, error: 'Nobody is currently due, so there is no real plan to render. Re-run when someone qualifies.' },
@@ -255,7 +261,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ...summary,
       testTo: body.testTo,
-      renderedFor: { mode: realPlan.mode, areas: realPlan.areaNames, roleLabel: realPlan.row.job_title },
+      renderedFor: {
+        name: realPlan.row.full_name,
+        isOwnList: (realPlan.row.email || '').trim().toLowerCase() === body.testTo.trim().toLowerCase(),
+        mode: realPlan.mode,
+        areas: realPlan.areaNames,
+        roleLabel: realPlan.row.job_title,
+      },
       sent: result.success ? 1 : 0,
       sendError: result.error,
       note: 'Test send only — no real candidate was contacted and no row was written. The unsubscribe link in this email is inert, so clicking it cannot opt anybody out.',
