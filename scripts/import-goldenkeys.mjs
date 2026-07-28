@@ -13,6 +13,7 @@
 
 import fs from 'fs'
 import path from 'path'
+import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 
 const EMPLOYER_ID = '9eb99b46-2b86-454c-be37-30a34e11a3ed'
@@ -105,7 +106,11 @@ const cleanUrl = u => { try { const x = new URL(u); return `${x.origin}${x.pathn
 // ── phase: enumerate listing pages -> vacancy URLs ──
 async function enumerate() {
   fs.mkdirSync(SCRATCH, { recursive: true })
-  const schema = { type: 'object', properties: { jobs: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, url: { type: 'string' } } } } } }
+  // `image` is pulled in the SAME pass that already fetches title+url, so each
+  // role's own featured photo costs no extra Firecrawl calls. That image is why
+  // this importer can brand a row honestly at insert: it is the picture
+  // Goldenkeys publishes for THAT vacancy, not a stock photo we guessed.
+  const schema = { type: 'object', properties: { jobs: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, url: { type: 'string' }, image: { type: 'string' } } } } } }
   const seen = new Map()
   // Walk until a page yields nothing new, rather than stopping at a fixed count.
   //
@@ -119,11 +124,30 @@ async function enumerate() {
   for (let p = 1; p <= MAX_PAGES; p++) {
     const url = p === 1 ? BASE : `${BASE}page/${p}/`
     const data = await fcScrape(url, schema)
+
+    // A FAILED page is not an empty page. fcScrape returns null after its
+    // retries, which the "no new URLs" check below would read as "we've reached
+    // the end" — silently truncating the live set. apply() then treats every
+    // role beyond the failure as gone and reconciles it to `filled`. A transient
+    // network blip would mass-retire live vacancies, non-deterministically.
+    // Abort instead: a run that stops with an error is recoverable, a run that
+    // quietly wipes the board is not.
+    if (data === null) {
+      throw new Error(
+        `Enumeration failed on page ${p} (${url}) after retries. Aborting rather than ` +
+        `treating a fetch failure as the end of the catalogue — continuing would ` +
+        `mark every role beyond this page as filled.`
+      )
+    }
+
     const jobs = data?.jobs || []
     let added = 0
     for (const j of jobs) {
       const u = cleanUrl(j.url)
-      if (u && u.includes('/vacancies/') && !seen.has(u)) { seen.set(u, j.title || ''); added++ }
+      if (u && u.includes('/vacancies/') && !seen.has(u)) {
+        seen.set(u, { title: j.title || '', image: j.image || null })
+        added++
+      }
     }
     pagesWalked = p
     console.log(`page ${p}: ${jobs.length} listed, ${added} new (total ${seen.size})`)
@@ -138,9 +162,10 @@ async function enumerate() {
     }
     await sleep(500)
   }
-  const list = [...seen].map(([url, title]) => ({ url, title }))
+  const list = [...seen].map(([url, v]) => ({ url, title: v.title, image: v.image }))
   fs.writeFileSync(ENUM_FILE, JSON.stringify(list, null, 2))
-  console.log(`\nEnumerated ${list.length} unique vacancy URLs across ${pagesWalked} pages -> ${ENUM_FILE}`)
+  const withImage = list.filter(l => l.image).length
+  console.log(`\nEnumerated ${list.length} unique vacancy URLs across ${pagesWalked} pages (${withImage} with a featured image) -> ${ENUM_FILE}`)
   return list
 }
 
@@ -192,6 +217,57 @@ async function scrapeDetails() {
   return clean
 }
 
+// ── branding ──
+//
+// WHY THIS LIVES HERE and not in a follow-up script: rows used to reach the
+// public board with no banner and no logo, and were only branded when
+// scripts/import-goldenkeys-images.mjs was run BY HAND afterwards. The workflow
+// never called it, so every scheduled scrape published unbranded listings. On
+// 27 Jul that was 16 roles, caught only because Paul saw them on the live site.
+//
+// Note this uses the role's OWN featured image from Goldenkeys, keyed off the
+// vacancy URL — not a stock photo chosen by category. lib/jobBanner.ts is
+// explicit that guessing a sector image is "wrong and a little dishonest", and
+// it is right; the branded Thrive fallback exists precisely so we never have to
+// guess. This isn't guessing — it's the picture Goldenkeys publishes for that
+// exact vacancy.
+
+const IMG_EXT = ct => (ct?.includes('png') ? 'png' : ct?.includes('webp') ? 'webp' : 'jpg')
+
+/** Download a source image into our own bucket; returns our public URL. */
+async function storeBanner(supa, srcUrl) {
+  if (!srcUrl) return null
+  try {
+    const res = await fetch(srcUrl)
+    if (!res.ok) return null
+    const ct = res.headers.get('content-type') || 'image/jpeg'
+    const buf = Buffer.from(await res.arrayBuffer())
+    // Content-addressed by source URL, so re-runs overwrite the same object
+    // rather than accumulating duplicates.
+    const key = crypto.createHash('sha256').update(srcUrl).digest('hex').slice(0, 20)
+    const objPath = `goldenkeys/${key}.${IMG_EXT(ct)}`
+    const up = await supa.storage.from('job-banners').upload(objPath, buf, { contentType: ct, upsert: true })
+    if (up.error) throw up.error
+    return supa.storage.from('job-banners').getPublicUrl(objPath).data.publicUrl
+  } catch (e) {
+    console.warn(`  banner fetch failed (${srcUrl}): ${e.message}`)
+    return null
+  }
+}
+
+/**
+ * The logo this employer already uses, read from an existing row rather than
+ * hardcoded — Goldenkeys' logo is a large inline data URI and duplicating it in
+ * source would be worse than looking it up once per run.
+ */
+async function existingLogo(supa) {
+  const { data } = await supa
+    .from('jobs').select('company_logo_url')
+    .eq('employer_id', EMPLOYER_ID).not('company_logo_url', 'is', null)
+    .limit(1).maybeSingle()
+  return data?.company_logo_url ?? null
+}
+
 // ── phase: backfill + upsert + reconcile ──
 async function apply() {
   const recs = JSON.parse(fs.readFileSync(REC_FILE, 'utf8'))
@@ -203,8 +279,19 @@ async function apply() {
   const supa = db()
 
   const { data: existing, error: exErr } = await supa
-    .from('jobs').select('id, title, source_url, status').eq('employer_id', EMPLOYER_ID)
+    .from('jobs').select('id, title, source_url, status, company_banner_url, company_logo_url').eq('employer_id', EMPLOYER_ID)
   if (exErr) throw exErr
+
+  // Branding inputs, resolved once per run.
+  const imageByUrl = new Map(enumList.filter(e => e.image).map(e => [e.url, e.image]))
+  const gkLogo = await existingLogo(supa)
+  const bannerCache = new Map() // source image URL -> our public URL
+  const bannerFor = async srcUrl => {
+    if (!srcUrl) return null
+    if (!bannerCache.has(srcUrl)) bannerCache.set(srcUrl, await storeBanner(supa, srcUrl))
+    return bannerCache.get(srcUrl)
+  }
+  console.log(`Branding: ${imageByUrl.size} live roles have a featured image | employer logo ${gkLogo ? 'found' : 'MISSING'}`)
   console.log(`Live listing URLs: ${liveUrls.size} | detail records: ${recs.length}`)
   console.log(`Existing GK jobs: ${existing.length} (active ${existing.filter(j => j.status === 'active').length})`)
 
@@ -245,6 +332,22 @@ async function apply() {
       is_recruiter_posting: true, status: 'active',
     }
     const id = urlToId.get(r.source_url)
+    const prior = id ? existing.find(j => j.id === id) : null
+
+    // Brand the row. INSERTS always get a banner + logo — that is the whole
+    // point of this change. UPDATES only FILL GAPS: an existing banner is never
+    // overwritten, so anything set by hand stays put and a re-run is cheap
+    // rather than re-downloading every image. That is deliberately unlike
+    // scripts/import-goldenkeys-images.mjs, which reassigns every row it can.
+    const needsBanner = !id || !prior?.company_banner_url
+    if (needsBanner && !DRY) {
+      const url = await bannerFor(imageByUrl.get(r.source_url))
+      if (url) row.company_banner_url = url
+    }
+    if (!id || !prior?.company_logo_url) {
+      if (gkLogo) row.company_logo_url = gkLogo
+    }
+
     if (id) {
       if (!DRY) { const { error } = await supa.from('jobs').update(row).eq('id', id); if (error) throw error }
       updated++
