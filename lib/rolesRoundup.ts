@@ -27,6 +27,28 @@ export const ROUNDUP_MEMORY = ROLES_PER_EMAIL * 3
  *  it does NOT read the per-candidate daily/weekly frequency the digest uses. */
 export const CADENCE_DAYS = 7
 
+/**
+ * How far short of seven days still counts as due.
+ *
+ * A weekly schedule must never silently skip a week because the previous send
+ * drifted by a few hours, and a manual send drifts by a lot. This was half a
+ * day, which is enough for a cron running slightly early but NOT enough for a
+ * human pressing send in the afternoon: a send at 20:01 on a Tuesday leaves
+ * 6.49 days before the next Tuesday 08:00 slot, isDue returns false for
+ * everybody, and the run goes green having mailed nobody.
+ *
+ * A full day covers the entire weekday. Even a send at 23:59 leaves 6.33 days,
+ * which clears. The cost is that nothing can now go out closer than six days
+ * apart rather than six and a half — reachable only by deliberately sending
+ * off-cycle, and one email six days after the last is not a harm.
+ *
+ * The alternative was "hasn't been sent this ISO week", which reads more like
+ * what a weekly email means but has a worse worst case: a manual send on a
+ * Sunday would still let Tuesday fire two days later. A tolerance cannot
+ * produce a surprise send; a calendar rule can.
+ */
+export const CADENCE_SLACK_DAYS = 1
+
 const DAY_MS = 86_400_000
 
 export type MatchMode = 'area' | 'profile'
@@ -85,8 +107,7 @@ export function isDue(row: RoundupCandidateRow, now: Date = new Date()): boolean
   if (!lastSentAt) return true
   const last = new Date(lastSentAt).getTime()
   if (!Number.isFinite(last)) return true
-  // Half a day of slack so a cron running slightly early doesn't skip a week.
-  return (now.getTime() - last) / DAY_MS >= CADENCE_DAYS - 0.5
+  return (now.getTime() - last) / DAY_MS >= CADENCE_DAYS - CADENCE_SLACK_DAYS
 }
 
 // ── Title matching ───────────────────────────────────────────────────
