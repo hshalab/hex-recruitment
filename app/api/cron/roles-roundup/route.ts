@@ -104,13 +104,26 @@ function previewUnsubscribeUrl(): string {
   return `${BASE_URL}/api/candidate/digest-unsubscribe?token=SAMPLE_TOKEN_NOT_VALID`
 }
 
-/** Browse link, filtered to their areas where we can express it. */
+/**
+ * Browse link. Only ever uses parameters the board actually reads.
+ *
+ * It previously sent `?area=Greater London,Kent` and `?q=Executive Chef`, and
+ * /jobs reads NEITHER — it accepts `search`, `city` and `id`. Both were silently
+ * ignored, so every "browse" link in every roundup landed on the unfiltered
+ * board. `search` is the one that genuinely filters, so profile-matched
+ * candidates now get a real search for their job title.
+ *
+ * Area-matched candidates go to the plain board, because the filter behind their
+ * match — preferred-area tokens, including "unresolved matches everyone" — is
+ * not expressible in any URL the board understands. Linking to something
+ * approximately right would be worse than linking to everything and saying so.
+ */
 function browseUrlFor(plan: RoundupPlan): string {
-  if (plan.mode === 'area' && plan.areaNames.length > 0) {
-    return `${BASE_URL}/jobs?area=${encodeURIComponent(plan.areaNames.join(','))}`
+  const title = (plan.row.job_title || '').trim()
+  if (plan.mode !== 'area' && title) {
+    return `${BASE_URL}/jobs?search=${encodeURIComponent(title)}`
   }
-  const q = (plan.row.job_title || '').trim()
-  return q ? `${BASE_URL}/jobs?q=${encodeURIComponent(q)}` : `${BASE_URL}/jobs`
+  return `${BASE_URL}/jobs`
 }
 
 function renderPlan(plan: RoundupPlan, opts: { live: boolean }) {
