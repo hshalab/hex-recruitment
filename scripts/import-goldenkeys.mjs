@@ -282,6 +282,30 @@ async function apply() {
     .from('jobs').select('id, title, source_url, status, company_banner_url, company_logo_url').eq('employer_id', EMPLOYER_ID)
   if (exErr) throw exErr
 
+  // ── SANITY GUARD: does this crawl look plausible? ──
+  //
+  // The enumerated set IS the live set: anything absent from it gets reconciled
+  // to `filled`. So an under-collected crawl doesn't just miss new roles, it
+  // retires existing ones. The loud abort in enumerate() catches a page that
+  // FAILS; this catches the cases it can't see — a layout change that yields
+  // zero links, a redirect to a landing page, a silent partial crawl.
+  //
+  // A genuine week's churn on this source is a handful of roles. A drop of
+  // dozens is a broken crawl, not a quiet week. Pausing on a real drop costs one
+  // manual re-run; getting it wrong the other way costs the board.
+  const activeNow = existing.filter(j => j.status === 'active').length
+  const DROP_TOLERANCE = 0.2
+  if (activeNow > 0 && liveUrls.size < activeNow * (1 - DROP_TOLERANCE)) {
+    const pct = Math.round((1 - liveUrls.size / activeNow) * 100)
+    throw new Error(
+      `ABORTING: enumeration found ${liveUrls.size} live roles against ${activeNow} currently active — ` +
+      `a ${pct}% drop, past the ${DROP_TOLERANCE * 100}% tolerance. That is far more likely to be a broken ` +
+      `crawl than a genuine week's churn, and continuing would reconcile the difference to 'filled'. ` +
+      `Re-run manually; if the drop is real, raise DROP_TOLERANCE for that run.`
+    )
+  }
+  console.log(`Sanity: ${liveUrls.size} live vs ${activeNow} active — within tolerance`)
+
   // Branding inputs, resolved once per run.
   const imageByUrl = new Map(enumList.filter(e => e.image).map(e => [e.url, e.image]))
   const gkLogo = await existingLogo(supa)
