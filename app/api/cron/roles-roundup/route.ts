@@ -104,13 +104,26 @@ function previewUnsubscribeUrl(): string {
   return `${BASE_URL}/api/candidate/digest-unsubscribe?token=SAMPLE_TOKEN_NOT_VALID`
 }
 
-/** Browse link, filtered to their areas where we can express it. */
+/**
+ * Browse link. Only ever uses parameters the board actually reads.
+ *
+ * It previously sent `?area=Greater London,Kent` and `?q=Executive Chef`, and
+ * /jobs reads NEITHER — it accepts `search`, `city` and `id`. Both were silently
+ * ignored, so every "browse" link in every roundup landed on the unfiltered
+ * board. `search` is the one that genuinely filters, so profile-matched
+ * candidates now get a real search for their job title.
+ *
+ * Area-matched candidates go to the plain board, because the filter behind their
+ * match — preferred-area tokens, including "unresolved matches everyone" — is
+ * not expressible in any URL the board understands. Linking to something
+ * approximately right would be worse than linking to everything and saying so.
+ */
 function browseUrlFor(plan: RoundupPlan): string {
-  if (plan.mode === 'area' && plan.areaNames.length > 0) {
-    return `${BASE_URL}/jobs?area=${encodeURIComponent(plan.areaNames.join(','))}`
+  const title = (plan.row.job_title || '').trim()
+  if (plan.mode !== 'area' && title) {
+    return `${BASE_URL}/jobs?search=${encodeURIComponent(title)}`
   }
-  const q = (plan.row.job_title || '').trim()
-  return q ? `${BASE_URL}/jobs?q=${encodeURIComponent(q)}` : `${BASE_URL}/jobs`
+  return `${BASE_URL}/jobs`
 }
 
 function renderPlan(plan: RoundupPlan, opts: { live: boolean }) {
@@ -258,6 +271,9 @@ export async function POST(req: NextRequest) {
     }
     const { subject, html } = renderPlan(realPlan, { live: false })
     const result = await sendEmail(body.testTo, subject, html)
+    // Same rule as the real send: a test that didn't send is not a 200. This
+    // one returned "HTTP 200, sent: 0" while Resend was rejecting the key, and
+    // the only reason it was caught is that somebody read the body carefully.
     return NextResponse.json({
       ...summary,
       testTo: body.testTo,
@@ -271,7 +287,7 @@ export async function POST(req: NextRequest) {
       sent: result.success ? 1 : 0,
       sendError: result.error,
       note: 'Test send only — no real candidate was contacted and no row was written. The unsubscribe link in this email is inert, so clicking it cannot opt anybody out.',
-    })
+    }, { status: result.success ? 200 : 500 })
   }
 
   // ── send ───────────────────────────────────────────────────────────
@@ -301,7 +317,40 @@ export async function POST(req: NextRequest) {
     sentTo.push(plan.row.email!)
   }
 
-  return NextResponse.json({ ...summary, sent: sentTo.length, sentTo, failed })
+  // A FAILED SEND MUST NOT LOOK LIKE A SUCCESSFUL RUN.
+  //
+  // This returned 200 whatever happened, so a run where every single email
+  // bounced was indistinguishable — to Vercel, to the logs, to us — from a
+  // clean one. Vercel's cron monitoring only surfaces non-2xx responses, so
+  // there was nothing for it to catch. That is exactly how a bad Resend key
+  // would have gone unnoticed week after week.
+  //
+  // PARTIAL failures count too. One address failing out of fifteen is how you
+  // quietly lose the same candidate every week; if it is worth knowing about at
+  // fifteen, it is worth knowing about at one.
+  //
+  // Safe to do because Vercel does not retry: "Vercel will not retry an
+  // invocation if a cron job fails" (docs/cron-jobs/manage-cron-jobs). So a
+  // non-2xx raises the alarm without re-mailing the people who did receive it.
+  // Duplicate delivery is possible independently of this — cron delivery is
+  // best-effort and can invoke the same run twice — but isDue()'s 7-day cadence
+  // and the markSent() stamp already make a second run in the same week a no-op.
+  const status = failed.length > 0 ? 500 : 200
+  console.log('[roles-roundup]', JSON.stringify({
+    mode, planned: plans.length, sent: sentTo.length, failed: failed.length,
+  }))
+  return NextResponse.json(
+    {
+      ...summary,
+      sent: sentTo.length,
+      sentTo,
+      failed,
+      ...(failed.length > 0 && {
+        error: `${failed.length} of ${plans.length} sends failed — see failed[] and the runtime logs`,
+      }),
+    },
+    { status },
+  )
 }
 
 /** Status only. There is deliberately no send path on GET for this route. */

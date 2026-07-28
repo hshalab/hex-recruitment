@@ -169,17 +169,46 @@ export function planFor(
   }
 }
 
-/** Salary line for one job, or null when we don't have honest numbers.
- *  Never invents a range: min-only and max-only are phrased as such. */
+/**
+ * Salary line for one job, or null when we don't have honest numbers.
+ * Never invents a range: min-only and max-only are phrased as such.
+ *
+ * EVERY line carries its unit — "£81,800 per annum", "£19.63–£31.38 per hour".
+ * Without it, six salaried roles reading "£81,800" and two agency roles reading
+ * "£20–£31" sit in one list and the hourly ones look like a typo or an insult.
+ * The reader should never have to infer the unit from the size of the number.
+ *
+ * THE UNIT USED TO BE MISSING ON HOURLY ROLES, and it was not a display choice.
+ * This tested `type === 'hour'`, but the jobs table stores 'hourly' — the
+ * candidate side uses 'hour'/'year' and the job side uses 'hourly'/'annual',
+ * two vocabularies for one idea in adjacent tables. So the hourly branch had
+ * never once executed: every agency role fell through to the annual path, which
+ * both dropped the suffix AND rounded to whole pounds. That is where
+ * "£19.63–£31.38" became "£20–£31" — the floor overstated by 2% on exactly the
+ * roles whose rates are quoted to the penny. Both spellings are accepted now.
+ */
 export function formatSalary(job: DigestJobRow): string | null {
   const { salary_min: min, salary_max: max, salary_type: type } = job
   const hasMin = typeof min === 'number' && min > 0
   const hasMax = typeof max === 'number' && max > 0
   if (!hasMin && !hasMax) return null
 
-  const unit = type === 'hour' ? '/hr' : type === 'day' ? '/day' : type === 'month' ? '/mo' : type === 'week' ? '/wk' : ''
+  const t = String(type || '').toLowerCase()
+  const perHour = t === 'hour' || t === 'hourly'
+  const unit = perHour ? ' per hour'
+    : t === 'day' || t === 'daily' ? ' per day'
+    : t === 'week' || t === 'weekly' ? ' per week'
+    : t === 'month' || t === 'monthly' ? ' per month'
+    : ' per annum'
+
+  // Salaries round to the pound — nobody quotes an annual figure in pence. Sub-
+  // annual rates are shown exactly, because a chef comparing £19.63 with £20.00
+  // is comparing real money, and trailing pence are dropped only when they are
+  // genuinely zero.
   const money = (n: number) =>
-    unit === '' ? `£${Math.round(n).toLocaleString('en-GB')}` : `£${Number(n.toFixed(2)).toLocaleString('en-GB')}`
+    perHour || unit !== ' per annum'
+      ? `£${Number(n.toFixed(2)).toLocaleString('en-GB', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })}`
+      : `£${Math.round(n).toLocaleString('en-GB')}`
 
   if (hasMin && hasMax) {
     return min === max ? `${money(min!)}${unit}` : `${money(min!)}–${money(max!)}${unit}`

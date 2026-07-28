@@ -19,10 +19,6 @@
     {
       "path": "/api/cron/job-digest",
       "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/roles-roundup",
-      "schedule": "0 8 * * 2"
     }
   ]
 }

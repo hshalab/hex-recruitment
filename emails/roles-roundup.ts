@@ -116,9 +116,23 @@ export function rolesRoundupEmail(params: RolesRoundupParams): { subject: string
     </table>
 
     ${
+      /*
+       * The count is a FACT, not a link label.
+       *
+       * This used to read "See all 60 roles →" and link to the job board. The
+       * board cannot reproduce the filter behind that 60 — it accepts search,
+       * city and id, and has no concept of preferred areas — so the link landed
+       * on all 247 roles. We told a candidate there were 60 for them and then
+       * showed them everything, which reads as either a bug or a lie at the very
+       * last line of the email.
+       *
+       * Rather than link to something approximately like 60, the number stays as
+       * a statement of what's on the board and the button below is honest about
+       * where it goes. A number that doesn't match is worse than no number.
+       */
       totalMatches > count
         ? `<p style="margin:16px 0 0;font-size:14px;color:#475569;">
-             <a href="${browseUrl}" style="color:#2563eb;font-weight:600;text-decoration:none;">See all ${totalMatches} roles →</a>
+             ${totalMatches} roles match you right now — these are the ${count} we'd start with.
            </p>`
         : ''
     }
