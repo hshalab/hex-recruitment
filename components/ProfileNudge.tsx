@@ -3,9 +3,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { parseNudgeState, pickNudge, type NudgeKey, type NudgeState } from '@/lib/nudges'
+import {
+  parseNudgeState,
+  pickNudge,
+  canShowNudge,
+  contextFromState,
+  type NudgeKey,
+  type NudgeState,
+} from '@/lib/nudges'
 import { missingKeys, satisfiedKeys, specFor, type NudgeCandidate } from '@/lib/nudgeFields'
-import { registerSession, hasShownThisSession, markShownThisSession } from '@/lib/nudgeSession'
 
 // ONE contextual nudge, at most, on the candidate dashboard.
 //
@@ -40,38 +46,48 @@ export default function ProfileNudge({ candidate }: Props) {
 
     ;(async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) return
-
-        const res = await fetch('/api/profile/nudge-state', {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        })
-        if (!res.ok) return
+        // One request: records this dashboard load and starts a new session if
+        // it's been long enough. Sessions are counted server-side now, so a
+        // candidate who never closes their tab still gets one, and opening
+        // extra tabs can't manufacture them.
+        const res = await post({ action: 'seen' })
+        if (!res || !res.ok) return
         const json = await res.json()
         // Migration not applied → nudges are simply off.
         if (json?.available === false) return
 
-        const state: NudgeState = parseNudgeState(json?.nudgeState)
+        let state: NudgeState = parseNudgeState(json?.nudgeState)
 
         // Retire anything they've since filled in, so a completed field can
-        // never come back round. Fire-and-forget: this is bookkeeping, and the
-        // pick below already ignores satisfied fields.
-        for (const done of satisfiedKeys(candidate)) {
-          if (!state.completed[done]) void post({ action: 'completed', key: done })
+        // never come back round. ONE request for all of them — see the note in
+        // the route about the lost update this used to cause.
+        const done = satisfiedKeys(candidate).filter(k => !state.completed[k])
+        if (done.length > 0) {
+          const updated = await post({ action: 'completed', keys: done })
+          if (updated?.ok) state = parseNudgeState((await updated.json())?.nudgeState)
         }
 
         const outstanding = missingKeys(candidate)
-        if (outstanding.length === 0) return
+        const ctx = contextFromState(state)
 
-        const sessionCount = registerSession()
-        const chosen = pickNudge(outstanding, state, {
-          sessionCount,
-          shownThisSession: hasShownThisSession(),
-        })
+        if (process.env.NODE_ENV !== 'production') {
+          // The rules decline silently by design — a nudge must never break the
+          // dashboard — which makes "why is nothing showing?" unanswerable from
+          // the browser. In development, say so.
+          console.info('[nudge]', {
+            sessionCount: ctx.sessionCount,
+            shownThisSession: ctx.shownThisSession,
+            outstanding,
+            decisions: outstanding.map(k => `${k}: ${canShowNudge(k, state, ctx).reason ?? 'ALLOWED'}`),
+          })
+        }
+
+        if (outstanding.length === 0 || cancelled) return
+
+        const chosen = pickNudge(outstanding, state, ctx)
         if (!chosen || cancelled) return
 
         setKey(chosen)
-        markShownThisSession()
         void post({ action: 'shown', key: chosen })
       } catch {
         /* never let a nudge break the dashboard */
