@@ -283,7 +283,8 @@ interface ProfileFormData {
   certifications: string[]
   interests: string[]
   workExperience: WorkExperience[]
-  yearsExperience: number
+  /** '' means "not answered yet" — see the placeholder note on the select. */
+  yearsExperience: number | ''
   desiredSalary: string
   salaryMin: string
   salaryMax: string
@@ -430,14 +431,17 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
     certifications: (existingData as any)?.certifications || [],
     interests: (existingData as any)?.interests || [],
     workExperience: (existingData as any)?.workExperience || [{ company: '', role: '', startDate: '', endDate: '', description: '' }],
-    yearsExperience: (existingData as any)?.yearsExperience || 1,
+    // '' not 1. A <select> whose value matches no <option> renders its FIRST
+    // option, so defaulting to 1 (or to '' with no placeholder option) showed
+    // every candidate an answer they had never given.
+    yearsExperience: (existingData as any)?.yearsExperience ?? '',
     desiredSalary: existingData?.desiredSalary || '',
     salaryMin: (existingData as any)?.salaryMin || '',
     salaryMax: (existingData as any)?.salaryMax || '',
     salaryPeriod: existingData?.salaryPeriod || 'year',
     preferredJobTypes: (existingData as any)?.preferredJobTypes || [],
     workLocationPreferences: (existingData as any)?.workLocationPreferences || [],
-    availability: (existingData as any)?.availability || 'Available immediately',
+    availability: (existingData as any)?.availability || '',
     linkedinUrl: existingData?.linkedinUrl || '',
     cv: null,
     cvFileName: existingData?.cvFileName || '',
@@ -876,7 +880,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
             })),
             cv_url: cvUrl,
             cv_file_name: formData.cvFileName || null,
-            availability: formData.availability,
+            availability: formData.availability || null,
             email: formData.email,
             phone: formData.phone,
             date_of_birth: formData.dateOfBirth || null,
@@ -1039,7 +1043,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           languages: formData.languages.filter(lang => lang.name).map(lang => ({
             name: lang.name, proficiency: lang.proficiency,
           })),
-          availability: formData.availability,
+          availability: formData.availability || null,
           phone: formData.phone,
           date_of_birth: formData.dateOfBirth || null,
           nationality: formData.nationality || null,
@@ -1749,6 +1753,12 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           onChange={handleSectorChange}
           className={styles.select}
         >
+          {/* An unset select renders its FIRST option, so without this every
+              candidate who had never chosen a sector was shown "Hospitality
+              Tourism & Sport" as though they had. 25 of 32 profiles were in
+              that state — and the sector nudge sends them here, to a field
+              that already looks answered. */}
+          <option value="">Select your sector…</option>
           {JOB_SECTORS.map(sector => (
             <option key={sector.id} value={sector.id}>{sector.label}</option>
           ))}
@@ -1778,6 +1788,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           onChange={handleInputChange}
           className={styles.select}
         >
+          <option value="">Select years of experience…</option>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(y => (
             <option key={y} value={y}>{y} {y === 1 ? 'year' : 'years'}</option>
           ))}
@@ -1916,6 +1927,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
           onChange={handleInputChange}
           className={styles.select}
         >
+          <option value="">Select your availability…</option>
           <option value="Available immediately">Available immediately</option>
           <option value="Available in 1 week">Available in 1 week</option>
           <option value="Available in 2 weeks">Available in 2 weeks</option>
