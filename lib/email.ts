@@ -48,12 +48,35 @@ function htmlToText(html: string): string {
     .trim()
 }
 
+export interface SendEmailOptions {
+  /**
+   * A working, per-recipient one-click unsubscribe URL. Supplying it adds the
+   * List-Unsubscribe and List-Unsubscribe-Post headers.
+   *
+   * Google and Yahoo have required these of bulk senders since February 2024,
+   * and their absence is a placement signal — it is weighed exactly when a
+   * filter decides Primary versus Promotions for a sender the recipient has no
+   * history with. We already put an unsubscribe link in the footer of every
+   * roundup, so we were doing the work of an unsubscribe and getting none of
+   * the credit for it.
+   *
+   * MUST be a URL that actually works. A List-Unsubscribe-Post header pointing
+   * at a dead URL is worse than no header at all, because the provider will
+   * POST it and record the failure against us. Callers that render a preview or
+   * a test should either omit this or pass a URL that is genuinely valid and
+   * genuinely harmless — see the roundup route, which signs a real token for an
+   * all-zero user id.
+   */
+  unsubscribeUrl?: string
+}
+
 export async function sendEmail(
   to: string,
   subject: string,
   html: string,
   replyTo: string = 'hello@thrivecareer.co.uk',
-  text?: string
+  text?: string,
+  options: SendEmailOptions = {},
 ): Promise<{ success: boolean; error?: string }> {
   if (!resend) {
     console.warn(`[Email] Would send to ${to}: ${subject} (Resend not configured)`)
@@ -61,6 +84,13 @@ export async function sendEmail(
   }
 
   try {
+    const headers = options.unsubscribeUrl
+      ? {
+          'List-Unsubscribe': `<${options.unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        }
+      : undefined
+
     const result = await resend.emails.send({
       from: FROM_ADDRESS,
       to,
@@ -68,6 +98,7 @@ export async function sendEmail(
       html,
       text: text || htmlToText(html),
       replyTo,
+      ...(headers ? { headers } : {}),
     })
 
     if (result.error) {

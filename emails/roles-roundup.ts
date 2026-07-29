@@ -146,7 +146,19 @@ export function rolesRoundupEmail(params: RolesRoundupParams): { subject: string
     </p>
   `
 
-  return { subject, html: emailLayout(subject, body) }
+  // The inbox preview line, which used to repeat the subject verbatim. It is the
+  // second most-read thing after the subject, so it carries the specifics the
+  // subject can't: the best-matched role, what it pays, and where. Built from
+  // this recipient's actual list, so it is never a generic promise.
+  const top = jobs[0]
+  const topPay = top ? formatSalary(top) : null
+  const rest = count > 1 ? `, and ${count - 1} more` : ''
+  const preheader = top
+    ? `${tidy(top.title) || 'A role for you'}${topPay ? ` — ${topPay}` : ''}${rest}` +
+      (mode === 'area' && areaNames.length ? ` in ${areas}` : '')
+    : subject
+
+  return { subject, html: emailLayout(subject, body, esc(preheader)) }
 }
 
 export { ROLES_PER_EMAIL }

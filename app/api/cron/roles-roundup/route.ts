@@ -99,9 +99,24 @@ function unsubscribeUrlFor(userId: string): string {
   return `${BASE_URL}/api/candidate/digest-unsubscribe?token=${generateDigestUnsubscribeToken(userId)}`
 }
 
-/** Inert stand-in: right shape, cannot unsubscribe anybody, needs no secret. */
+/**
+ * A REAL, VALID token that cannot unsubscribe anybody — signed for the all-zero
+ * user id, which is a legitimate UUID shape and never a real row, so redeeming
+ * it lands on 'notfound' and changes nothing.
+ *
+ * It used to be the literal string SAMPLE_TOKEN_NOT_VALID, which was fine while
+ * the URL only appeared as a footer link a human might click. It is not fine now
+ * that it also goes in the List-Unsubscribe-Post header: Gmail and Outlook POST
+ * that URL themselves, unattended, and a header pointing at a URL that fails
+ * verification is worse than no header — we would be advertising a one-click
+ * unsubscribe that doesn't work and having the provider find out.
+ *
+ * Signing it properly means a test send carries a header that is structurally
+ * and cryptographically correct, so it can be verified from a received message,
+ * while still being incapable of opting out a real candidate.
+ */
 function previewUnsubscribeUrl(): string {
-  return `${BASE_URL}/api/candidate/digest-unsubscribe?token=SAMPLE_TOKEN_NOT_VALID`
+  return unsubscribeUrlFor('00000000-0000-0000-0000-000000000000')
 }
 
 /**
@@ -126,17 +141,26 @@ function browseUrlFor(plan: RoundupPlan): string {
   return `${BASE_URL}/jobs`
 }
 
+/** Returns the rendered email AND the unsubscribe URL it was built with, so the
+ *  List-Unsubscribe header and the footer link can never disagree about where
+ *  they point. */
 function renderPlan(plan: RoundupPlan, opts: { live: boolean }) {
-  return rolesRoundupEmail({
-    candidateName: plan.row.full_name,
-    mode: plan.mode,
-    areaNames: plan.areaNames,
-    roleLabel: plan.row.job_title,
-    jobs: plan.jobs,
-    totalMatches: plan.totalMatches,
-    unsubscribeUrl: opts.live ? unsubscribeUrlFor(plan.row.user_id) : previewUnsubscribeUrl(),
-    browseUrl: browseUrlFor(plan),
-  })
+  const unsubscribeUrl = opts.live
+    ? unsubscribeUrlFor(plan.row.user_id)
+    : previewUnsubscribeUrl()
+  return {
+    ...rolesRoundupEmail({
+      candidateName: plan.row.full_name,
+      mode: plan.mode,
+      areaNames: plan.areaNames,
+      roleLabel: plan.row.job_title,
+      jobs: plan.jobs,
+      totalMatches: plan.totalMatches,
+      unsubscribeUrl,
+      browseUrl: browseUrlFor(plan),
+    }),
+    unsubscribeUrl,
+  }
 }
 
 async function build(supabase: SupabaseClient, now: Date) {
@@ -269,7 +293,7 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       )
     }
-    const { subject, html } = renderPlan(realPlan, { live: false })
+    const { subject, html, unsubscribeUrl } = renderPlan(realPlan, { live: false })
     // Test subjects carry a timestamp so Gmail cannot thread them together.
     //
     // Repeated tests with an identical subject land in one Gmail conversation,
@@ -281,7 +305,9 @@ export async function POST(req: NextRequest) {
     //
     // Test mode only. The real send keeps the clean subject.
     const testSubject = `${subject} [test ${now.toISOString().slice(11, 19)}Z]`
-    const result = await sendEmail(body.testTo, testSubject, html)
+    // The test carries the header too, with the inert-but-valid token, so this
+    // path proves the header end to end without risking a real opt-out.
+    const result = await sendEmail(body.testTo, testSubject, html, undefined, undefined, { unsubscribeUrl })
     // Same rule as the real send: a test that didn't send is not a 200. This
     // one returned "HTTP 200, sent: 0" while Resend was rejecting the key, and
     // the only reason it was caught is that somebody read the body carefully.
@@ -306,8 +332,8 @@ export async function POST(req: NextRequest) {
   const failed: { email: string | null; error?: string }[] = []
 
   for (const plan of plans) {
-    const { subject, html } = renderPlan(plan, { live: true })
-    const result = await sendEmail(plan.row.email!, subject, html)
+    const { subject, html, unsubscribeUrl } = renderPlan(plan, { live: true })
+    const result = await sendEmail(plan.row.email!, subject, html, undefined, undefined, { unsubscribeUrl })
     if (!result.success) {
       failed.push({ email: plan.row.email, error: result.error })
       continue
