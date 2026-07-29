@@ -47,7 +47,9 @@ export function formatJobSalary(job: Job): string {
   const single = !job.salaryMax || job.salaryMin === job.salaryMax
 
   if (job.salaryPeriod === 'hour') {
-    const f = (n: number) => `£${Number(n.toFixed(2))}`
+    // Pence in full or not at all — "£23.50" not "£23.5", which reads as a typo
+    // next to "£16.95". Whole rates stay clean: £14, not £14.00.
+    const f = (n: number) => `£${Number.isInteger(n) ? n : n.toFixed(2)}`
     return single
       ? `${f(job.salaryMin)}/hr${negotiable}`
       : `${f(job.salaryMin)}-${f(job.salaryMax)}/hr${negotiable}`
