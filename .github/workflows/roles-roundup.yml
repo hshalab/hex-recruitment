@@ -20,13 +20,13 @@ name: Roles roundup email
 # Requires repo secrets: SITE_URL, CRON_SECRET
 
 on:
-  # SCHEDULE DELIBERATELY COMMENTED OUT. Nothing runs unattended until a manual
-  # workflow_dispatch has been watched end to end. To enable, uncomment and keep
-  # it two hours after the Goldenkeys scrape (0 6 * * 2) so the email goes out
-  # against a board refreshed that morning.
+  # ARMED 29 Jul 2026, after a manual send was watched end to end.
   #
-  # schedule:
-  #   - cron: '0 8 * * 2'   # Tuesdays 08:00 UTC
+  # Two hours after the Goldenkeys scrape (0 6 * * 2) so the email goes out
+  # against a board refreshed that morning. If either time moves, move both —
+  # the pairing is the point, not the individual times.
+  schedule:
+    - cron: '0 8 * * 2'   # Tuesdays 08:00 UTC (09:00 UK in summer)
 
   workflow_dispatch:
     inputs:
