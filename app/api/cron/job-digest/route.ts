@@ -98,19 +98,41 @@ function unsubscribeUrlFor(userId: string): string {
   return `${BASE_URL}/api/candidate/digest-unsubscribe?token=${generateDigestUnsubscribeToken(userId)}`
 }
 
-/** Inert stand-in: right shape, cannot unsubscribe anybody, needs no secret. */
+/**
+ * A REAL, VALID token that cannot unsubscribe anybody — signed for the all-zero
+ * user id, which is a legitimate UUID shape and never a real row, so redeeming
+ * it lands on 'notfound' and changes nothing.
+ *
+ * It used to be the literal string SAMPLE_TOKEN_NOT_VALID. That was fine while
+ * the URL was only a footer link a human might click, and is not fine now that
+ * it also goes in the List-Unsubscribe-Post header: Gmail and Outlook POST that
+ * URL themselves, unattended, and a header pointing at a URL that fails
+ * verification is worse than no header at all.
+ *
+ * The fallback test path below already did exactly this. This just stops the
+ * two disagreeing.
+ */
 function previewUnsubscribeUrl(): string {
-  return `${BASE_URL}/api/candidate/digest-unsubscribe?token=SAMPLE_TOKEN_NOT_VALID`
+  return unsubscribeUrlFor('00000000-0000-0000-0000-000000000000')
 }
 
+/** Returns the rendered email AND the unsubscribe URL it was built with, so the
+ *  List-Unsubscribe header and the footer link can never point at different
+ *  places. */
 function renderPlan(plan: DigestPlan, opts: { live: boolean }) {
-  return jobDigestEmail({
-    candidateName: plan.row.full_name,
-    areaNames: plan.areaNames,
-    jobs: plan.jobs,
-    overflow: plan.overflow,
-    unsubscribeUrl: opts.live ? unsubscribeUrlFor(plan.row.user_id) : previewUnsubscribeUrl(),
-  })
+  const unsubscribeUrl = opts.live
+    ? unsubscribeUrlFor(plan.row.user_id)
+    : previewUnsubscribeUrl()
+  return {
+    ...jobDigestEmail({
+      candidateName: plan.row.full_name,
+      areaNames: plan.areaNames,
+      jobs: plan.jobs,
+      overflow: plan.overflow,
+      unsubscribeUrl,
+    }),
+    unsubscribeUrl,
+  }
 }
 
 async function build(supabase: SupabaseClient, now: Date) {
@@ -222,19 +244,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ...summary, sent: 0, error: 'No active jobs at all — nothing to render.' }, { status: 409 })
     }
 
-    const { subject, html } = realPlan
+    const fallbackUnsubscribeUrl = previewUnsubscribeUrl()
+    const { subject, html, unsubscribeUrl } = realPlan
       ? renderPlan(realPlan, { live: false })
-      : jobDigestEmail({
-          candidateName: typeof body.testName === 'string' ? body.testName : 'Alex',
-          areaNames: ['your areas'],
-          jobs: fallbackJobs,
-          overflow: 0,
-          // Signed for a non-existent user: genuinely clickable, exercises the
-          // real route, cannot unsubscribe anybody.
-          unsubscribeUrl: unsubscribeUrlFor('00000000-0000-0000-0000-000000000000'),
-        })
+      : {
+          ...jobDigestEmail({
+            candidateName: typeof body.testName === 'string' ? body.testName : 'Alex',
+            areaNames: ['your areas'],
+            jobs: fallbackJobs,
+            overflow: 0,
+            // Signed for a non-existent user: genuinely clickable, exercises the
+            // real route, cannot unsubscribe anybody.
+            unsubscribeUrl: fallbackUnsubscribeUrl,
+          }),
+          unsubscribeUrl: fallbackUnsubscribeUrl,
+        }
 
-    const result = await sendEmail(body.testTo, subject, html)
+    // The test carries the header too, with the inert-but-valid token, so this
+    // path proves the header end to end without risking a real opt-out.
+    const result = await sendEmail(body.testTo, subject, html, undefined, undefined, { unsubscribeUrl })
     return NextResponse.json({
       ...summary,
       testTo: body.testTo,
@@ -250,8 +278,8 @@ export async function POST(req: NextRequest) {
   const failed: { email: string | null; error?: string }[] = []
 
   for (const plan of plans) {
-    const { subject, html } = renderPlan(plan, { live: true })
-    const result = await sendEmail(plan.row.email!, subject, html)
+    const { subject, html, unsubscribeUrl } = renderPlan(plan, { live: true })
+    const result = await sendEmail(plan.row.email!, subject, html, undefined, undefined, { unsubscribeUrl })
     if (!result.success) {
       failed.push({ email: plan.row.email, error: result.error })
       continue
@@ -323,8 +351,8 @@ export async function GET(req: NextRequest) {
   const sentTo: string[] = []
   const failed: { email: string | null; error?: string }[] = []
   for (const plan of plans) {
-    const { subject, html } = renderPlan(plan, { live: true })
-    const result = await sendEmail(plan.row.email!, subject, html)
+    const { subject, html, unsubscribeUrl } = renderPlan(plan, { live: true })
+    const result = await sendEmail(plan.row.email!, subject, html, undefined, undefined, { unsubscribeUrl })
     if (!result.success) {
       failed.push({ email: plan.row.email, error: result.error })
       continue
