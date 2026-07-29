@@ -117,3 +117,14 @@
   .catBtn { width: auto; border: 1px solid #e2e8f0; border-radius: 999px; }
   .roleChips { padding-left: 0; width: 100%; }
 }
+
+/* A job-board card in the temp feed.
+   The card brings its own look from the shared stylesheet; this only gives it
+   the same vertical rhythm as the shift cards around it, and a sensible height
+   since the feed is a single column rather than the /jobs grid. */
+.jobCardWrap {
+  margin-bottom: 1rem;
+}
+.jobCardWrap > * {
+  height: 260px;
+}

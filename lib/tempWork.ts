@@ -56,6 +56,39 @@ export function rolesInGroup(groupKey: string): string[] {
   return ROLE_GROUPS.find(g => g.key === groupKey)?.roles.map(r => r.key) ?? []
 }
 
+/**
+ * Best-guess role key for a JOBS row, from its title.
+ *
+ * A shift carries an explicit category because the person posting it picked one.
+ * A jobs row does not: jobs.category is the SECTOR, and it is 'hospitality' on
+ * all 247 rows, so it cannot drive a role filter. The title is the only signal
+ * there is.
+ *
+ * Longest label first, so "Chef de Partie" wins over "Chef" and "Head Chef" over
+ * both. Anything unrecognised falls to 'other', which is honest — it means the
+ * filter shows it under Other rather than silently hiding it, and a role missing
+ * from a filter is a much smaller failure than a role missing from the page.
+ */
+const ROLE_MATCHERS: { key: string; needle: string }[] = ROLE_GROUPS
+  .flatMap(g => g.roles.map(r => ({ key: r.key, needle: r.label.toLowerCase() })))
+  .filter(r => r.key !== 'other')
+  .sort((a, b) => b.needle.length - a.needle.length)
+
+export function roleKeyFromTitle(title: string | null | undefined): string {
+  const t = (title || '').toLowerCase()
+  if (!t) return 'other'
+  for (const { key, needle } of ROLE_MATCHERS) {
+    if (t.includes(needle)) return key
+  }
+  // A couple of titles the labels don't spell out but the trade does.
+  if (/\bkp\b|porter/.test(t)) return 'kitchen_porter'
+  if (/waiter|waitress|server\b/.test(t)) return 'waiting_staff'
+  if (/\bchef\b/.test(t)) return 'chef_de_partie'
+  if (/\bbar\b|mixologist|sommelier/.test(t)) return 'bartender'
+  if (/manager|supervisor/.test(t)) return 'duty_manager'
+  return 'other'
+}
+
 export const RATE_TYPES = ['hour', 'shift', 'day'] as const
 export type RateType = typeof RATE_TYPES[number]
 

@@ -7,11 +7,34 @@ import Header from '@/components/Header'
 import { ThumbsUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
-  ROLE_GROUPS, roleMeta, rolesInGroup, formatWhen, formatRate, timeAgo, initialsOf, DISCLAIMER,
+  ROLE_GROUPS, roleMeta, rolesInGroup, roleKeyFromTitle, formatWhen, formatRate, timeAgo, initialsOf, DISCLAIMER,
   type TempPost, type TempComment,
 } from '@/lib/tempWork'
 import { EXAMPLE_TEMP_POSTS } from '@/lib/tempExamples'
+import JobCard from '@/components/JobCard'
+import { supabaseJobToJob } from '@/lib/types'
+import type { Job } from '@/lib/mockJobs'
 import styles from './page.module.css'
+
+// WHAT THIS PAGE READS, and why it reads two things.
+//
+// TEMP-FLAGGED JOBS — jobs rows with 'Temporary' in employment_type. These are
+// ongoing vacancies that happen to be casual or hourly, and they belong in
+// `jobs`: same row, same source of truth, so the weekly reconcile keeps them
+// honest. Copying them into temp_posts would take them out of that reconcile
+// and leave a filled role sitting here forever.
+//
+// SHIFTS — temp_posts. A dated shift ("Saturday 7am–3pm, three chefs") carries
+// dates, times and a headcount that a jobs row has nowhere to put, so it keeps
+// its own table and its own card. Nothing is copied between the two.
+//
+// They render in one feed, each in the card its data can actually fill. A
+// vacancy gets the job-board card so this page and /jobs read as one product; a
+// shift gets the shift card because a job card has no slot for "three needed,
+// 7am–3pm".
+type FeedItem =
+  | { kind: 'job'; at: string; job: Job }
+  | { kind: 'shift'; at: string; post: TempPost }
 
 export default function TempWorkPage() {
   const router = useRouter()
@@ -37,10 +60,24 @@ export default function TempWorkPage() {
 
   const RATE_PRESETS = [12, 15, 18, 20]
 
+  // Job.postedAt is a humanised string ("3 days ago") by the time it reaches a
+  // card, so the raw timestamp is kept alongside for sorting the mixed feed.
+  const [tempJobs, setTempJobs] = useState<{ job: Job; at: string }[]>([])
+
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('temp_posts').select('*').eq('status', 'open').order('created_at', { ascending: false })
-    setPosts((data as TempPost[]) || [])
+    const [shifts, jobs] = await Promise.all([
+      supabase.from('temp_posts').select('*').eq('status', 'open').order('created_at', { ascending: false }),
+      // 'Temporary' rather than 'Flexible' or salary_type='hourly'. It says what
+      // it means: Flexible misses the one Temporary role that isn't flagged
+      // flexible, and salary_type describes how someone is PAID, not what the
+      // work is — a salaried three-month contract is temp and hourly would miss it.
+      supabase.from('jobs').select('*').eq('status', 'active')
+        .contains('employment_type', ['Temporary'])
+        .order('created_at', { ascending: false }),
+    ])
+    setPosts((shifts.data as TempPost[]) || [])
+    setTempJobs(((jobs.data as { created_at?: string }[]) || [])
+      .map(r => ({ job: supabaseJobToJob(r), at: r.created_at || '' })))
     setLoading(false)
   }, [])
 
@@ -60,27 +97,41 @@ export default function TempWorkPage() {
     init()
   }, [load])
 
-  const usingExamples = !loading && posts.length === 0
+  // Examples only when there is genuinely NOTHING — no shifts AND no temp jobs.
+  // With six real roles on the board they can no longer fire.
+  const usingExamples = !loading && posts.length === 0 && tempJobs.length === 0
   const visible: TempPost[] = usingExamples ? EXAMPLE_TEMP_POSTS : posts
 
-  const matchesDate = (p: TempPost) => {
-    if (!date) return true
-    if (!p.date_from) return false
-    const end = p.date_to || p.date_from
-    return date >= p.date_from && date <= end
+  const matchesGroupRole = (roleKey: string) => {
+    if (role) return roleKey === role
+    if (group) return rolesInGroup(group).includes(roleKey)
+    return true
   }
 
-  const filtered = useMemo(() => visible.filter(p => {
+  const filteredPosts = useMemo(() => visible.filter(p => {
     if (usingExamples) return true
-    if (role && p.category !== role) return false
-    if (!role && group && !rolesInGroup(group).includes(p.category)) return false
+    if (!matchesGroupRole(p.category)) return false
     if (loc && !(`${p.location_area} ${p.postcode || ''}`.toLowerCase().includes(loc.toLowerCase()))) return false
-    if (!matchesDate(p)) return false
     // Min £/hr is an hourly-only filter: a per-shift/day rate can't be compared to
     // an hourly minimum, so applying a minimum hides non-hourly posts entirely.
     if (minRate > 0 && !(p.rate_type === 'hour' && p.hourly_rate != null && p.hourly_rate >= minRate)) return false
     return true
-  }), [visible, usingExamples, group, role, loc, date, minRate]) // eslint-disable-line react-hooks/exhaustive-deps
+  }), [visible, usingExamples, group, role, loc, minRate]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const filteredJobs = useMemo(() => tempJobs.filter(({ job: j }) => {
+    if (!matchesGroupRole(roleKeyFromTitle(j.title))) return false
+    if (loc && !(`${j.location || ''} ${j.area || ''}`.toLowerCase().includes(loc.toLowerCase()))) return false
+    // Same rule as shifts: an hourly minimum can only judge an hourly role.
+    if (minRate > 0 && !(j.salaryPeriod === 'hour' && (j.salaryMax ?? j.salaryMin) >= minRate)) return false
+    return true
+  }), [tempJobs, group, role, loc, minRate]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** One feed, newest first, each item in the card its data can fill. */
+  const feed: FeedItem[] = useMemo(() => ([
+    ...filteredJobs.map(({ job, at }) => ({ kind: 'job' as const, at, job })),
+    ...filteredPosts.map(post => ({ kind: 'shift' as const, at: post.created_at || '', post })),
+  ]).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
+  [filteredJobs, filteredPosts])
 
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(''), 3000) }
   const requireLogin = () => router.push(`/login/employee?redirect=${encodeURIComponent('/temp-work')}`)
@@ -146,7 +197,7 @@ export default function TempWorkPage() {
     } else flash('Could not remove the comment.')
   }
 
-  const anyFilter = !!(group || role || loc || date || minRate)
+  const anyFilter = !!(group || role || loc || minRate)
 
   return (
     <main>
@@ -174,9 +225,13 @@ export default function TempWorkPage() {
                 </div>
               ))}
             </div>
-            <div className={styles.filterTitle} style={{ marginTop: '1rem' }}>Where & when</div>
+            <div className={styles.filterTitle} style={{ marginTop: '1rem' }}>Where</div>
             <input className={styles.filterInput} placeholder="Location or postcode" value={loc} onChange={e => setLoc(e.target.value)} />
-            <input className={styles.filterInput} type="date" value={date} onChange={e => setDate(e.target.value)} />
+            {/* THE DATE FILTER IS GONE, deliberately. It could only ever match a
+                dated shift, and every role on this page today is an ongoing
+                vacancy with no date to match — so it filtered everything out the
+                moment it was touched. A control that silently empties the page
+                is worse than one that isn't there. It comes back with shifts. */}
 
             <div className={styles.filterTitle} style={{ marginTop: '1rem' }}>Min pay (£/hr)</div>
             <div className={styles.rateChips}>
@@ -188,7 +243,7 @@ export default function TempWorkPage() {
             </div>
             <p className={styles.rateHint}>Hourly shifts only</p>
 
-            {anyFilter && <button className={styles.clearBtn} onClick={() => { setGroup(''); setRole(''); setLoc(''); setDate(''); setMinRate(0) }}>Clear filters</button>}
+            {anyFilter && <button className={styles.clearBtn} onClick={() => { setGroup(''); setRole(''); setLoc(''); setMinRate(0) }}>Clear filters</button>}
           </aside>
 
           {/* Centre feed */}
@@ -206,9 +261,14 @@ export default function TempWorkPage() {
 
             {loading ? (
               <div className={styles.empty}>Loading shifts…</div>
-            ) : filtered.length === 0 ? (
-              <div className={styles.empty}>No open shifts match your filters right now.</div>
-            ) : filtered.map(post => {
+            ) : feed.length === 0 ? (
+              <div className={styles.empty}>No temp work matches your filters right now.</div>
+            ) : feed.map(item => item.kind === 'job' ? (
+              <div key={`job-${item.job.id}`} className={styles.jobCardWrap}>
+                <JobCard job={item.job} onSelect={j => router.push(`/jobs?id=${j.id}`)} />
+              </div>
+            ) : (() => {
+              const post = item.post
               const rm = roleMeta(post.category)
               const rate = formatRate(post)
               const liked = myLikes.has(post.id)
@@ -330,7 +390,7 @@ export default function TempWorkPage() {
                   )}
                 </article>
               )
-            })}
+            })())}
 
             <p className={styles.disclaimer}>{DISCLAIMER}</p>
           </div>
