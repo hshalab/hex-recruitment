@@ -161,3 +161,37 @@ jobs:
 
           sent=$(python3 -c "import json;print(json.load(open('response.json')).get('sent',0))")
           echo "::notice::Roundup ${MODE} completed — sent=${sent}"
+          echo "SENT_COUNT=${sent}" >> "$GITHUB_ENV"
+          echo "RESOLVED_MODE=${MODE}" >> "$GITHUB_ENV"
+
+      # "sent" counts what Resend ACCEPTED, not what arrived. Two candidates
+      # asked why they hadn't received an email that the run had reported as
+      # sent, and answering it meant interrogating Resend by hand. This does
+      # that automatically, in the log you are already looking at.
+      - name: Check what was actually delivered
+        if: env.RESOLVED_MODE == 'send' && env.SENT_COUNT != '0'
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RESEND_API_KEY:-}" ]; then
+            echo "::warning::RESEND_API_KEY not set — skipping the delivery check."
+            exit 0
+          fi
+
+          # Delivery status is asynchronous: Resend reports 'sent' the moment it
+          # accepts a message and only becomes 'delivered' once the receiving
+          # server has taken it, which is usually seconds but not always. Give it
+          # a moment, then report what we have — WITHOUT failing the run for a
+          # status that simply hasn't settled. An unsettled status is not a
+          # failure, and treating it as one would make this step cry wolf.
+          sleep 45
+
+          curl -sS "https://api.resend.com/emails?limit=100" \
+            -H "Authorization: Bearer ${RESEND_API_KEY}" -o emails.json
+
+          # Node rather than python here: it is what the rest of this repo is
+          # written in, it is preinstalled on the runner, and — the reason that
+          # actually decided it — I can run this exact script locally against
+          # the real API before shipping it, which I could not do with python.
+          node scripts/check-roundup-delivery.mjs emails.json "$SENT_COUNT"

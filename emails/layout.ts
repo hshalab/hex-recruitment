@@ -14,7 +14,14 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://thrivecareer.co.uk
  * Signatures are unchanged (emailLayout / ctaButton / BASE_URL) so every
  * existing template re-brands automatically.
  */
-export function emailLayout(title: string, bodyHtml: string): string {
+/**
+ * @param preheader The hidden line inboxes show NEXT TO the subject. Defaults to
+ * the title, which is what every template did implicitly — and which wastes it,
+ * because the preview then repeats the subject word for word. Pass something
+ * that adds information and the recipient gets two reasons to open instead of
+ * the same one twice.
+ */
+export function emailLayout(title: string, bodyHtml: string, preheader: string = title): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,7 +32,7 @@ export function emailLayout(title: string, bodyHtml: string): string {
   <title>${title}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
-  <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all;">${title}</span>
+  <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all;">${preheader}</span>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:32px 16px;">
     <tr>
       <td align="center">
