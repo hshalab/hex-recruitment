@@ -238,7 +238,85 @@ export default function TempWorkPage() {
       body: JSON.stringify({ kind: 'interest', postId: post.id, actorName: myName, note }),
     }).catch(() => console.warn('[temp-notify] interest email failed'))
 
+    await openConversationForInterest(post, note)
     setBusyInterest(null)
+  }
+
+  /**
+   * Put the candidate in the employer's Messages, the way an application does.
+   *
+   * An Easy apply creates a conversation and posts an auto-message, so an
+   * applicant turns up in the employer's inbox with everyone else. Interest in a
+   * shift did not, which gave an agency two places to look and made the shift
+   * candidates the easier ones to lose.
+   *
+   * Mirrors app/jobs/page.tsx exactly — participant_1 is the candidate,
+   * participant_2 the employer — so the two kinds of thread sort and render
+   * identically. related_job_title carries the SHIFT title, which is a plain
+   * text column with no foreign key, so /messages renders it with no change.
+   *
+   * THE DEDUP IS THE PART THAT MATTERS. It looks up by related_temp_post_id, not
+   * related_job_id: the latter has a foreign key to jobs(id) and would reject a
+   * shift id outright. And the existing UNIQUE (p1, p2, related_job_id) does NOT
+   * cover this case, because Postgres treats NULLs as distinct — so without the
+   * partial unique index added alongside this, a chef interested in three of an
+   * agency's shifts would silently collect three identical threads.
+   *
+   * Best-effort throughout: the interest row is already committed and must not be
+   * undone because a thread failed to open.
+   */
+  const openConversationForInterest = async (post: TempPost, note: string | null) => {
+    if (!userId) return
+    const opener = note || `I'm available for ${post.title}.`
+    const company = post.company_name || 'the employer'
+    try {
+      const { data: existing } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(participant_1.eq.${userId},participant_2.eq.${post.employer_id}),and(participant_1.eq.${post.employer_id},participant_2.eq.${userId})`)
+        .eq('related_temp_post_id', post.id)
+        .maybeSingle()
+
+      let conv = existing
+      if (!conv) {
+        const { data: created, error } = await supabase
+          .from('conversations')
+          .insert({
+            participant_1: userId,
+            participant_2: post.employer_id,
+            participant_1_name: myName || 'A candidate',
+            participant_1_role: 'candidate',
+            participant_2_name: company,
+            participant_2_role: 'employer',
+            participant_2_company: company,
+            related_temp_post_id: post.id,
+            related_job_title: post.title,
+            last_message: opener,
+            last_message_at: new Date().toISOString(),
+          })
+          .select('id')
+          .single()
+        if (error) { console.warn('[interest] conversation failed:', error.message); return }
+        conv = created
+      } else {
+        await supabase.from('conversations')
+          .update({ last_message: opener, last_message_at: new Date().toISOString() })
+          .eq('id', conv.id)
+      }
+
+      if (conv) {
+        await supabase.from('messages').insert({
+          conversation_id: conv.id,
+          sender_id: userId,
+          sender_name: myName || 'A candidate',
+          sender_role: 'candidate',
+          content: opener,
+          is_read: false,
+        })
+      }
+    } catch (e: any) {
+      console.warn('[interest] conversation failed:', e?.message)
+    }
   }
   const requireLogin = () => router.push(`/login/employee?redirect=${encodeURIComponent('/temp-work')}`)
 
