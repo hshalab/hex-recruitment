@@ -25,6 +25,11 @@
 .ctaCard { border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; padding: 1.1rem; }
 .ctaTitle { font-size: 1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.3rem; }
 .ctaSub { font-size: 0.85rem; line-height: 1.5; color: #64748b; margin: 0 0 0.85rem; }
+/* "How it works" is two lines rather than one paragraph, so they sit closer
+   together than ctaSub's button-gap allows, and the last one has no gap at all. */
+.ctaStep { font-size: 0.85rem; line-height: 1.5; color: #64748b; margin: 0 0 0.5rem; }
+.ctaStep:last-child { margin-bottom: 0; }
+.ctaStepLabel { font-weight: 700; color: #0f172a; }
 .ctaBtn { display: block; text-align: center; padding: 0.6rem; background: #ffe500; color: #0f172a; font-weight: 700; font-size: 0.9rem; border-radius: 9px; text-decoration: none; }
 .ctaBtn:hover { filter: brightness(0.95); }
 .ctaLink { display: block; margin-top: 0.7rem; font-size: 0.83rem; font-weight: 600; color: #334155; text-decoration: none; text-align: center; }

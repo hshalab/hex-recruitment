@@ -207,7 +207,7 @@ export default function TempWorkPage() {
           <aside className={styles.leftRail}>
             <div className={styles.filterTitle}>Category</div>
             <div className={styles.catCol}>
-              <button className={`${styles.catBtn} ${!group ? styles.catBtnOn : ''}`} onClick={() => { setGroup(''); setRole('') }}>All shifts</button>
+              <button className={`${styles.catBtn} ${!group ? styles.catBtnOn : ''}`} onClick={() => { setGroup(''); setRole('') }}>All temp work</button>
               {ROLE_GROUPS.map(g => (
                 <div key={g.key}>
                   <button className={`${styles.catBtn} ${group === g.key ? styles.catBtnOn : ''}`} onClick={() => { setGroup(group === g.key ? '' : g.key); setRole('') }}>
@@ -250,7 +250,7 @@ export default function TempWorkPage() {
             <div className={styles.feedHead}>
               <div>
                 <h1 className={styles.h1}>Temp Work</h1>
-                <p className={styles.h1sub}>Shifts and short-term gigs. Like the ones you fancy, and comment to put yourself forward.</p>
+                <p className={styles.h1sub}>Short-term roles and casual shifts. Apply to a role, or comment on a shift to put your name forward.</p>
               </div>
               {canPost && <Link href="/temp-work/post" className={styles.feedPostBtn}>+ Post</Link>}
             </div>
@@ -398,15 +398,23 @@ export default function TempWorkPage() {
           <aside className={styles.rightRail}>
             {canPost ? (
               <div className={styles.ctaCard}>
-                <div className={styles.ctaTitle}>Hiring for a shift?</div>
-                <p className={styles.ctaSub}>Post it to the feed and see who likes and comments.</p>
+                <div className={styles.ctaTitle}>Hiring temp staff?</div>
+                <p className={styles.ctaSub}>Post a dated shift and see who likes and comments. Ongoing casual roles go on the job board.</p>
                 <Link href="/temp-work/post" className={styles.ctaBtn}>+ Post temp work</Link>
                 <Link href="/temp-work/manage" className={styles.ctaLink}>Your posts & comments →</Link>
               </div>
             ) : (
               <div className={styles.ctaCard}>
                 <div className={styles.ctaTitle}>How it works</div>
-                <p className={styles.ctaSub}>Like the shifts you fancy and comment to put yourself forward. The employer reads the comments and gets in touch to book you directly.</p>
+                {/* Two lines, one per card type. The label carries the weight so a
+                    reader scanning on a phone can find their own case without
+                    reading both. */}
+                <p className={styles.ctaStep}>
+                  <span className={styles.ctaStepLabel}>Short-term roles:</span> apply as you would any job.
+                </p>
+                <p className={styles.ctaStep}>
+                  <span className={styles.ctaStepLabel}>Posted shifts:</span> like and comment — the employer reads the comments and gets in touch to book you.
+                </p>
               </div>
             )}
           </aside>
