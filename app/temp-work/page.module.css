@@ -25,13 +25,21 @@
 .ctaCard { border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; padding: 1.1rem; }
 .ctaTitle { font-size: 1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.3rem; }
 .ctaSub { font-size: 0.85rem; line-height: 1.5; color: #64748b; margin: 0 0 0.85rem; }
+/* "How it works" is two lines rather than one paragraph, so they sit closer
+   together than ctaSub's button-gap allows, and the last one has no gap at all. */
+.ctaStep { font-size: 0.85rem; line-height: 1.5; color: #64748b; margin: 0 0 0.5rem; }
+.ctaStep:last-child { margin-bottom: 0; }
+.ctaStepLabel { font-weight: 700; color: #0f172a; }
 .ctaBtn { display: block; text-align: center; padding: 0.6rem; background: #ffe500; color: #0f172a; font-weight: 700; font-size: 0.9rem; border-radius: 9px; text-decoration: none; }
 .ctaBtn:hover { filter: brightness(0.95); }
 .ctaLink { display: block; margin-top: 0.7rem; font-size: 0.83rem; font-weight: 600; color: #334155; text-decoration: none; text-align: center; }
 .ctaLink:hover { text-decoration: underline; }
 
 /* ── Feed ── */
-.feed { width: 100%; max-width: 620px; margin: 0 auto; }
+/* No max-width. The feed fills its grid column: a job card has
+   aspect-ratio 16/11, so capping the width shrank the card and left dead space
+   to the right of it. Width comes from the column, height from the ratio. */
+.feed { width: 100%; }
 .feedHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
 .h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.4px; margin: 0 0 0.2rem; }
 .h1sub { font-size: 0.88rem; color: #64748b; margin: 0; }
@@ -39,7 +47,42 @@
 
 .toast { margin-bottom: 1rem; padding: 0.7rem 1rem; border-radius: 9px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 0.88rem; }
 .exNote { margin-bottom: 1rem; padding: 0.7rem 1rem; border-radius: 9px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 0.84rem; line-height: 1.45; }
+/* Deliberately louder than exNote: exNote is a note to a candidate, this is a
+   warning to whoever is reviewing that part of the feed is not real. */
+.previewNote { margin-bottom: 1rem; padding: 0.7rem 1rem; border-radius: 9px; background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; font-size: 0.84rem; line-height: 1.45; font-weight: 600; }
+.previewNote code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95em; background: #fee2e2; padding: 0.05rem 0.25rem; border-radius: 4px; }
 .empty { text-align: center; color: #94a3b8; padding: 3rem 1rem; }
+
+/* ── Shift item: a job-shaped card, with its detail and thread underneath ──
+   The card is the SAME component a job gets, so the two are the same size and
+   shape by construction rather than by two stylesheets agreeing. Everything a
+   shift has and a job doesn't — the description, the comment thread — is
+   revealed below the card on tap, which is why one column was the right call. */
+.shiftItem { margin-bottom: 1rem; }
+.shiftControls { position: absolute; top: 12px; right: 12px; z-index: 2; display: flex; gap: 6px; align-items: center; }
+.iconBtn { height: 34px; min-width: 34px; padding: 0 9px; border-radius: 999px; background: rgba(10,22,40,.35); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,.25); display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: #fff; cursor: pointer; font-size: 12px; font-weight: 700; }
+.iconBtn:disabled { opacity: .55; cursor: default; }
+.iconBtnOn { background: rgba(255,229,0,.92); color: #0A1628; border-color: rgba(255,229,0,.9); }
+.iconBtnCount { line-height: 1; }
+/* Detail panel — only ever on screen when the reader asked for it. */
+.shiftDetail { margin-top: -0.4rem; padding: 0.85rem 1rem 0.2rem; }
+.detailMeta { font-size: 0.78rem; color: #94a3b8; margin: 0.5rem 0 0; }
+
+/* Putting yourself forward. Deliberately the heaviest control in the expanded
+   panel — it is the application, and the comment box below it is only a question. */
+.interestBox { margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.interestNote { width: 100%; resize: vertical; padding: 0.6rem 0.7rem; border: 1px solid #e2e8f0; border-radius: 9px; font: inherit; font-size: 0.88rem; color: #0f172a; }
+.interestNote:focus { outline: 2px solid #ffe500; outline-offset: 1px; border-color: #cbd5e1; }
+.interestBtn { align-self: flex-start; padding: 0.6rem 1.1rem; background: #ffe500; color: #0f172a; font-weight: 700; font-size: 0.9rem; border: none; border-radius: 9px; cursor: pointer; }
+.interestBtn:hover:not(:disabled) { filter: brightness(0.95); }
+.interestBtn:disabled { opacity: 0.6; cursor: default; }
+.interestDone { margin-top: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 9px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 0.86rem; font-weight: 600; }
+.interestHint { font-size: 0.78rem; color: #94a3b8; }
+/* The owner's view of their own shift: not a control, just a way through to the
+   page that can actually do something with it. */
+.interestOwn { margin-top: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 9px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-size: 0.86rem; }
+.interestOwnLink { color: #0f172a; font-weight: 700; text-decoration: none; }
+.interestOwnLink:hover { text-decoration: underline; }
 
 .card { border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; padding: 1.1rem 1.15rem; margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
 .cardExample { border-style: dashed; background: #fefefe; }
@@ -106,7 +149,13 @@
 /* ── Responsive ── */
 @media (max-width: 1024px) {
   .grid { grid-template-columns: 220px minmax(0, 1fr); }
-  .rightRail { display: none; }
+  /* The panel moves BELOW the feed rather than disappearing.
+     Not above it: a three-line explanation sitting between the heading and the
+     first card is exactly the shape that made the roundup wrong on a phone —
+     logo, then instructions, then the roles somewhere past the fold. A chef
+     opening this wants the shifts. Underneath, the roles come first and the
+     explanation is still there for anyone who scrolls looking for it. */
+  .rightRail { position: static; grid-column: 2; margin-top: 0.25rem; }
   .feedPostBtn { display: inline-block; flex-shrink: 0; padding: 0.5rem 0.9rem; background: #ffe500; color: #0f172a; font-weight: 700; font-size: 0.85rem; border-radius: 9px; text-decoration: none; }
 }
 @media (max-width: 760px) {
@@ -116,4 +165,16 @@
   .catCol { flex-direction: row; flex-wrap: wrap; }
   .catBtn { width: auto; border: 1px solid #e2e8f0; border-radius: 999px; }
   .roleChips { padding-left: 0; width: 100%; }
+  /* Single column here, so the panel is the third child and already falls below
+     the feed — it just needs releasing from column 2. */
+  .rightRail { grid-column: 1; }
+}
+
+/* A job-board card in the temp feed.
+   The card brings its own look from the shared stylesheet — including
+   aspect-ratio 16/11 — so it must NOT be given a height here. Setting one made
+   the ratio solve for width instead and produced a 378px card in a 620px
+   column, which is the gap Paul spotted. Spacing only. */
+.jobCardWrap {
+  margin-bottom: 1rem;
 }

@@ -177,7 +177,11 @@ export default function PostTempWorkPage() {
         </div>
 
         <div style={group}>
-          <label style={label}>Photo <span style={{ fontWeight: 400, color: '#94a3b8' }}>· optional</span></label>
+          <label style={label}>Banner photo <span style={{ fontWeight: 400, color: '#94a3b8' }}>· optional</span></label>
+          {/* It is a banner now, not an attachment: it sits behind the title on
+              the card. Saying so matters because the employer is choosing what
+              their post looks like, not adding a picture to the bottom of it.
+              No photo is a perfectly good answer — see the branded fallback. */}
           <TempImagePicker value={imageUrl} onChange={setImageUrl} disabled={busy} />
         </div>
 

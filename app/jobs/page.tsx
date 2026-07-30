@@ -15,6 +15,7 @@ import { getTagCategory } from '@/lib/jobTags'
 import { Boost } from '@/lib/boostTypes'
 import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
 import CompanyLogo from '@/components/CompanyLogo'
+import JobCard from '@/components/JobCard'
 import { resolveJobBanner } from '@/lib/jobBanner'
 import BrandedJobFallback from '@/components/BrandedJobFallback'
 import BrandedLogoFallback from '@/components/BrandedLogoFallback'
@@ -1141,67 +1142,18 @@ function JobsPageContent() {
           </div>
         ) : filteredJobs.length > 0 ? (
           <div className={styles.jobsGrid} ref={listRef}>
-            {filteredJobs.map(job => {
-              const banner = resolveJobBanner({ id: job.id, companyBanner: job.companyBanner, company: job.company, category: job.category })
-              const initial = (job.company || '?').trim().charAt(0).toUpperCase() || '?'
-              const isNew = getPostedDaysAgo(job.postedAt) <= 2
-              const easyApply = !job.tags?.includes('CV required') && !job.tags?.includes('Cover letter required')
-              const badges = Array.isArray(job.employmentType) ? job.employmentType.slice(0, 2) : (job.employmentType ? [job.employmentType] : [])
-              const saved = isSaved(job.id)
-              return (
-              <div
+            {filteredJobs.map(job => (
+              <JobCard
                 key={job.id}
-                className={`${styles.jobCard} ${banner ? '' : styles.jobCardFallback} ${boostedJobIds.has(job.id) ? styles.jobCardBoosted : ''}`}
-                onClick={() => selectJob(job)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && selectJob(job)}
-              >
-                {banner
-                  ? <div className={styles.cardBg} style={{ backgroundImage: `url(${banner})` }} aria-hidden="true" />
-                  : job.companyLogo
-                    ? <BrandedLogoFallback logoUrl={job.companyLogo} company={job.company} seed={job.id} />
-                    : <BrandedJobFallback company={job.company} seed={job.id} />}
-                <div className={styles.cardScrim} aria-hidden="true" />
-
-                {isNew && <span className={styles.cardNew}>New</span>}
-                <button
-                  className={`${styles.cardSave} ${saved ? styles.cardSaved : ''}`}
-                  onClick={(e) => { e.stopPropagation(); if (!saved) trackClickEvent(job.id, 'save_click'); toggleSave(job.id) }}
-                  aria-label={saved ? 'Unsave job' : 'Save job'}
-                >
-                  <svg viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
-                </button>
-
-                <div className={styles.cardContent}>
-                  <div className={styles.cardCompanyRow}>
-                    <span className={styles.cardChip}>
-                      {job.companyLogo ? <CompanyLogo src={job.companyLogo} alt={job.company} className={styles.cardChipImg} /> : initial}
-                    </span>
-                    <span className={styles.cardCompany}>
-                      {job.company}
-                      {job.isRecruiterPosting && <span className={styles.cardViaRecruiter}> · via recruiter</span>}
-                    </span>
-                  </div>
-                  <h3 className={styles.cardRole}>{job.title}</h3>
-                  <div className={styles.cardMeta}>
-                    <span>{job.location}{job.area ? `, ${job.area}` : ''}</span>
-                    <span className={styles.cardDot}>·</span>
-                    <span className={styles.cardSalary}>{formatSalary(job)}</span>
-                  </div>
-                  <div className={styles.cardBadges}>
-                    {badges.map((t, i) => <span key={i} className={styles.cardBadge}>{t}</span>)}
-                    {job.workLocationType && <span className={styles.cardBadge}>{job.workLocationType}</span>}
-                    {job.urgent && <span className={styles.cardBadge}>Urgent</span>}
-                    {easyApply && <span className={`${styles.cardBadge} ${styles.cardBadgeApply}`}>⚡ Easy apply</span>}
-                  </div>
-                </div>
-
-                {appliedJobIds.has(job.id) && <span className={styles.cardApplied}>Applied ✓</span>}
-                {shortlistedJobIds.has(job.id) && <span className={styles.jobCardStamp}>SHORTLISTED</span>}
-              </div>
-              )
-            })}
+                job={job}
+                onSelect={selectJob}
+                saved={isSaved(job.id)}
+                onToggleSave={j => { if (!isSaved(j.id)) trackClickEvent(j.id, 'save_click'); toggleSave(j.id) }}
+                applied={appliedJobIds.has(job.id)}
+                shortlisted={shortlistedJobIds.has(job.id)}
+                boosted={boostedJobIds.has(job.id)}
+              />
+            ))}
           </div>
         ) : (
           <div className={styles.emptyState}>

@@ -1,5 +1,8 @@
 // Shared model for the Temp Work feed. Client + server safe.
 
+import type { FeedCardModel } from '@/components/FeedCard'
+import { formatMoney } from '@/lib/money'
+
 // ── Grouped role taxonomy (one source for the composer picker AND the filter) ──
 export interface RoleDef { key: string; label: string }
 export interface RoleGroup { key: string; label: string; icon: string; roles: RoleDef[] }
@@ -54,6 +57,39 @@ export function roleMeta(key: string): { key: string; label: string; groupKey: s
 
 export function rolesInGroup(groupKey: string): string[] {
   return ROLE_GROUPS.find(g => g.key === groupKey)?.roles.map(r => r.key) ?? []
+}
+
+/**
+ * Best-guess role key for a JOBS row, from its title.
+ *
+ * A shift carries an explicit category because the person posting it picked one.
+ * A jobs row does not: jobs.category is the SECTOR, and it is 'hospitality' on
+ * all 247 rows, so it cannot drive a role filter. The title is the only signal
+ * there is.
+ *
+ * Longest label first, so "Chef de Partie" wins over "Chef" and "Head Chef" over
+ * both. Anything unrecognised falls to 'other', which is honest — it means the
+ * filter shows it under Other rather than silently hiding it, and a role missing
+ * from a filter is a much smaller failure than a role missing from the page.
+ */
+const ROLE_MATCHERS: { key: string; needle: string }[] = ROLE_GROUPS
+  .flatMap(g => g.roles.map(r => ({ key: r.key, needle: r.label.toLowerCase() })))
+  .filter(r => r.key !== 'other')
+  .sort((a, b) => b.needle.length - a.needle.length)
+
+export function roleKeyFromTitle(title: string | null | undefined): string {
+  const t = (title || '').toLowerCase()
+  if (!t) return 'other'
+  for (const { key, needle } of ROLE_MATCHERS) {
+    if (t.includes(needle)) return key
+  }
+  // A couple of titles the labels don't spell out but the trade does.
+  if (/\bkp\b|porter/.test(t)) return 'kitchen_porter'
+  if (/waiter|waitress|server\b/.test(t)) return 'waiting_staff'
+  if (/\bchef\b/.test(t)) return 'chef_de_partie'
+  if (/\bbar\b|mixologist|sommelier/.test(t)) return 'bartender'
+  if (/manager|supervisor/.test(t)) return 'duty_manager'
+  return 'other'
 }
 
 export const RATE_TYPES = ['hour', 'shift', 'day'] as const
@@ -124,9 +160,57 @@ export function formatWhen(p: Pick<TempPost, 'is_ongoing' | 'date_from' | 'date_
   return times ? `${datePart} · ${times}` : datePart
 }
 
+/**
+ * A shift's pay line, in the SAME shape the job card uses.
+ *
+ * Two things were wrong and both were visible in one screenshot of the mixed
+ * feed: `£${rate}` printed £12.5 where the job card printed £18.16, and the unit
+ * read "/hour" next to the job card's "/hr". The money now comes from the single
+ * shared formatter, and 'hour' abbreviates to match. 'shift' and 'day' stay as
+ * words because there is nothing to abbreviate them to.
+ */
+const RATE_UNIT: Record<RateType, string> = { hour: 'hr', shift: 'shift', day: 'day' }
+
 export function formatRate(p: Pick<TempPost, 'hourly_rate' | 'rate_type'>): string | null {
   if (p.hourly_rate == null) return null
-  return `£${p.hourly_rate}/${p.rate_type}`
+  return `${formatMoney(p.hourly_rate)}/${RATE_UNIT[p.rate_type] || p.rate_type}`
+}
+
+/**
+ * A shift as the shared card sees it — the same model a job fills in, so the two
+ * cannot end up looking like two products.
+ *
+ * ONE DELIBERATE DEVIATION from the brief: the rate goes in the PAY slot, next to
+ * the location, rather than into a badge. A job's pay sits there, and putting a
+ * shift's rate somewhere else would rebuild the difference this change exists to
+ * remove — pay is the number a chef compares between two postings and it should
+ * be in the same place on both. The genuinely shift-shaped fields (when, how many
+ * needed) are the badges.
+ */
+export function cardModelFromShift(p: TempPost): FeedCardModel {
+  const ageDays = (Date.now() - new Date(p.created_at).getTime()) / 86400_000
+  return {
+    id: p.id,
+    banner: p.image_url || null,
+    logo: p.company_logo || null,
+    company: p.company_name || 'A hospitality employer',
+    companyNote: `· ${roleMeta(p.category).label}`,
+    title: p.title,
+    where: `${p.location_area}${p.postcode ? ` · ${p.postcode}` : ''}`,
+    pay: formatRate(p),
+    isNew: ageDays <= 2,
+    badges: [
+      { label: formatWhen(p) },
+      ...(p.headcount > 1 ? [{ label: `${p.headcount} needed` }] : []),
+      // "Comment on this shift", NOT "Comment to apply", under Paul's own
+      // condition: the notification diagnosis found a comment reaches the
+      // employer's bell in realtime but sends no email, offers them no reply
+      // box, and never tells the candidate when they do reply. Promising an
+      // application route we only deliver a third of would spend a chef's first
+      // attempt. Becomes "⚡ I'm interested" once temp_interest is wired.
+      { label: '💬 Comment on this shift', accent: true },
+    ],
+  }
 }
 
 export function timeAgo(iso: string): string {

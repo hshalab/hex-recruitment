@@ -32,6 +32,7 @@ export default function Header() {
   const [unreadMessageCount, setUnreadMessageCount] = useState(0)
   // Upcoming interviews (next 7 days) count — employers only
   const [upcomingInterviewCount, setUpcomingInterviewCount] = useState(0)
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -65,6 +66,15 @@ export default function Header() {
       supabase.removeChannel(channel)
       window.removeEventListener('messages:read', onMessagesRead)
     }
+  }, [user])
+
+  // The employer's company logo, from the table rather than the token.
+  useEffect(() => {
+    if (!user || user?.user_metadata?.role !== 'employer') { setCompanyLogo(null); return }
+    let cancelled = false
+    supabase.from('employer_profiles').select('logo_url').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => { if (!cancelled) setCompanyLogo((data as { logo_url?: string } | null)?.logo_url || null) })
+    return () => { cancelled = true }
   }, [user])
 
   // Fetch upcoming interview count for employers (next 7 days)
@@ -242,9 +252,17 @@ export default function Header() {
   }
 
   // Get user profile photo (employers: prefer company logo)
+  //
+  // The company logo comes from employer_profiles, NOT from user_metadata.
+  // It used to be written into metadata for exactly this avatar, but metadata
+  // rides in the JWT and the logo is a base64 data URL — which grew one
+  // employer's auth cookie past Vercel's header limit and locked her out of the
+  // product entirely. employer_profiles is where it already lived; this just
+  // reads it from there. The metadata fallback stays only so accounts written
+  // before this change keep their avatar until they next save.
   const getProfilePhoto = () => {
     if (isEmployer) {
-      return user?.user_metadata?.logo_url || user?.user_metadata?.profile_photo || user?.user_metadata?.avatar_url || null
+      return companyLogo || user?.user_metadata?.logo_url || user?.user_metadata?.profile_photo || user?.user_metadata?.avatar_url || null
     }
     return user?.user_metadata?.profile_photo || user?.user_metadata?.avatar_url || null
   }
