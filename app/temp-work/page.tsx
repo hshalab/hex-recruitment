@@ -189,8 +189,12 @@ export default function TempWorkPage() {
   }
 
   const openComments = async (post: TempPost) => {
-    if (post.isExample) return
     if (openThread === post.id) { setOpenThread(null); return }
+    // An example expands to show its description, because that is the whole
+    // point of an example — a card nobody can open demonstrates nothing. It
+    // still fetches no comments and offers no comment box; those need a real
+    // post behind them.
+    if (post.isExample) { setOpenThread(post.id); return }
     setOpenThread(post.id); setDraft('')
     if (!comments[post.id]) {
       const { data } = await supabase
@@ -316,7 +320,7 @@ export default function TempWorkPage() {
                     <FeedCard
                       model={cardModelFromShift(post)}
                       example={isEx}
-                      onSelect={isEx ? undefined : () => openComments(post)}
+                      onSelect={() => openComments(post)}
                       controls={
                         <div className={styles.shiftControls}>
                           {isEx && <span className={styles.exampleBadge}>Example</span>}
@@ -345,7 +349,7 @@ export default function TempWorkPage() {
                     />
                   </div>
 
-                  {threadOpen && !isEx && (
+                  {threadOpen && (
                     <div className={styles.shiftDetail}>
                       {post.description && <p className={styles.desc}>{post.description}</p>}
                       <p className={styles.detailMeta}>Posted {timeAgo(post.created_at)}</p>
