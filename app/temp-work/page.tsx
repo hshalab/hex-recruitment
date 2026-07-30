@@ -63,6 +63,35 @@ export default function TempWorkPage() {
   // card, so the raw timestamp is kept alongside for sorting the mixed feed.
   const [tempJobs, setTempJobs] = useState<{ job: Job; at: string }[]>([])
 
+  // ── PREVIEW-ONLY: see the mixed feed before a real shift exists ──────────
+  //
+  // The feed's whole point is two card types side by side, but temp_posts is
+  // empty, so the shape being shipped cannot be looked at. ?preview=shifts adds
+  // the display-only examples from lib/tempExamples ALONGSIDE the real jobs, so
+  // the mixed feed can be reviewed. It writes nothing and reads nothing extra.
+  //
+  // THE GATE FAILS CLOSED, which is the property that matters. It enables only
+  // on a value it can positively confirm is non-production: an unset
+  // NEXT_PUBLIC_VERCEL_ENV yields false rather than true, so a build where the
+  // variable is missing behaves like production. Written the other way round —
+  // `!== 'production'` — a missing variable would have turned this ON for real
+  // candidates, which is exactly the mistake worth designing out.
+  //
+  // NEXT_PUBLIC_ is inlined at build time, so the production bundle carries a
+  // literal false here and the param is inert there no matter who types it.
+  const previewAllowed =
+    process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === 'development' ||
+    process.env.NODE_ENV === 'development'
+
+  // Read in an effect off window.location rather than via useSearchParams, which
+  // would drag a Suspense boundary into a page that has no other need for one.
+  const [previewShifts, setPreviewShifts] = useState(false)
+  useEffect(() => {
+    if (!previewAllowed) return
+    setPreviewShifts(new URLSearchParams(window.location.search).get('preview') === 'shifts')
+  }, [previewAllowed])
+
   const load = useCallback(async () => {
     const [shifts, jobs] = await Promise.all([
       supabase.from('temp_posts').select('*').eq('status', 'open').order('created_at', { ascending: false }),
@@ -99,7 +128,9 @@ export default function TempWorkPage() {
   // Examples only when there is genuinely NOTHING — no shifts AND no temp jobs.
   // With six real roles on the board they can no longer fire.
   const usingExamples = !loading && posts.length === 0 && tempJobs.length === 0
-  const visible: TempPost[] = usingExamples ? EXAMPLE_TEMP_POSTS : posts
+  const visible: TempPost[] = usingExamples
+    ? EXAMPLE_TEMP_POSTS
+    : previewShifts ? [...posts, ...EXAMPLE_TEMP_POSTS] : posts
 
   const matchesGroupRole = (roleKey: string) => {
     if (role) return roleKey === role
@@ -257,6 +288,9 @@ export default function TempWorkPage() {
 
             {toast && <div className={styles.toast}>{toast}</div>}
             {usingExamples && <div className={styles.exNote}>No live shifts yet — here’s what posts look like. Real shifts replace these the moment one is posted.</div>}
+            {previewShifts && !usingExamples && <div className={styles.previewNote}>
+              PREVIEW MODE — the dashed cards below are illustrative examples, not real shifts, and are visible only because <code>?preview=shifts</code> is in the URL on a non-production build. Nothing has been written to the database.
+            </div>}
 
             {loading ? (
               <div className={styles.empty}>Loading shifts…</div>
