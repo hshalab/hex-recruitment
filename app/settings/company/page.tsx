@@ -567,12 +567,20 @@ export default function CompanySettingsPage() {
           }
         }
 
-        // Also update user metadata (logo_url used by Header avatar)
+        // Company name only. The LOGO MUST NOT GO IN HERE.
+        //
+        // user_metadata is embedded in the JWT, and the JWT is the auth cookie
+        // sent on every single request. handleLogoUpload produces a base64 data
+        // URL — around 34KB for a 200x200 PNG — so writing it here grew one
+        // employer's cookie to roughly 46KB across fifteen chunks and Vercel
+        // rejected her requests at the edge with REQUEST_HEADER_TOO_LARGE. She
+        // could not use the product at all, and nothing reached our logs because
+        // nothing reached our code.
+        //
+        // The Header now reads employer_profiles.logo_url instead, which is
+        // where the logo already was.
         await supabase.auth.updateUser({
-          data: {
-            company_name: formData.companyName,
-            logo_url: formData.logoUrl || null,
-          }
+          data: { company_name: formData.companyName },
         })
 
         setMessage({ type: 'success', text: 'Company profile saved successfully!' })
