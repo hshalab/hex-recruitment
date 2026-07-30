@@ -216,8 +216,24 @@ export default function ManageTempWorkPage() {
               </div>
 
               <div style={{ padding: '0.75rem 1rem' }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.6rem' }}>
-                  {rows.length} comment{rows.length === 1 ? '' : 's'}
+                {/* Reply lives HERE, not inside the comments loop.
+                    It used to render per comment, so a post with none showed no
+                    Reply button at all — an employer could only ever reply
+                    SECOND and could never open a thread. Which is precisely the
+                    case that matters: someone has put themselves forward and
+                    said nothing, and the employer wants to ask when they can
+                    start. A control has to exist in the empty state or it isn't
+                    a control, it's a reward for the happy path. */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: '0.6rem' }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {rows.length} comment{rows.length === 1 ? '' : 's'}
+                  </div>
+                  <button
+                    onClick={() => { setReplyTo(replyTo === post.id ? null : post.id); setReplyDraft('') }}
+                    style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.78rem', fontWeight: 700, color: C.ink, cursor: 'pointer' }}
+                  >
+                    {replyTo === post.id ? 'Cancel' : 'Reply'}
+                  </button>
                 </div>
                 {rows.length === 0 ? (
                   <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>No comments yet — sit tight.</p>
@@ -251,9 +267,6 @@ export default function ManageTempWorkPage() {
                             </button>
                             <button disabled={busy === c.id} onClick={() => deleteComment(c)} style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.74rem', fontWeight: 600, color: '#b91c1c', cursor: 'pointer' }}>
                               Delete
-                            </button>
-                            <button onClick={() => { setReplyTo(replyTo === post.id ? null : post.id); setReplyDraft('') }} style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.74rem', fontWeight: 700, color: '#0f172a', cursor: 'pointer' }}>
-                              {replyTo === post.id ? 'Cancel' : 'Reply'}
                             </button>
                           </div>
                         </div>
