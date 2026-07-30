@@ -77,6 +77,12 @@
 .interestBtn:hover:not(:disabled) { filter: brightness(0.95); }
 .interestBtn:disabled { opacity: 0.6; cursor: default; }
 .interestDone { margin-top: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 9px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 0.86rem; font-weight: 600; }
+.interestHint { font-size: 0.78rem; color: #94a3b8; }
+/* The owner's view of their own shift: not a control, just a way through to the
+   page that can actually do something with it. */
+.interestOwn { margin-top: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 9px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-size: 0.86rem; }
+.interestOwnLink { color: #0f172a; font-weight: 700; text-decoration: none; }
+.interestOwnLink:hover { text-decoration: underline; }
 
 .card { border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; padding: 1.1rem 1.15rem; margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
 .cardExample { border-style: dashed; background: #fefefe; }

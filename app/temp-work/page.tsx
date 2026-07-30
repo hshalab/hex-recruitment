@@ -401,6 +401,7 @@ export default function TempWorkPage() {
               const post = item.post
               const liked = myLikes.has(post.id)
               const isEx = !!post.isExample
+              const isOwner = !!userId && post.employer_id === userId
               const thread = comments[post.id] || []
               const threadOpen = openThread === post.id
               return (
@@ -451,29 +452,50 @@ export default function TempWorkPage() {
                           Comments are for questions; this is the thing an
                           employer can work through, and it writes temp_interest,
                           which was built for exactly this and then abandoned. */}
-                      {!isEx && (myInterest.has(post.id) ? (
-                        <div className={styles.interestDone}>
-                          ✓ You’re available for this shift. The employer has your name and note.
-                        </div>
-                      ) : (
-                        <div className={styles.interestBox}>
-                          <textarea
-                            className={styles.interestNote}
-                            rows={2}
-                            placeholder="Anything they should know? e.g. “Free from 5pm, I have my own knives” (optional)"
-                            value={interestNote}
-                            onFocus={() => { if (!userId) requireLogin() }}
-                            onChange={e => setInterestNote(e.target.value)}
-                          />
-                          <button
-                            className={styles.interestBtn}
-                            disabled={busyInterest === post.id}
-                            onClick={() => expressInterest(post)}
-                          >
-                            {busyInterest === post.id ? 'Sending…' : '⚡ I’m interested'}
-                          </button>
-                        </div>
-                      ))}
+                      {/* WHO GETS OFFERED THIS.
+                          Only a signed-in viewer who does not own the post. The
+                          owner was being offered a button the database is
+                          designed to ignore — temp_interest_notify refuses to
+                          notify when the owner is the candidate — and a logged-out
+                          visitor was being offered one that could only end in a
+                          redirect. Both are the same fault: a control that can't
+                          do the thing it invites. */}
+                      {!isEx && (
+                        isOwner ? (
+                          <div className={styles.interestOwn}>
+                            This is your shift.{' '}
+                            <Link href="/temp-work/manage" className={styles.interestOwnLink}>See who’s available →</Link>
+                          </div>
+                        ) : !userId ? (
+                          <div className={styles.interestBox}>
+                            <button className={styles.interestBtn} onClick={() => requireLogin()}>
+                              Log in to put yourself forward
+                            </button>
+                            <span className={styles.interestHint}>Takes a minute, and the employer gets your name and availability.</span>
+                          </div>
+                        ) : myInterest.has(post.id) ? (
+                          <div className={styles.interestDone}>
+                            ✓ You’re available for this shift. The employer has your name and note.
+                          </div>
+                        ) : (
+                          <div className={styles.interestBox}>
+                            <textarea
+                              className={styles.interestNote}
+                              rows={2}
+                              placeholder="Anything they should know? e.g. “Free from 5pm, I have my own knives” (optional)"
+                              value={interestNote}
+                              onChange={e => setInterestNote(e.target.value)}
+                            />
+                            <button
+                              className={styles.interestBtn}
+                              disabled={busyInterest === post.id}
+                              onClick={() => expressInterest(post)}
+                            >
+                              {busyInterest === post.id ? 'Sending…' : '⚡ I’m interested'}
+                            </button>
+                          </div>
+                        )
+                      )}
                     </div>
                   )}
 
