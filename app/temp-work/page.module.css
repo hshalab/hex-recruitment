@@ -31,7 +31,10 @@
 .ctaLink:hover { text-decoration: underline; }
 
 /* ── Feed ── */
-.feed { width: 100%; max-width: 620px; margin: 0 auto; }
+/* No max-width. The feed fills its grid column: a job card has
+   aspect-ratio 16/11, so capping the width shrank the card and left dead space
+   to the right of it. Width comes from the column, height from the ratio. */
+.feed { width: 100%; }
 .feedHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
 .h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.4px; margin: 0 0 0.2rem; }
 .h1sub { font-size: 0.88rem; color: #64748b; margin: 0; }
@@ -119,12 +122,10 @@
 }
 
 /* A job-board card in the temp feed.
-   The card brings its own look from the shared stylesheet; this only gives it
-   the same vertical rhythm as the shift cards around it, and a sensible height
-   since the feed is a single column rather than the /jobs grid. */
+   The card brings its own look from the shared stylesheet — including
+   aspect-ratio 16/11 — so it must NOT be given a height here. Setting one made
+   the ratio solve for width instead and produced a 378px card in a 620px
+   column, which is the gap Paul spotted. Spacing only. */
 .jobCardWrap {
   margin-bottom: 1rem;
-}
-.jobCardWrap > * {
-  height: 260px;
 }

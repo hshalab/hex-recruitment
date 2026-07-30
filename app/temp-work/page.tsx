@@ -54,7 +54,6 @@ export default function TempWorkPage() {
   const [group, setGroup] = useState('')
   const [role, setRole] = useState('')
   const [loc, setLoc] = useState('')
-  const [date, setDate] = useState('')
   const [minRate, setMinRate] = useState(0) // min £/hr; only applies to hourly posts
   const [toast, setToast] = useState('')
 
