@@ -54,7 +54,9 @@ export default function TempImagePicker({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: `1px solid ${c.border}` }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="Selected photo" style={{ width: '100%', maxHeight: 260, objectFit: 'cover', display: 'block' }} />
+          {/* 16/11 because that is the card slot, and the upload is cropped to it.
+              Previewing any other shape would promise a framing the feed won't give. */}
+          <img src={value} alt="Selected banner" style={{ width: '100%', aspectRatio: '16 / 11', objectFit: 'cover', display: 'block' }} />
           <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 6 }}>
             <button type="button" onClick={() => inputRef.current?.click()} disabled={disabled || uploading}
               style={pillBtn}>Replace</button>
@@ -95,7 +97,7 @@ export default function TempImagePicker({
               Drag a photo here, or click to choose
             </div>
             <div style={{ color: c.sub, fontSize: '0.8rem', marginTop: 4 }}>
-              Any photo works — we’ll size it for you.
+              Any photo works — we’ll crop it for you. No photo is fine too.
             </div>
           </>
         )}

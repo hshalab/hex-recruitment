@@ -4,14 +4,15 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
-import { ThumbsUp } from 'lucide-react'
+import { ThumbsUp, MessageCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
-  ROLE_GROUPS, roleMeta, rolesInGroup, roleKeyFromTitle, formatWhen, formatRate, timeAgo, initialsOf, DISCLAIMER,
+  ROLE_GROUPS, rolesInGroup, roleKeyFromTitle, cardModelFromShift, timeAgo, initialsOf, DISCLAIMER,
   type TempPost, type TempComment,
 } from '@/lib/tempWork'
 import { EXAMPLE_TEMP_POSTS } from '@/lib/tempExamples'
 import JobCard from '@/components/JobCard'
+import FeedCard from '@/components/FeedCard'
 import { supabaseJobToJob } from '@/lib/types'
 import type { Job } from '@/lib/mockJobs'
 import styles from './page.module.css'
@@ -302,76 +303,55 @@ export default function TempWorkPage() {
               </div>
             ) : (() => {
               const post = item.post
-              const rm = roleMeta(post.category)
-              const rate = formatRate(post)
               const liked = myLikes.has(post.id)
               const isEx = !!post.isExample
               const thread = comments[post.id] || []
               const threadOpen = openThread === post.id
               return (
-                <article key={post.id} className={`${styles.card} ${isEx ? styles.cardExample : ''}`}>
-                  <div className={styles.posterRow}>
-                    <span className={styles.avatar}>
-                      {post.company_logo
-                        // eslint-disable-next-line @next/next/no-img-element
-                        ? <img src={post.company_logo} alt="" className={styles.avatarImg} />
-                        : <span className={styles.avatarInitials}>{initialsOf(post.company_name || 'Thrive')}</span>}
-                    </span>
-                    <div className={styles.posterMeta}>
-                      <span className={styles.posterName}>{post.company_name || 'A hospitality employer'}</span>
-                      <span className={styles.posterSub}>{rm.icon} {rm.label} · {timeAgo(post.created_at)}</span>
+                <article key={post.id} className={styles.shiftItem}>
+                  {/* The SAME card a job gets — see lib/tempWork cardModelFromShift.
+                      The description and the thread live below it, revealed on tap,
+                      so the card itself stays exactly a job card's shape. */}
+                  <div className={styles.jobCardWrap}>
+                    <FeedCard
+                      model={cardModelFromShift(post)}
+                      example={isEx}
+                      onSelect={isEx ? undefined : () => openComments(post)}
+                      controls={
+                        <div className={styles.shiftControls}>
+                          {isEx && <span className={styles.exampleBadge}>Example</span>}
+                          <button
+                            className={`${styles.iconBtn} ${liked ? styles.iconBtnOn : ''}`}
+                            onClick={e => { e.stopPropagation(); toggleLike(post) }}
+                            disabled={isEx || busyLike === post.id}
+                            aria-label={liked ? 'Unlike this shift' : 'Like this shift'}
+                            title={isEx ? 'This is an example post' : liked ? 'Unlike' : 'Like'}
+                          >
+                            <ThumbsUp size={15} strokeWidth={2.2} fill={liked ? 'currentColor' : 'none'} />
+                            {post.like_count > 0 && <span className={styles.iconBtnCount}>{post.like_count}</span>}
+                          </button>
+                          <button
+                            className={`${styles.iconBtn} ${threadOpen ? styles.iconBtnOn : ''}`}
+                            onClick={e => { e.stopPropagation(); openComments(post) }}
+                            disabled={isEx}
+                            aria-label="Comments"
+                            title={isEx ? 'This is an example post' : 'Comment'}
+                          >
+                            <MessageCircle size={15} strokeWidth={2.2} />
+                            {post.comment_count > 0 && <span className={styles.iconBtnCount}>{post.comment_count}</span>}
+                          </button>
+                        </div>
+                      }
+                    />
+                  </div>
+
+                  {threadOpen && !isEx && (
+                    <div className={styles.shiftDetail}>
+                      {post.description && <p className={styles.desc}>{post.description}</p>}
+                      <p className={styles.detailMeta}>Posted {timeAgo(post.created_at)}</p>
+                      {post.external_link && <a href={post.external_link} target="_blank" rel="noopener noreferrer" className={styles.extLink}>More details ↗</a>}
                     </div>
-                    {isEx && <span className={styles.exampleBadge}>Example</span>}
-                  </div>
-
-                  <h2 className={styles.cardTitle}>{post.title}</h2>
-
-                  <div className={styles.metaRow}>
-                    <span>📅 {formatWhen(post)}</span>
-                    <span>📍 {post.location_area}{post.postcode ? ` · ${post.postcode}` : ''}</span>
-                    {rate && <span className={styles.rate}>{rate}</span>}
-                    {post.headcount > 1 && <span>👥 {post.headcount} needed</span>}
-                  </div>
-
-                  {post.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={post.image_url} alt="" className={styles.cardImg} />
                   )}
-                  {post.description && <p className={styles.desc}>{post.description}</p>}
-                  {post.external_link && <a href={post.external_link} target="_blank" rel="noopener noreferrer" className={styles.extLink}>More details ↗</a>}
-
-                  {/* engagement summary */}
-                  {(post.like_count > 0 || post.comment_count > 0) && (
-                    <div className={styles.engRow}>
-                      {post.like_count > 0 && (
-                        <span className={styles.engLikes}><ThumbsUp size={13} strokeWidth={2.4} /> {post.like_count}</span>
-                      )}
-                      {post.comment_count > 0 && (
-                        <button className={styles.engCount} onClick={() => openComments(post)} disabled={isEx}>
-                          {post.comment_count} comment{post.comment_count === 1 ? '' : 's'}
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  <div className={styles.actionBar}>
-                    <button
-                      className={`${styles.actionBtn} ${liked ? styles.actionBtnOn : ''}`}
-                      onClick={() => toggleLike(post)}
-                      disabled={isEx || busyLike === post.id}
-                      title={isEx ? 'This is an example post' : liked ? 'Unlike' : 'Like'}
-                    >
-                      <ThumbsUp size={16} strokeWidth={2.2} fill={liked ? 'currentColor' : 'none'} /> Like
-                    </button>
-                    <button
-                      className={`${styles.actionBtn} ${threadOpen ? styles.actionBtnOn : ''}`}
-                      onClick={() => openComments(post)}
-                      disabled={isEx}
-                      title={isEx ? 'This is an example post' : 'Comment'}
-                    >
-                      💬 Comment
-                    </button>
-                  </div>
 
                   {threadOpen && !isEx && (
                     <div className={styles.thread}>

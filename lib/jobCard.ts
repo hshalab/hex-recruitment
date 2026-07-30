@@ -9,6 +9,9 @@
 // touches six files that each need looking at.
 
 import type { Job } from './mockJobs'
+import type { FeedCardModel } from '@/components/FeedCard'
+import { resolveJobBanner } from './jobBanner'
+import { formatMoney } from './money'
 
 /**
  * "3 days ago" and friends, as a number of days. Job.postedAt is already a
@@ -47,16 +50,46 @@ export function formatJobSalary(job: Job): string {
   const single = !job.salaryMax || job.salaryMin === job.salaryMax
 
   if (job.salaryPeriod === 'hour') {
-    // Pence in full or not at all — "£23.50" not "£23.5", which reads as a typo
-    // next to "£16.95". Whole rates stay clean: £14, not £14.00.
-    const f = (n: number) => `£${Number.isInteger(n) ? n : n.toFixed(2)}`
     return single
-      ? `${f(job.salaryMin)}/hr${negotiable}`
-      : `${f(job.salaryMin)}-${f(job.salaryMax)}/hr${negotiable}`
+      ? `${formatMoney(job.salaryMin)}/hr${negotiable}`
+      : `${formatMoney(job.salaryMin)}-${formatMoney(job.salaryMax)}/hr${negotiable}`
   }
 
   const k = (n: number) => `£${(n / 1000).toFixed(0)}k`
   return single
     ? `${k(job.salaryMin)}/year${negotiable}`
     : `${k(job.salaryMin)}-${k(job.salaryMax)}/year${negotiable}`
+}
+
+/**
+ * A job as the shared card sees it.
+ *
+ * The card itself does no formatting and knows nothing about jobs — this is the
+ * only place that decides what a job's badges, pay line and location read like.
+ */
+export function cardModelFromJob(job: Job): FeedCardModel {
+  const employmentBadges = Array.isArray(job.employmentType)
+    ? job.employmentType.slice(0, 2)
+    : (job.employmentType ? [job.employmentType] : [])
+  const easyApply = !job.tags?.includes('CV required') && !job.tags?.includes('Cover letter required')
+
+  return {
+    id: job.id,
+    banner: resolveJobBanner({
+      id: job.id, companyBanner: job.companyBanner, company: job.company, category: job.category,
+    }),
+    logo: job.companyLogo || null,
+    company: job.company,
+    companyNote: job.isRecruiterPosting ? '· via recruiter' : null,
+    title: job.title,
+    where: `${job.location}${job.area ? `, ${job.area}` : ''}`,
+    pay: formatJobSalary(job),
+    isNew: getPostedDaysAgo(job.postedAt) <= 2,
+    badges: [
+      ...employmentBadges.map(label => ({ label })),
+      ...(job.workLocationType ? [{ label: job.workLocationType }] : []),
+      ...(job.urgent ? [{ label: 'Urgent' }] : []),
+      ...(easyApply ? [{ label: '⚡ Easy apply', accent: true }] : []),
+    ],
+  }
 }

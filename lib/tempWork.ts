@@ -1,5 +1,8 @@
 // Shared model for the Temp Work feed. Client + server safe.
 
+import type { FeedCardModel } from '@/components/FeedCard'
+import { formatMoney } from '@/lib/money'
+
 // ── Grouped role taxonomy (one source for the composer picker AND the filter) ──
 export interface RoleDef { key: string; label: string }
 export interface RoleGroup { key: string; label: string; icon: string; roles: RoleDef[] }
@@ -157,9 +160,51 @@ export function formatWhen(p: Pick<TempPost, 'is_ongoing' | 'date_from' | 'date_
   return times ? `${datePart} · ${times}` : datePart
 }
 
+/**
+ * A shift's pay line, in the SAME shape the job card uses.
+ *
+ * Two things were wrong and both were visible in one screenshot of the mixed
+ * feed: `£${rate}` printed £12.5 where the job card printed £18.16, and the unit
+ * read "/hour" next to the job card's "/hr". The money now comes from the single
+ * shared formatter, and 'hour' abbreviates to match. 'shift' and 'day' stay as
+ * words because there is nothing to abbreviate them to.
+ */
+const RATE_UNIT: Record<RateType, string> = { hour: 'hr', shift: 'shift', day: 'day' }
+
 export function formatRate(p: Pick<TempPost, 'hourly_rate' | 'rate_type'>): string | null {
   if (p.hourly_rate == null) return null
-  return `£${p.hourly_rate}/${p.rate_type}`
+  return `${formatMoney(p.hourly_rate)}/${RATE_UNIT[p.rate_type] || p.rate_type}`
+}
+
+/**
+ * A shift as the shared card sees it — the same model a job fills in, so the two
+ * cannot end up looking like two products.
+ *
+ * ONE DELIBERATE DEVIATION from the brief: the rate goes in the PAY slot, next to
+ * the location, rather than into a badge. A job's pay sits there, and putting a
+ * shift's rate somewhere else would rebuild the difference this change exists to
+ * remove — pay is the number a chef compares between two postings and it should
+ * be in the same place on both. The genuinely shift-shaped fields (when, how many
+ * needed) are the badges.
+ */
+export function cardModelFromShift(p: TempPost): FeedCardModel {
+  const ageDays = (Date.now() - new Date(p.created_at).getTime()) / 86400_000
+  return {
+    id: p.id,
+    banner: p.image_url || null,
+    logo: p.company_logo || null,
+    company: p.company_name || 'A hospitality employer',
+    companyNote: `· ${roleMeta(p.category).label}`,
+    title: p.title,
+    where: `${p.location_area}${p.postcode ? ` · ${p.postcode}` : ''}`,
+    pay: formatRate(p),
+    isNew: ageDays <= 2,
+    badges: [
+      { label: formatWhen(p) },
+      ...(p.headcount > 1 ? [{ label: `${p.headcount} needed` }] : []),
+      { label: '💬 Comment to apply', accent: true },
+    ],
+  }
 }
 
 export function timeAgo(iso: string): string {

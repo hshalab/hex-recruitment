@@ -53,6 +53,21 @@
 .previewNote code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95em; background: #fee2e2; padding: 0.05rem 0.25rem; border-radius: 4px; }
 .empty { text-align: center; color: #94a3b8; padding: 3rem 1rem; }
 
+/* ── Shift item: a job-shaped card, with its detail and thread underneath ──
+   The card is the SAME component a job gets, so the two are the same size and
+   shape by construction rather than by two stylesheets agreeing. Everything a
+   shift has and a job doesn't — the description, the comment thread — is
+   revealed below the card on tap, which is why one column was the right call. */
+.shiftItem { margin-bottom: 1rem; }
+.shiftControls { position: absolute; top: 12px; right: 12px; z-index: 2; display: flex; gap: 6px; align-items: center; }
+.iconBtn { height: 34px; min-width: 34px; padding: 0 9px; border-radius: 999px; background: rgba(10,22,40,.35); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,.25); display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: #fff; cursor: pointer; font-size: 12px; font-weight: 700; }
+.iconBtn:disabled { opacity: .55; cursor: default; }
+.iconBtnOn { background: rgba(255,229,0,.92); color: #0A1628; border-color: rgba(255,229,0,.9); }
+.iconBtnCount { line-height: 1; }
+/* Detail panel — only ever on screen when the reader asked for it. */
+.shiftDetail { margin-top: -0.4rem; padding: 0.85rem 1rem 0.2rem; }
+.detailMeta { font-size: 0.78rem; color: #94a3b8; margin: 0.5rem 0 0; }
+
 .card { border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; padding: 1.1rem 1.15rem; margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
 .cardExample { border-style: dashed; background: #fefefe; }
 
