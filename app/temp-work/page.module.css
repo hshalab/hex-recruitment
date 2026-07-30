@@ -133,7 +133,13 @@
 /* ── Responsive ── */
 @media (max-width: 1024px) {
   .grid { grid-template-columns: 220px minmax(0, 1fr); }
-  .rightRail { display: none; }
+  /* The panel moves BELOW the feed rather than disappearing.
+     Not above it: a three-line explanation sitting between the heading and the
+     first card is exactly the shape that made the roundup wrong on a phone —
+     logo, then instructions, then the roles somewhere past the fold. A chef
+     opening this wants the shifts. Underneath, the roles come first and the
+     explanation is still there for anyone who scrolls looking for it. */
+  .rightRail { position: static; grid-column: 2; margin-top: 0.25rem; }
   .feedPostBtn { display: inline-block; flex-shrink: 0; padding: 0.5rem 0.9rem; background: #ffe500; color: #0f172a; font-weight: 700; font-size: 0.85rem; border-radius: 9px; text-decoration: none; }
 }
 @media (max-width: 760px) {
@@ -143,6 +149,9 @@
   .catCol { flex-direction: row; flex-wrap: wrap; }
   .catBtn { width: auto; border: 1px solid #e2e8f0; border-radius: 999px; }
   .roleChips { padding-left: 0; width: 100%; }
+  /* Single column here, so the panel is the third child and already falls below
+     the feed — it just needs releasing from column 2. */
+  .rightRail { grid-column: 1; }
 }
 
 /* A job-board card in the temp feed.

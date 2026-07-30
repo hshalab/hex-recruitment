@@ -15,6 +15,28 @@ import type { TempPost } from '@/lib/tempWork'
 // A plausible upcoming multi-day window for the events example (display only).
 const daysOut = (n: number) => new Date(Date.now() + n * 24 * 3600_000).toISOString().slice(0, 10)
 
+/**
+ * The NEXT occurrence of a weekday (0 = Sunday … 6 = Saturday), as YYYY-MM-DD.
+ *
+ * The Saturday example used to carry no date at all, so formatWhen fell through
+ * to "Flexible dates" on a card titled "Saturday service" — and silently dropped
+ * its 17:00–23:30 times, since those only render alongside a date. A card that
+ * contradicts its own title is the kind of thing an agency notices and we don't.
+ *
+ * `|| 7` rolls to next week when today IS that day, so the example is always an
+ * upcoming shift rather than one that may already have finished.
+ */
+const nextWeekday = (dow: number) => {
+  const d = new Date()
+  d.setDate(d.getDate() + ((dow - d.getDay() + 7) % 7 || 7))
+  return d.toISOString().slice(0, 10)
+}
+
+// Thrive-owned or Host generic frames only — never a Goldenkeys venue photograph,
+// which belongs to a real employer's role. Deliberately none of the images the six
+// temp-flagged JOBS carry, so the demo feed never shows the same picture twice.
+const BANNER = 'https://aaljufxcniacfggqiuls.supabase.co/storage/v1/object/public/job-banners/host-staffing'
+
 export const EXAMPLE_TEMP_POSTS: TempPost[] = [
   {
     isExample: true,
@@ -23,9 +45,9 @@ export const EXAMPLE_TEMP_POSTS: TempPost[] = [
     title: 'Chef de Partie needed — Saturday service',
     category: 'chef_de_partie',
     description: 'Busy Italian kitchen, one CDP needed for Saturday dinner service. Fresh pasta section — some experience preferred. Meal on shift.',
-    date_from: null, date_to: null, start_time: '17:00', end_time: '23:30', is_ongoing: false,
+    date_from: nextWeekday(6), date_to: null, start_time: '17:00', end_time: '23:30', is_ongoing: false,
     location_area: 'Soho, London', postcode: 'W1', hourly_rate: 16, rate_type: 'hour', headcount: 1,
-    image_url: null, external_link: null,
+    image_url: `${BANNER}/kitchen-pass.jpg`, external_link: null,
     company_name: 'The Example Kitchen', company_logo: null, like_count: 9, comment_count: 3,
     status: 'open', created_at: new Date(Date.now() - 2 * 3600_000).toISOString(),
   },
@@ -38,7 +60,7 @@ export const EXAMPLE_TEMP_POSTS: TempPost[] = [
     description: 'Friendly all-day café after reliable waiting staff for Sat & Sun brunch. Tips shared. Ongoing — pick the weekends that suit you.',
     date_from: null, date_to: null, start_time: null, end_time: null, is_ongoing: true,
     location_area: 'Bristol', postcode: 'BS1', hourly_rate: 12.5, rate_type: 'hour', headcount: 2,
-    image_url: null, external_link: null,
+    image_url: `${BANNER}/country-pub-dining.jpg`, external_link: null,
     company_name: 'Example Café Co.', company_logo: null, like_count: 5, comment_count: 2,
     status: 'open', created_at: new Date(Date.now() - 26 * 3600_000).toISOString(),
   },
@@ -51,7 +73,7 @@ export const EXAMPLE_TEMP_POSTS: TempPost[] = [
     description: 'Outdoor food & music festival across a long weekend. Setup, service and pack-down. Smart black uniform. Great day rate — work one day or all three.',
     date_from: daysOut(10), date_to: daysOut(12), start_time: '11:00', end_time: '23:00', is_ongoing: false,
     location_area: 'Manchester', postcode: 'M2', hourly_rate: 130, rate_type: 'day', headcount: 8,
-    image_url: null, external_link: null,
+    image_url: `${BANNER}/grill-chef.jpg`, external_link: null,
     company_name: 'Example Events Group', company_logo: null, like_count: 14, comment_count: 6,
     status: 'open', created_at: new Date(Date.now() - 3 * 24 * 3600_000).toISOString(),
   },

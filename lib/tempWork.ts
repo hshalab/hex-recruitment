@@ -202,7 +202,13 @@ export function cardModelFromShift(p: TempPost): FeedCardModel {
     badges: [
       { label: formatWhen(p) },
       ...(p.headcount > 1 ? [{ label: `${p.headcount} needed` }] : []),
-      { label: '💬 Comment to apply', accent: true },
+      // "Comment on this shift", NOT "Comment to apply", under Paul's own
+      // condition: the notification diagnosis found a comment reaches the
+      // employer's bell in realtime but sends no email, offers them no reply
+      // box, and never tells the candidate when they do reply. Promising an
+      // application route we only deliver a third of would spend a chef's first
+      // attempt. Becomes "⚡ I'm interested" once temp_interest is wired.
+      { label: '💬 Comment on this shift', accent: true },
     ],
   }
 }
