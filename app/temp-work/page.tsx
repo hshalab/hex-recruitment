@@ -47,6 +47,15 @@ export default function TempWorkPage() {
   const [myLikes, setMyLikes] = useState<Set<string>>(new Set())
   const [busyLike, setBusyLike] = useState<string | null>(null)
 
+  // Which posts I've already put myself forward for. The unique constraint on
+  // (temp_post_id, candidate_user_id) means a second attempt is a 23505 rather
+  // than a duplicate — so this exists to present that as STATE ("You're
+  // available for this") instead of letting someone tap into an error.
+  const [myName, setMyName] = useState('')
+  const [myInterest, setMyInterest] = useState<Set<string>>(new Set())
+  const [interestNote, setInterestNote] = useState('')
+  const [busyInterest, setBusyInterest] = useState<string | null>(null)
+
   const [openThread, setOpenThread] = useState<string | null>(null)
   const [comments, setComments] = useState<Record<string, TempComment[]>>({})
   const [draft, setDraft] = useState('')
@@ -121,6 +130,15 @@ export default function TempWorkPage() {
         // Which posts I've already liked (comment identity is resolved server-side).
         const { data: likes } = await supabase.from('temp_post_likes').select('post_id').eq('user_id', uid)
         setMyLikes(new Set((likes || []).map((r: { post_id: string }) => r.post_id)))
+        // …and which I've already put myself forward for. RLS restricts this to
+        // my own rows, so it cannot leak who else is interested.
+        const { data: mine } = await supabase.from('temp_interest').select('temp_post_id').eq('candidate_user_id', uid)
+        setMyInterest(new Set((mine || []).map((r: { temp_post_id: string }) => r.temp_post_id)))
+        // Name for the email only. The notification's name is resolved by the
+        // database trigger from candidate_profiles, so the client cannot spoof
+        // the one the employer sees in their bell.
+        const { data: cp } = await supabase.from('candidate_profiles').select('full_name').eq('user_id', uid).maybeSingle()
+        setMyName((cp as { full_name?: string } | null)?.full_name || '')
       }
     }
     init()
@@ -164,7 +182,64 @@ export default function TempWorkPage() {
   ]).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
   [filteredJobs, filteredPosts])
 
+  // A reply notification links to /temp-work?post=<id>. Honour it by opening
+  // that post, so the notification lands ON the thread rather than on a feed the
+  // reader then has to search. A link that can't complete the action it invites
+  // is the fault this whole piece of work exists to remove.
+  useEffect(() => {
+    if (loading) return
+    const wanted = new URLSearchParams(window.location.search).get('post')
+    if (!wanted) return
+    setOpenThread(prev => prev ?? wanted)
+    const el = document.getElementById(`post-${wanted}`)
+    if (el) el.scrollIntoView({ block: 'center' })
+  }, [loading])
+
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(''), 3000) }
+
+  /**
+   * Put myself forward for a shift.
+   *
+   * The row is written first and everything after it is best-effort: the in-app
+   * notification is a database trigger, and the email is a fire-and-forget POST.
+   * A candidate who has already committed must never be shown a failure because
+   * a downstream side effect wobbled.
+   */
+  const expressInterest = async (post: TempPost) => {
+    if (post.isExample) return
+    if (!userId) { requireLogin(); return }
+    if (myInterest.has(post.id) || busyInterest === post.id) return
+    setBusyInterest(post.id)
+
+    const note = interestNote.trim() || null
+    const { error } = await supabase.from('temp_interest').insert({
+      temp_post_id: post.id, candidate_user_id: userId, message: note,
+    })
+
+    // 23505 is the unique constraint — they were already interested, which is
+    // the outcome they wanted. Treat it as success, never as an error.
+    if (error && (error as { code?: string }).code !== '23505') {
+      setBusyInterest(null)
+      flash('Could not put you forward just now. Please try again.')
+      return
+    }
+
+    setMyInterest(prev => new Set(prev).add(post.id))
+    setInterestNote('')
+    flash('You’re on the list — the employer has been told.')
+
+    const { data: { session } } = await supabase.auth.getSession()
+    fetch('/api/temp-notify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ kind: 'interest', postId: post.id, actorName: myName, note }),
+    }).catch(() => console.warn('[temp-notify] interest email failed'))
+
+    setBusyInterest(null)
+  }
   const requireLogin = () => router.push(`/login/employee?redirect=${encodeURIComponent('/temp-work')}`)
 
   const toggleLike = async (post: TempPost) => {
@@ -218,6 +293,23 @@ export default function TempWorkPage() {
       setComments(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), data as TempComment] }))
       setPosts(prev => prev.map(p => p.id === post.id ? { ...p, comment_count: p.comment_count + 1 } : p))
       setDraft('')
+      // Email the employer too. The in-app notification is a database trigger,
+      // but an agency who isn't logged in learned nothing until they next
+      // visited — which for a Saturday shift is too late to be worth anything.
+      // Only when the commenter ISN'T the owner: the trigger already routes an
+      // owner's reply to the candidates instead, and emailing an employer about
+      // their own comment would be daft.
+      if (post.employer_id !== userId) {
+        const { data: { session } } = await supabase.auth.getSession()
+        fetch('/api/temp-notify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ kind: 'comment', postId: post.id, actorName: (data as TempComment).author_name || myName, body }),
+        }).catch(() => console.warn('[temp-notify] comment email failed'))
+      }
     } else {
       flash(error?.message || 'Could not post your comment.')
     }
@@ -312,7 +404,7 @@ export default function TempWorkPage() {
               const thread = comments[post.id] || []
               const threadOpen = openThread === post.id
               return (
-                <article key={post.id} className={styles.shiftItem}>
+                <article key={post.id} id={`post-${post.id}`} className={styles.shiftItem}>
                   {/* The SAME card a job gets — see lib/tempWork cardModelFromShift.
                       The description and the thread live below it, revealed on tap,
                       so the card itself stays exactly a job card's shape. */}
@@ -354,6 +446,34 @@ export default function TempWorkPage() {
                       {post.description && <p className={styles.desc}>{post.description}</p>}
                       <p className={styles.detailMeta}>Posted {timeAgo(post.created_at)}</p>
                       {post.external_link && <a href={post.external_link} target="_blank" rel="noopener noreferrer" className={styles.extLink}>More details ↗</a>}
+
+                      {/* PUTTING YOURSELF FORWARD — the actual application.
+                          Comments are for questions; this is the thing an
+                          employer can work through, and it writes temp_interest,
+                          which was built for exactly this and then abandoned. */}
+                      {!isEx && (myInterest.has(post.id) ? (
+                        <div className={styles.interestDone}>
+                          ✓ You’re available for this shift. The employer has your name and note.
+                        </div>
+                      ) : (
+                        <div className={styles.interestBox}>
+                          <textarea
+                            className={styles.interestNote}
+                            rows={2}
+                            placeholder="Anything they should know? e.g. “Free from 5pm, I have my own knives” (optional)"
+                            value={interestNote}
+                            onFocus={() => { if (!userId) requireLogin() }}
+                            onChange={e => setInterestNote(e.target.value)}
+                          />
+                          <button
+                            className={styles.interestBtn}
+                            disabled={busyInterest === post.id}
+                            onClick={() => expressInterest(post)}
+                          >
+                            {busyInterest === post.id ? 'Sending…' : '⚡ I’m interested'}
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
 
