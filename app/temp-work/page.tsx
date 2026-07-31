@@ -267,13 +267,17 @@ export default function TempWorkPage() {
    * A candidate who has already committed must never be shown a failure because
    * a downstream side effect wobbled.
    */
-  const expressInterest = async (post: TempPost) => {
+  const expressInterest = async (post: TempPost, withNote = false) => {
     if (post.isExample) return
     if (!userId) { requireLogin(); return }
     if (myInterest.has(post.id) || busyInterest === post.id) return
     setBusyInterest(post.id)
 
-    const note = interestNote.trim() || null
+    // interestNote is ONE piece of state shared by the whole feed, because only
+    // one panel is ever open. The card badge must therefore send no note at all
+    // — otherwise typing a note under shift A and then tapping the badge on
+    // shift B would silently attach A's note to B.
+    const note = withNote ? (interestNote.trim() || null) : null
     const { error } = await supabase.from('temp_interest').insert({
       temp_post_id: post.id, candidate_user_id: userId, message: note,
     })
@@ -559,7 +563,26 @@ export default function TempWorkPage() {
                       so the card itself stays exactly a job card's shape. */}
                   <div className={styles.jobCardWrap}>
                     <FeedCard
-                      model={cardModelFromShift(post)}
+                      model={{
+                        ...cardModelFromShift(post),
+                        badges: [
+                          ...cardModelFromShift(post).badges,
+                          // THE ACTION, ON THE CARD. One tap, mirroring
+                          // "⚡ Easy apply" on a job. Four viewer states, which
+                          // collapse to three visible ones: the owner simply
+                          // gets no action badge rather than a fourth label.
+                          ...(isEx || post.status === 'filled' || isOwner ? [] : [
+                            myInterest.has(post.id)
+                              ? { label: '✓ You’re available' }
+                              : {
+                                  label: busyInterest === post.id ? 'Sending…' : '⚡ I’m interested',
+                                  accent: true,
+                                  disabled: busyInterest === post.id,
+                                  onClick: () => expressInterest(post),
+                                },
+                          ]),
+                        ],
+                      }}
                       example={isEx}
                       onSelect={() => openComments(post)}
                       controls={
@@ -592,7 +615,20 @@ export default function TempWorkPage() {
 
                   {threadOpen && (
                     <div className={styles.shiftDetail}>
-                      {post.description && <p className={styles.desc}>{post.description}</p>}
+                      {/* THE ADVERT, NOT THE FIRST MESSAGE.
+                          Bare prose sitting directly above a run of labelled,
+                          avatared comments reads as the opening line of the
+                          conversation. It needs to look like a different KIND of
+                          thing, not just be further away — so it gets a label
+                          and a tinted panel, and the thread below keeps the
+                          avatars. Whose words these are is then obvious at a
+                          glance rather than by reading. */}
+                      {post.description && (
+                        <div className={styles.aboutBox}>
+                          <div className={styles.aboutLabel}>About this shift</div>
+                          <p className={styles.desc}>{post.description}</p>
+                        </div>
+                      )}
                       <p className={styles.detailMeta}>Posted {timeAgo(post.created_at)}</p>
                       {post.external_link && <a href={post.external_link} target="_blank" rel="noopener noreferrer" className={styles.extLink}>More details ↗</a>}
 
@@ -646,7 +682,7 @@ export default function TempWorkPage() {
                             <button
                               className={styles.interestBtn}
                               disabled={busyInterest === post.id}
-                              onClick={() => expressInterest(post)}
+                              onClick={() => expressInterest(post, true)}
                             >
                               {busyInterest === post.id ? 'Sending…' : '⚡ I’m interested'}
                             </button>

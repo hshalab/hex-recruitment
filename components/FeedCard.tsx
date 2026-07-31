@@ -27,6 +27,15 @@ export interface FeedCardBadge {
   label: string
   /** Yellow-outlined, for the one badge that is a call to action. */
   accent?: boolean
+  /**
+   * Makes this badge a real button rather than a label.
+   *
+   * "⚡ Easy apply" on a job card is a promise the card keeps when you tap it.
+   * On a shift the equivalent action is putting yourself forward, and burying it
+   * one expand deep made the page's whole purpose the second thing you could do.
+   */
+  onClick?: () => void
+  disabled?: boolean
 }
 
 export interface FeedCardModel {
@@ -103,7 +112,20 @@ export default function FeedCard({
           </>}
         </div>
         <div className={styles.cardBadges}>
-          {model.badges.map((b, i) => (
+          {model.badges.map((b, i) => b.onClick ? (
+            <button
+              key={i}
+              type="button"
+              className={`${styles.cardBadge} ${b.accent ? styles.cardBadgeApply : ''}`}
+              style={{ cursor: b.disabled ? 'default' : 'pointer', opacity: b.disabled ? 0.65 : 1 }}
+              disabled={b.disabled}
+              // The whole card is tappable, so an action inside it must not also
+              // trigger the expand — otherwise one tap does two things.
+              onClick={e => { e.stopPropagation(); b.onClick!() }}
+            >
+              {b.label}
+            </button>
+          ) : (
             <span key={i} className={`${styles.cardBadge} ${b.accent ? styles.cardBadgeApply : ''}`}>{b.label}</span>
           ))}
         </div>

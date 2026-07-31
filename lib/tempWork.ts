@@ -206,16 +206,10 @@ export function cardModelFromShift(p: TempPost): FeedCardModel {
       // thing happening on that date — but it must not advertise an action that
       // has gone. Someone putting themselves forward for work already taken is
       // worse than never having seen it.
-      //
-      // "Comment on this shift", NOT "Comment to apply", under Paul's own
-      // condition: the notification diagnosis found a comment reaches the
-      // employer's bell in realtime but sends no email, offers them no reply
-      // box, and never tells the candidate when they do reply. Promising an
-      // application route we only deliver a third of would spend a chef's first
-      // attempt. Becomes "⚡ I'm interested" once temp_interest is wired.
-      p.status === 'filled'
-        ? { label: '✓ Filled' }
-        : { label: '💬 Comment on this shift', accent: true },
+      ...(p.status === 'filled' ? [{ label: '✓ Filled' }] : []),
+      // The ACTION badge is appended by the feed, not here: it depends on who is
+      // looking (owner, signed out, already interested), and this module has no
+      // business knowing about the viewer or holding a click handler.
     ],
   }
 }
