@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -186,16 +186,57 @@ export default function TempWorkPage() {
   // that post, so the notification lands ON the thread rather than on a feed the
   // reader then has to search. A link that can't complete the action it invites
   // is the fault this whole piece of work exists to remove.
-  useEffect(() => {
-    if (loading) return
-    const wanted = new URLSearchParams(window.location.search).get('post')
-    if (!wanted) return
-    setOpenThread(prev => prev ?? wanted)
-    const el = document.getElementById(`post-${wanted}`)
-    if (el) el.scrollIntoView({ block: 'center' })
-  }, [loading])
 
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(''), 3000) }
+
+  /**
+   * Load a post's comments.
+   *
+   * The feed deliberately does NOT fetch comments for every post up front — that
+   * would be one query per card for something most readers never open. They are
+   * fetched when a thread opens, and cached per post.
+   *
+   * A function of its own because there are now TWO ways a thread opens: tapping
+   * the card, and arriving from a reply notification.
+   */
+  const loadComments = useCallback(async (postId: string) => {
+    const { data } = await supabase
+      .from('temp_post_comments').select('*').eq('post_id', postId).order('created_at', { ascending: true })
+    setComments(prev => ({ ...prev, [postId]: (data as TempComment[]) || [] }))
+  }, [])
+
+  // A reply notification links to /temp-work?post=<id>. Honour it by opening
+  // that post AND LOADING IT.
+  //
+  // This used to set the open state without ever fetching, so the thread opened
+  // EMPTY: the badge said "1 comment" and the panel said "be the first to
+  // comment". A chef was told there was an answer, clicked through, and found
+  // the page denying it existed — the exact fault this feature was built to
+  // remove, reproduced inside the fix for it.
+  const deepLinked = useRef(false)
+  useEffect(() => {
+    if (loading || deepLinked.current) return
+    const wanted = new URLSearchParams(window.location.search).get('post')
+    if (!wanted) return
+    deepLinked.current = true
+
+    setOpenThread(wanted)
+    loadComments(wanted)
+
+    // The card renders on the same tick the feed does, so wait a frame rather
+    // than querying a DOM that hasn't caught up.
+    requestAnimationFrame(() => {
+      document.getElementById(`post-${wanted}`)?.scrollIntoView({ block: 'center' })
+    })
+
+    // If the post isn't in the feed, say so rather than leaving someone staring
+    // at a page that silently ignored their notification. That happens the
+    // moment a shift is filled or closed: it drops out of the feed, but the
+    // notification pointing at it outlives it.
+    if (!posts.some(p => p.id === wanted)) {
+      flash('That shift has closed, so it’s no longer on the board.')
+    }
+  }, [loading, posts, loadComments]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Put myself forward for a shift.
@@ -349,11 +390,7 @@ export default function TempWorkPage() {
     // post behind them.
     if (post.isExample) { setOpenThread(post.id); return }
     setOpenThread(post.id); setDraft('')
-    if (!comments[post.id]) {
-      const { data } = await supabase
-        .from('temp_post_comments').select('*').eq('post_id', post.id).order('created_at', { ascending: true })
-      setComments(prev => ({ ...prev, [post.id]: (data as TempComment[]) || [] }))
-    }
+    if (!comments[post.id]) await loadComments(post.id)
   }
 
   const sendComment = async (post: TempPost) => {

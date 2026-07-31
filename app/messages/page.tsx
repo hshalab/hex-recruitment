@@ -47,6 +47,9 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  // The page is used by both sides and had no idea which it was serving, so its
+  // empty state told candidates to "connect with candidates".
+  const [isEmployer, setIsEmployer] = useState(false)
   const [showSidebar, setShowSidebar] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
@@ -234,6 +237,8 @@ export default function MessagesPage() {
         // employer doesn't belong in the app yet and is sent to the
         // under-review page. (Was previously also redirecting lapsed-sub
         // employers to /dashboard/subscription — removed.)
+        setIsEmployer(session.user.user_metadata?.role === 'employer')
+
         if (session.user.user_metadata?.role === 'employer') {
           try {
             const { data: profile } = await supabase
@@ -526,13 +531,30 @@ export default function MessagesPage() {
           {/* Conversations */}
           <div className={styles.conversationsList}>
             {filteredConversations.length === 0 ? (
-              <div className={styles.emptyState}>
-                <span className={styles.emptyIcon}>💬</span>
-                <h3 className={styles.emptyTitle}>No conversations yet</h3>
-                <p className={styles.emptyText}>
-                  Connect with candidates to start chatting
-                </p>
-              </div>
+              /* TWO different empty states, because they were one.
+                 "No conversations yet" also fired when a SEARCH matched nothing,
+                 telling someone with a full inbox that they had none — and the
+                 message underneath told candidates to "connect with candidates",
+                 which is employer copy on a candidate's page. */
+              conversations.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <span className={styles.emptyIcon}>💬</span>
+                  <h3 className={styles.emptyTitle}>No conversations yet</h3>
+                  <p className={styles.emptyText}>
+                    {isEmployer
+                      ? 'When someone applies for a role or puts themselves forward for a shift, your conversation with them starts here.'
+                      : 'Apply for a role or put yourself forward for a shift, and your conversation with the employer starts here.'}
+                  </p>
+                </div>
+              ) : (
+                <div className={styles.emptyState}>
+                  <span className={styles.emptyIcon}>🔍</span>
+                  <h3 className={styles.emptyTitle}>No matches</h3>
+                  <p className={styles.emptyText}>
+                    Nothing here matches “{searchQuery.trim()}”.
+                  </p>
+                </div>
+              )
             ) : (
               filteredConversations.map(conversation => (
                 <div
