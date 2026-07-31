@@ -6,7 +6,8 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
-import { getCurrentEmployerOwnerId } from '@/lib/employer'
+import { getCurrentEmployerOwnerId, getEmployerCapabilities } from '@/lib/employer'
+import { formatWhen, type TempPost } from '@/lib/tempWork'
 import { useJobs } from '@/lib/JobsContext' // refreshJobs only — data fetched directly from Supabase
 import CompanyLogo from '@/components/CompanyLogo'
 import BoostModal from '@/components/BoostModal'
@@ -61,6 +62,10 @@ function MyJobsContent() {
   const searchParams = useSearchParams()
   const { refreshJobs } = useJobs()
   const [isEmployer, setIsEmployer] = useState(false)
+  // Shifts live in their own table and their own page. This is the ROUTE to
+  // them, not a second home for them — see the section below.
+  const [shifts, setShifts] = useState<TempPost[] | null>(null)
+  const [canManageShifts, setCanManageShifts] = useState(false)
   const [loading, setLoading] = useState(true)
   const [postedJobs, setPostedJobs] = useState<PostedJob[]>([])
   const [appliedJobs, setAppliedJobs] = useState<AppliedJob[]>([])
@@ -692,6 +697,37 @@ function MyJobsContent() {
   }, [viewData.filtered, myJobsSearch, myJobsLocationSearch])
 
   // Close kebab on outside click or Escape.
+  // Load this employer's shifts, separately from the jobs fetch.
+  //
+  // Its own effect on purpose: the jobs load is the busiest path on the busiest
+  // employer page, and a shift query failing must not be able to take the job
+  // list down with it.
+  //
+  // The capability check mirrors /temp-work/manage exactly — employer role AND
+  // manage_jobs. That page denies without it, so offering a link to someone who
+  // would be turned away is the door-that-goes-nowhere fault again, just pointed
+  // the other way.
+  useEffect(() => {
+    if (!isEmployer) return
+    let cancelled = false
+    const run = async () => {
+      const caps = await getEmployerCapabilities(supabase)
+      if (cancelled) return
+      if (!caps.manage_jobs) { setCanManageShifts(false); setShifts([]); return }
+      setCanManageShifts(true)
+      const ownerId = await getCurrentEmployerOwnerId(supabase)
+      const { data: { session } } = await supabase.auth.getSession()
+      const eid = ownerId ?? session?.user?.id
+      if (!eid || cancelled) return
+      const { data } = await supabase
+        .from('temp_posts').select('*').eq('employer_id', eid)
+        .order('created_at', { ascending: false })
+      if (!cancelled) setShifts((data as TempPost[]) || [])
+    }
+    run()
+    return () => { cancelled = true }
+  }, [isEmployer])
+
   useEffect(() => {
     if (!openMenuJobId) return
     const onDocClick = (e: MouseEvent) => {
@@ -820,6 +856,58 @@ function MyJobsContent() {
               </Link>
             )}
           </div>
+
+          {/* SHIFTS — the route to /temp-work/manage.
+
+              DELIBERATELY OUTSIDE the postedJobs.length === 0 ternary below.
+              That ternary is an early return: an employer with no job ads sees
+              the empty state and NOTHING else on this page. Putting this inside
+              it would hide the door from precisely the agency that needs it —
+              shifts but no full-time roles — which is Neway's exact shape, and
+              the same fault as a reply button that only appeared once someone
+              had already replied.
+
+              It is a ROUTE, not a second management surface. A job leads to an
+              applications pipeline; a shift leads to an available list and a
+              public thread. Forced into one list, one of them gets the wrong
+              controls. */}
+          {canManageShifts && shifts !== null && (
+            <section className={styles.shiftsSection}>
+              <div className={styles.shiftsHead}>
+                <h2 className={styles.shiftsTitle}>Shifts</h2>
+                <Link href="/temp-work/manage" className={styles.shiftsLink}>Manage shifts →</Link>
+              </div>
+
+              {shifts.length === 0 ? (
+                <p className={styles.shiftsEmpty}>
+                  No shifts posted yet.{' '}
+                  <Link href="/temp-work/post" className={styles.shiftsInlineLink}>Post a shift →</Link>
+                </p>
+              ) : (
+                <>
+                  <ul className={styles.shiftsList}>
+                    {shifts.slice(0, 3).map(s => (
+                      <li key={s.id} className={styles.shiftRow}>
+                        <Link href="/temp-work/manage" className={styles.shiftRowMain}>
+                          <span className={styles.shiftName}>{s.title}</span>
+                          <span className={styles.shiftMeta}>{formatWhen(s)}</span>
+                        </Link>
+                        <span className={styles.shiftCounts}>
+                          <span className={styles.shiftAvail}>{s.interest_count ?? 0} available</span>
+                          {s.status !== 'open' && <span className={styles.shiftStatus}>{s.status}</span>}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {shifts.length > 3 && (
+                    <Link href="/temp-work/manage" className={styles.shiftsInlineLink}>
+                      View all {shifts.length} shifts →
+                    </Link>
+                  )}
+                </>
+              )}
+            </section>
+          )}
 
           {postedJobs.length > 0 && (
             <div className={styles.filterTabs}>

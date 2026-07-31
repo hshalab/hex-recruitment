@@ -521,3 +521,26 @@
   .container { padding: 1rem; }
 }
 
+
+/* ── Shifts: the ROUTE to /temp-work/manage ──────────────────────────────
+   Compact on purpose. This page is the working surface for 247 job ads and a
+   shifts panel must not compete with it — it exists so an agency can find their
+   shifts from where they already are, not so they can manage them here. */
+.shiftsSection { border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; padding: 0.9rem 1.1rem; margin-bottom: 1.25rem; }
+.shiftsHead { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.shiftsTitle { font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0; }
+.shiftsLink { font-size: 0.85rem; font-weight: 700; color: #0f172a; text-decoration: none; flex-shrink: 0; }
+.shiftsLink:hover { text-decoration: underline; }
+.shiftsInlineLink { font-size: 0.85rem; font-weight: 700; color: #0f172a; text-decoration: underline; }
+/* The empty state carries the route too — a door that only appears once you are
+   already inside is not a door. */
+.shiftsEmpty { margin: 0.5rem 0 0; font-size: 0.88rem; color: #64748b; }
+.shiftsList { list-style: none; margin: 0.6rem 0 0; padding: 0; display: flex; flex-direction: column; }
+.shiftRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.5rem 0; border-top: 1px solid #f1f5f9; }
+.shiftRow:first-child { border-top: none; }
+.shiftRowMain { display: flex; flex-direction: column; gap: 0.1rem; text-decoration: none; min-width: 0; }
+.shiftName { font-size: 0.9rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shiftMeta { font-size: 0.78rem; color: #64748b; }
+.shiftCounts { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.shiftAvail { font-size: 0.78rem; font-weight: 700; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.1rem 0.45rem; border-radius: 999px; }
+.shiftStatus { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #475569; background: #f1f5f9; padding: 0.1rem 0.45rem; border-radius: 6px; }

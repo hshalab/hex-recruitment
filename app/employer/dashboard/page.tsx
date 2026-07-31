@@ -1193,7 +1193,13 @@ export default function EmployerDashboardPage() {
             <div className={`${styles.card} ${styles.aYellow}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Active Jobs</h2>
-                <Link href="/my-jobs" className={styles.cardLink}>Manage Jobs</Link>
+                {/* Shifts have never had a route from the dashboard. Rather than
+                    build a second panel here, this points at the one place that
+                    now carries both — /my-jobs leads on to /temp-work/manage. */}
+                <span style={{ display: 'inline-flex', gap: '0.9rem', alignItems: 'baseline' }}>
+                  <Link href="/temp-work/manage" className={styles.cardLink}>Shifts</Link>
+                  <Link href="/my-jobs" className={styles.cardLink}>Manage Jobs</Link>
+                </span>
               </div>
               <div className={styles.cardBody}>
                 {activeJobsList.length > 0 ? (
