@@ -104,7 +104,15 @@ export default function TempWorkPage() {
 
   const load = useCallback(async () => {
     const [shifts, jobs] = await Promise.all([
-      supabase.from('temp_posts').select('*').eq('status', 'open').order('created_at', { ascending: false }),
+      // Open shifts, plus FILLED ones that haven't reached their date yet.
+      // A Saturday shift is still a real thing happening on Saturday whether or
+      // not it has been booked — and leaving it up keeps its comment thread
+      // reachable for the candidate who got it, who is the person the reply
+      // notification is aimed at. The RLS policy enforces the same rule, so this
+      // filter is the query agreeing with the database rather than guarding it.
+      supabase.from('temp_posts').select('*')
+        .or(`status.eq.open,and(status.eq.filled,expires_at.gt.${new Date().toISOString()})`)
+        .order('created_at', { ascending: false }),
       // 'Temporary' rather than 'Flexible' or salary_type='hourly'. It says what
       // it means: Flexible misses the one Temporary role that isn't flagged
       // flexible, and salary_type describes how someone is PAID, not what the
@@ -175,11 +183,24 @@ export default function TempWorkPage() {
     return true
   }), [tempJobs, group, role, loc, minRate]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** One feed, newest first, each item in the card its data can fill. */
+  /**
+   * One feed: live work first, newest first — then filled shifts, newest first.
+   *
+   * Filled ones stay on the board until their date passes, which is worth having
+   * twice over: the thread a candidate was notified about stays reachable, and a
+   * feed carrying FILLED stamps tells every other chef that shifts here actually
+   * get taken. An empty board says nothing happens on this platform.
+   *
+   * But they sort BELOW the open ones, always. If an agency fills three shifts
+   * and posts a fourth, the fourth is the one that matters.
+   */
   const feed: FeedItem[] = useMemo(() => ([
     ...filteredJobs.map(({ job, at }) => ({ kind: 'job' as const, at, job })),
     ...filteredPosts.map(post => ({ kind: 'shift' as const, at: post.created_at || '', post })),
-  ]).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
+  ]).sort((a, b) => {
+    const taken = (i: FeedItem) => (i.kind === 'shift' && i.post.status === 'filled' ? 1 : 0)
+    return taken(a) - taken(b) || new Date(b.at).getTime() - new Date(a.at).getTime()
+  }),
   [filteredJobs, filteredPosts])
 
   // A reply notification links to /temp-work?post=<id>. Honour it by opening
@@ -576,7 +597,16 @@ export default function TempWorkPage() {
                           redirect. Both are the same fault: a control that can't
                           do the thing it invites. */}
                       {!isEx && (
-                        isOwner ? (
+                        post.status === 'filled' ? (
+                          /* The action is gone, so the control goes with it —
+                             but say which it is. Someone who put themselves
+                             forward should be able to tell whether they were the
+                             one booked without having to ask. */
+                          <div className={styles.interestOwn}>
+                            This shift has been filled.
+                            {myInterest.has(post.id) && ' You put yourself forward for this one.'}
+                          </div>
+                        ) : isOwner ? (
                           <div className={styles.interestOwn}>
                             This is your shift.{' '}
                             <Link href="/temp-work/manage" className={styles.interestOwnLink}>See who’s available →</Link>
@@ -660,6 +690,14 @@ export default function TempWorkPage() {
                           {busyComment ? 'Posting…' : 'Comment'}
                         </button>
                       </div>
+                      {/* Said out loud because the difference is invisible and
+                          the failure is permanent: a chef who wants to be sure
+                          the agency sees them will put their phone number in a
+                          comment. Filled threads staying up for longer makes
+                          that worse, so the warning arrives with the change. */}
+                      <p className={styles.commentPrivacy}>
+                        Public — anyone can read this. Your “I’m interested” note is private.
+                      </p>
                     </div>
                   )}
                 </article>

@@ -202,13 +202,20 @@ export function cardModelFromShift(p: TempPost): FeedCardModel {
     badges: [
       { label: formatWhen(p) },
       ...(p.headcount > 1 ? [{ label: `${p.headcount} needed` }] : []),
+      // A FILLED shift keeps its when and its headcount — it is still a real
+      // thing happening on that date — but it must not advertise an action that
+      // has gone. Someone putting themselves forward for work already taken is
+      // worse than never having seen it.
+      //
       // "Comment on this shift", NOT "Comment to apply", under Paul's own
       // condition: the notification diagnosis found a comment reaches the
       // employer's bell in realtime but sends no email, offers them no reply
       // box, and never tells the candidate when they do reply. Promising an
       // application route we only deliver a third of would spend a chef's first
       // attempt. Becomes "⚡ I'm interested" once temp_interest is wired.
-      { label: '💬 Comment on this shift', accent: true },
+      p.status === 'filled'
+        ? { label: '✓ Filled' }
+        : { label: '💬 Comment on this shift', accent: true },
     ],
   }
 }
