@@ -65,17 +65,32 @@ export interface FeedCardProps {
   boosted?: boolean
   /** Dashed outline for illustrative content. */
   example?: boolean
+  /**
+   * The card has a panel joined to its bottom edge, so it must stop behaving
+   * like a free-floating tile.
+   *
+   * Two things, and the second is the one that would have been missed: square
+   * off the bottom corners, and kill the hover lift. .jobCard:hover carries
+   * translateY(-3px), which would slide the card up AWAY from the panel welded
+   * beneath it at exactly the moment someone points at it. An inline transform
+   * beats the stylesheet's :hover rule, which is why it is set here rather than
+   * in a class.
+   */
+  attached?: boolean
 }
 
 export default function FeedCard({
-  model, onSelect, controls, stamps, boosted, example,
+  model, onSelect, controls, stamps, boosted, example, attached,
 }: FeedCardProps) {
   const initial = (model.company || '?').trim().charAt(0).toUpperCase() || '?'
 
   return (
     <div
       className={`${styles.jobCard} ${model.banner ? '' : styles.jobCardFallback} ${boosted ? styles.jobCardBoosted : ''}`}
-      style={example ? { outline: '2px dashed rgba(148,163,184,.9)', outlineOffset: -2 } : undefined}
+      style={{
+        ...(example ? { outline: '2px dashed rgba(148,163,184,.9)', outlineOffset: -2 } : {}),
+        ...(attached ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, transform: 'none' } : {}),
+      }}
       onClick={onSelect}
       role={onSelect ? 'button' : undefined}
       tabIndex={onSelect ? 0 : undefined}

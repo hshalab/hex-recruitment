@@ -309,6 +309,66 @@ export default function TempWorkPage() {
   }
 
   /**
+   * Withdraw. The other half of the one-tap action.
+   *
+   * Registering interest needs no confirmation BECAUSE it is reversible — and
+   * until now it wasn't, which made the argument for one tap false rather than
+   * merely optimistic.
+   *
+   * "Off the list", not "erased". The employer's notification stays: it was true
+   * when it was sent, and the available list — the thing they actually work from
+   * — loses the row immediately. The conversation stays too, because deleting a
+   * thread out from under an employer mid-exchange is worse than a stale opener.
+   * But it does not stay SILENT: a line goes into the conversation, so an agency
+   * finds out where they are rather than by messaging into a void and waiting.
+   */
+  const withdrawInterest = async (post: TempPost) => {
+    if (post.isExample || !userId) return
+    if (!myInterest.has(post.id) || busyInterest === post.id) return
+    setBusyInterest(post.id)
+
+    // Optimistic, with a rollback — the badge is the only feedback there is.
+    setMyInterest(prev => { const n = new Set(prev); n.delete(post.id); return n })
+
+    const { error } = await supabase.from('temp_interest')
+      .delete().eq('temp_post_id', post.id).eq('candidate_user_id', userId)
+
+    if (error) {
+      setMyInterest(prev => new Set(prev).add(post.id))
+      setBusyInterest(null)
+      flash('Could not withdraw just now. Please try again.')
+      return
+    }
+
+    flash('Withdrawn — you’re off the list for this shift.')
+
+    // Tell the thread, best-effort. The row is already gone; a failed system
+    // line must not make a successful withdrawal look broken.
+    try {
+      const { data: conv } = await supabase
+        .from('conversations').select('id')
+        .or(`and(participant_1.eq.${userId},participant_2.eq.${post.employer_id}),and(participant_1.eq.${post.employer_id},participant_2.eq.${userId})`)
+        .eq('related_temp_post_id', post.id)
+        .maybeSingle()
+      if (conv) {
+        const line = `${myName || 'The candidate'} withdrew their availability for ${post.title}.`
+        await supabase.from('messages').insert({
+          conversation_id: conv.id, sender_id: userId,
+          sender_name: myName || 'A candidate', sender_role: 'candidate',
+          content: line, is_read: false,
+        })
+        await supabase.from('conversations')
+          .update({ last_message: line, last_message_at: new Date().toISOString() })
+          .eq('id', conv.id)
+      }
+    } catch (e: any) {
+      console.warn('[withdraw] could not post the system line:', e?.message)
+    }
+
+    setBusyInterest(null)
+  }
+
+  /**
    * Put the candidate in the employer's Messages, the way an application does.
    *
    * An Easy apply creates a conversation and posts an auto-message, so an
@@ -557,7 +617,7 @@ export default function TempWorkPage() {
               const thread = comments[post.id] || []
               const threadOpen = openThread === post.id
               return (
-                <article key={post.id} id={`post-${post.id}`} className={styles.shiftItem}>
+                <article key={post.id} id={`post-${post.id}`} className={`${styles.shiftItem} ${threadOpen ? styles.shiftItemOpen : ''}`}>
                   {/* The SAME card a job gets — see lib/tempWork cardModelFromShift.
                       The description and the thread live below it, revealed on tap,
                       so the card itself stays exactly a job card's shape. */}
@@ -573,7 +633,11 @@ export default function TempWorkPage() {
                           // gets no action badge rather than a fourth label.
                           ...(isEx || post.status === 'filled' || isOwner ? [] : [
                             myInterest.has(post.id)
-                              ? { label: '✓ You’re available' }
+                              ? {
+                                  label: busyInterest === post.id ? 'Withdrawing…' : '✓ You’re available',
+                                  disabled: busyInterest === post.id,
+                                  onClick: () => withdrawInterest(post),
+                                }
                               : {
                                   label: busyInterest === post.id ? 'Sending…' : '⚡ I’m interested',
                                   accent: true,
@@ -584,6 +648,7 @@ export default function TempWorkPage() {
                         ],
                       }}
                       example={isEx}
+                      attached={threadOpen}
                       onSelect={() => openComments(post)}
                       controls={
                         <div className={styles.shiftControls}>
@@ -668,7 +733,14 @@ export default function TempWorkPage() {
                           </div>
                         ) : myInterest.has(post.id) ? (
                           <div className={styles.interestDone}>
-                            ✓ You’re available for this shift. The employer has your name and note.
+                            <span>✓ You’re available for this shift. The employer has your name and note.</span>
+                            <button
+                              className={styles.withdrawBtn}
+                              disabled={busyInterest === post.id}
+                              onClick={() => withdrawInterest(post)}
+                            >
+                              {busyInterest === post.id ? 'Withdrawing…' : 'Withdraw'}
+                            </button>
                           </div>
                         ) : (
                           <div className={styles.interestBox}>
@@ -694,6 +766,7 @@ export default function TempWorkPage() {
 
                   {threadOpen && !isEx && (
                     <div className={styles.thread}>
+                      <p className={styles.threadHead}>Comments</p>
                       {thread.length === 0 && <p className={styles.threadEmpty}>Be the first to comment — say when you’re free.</p>}
                       {thread.map(c => {
                         // Only candidates have a profile page; the route enforces the
