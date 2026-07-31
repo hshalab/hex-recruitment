@@ -53,6 +53,14 @@ export default function TempWorkPage() {
   // available for this") instead of letting someone tap into an error.
   const [myName, setMyName] = useState('')
   const [myInterest, setMyInterest] = useState<Set<string>>(new Set())
+  // Whether MY availability on a post carried a note. The panel claimed "your
+  // name and note" unconditionally, which was a lie for anyone who registered
+  // from the card — that path deliberately sends no note.
+  const [myNoteSent, setMyNoteSent] = useState<Set<string>>(new Set())
+  // Posts I have just withdrawn from. A removal's success looks identical to a
+  // removal that failed — both leave an absence — so it has to be stated, and
+  // stated persistently rather than in a toast that's gone before you look up.
+  const [withdrawnFrom, setWithdrawnFrom] = useState<Set<string>>(new Set())
   const [interestNote, setInterestNote] = useState('')
   const [busyInterest, setBusyInterest] = useState<string | null>(null)
 
@@ -140,8 +148,10 @@ export default function TempWorkPage() {
         setMyLikes(new Set((likes || []).map((r: { post_id: string }) => r.post_id)))
         // …and which I've already put myself forward for. RLS restricts this to
         // my own rows, so it cannot leak who else is interested.
-        const { data: mine } = await supabase.from('temp_interest').select('temp_post_id').eq('candidate_user_id', uid)
-        setMyInterest(new Set((mine || []).map((r: { temp_post_id: string }) => r.temp_post_id)))
+        const { data: mine } = await supabase.from('temp_interest').select('temp_post_id, message').eq('candidate_user_id', uid)
+        const rows = (mine || []) as { temp_post_id: string; message: string | null }[]
+        setMyInterest(new Set(rows.map(r => r.temp_post_id)))
+        setMyNoteSent(new Set(rows.filter(r => (r.message || '').trim()).map(r => r.temp_post_id)))
         // Name for the email only. The notification's name is resolved by the
         // database trigger from candidate_profiles, so the client cannot spoof
         // the one the employer sees in their bell.
@@ -282,17 +292,19 @@ export default function TempWorkPage() {
       temp_post_id: post.id, candidate_user_id: userId, message: note,
     })
 
-    // 23505 is the unique constraint — they were already interested, which is
-    // the outcome they wanted. Treat it as success, never as an error.
+    // 23505 is the unique constraint — they were already available, which is the
+    // outcome they wanted. Treat it as success, never as an error.
     if (error && (error as { code?: string }).code !== '23505') {
       setBusyInterest(null)
-      flash('Could not put you forward just now. Please try again.')
+      flash('Could not mark you available just now. Please try again.')
       return
     }
 
     setMyInterest(prev => new Set(prev).add(post.id))
+    setMyNoteSent(prev => { const n = new Set(prev); note ? n.add(post.id) : n.delete(post.id); return n })
+    setWithdrawnFrom(prev => { const n = new Set(prev); n.delete(post.id); return n })
     setInterestNote('')
-    flash('You’re on the list — the employer has been told.')
+    flash('You’re available for this shift — the employer has been told.')
 
     const { data: { session } } = await supabase.auth.getSession()
     fetch('/api/temp-notify', {
@@ -340,7 +352,9 @@ export default function TempWorkPage() {
       return
     }
 
-    flash('Withdrawn — you’re off the list for this shift.')
+    setMyNoteSent(prev => { const n = new Set(prev); n.delete(post.id); return n })
+    setWithdrawnFrom(prev => new Set(prev).add(post.id))
+    flash('You’re no longer available for this shift.')
 
     // Tell the thread, best-effort. The row is already gone; a failed system
     // line must not make a successful withdrawal look broken.
@@ -351,7 +365,10 @@ export default function TempWorkPage() {
         .eq('related_temp_post_id', post.id)
         .maybeSingle()
       if (conv) {
-        const line = `${myName || 'The candidate'} withdrew their availability for ${post.title}.`
+        // "No longer available", not "no longer interested". Same event, and the
+        // difference is the relationship: one is a scheduling fact, the other
+        // reads as rejecting the employer.
+        const line = `${myName || 'The candidate'} is no longer available for ${post.title}.`
         await supabase.from('messages').insert({
           conversation_id: conv.id, sender_id: userId,
           sender_name: myName || 'A candidate', sender_role: 'candidate',
@@ -590,7 +607,7 @@ export default function TempWorkPage() {
             <div className={styles.feedHead}>
               <div>
                 <h1 className={styles.h1}>Temp Work</h1>
-                <p className={styles.h1sub}>Short-term roles and casual shifts. Apply to a role, or comment on a shift to put your name forward.</p>
+                <p className={styles.h1sub}>Short-term roles and casual shifts. Apply to a role, or tell an employer you’re available for a shift.</p>
               </div>
               {canPost && <Link href="/temp-work/post" className={styles.feedPostBtn}>+ Post</Link>}
             </div>
@@ -632,14 +649,26 @@ export default function TempWorkPage() {
                           // collapse to three visible ones: the owner simply
                           // gets no action badge rather than a fourth label.
                           ...(isEx || post.status === 'filled' || isOwner ? [] : [
+                            // THE TWO DIRECTIONS ARE NOT SYMMETRIC.
+                            //
+                            // Going IN is harmless — a name on a list you can
+                            // take off — so it stays one tap on the card.
+                            // Coming OUT is not: you would silently drop off an
+                            // agency's list, and by the time you noticed, a "no
+                            // longer available" line would already be sitting in
+                            // their inbox. Its undo is not free.
+                            //
+                            // So the registered badge OPENS the shift rather
+                            // than withdrawing. Leaving is done deliberately,
+                            // from inside, against an explicit label — which is
+                            // the job a confirmation dialog would otherwise do.
                             myInterest.has(post.id)
                               ? {
-                                  label: busyInterest === post.id ? 'Withdrawing…' : '✓ You’re available',
-                                  disabled: busyInterest === post.id,
-                                  onClick: () => withdrawInterest(post),
+                                  label: '✓ You’re available',
+                                  onClick: () => openComments(post),
                                 }
                               : {
-                                  label: busyInterest === post.id ? 'Sending…' : '⚡ I’m interested',
+                                  label: busyInterest === post.id ? 'Sending…' : '⚡ I’m available',
                                   accent: true,
                                   disabled: busyInterest === post.id,
                                   onClick: () => expressInterest(post),
@@ -717,7 +746,7 @@ export default function TempWorkPage() {
                              one booked without having to ask. */
                           <div className={styles.interestOwn}>
                             This shift has been filled.
-                            {myInterest.has(post.id) && ' You put yourself forward for this one.'}
+                            {myInterest.has(post.id) && ' You were available for this one.'}
                           </div>
                         ) : isOwner ? (
                           <div className={styles.interestOwn}>
@@ -727,19 +756,40 @@ export default function TempWorkPage() {
                         ) : !userId ? (
                           <div className={styles.interestBox}>
                             <button className={styles.interestBtn} onClick={() => requireLogin()}>
-                              Log in to put yourself forward
+                              Log in to say you’re available
                             </button>
                             <span className={styles.interestHint}>Takes a minute, and the employer gets your name and availability.</span>
                           </div>
                         ) : myInterest.has(post.id) ? (
                           <div className={styles.interestDone}>
-                            <span>✓ You’re available for this shift. The employer has your name and note.</span>
+                            {/* "and note" only when a note actually went. The
+                                card path deliberately sends none, so claiming one
+                                was a promise about what the employer can see. */}
+                            <span>✓ You’re available for this shift. The employer has your name{myNoteSent.has(post.id) ? ' and note' : ''}.</span>
                             <button
                               className={styles.withdrawBtn}
                               disabled={busyInterest === post.id}
                               onClick={() => withdrawInterest(post)}
                             >
-                              {busyInterest === post.id ? 'Withdrawing…' : 'Withdraw'}
+                              {busyInterest === post.id ? 'Updating…' : 'I’m no longer available'}
+                            </button>
+                          </div>
+                        ) : withdrawnFrom.has(post.id) ? (
+                          /* A REMOVAL HAS TO SAY IT WORKED.
+                             Reverting to the starting state is indistinguishable
+                             from the tap having failed — an addition confirms
+                             itself by appearing, a removal cannot. So this
+                             persists while the shift is open rather than living
+                             in a toast that's gone before you look up, and it
+                             carries the way back. */
+                          <div className={styles.withdrawnBox}>
+                            <span>You’re no longer available for this shift.</span>
+                            <button
+                              className={styles.withdrawBtn}
+                              disabled={busyInterest === post.id}
+                              onClick={() => expressInterest(post)}
+                            >
+                              {busyInterest === post.id ? 'Updating…' : 'Make me available again'}
                             </button>
                           </div>
                         ) : (
@@ -756,7 +806,7 @@ export default function TempWorkPage() {
                               disabled={busyInterest === post.id}
                               onClick={() => expressInterest(post, true)}
                             >
-                              {busyInterest === post.id ? 'Sending…' : '⚡ I’m interested'}
+                              {busyInterest === post.id ? 'Sending…' : '⚡ I’m available'}
                             </button>
                           </div>
                         )
@@ -817,7 +867,7 @@ export default function TempWorkPage() {
                           comment. Filled threads staying up for longer makes
                           that worse, so the warning arrives with the change. */}
                       <p className={styles.commentPrivacy}>
-                        Public — anyone can read this. Your “I’m interested” note is private.
+                        Public — anyone can read this. Your availability note is private.
                       </p>
                     </div>
                   )}

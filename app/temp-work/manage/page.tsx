@@ -212,7 +212,7 @@ export default function ManageTempWorkPage() {
                   {(interest[post.id] || []).length} available
                 </div>
                 {(interest[post.id] || []).length === 0 ? (
-                  <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>Nobody has put themselves forward yet.</p>
+                  <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>Nobody has said they’re available yet.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                     {(interest[post.id] || []).map(r => (
@@ -320,7 +320,7 @@ export default function ManageTempWorkPage() {
                       {busy === post.id ? 'Sending…' : 'Send reply'}
                     </button>
                     <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                      Everyone who commented or put themselves forward will be notified.
+                      Everyone who commented or said they’re available will be notified.
                     </span>
                   </div>
                 )}

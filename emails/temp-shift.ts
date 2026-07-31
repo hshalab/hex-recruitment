@@ -9,7 +9,7 @@ import { emailLayout, ctaButton, BASE_URL } from './layout'
 // invited you to do is the fault we keep finding, so these do not link to the
 // public feed.
 
-/** Someone has put themselves forward for a shift. The one that must not be missed. */
+/** Someone is available for a shift. The one that must not be missed. */
 export function tempInterestEmail(
   candidateName: string,
   shiftTitle: string,
@@ -21,7 +21,7 @@ export function tempInterestEmail(
   const html = emailLayout(subject, `
     <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">Someone's available for your shift</h1>
     <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
-      <strong>${candidateName}</strong> has put themselves forward for <strong>${shiftTitle}</strong>.
+      <strong>${candidateName}</strong> is available for <strong>${shiftTitle}</strong>.
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;background:#f8fafc;border-radius:8px;">
       <tr>

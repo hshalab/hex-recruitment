@@ -99,6 +99,11 @@
 /* Quiet, not a danger button. Withdrawing is an ordinary thing to do and it
    should not look like an act of vandalism. */
 .withdrawBtn { flex-shrink: 0; background: none; border: none; padding: 0; font: inherit; font-size: 0.8rem; font-weight: 700; color: #15803d; text-decoration: underline; cursor: pointer; }
+/* Neutral, not an error. Being unavailable is an ordinary state, not a problem
+   the reader has to fix — but it has to be VISIBLE, because the alternative is
+   an absence that looks exactly like a failed tap. */
+.withdrawnBox { margin-top: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 9px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-size: 0.86rem; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+.withdrawnBox .withdrawBtn { color: #0f172a; }
 .withdrawBtn:disabled { opacity: 0.6; cursor: default; }
 .interestHint { font-size: 0.78rem; color: #94a3b8; }
 /* Quiet, but always there — not a warning that only appears once someone has
