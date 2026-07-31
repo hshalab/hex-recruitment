@@ -45,6 +45,43 @@ export function tempInterestEmail(
   return { subject, html }
 }
 
+/**
+ * The employer has replied. This one goes to the CANDIDATE.
+ *
+ * It exists because the in-app notification went both ways and the email only
+ * went one: a chef who wasn't logged in was never told the agency had answered,
+ * and that chef is the entire point of the feature. Links to the post rather
+ * than to /temp-work, so it lands on the thread it is telling them about.
+ */
+export function tempReplyEmail(
+  employerName: string,
+  shiftTitle: string,
+  body: string,
+  postId: string
+): { subject: string; html: string } {
+  const subject = `${employerName} replied about ${shiftTitle}`
+
+  const html = emailLayout(subject, `
+    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e293b;">${employerName} replied</h1>
+    <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+      About <strong>${shiftTitle}</strong>.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;background:#f8fafc;border-radius:8px;">
+      <tr>
+        <td style="padding:16px;">
+          <p style="margin:0;font-size:15px;color:#1e293b;line-height:1.6;">${body}</p>
+        </td>
+      </tr>
+    </table>
+    ${ctaButton('Read and reply', `${BASE_URL}/temp-work?post=${postId}`)}
+    <p style="margin:0;font-size:14px;color:#94a3b8;">
+      Replies on the post are public. To send something private, use Messages.
+    </p>
+  `)
+
+  return { subject, html }
+}
+
 /** A comment on the employer's shift — a question, usually. */
 export function tempCommentEmail(
   authorName: string,

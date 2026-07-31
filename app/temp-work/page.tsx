@@ -435,7 +435,12 @@ export default function TempWorkPage() {
       // Only when the commenter ISN'T the owner: the trigger already routes an
       // owner's reply to the candidates instead, and emailing an employer about
       // their own comment would be daft.
-      if (post.employer_id !== userId) {
+      // BOTH DIRECTIONS NOW. It used to email only when the commenter wasn't the
+      // owner, so an employer replying on their own post emailed nobody — the
+      // in-app notification went both ways and the email went one. A chef who
+      // isn't logged in never learned the agency had answered, and that chef is
+      // the whole point of this.
+      {
         const { data: { session } } = await supabase.auth.getSession()
         fetch('/api/temp-notify', {
           method: 'POST',
@@ -443,7 +448,14 @@ export default function TempWorkPage() {
             'Content-Type': 'application/json',
             ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
           },
-          body: JSON.stringify({ kind: 'comment', postId: post.id, actorName: (data as TempComment).author_name || myName, body }),
+          body: JSON.stringify({
+            // The owner commenting IS the reply — it goes to the candidates.
+            // Anyone else commenting goes to the employer.
+            kind: post.employer_id === userId ? 'reply' : 'comment',
+            postId: post.id,
+            actorName: (data as TempComment).author_name || myName,
+            body,
+          }),
         }).catch(() => console.warn('[temp-notify] comment email failed'))
       }
     } else {

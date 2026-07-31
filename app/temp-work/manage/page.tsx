@@ -130,6 +130,24 @@ export default function ManageTempWorkPage() {
       setComments(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), data as TempComment] }))
       setPosts(prev => prev.map(p => p.id === post.id ? { ...p, comment_count: p.comment_count + 1 } : p))
       setReplyDraft(''); setReplyTo(null)
+
+      // EMAIL THE CANDIDATES. This page sent nothing at all before — replying
+      // from here wrote the comment and fired the in-app notification, and a
+      // chef who wasn't logged in heard nothing. The feed's reply path does the
+      // same thing; both had to be wired or the gap just moves.
+      fetch('/api/temp-notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({
+          kind: 'reply',
+          postId: post.id,
+          actorName: (data as TempComment).author_name || 'The employer',
+          body,
+        }),
+      }).catch(() => console.warn('[temp-notify] reply email failed'))
     }
     setBusy(null)
   }
