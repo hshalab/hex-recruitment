@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { ThumbsUp, MessageCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
-  ROLE_GROUPS, rolesInGroup, roleKeyFromTitle, cardModelFromShift, timeAgo, initialsOf, DISCLAIMER,
+  ROLE_GROUPS, rolesInGroup, roleKeyFromTitle, cardModelFromShift, retiredLabel, timeAgo, initialsOf, DISCLAIMER,
   type TempPost, type TempComment,
 } from '@/lib/tempWork'
 import { EXAMPLE_TEMP_POSTS } from '@/lib/tempExamples'
@@ -53,6 +53,14 @@ export default function TempWorkPage() {
   // available for this") instead of letting someone tap into an error.
   const [myName, setMyName] = useState('')
   const [myInterest, setMyInterest] = useState<Set<string>>(new Set())
+  // Whether MY availability on a post carried a note. The panel claimed "your
+  // name and note" unconditionally, which was a lie for anyone who registered
+  // from the card — that path deliberately sends no note.
+  const [myNoteSent, setMyNoteSent] = useState<Set<string>>(new Set())
+  // Posts I have just withdrawn from. A removal's success looks identical to a
+  // removal that failed — both leave an absence — so it has to be stated, and
+  // stated persistently rather than in a toast that's gone before you look up.
+  const [withdrawnFrom, setWithdrawnFrom] = useState<Set<string>>(new Set())
   const [interestNote, setInterestNote] = useState('')
   const [busyInterest, setBusyInterest] = useState<string | null>(null)
 
@@ -104,7 +112,15 @@ export default function TempWorkPage() {
 
   const load = useCallback(async () => {
     const [shifts, jobs] = await Promise.all([
-      supabase.from('temp_posts').select('*').eq('status', 'open').order('created_at', { ascending: false }),
+      // Open shifts, plus FILLED ones that haven't reached their date yet.
+      // A Saturday shift is still a real thing happening on Saturday whether or
+      // not it has been booked — and leaving it up keeps its comment thread
+      // reachable for the candidate who got it, who is the person the reply
+      // notification is aimed at. The RLS policy enforces the same rule, so this
+      // filter is the query agreeing with the database rather than guarding it.
+      supabase.from('temp_posts').select('*')
+        .or(`status.eq.open,and(status.eq.filled,expires_at.gt.${new Date().toISOString()})`)
+        .order('created_at', { ascending: false }),
       // 'Temporary' rather than 'Flexible' or salary_type='hourly'. It says what
       // it means: Flexible misses the one Temporary role that isn't flagged
       // flexible, and salary_type describes how someone is PAID, not what the
@@ -132,8 +148,10 @@ export default function TempWorkPage() {
         setMyLikes(new Set((likes || []).map((r: { post_id: string }) => r.post_id)))
         // …and which I've already put myself forward for. RLS restricts this to
         // my own rows, so it cannot leak who else is interested.
-        const { data: mine } = await supabase.from('temp_interest').select('temp_post_id').eq('candidate_user_id', uid)
-        setMyInterest(new Set((mine || []).map((r: { temp_post_id: string }) => r.temp_post_id)))
+        const { data: mine } = await supabase.from('temp_interest').select('temp_post_id, message').eq('candidate_user_id', uid)
+        const rows = (mine || []) as { temp_post_id: string; message: string | null }[]
+        setMyInterest(new Set(rows.map(r => r.temp_post_id)))
+        setMyNoteSent(new Set(rows.filter(r => (r.message || '').trim()).map(r => r.temp_post_id)))
         // Name for the email only. The notification's name is resolved by the
         // database trigger from candidate_profiles, so the client cannot spoof
         // the one the employer sees in their bell.
@@ -175,27 +193,81 @@ export default function TempWorkPage() {
     return true
   }), [tempJobs, group, role, loc, minRate]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** One feed, newest first, each item in the card its data can fill. */
+  /**
+   * One feed: live work first, newest first — then filled shifts, newest first.
+   *
+   * Filled ones stay on the board until their date passes, which is worth having
+   * twice over: the thread a candidate was notified about stays reachable, and a
+   * feed carrying FILLED stamps tells every other chef that shifts here actually
+   * get taken. An empty board says nothing happens on this platform.
+   *
+   * But they sort BELOW the open ones, always. If an agency fills three shifts
+   * and posts a fourth, the fourth is the one that matters.
+   */
   const feed: FeedItem[] = useMemo(() => ([
     ...filteredJobs.map(({ job, at }) => ({ kind: 'job' as const, at, job })),
     ...filteredPosts.map(post => ({ kind: 'shift' as const, at: post.created_at || '', post })),
-  ]).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
+  ]).sort((a, b) => {
+    const taken = (i: FeedItem) => (i.kind === 'shift' && i.post.status === 'filled' ? 1 : 0)
+    return taken(a) - taken(b) || new Date(b.at).getTime() - new Date(a.at).getTime()
+  }),
   [filteredJobs, filteredPosts])
 
   // A reply notification links to /temp-work?post=<id>. Honour it by opening
   // that post, so the notification lands ON the thread rather than on a feed the
   // reader then has to search. A link that can't complete the action it invites
   // is the fault this whole piece of work exists to remove.
-  useEffect(() => {
-    if (loading) return
-    const wanted = new URLSearchParams(window.location.search).get('post')
-    if (!wanted) return
-    setOpenThread(prev => prev ?? wanted)
-    const el = document.getElementById(`post-${wanted}`)
-    if (el) el.scrollIntoView({ block: 'center' })
-  }, [loading])
 
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(''), 3000) }
+
+  /**
+   * Load a post's comments.
+   *
+   * The feed deliberately does NOT fetch comments for every post up front — that
+   * would be one query per card for something most readers never open. They are
+   * fetched when a thread opens, and cached per post.
+   *
+   * A function of its own because there are now TWO ways a thread opens: tapping
+   * the card, and arriving from a reply notification.
+   */
+  const loadComments = useCallback(async (postId: string) => {
+    const { data } = await supabase
+      .from('temp_post_comments').select('*').eq('post_id', postId).order('created_at', { ascending: true })
+    setComments(prev => ({ ...prev, [postId]: (data as TempComment[]) || [] }))
+  }, [])
+
+  // A reply notification links to /temp-work?post=<id>. Honour it by opening
+  // that post AND LOADING IT.
+  //
+  // This used to set the open state without ever fetching, so the thread opened
+  // EMPTY: the badge said "1 comment" and the panel said "be the first to
+  // comment". A chef was told there was an answer, clicked through, and found
+  // the page denying it existed — the exact fault this feature was built to
+  // remove, reproduced inside the fix for it.
+  const deepLinked = useRef(false)
+  useEffect(() => {
+    if (loading || deepLinked.current) return
+    const wanted = new URLSearchParams(window.location.search).get('post')
+    if (!wanted) return
+    deepLinked.current = true
+
+    setOpenThread(wanted)
+    loadComments(wanted)
+
+    // The card renders on the same tick the feed does, so wait a frame rather
+    // than querying a DOM that hasn't caught up.
+    requestAnimationFrame(() => {
+      document.getElementById(`post-${wanted}`)?.scrollIntoView({ block: 'center' })
+    })
+
+    // If the post isn't in the feed, say so rather than leaving someone staring
+    // at a page that silently ignored their notification. That happens the
+    // moment a shift is filled or closed: it drops out of the feed, but the
+    // notification pointing at it outlives it.
+    if (!posts.some(p => p.id === wanted)) {
+      flash('That shift has closed, so it’s no longer on the board.')
+    }
+  }, [loading, posts, loadComments]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Put myself forward for a shift.
@@ -205,28 +277,34 @@ export default function TempWorkPage() {
    * A candidate who has already committed must never be shown a failure because
    * a downstream side effect wobbled.
    */
-  const expressInterest = async (post: TempPost) => {
+  const expressInterest = async (post: TempPost, withNote = false) => {
     if (post.isExample) return
     if (!userId) { requireLogin(); return }
     if (myInterest.has(post.id) || busyInterest === post.id) return
     setBusyInterest(post.id)
 
-    const note = interestNote.trim() || null
+    // interestNote is ONE piece of state shared by the whole feed, because only
+    // one panel is ever open. The card badge must therefore send no note at all
+    // — otherwise typing a note under shift A and then tapping the badge on
+    // shift B would silently attach A's note to B.
+    const note = withNote ? (interestNote.trim() || null) : null
     const { error } = await supabase.from('temp_interest').insert({
       temp_post_id: post.id, candidate_user_id: userId, message: note,
     })
 
-    // 23505 is the unique constraint — they were already interested, which is
-    // the outcome they wanted. Treat it as success, never as an error.
+    // 23505 is the unique constraint — they were already available, which is the
+    // outcome they wanted. Treat it as success, never as an error.
     if (error && (error as { code?: string }).code !== '23505') {
       setBusyInterest(null)
-      flash('Could not put you forward just now. Please try again.')
+      flash('Could not mark you available just now. Please try again.')
       return
     }
 
     setMyInterest(prev => new Set(prev).add(post.id))
+    setMyNoteSent(prev => { const n = new Set(prev); note ? n.add(post.id) : n.delete(post.id); return n })
+    setWithdrawnFrom(prev => { const n = new Set(prev); n.delete(post.id); return n })
     setInterestNote('')
-    flash('You’re on the list — the employer has been told.')
+    flash('You’re available for this shift — the employer has been told.')
 
     const { data: { session } } = await supabase.auth.getSession()
     fetch('/api/temp-notify', {
@@ -239,6 +317,71 @@ export default function TempWorkPage() {
     }).catch(() => console.warn('[temp-notify] interest email failed'))
 
     await openConversationForInterest(post, note)
+    setBusyInterest(null)
+  }
+
+  /**
+   * Withdraw. The other half of the one-tap action.
+   *
+   * Registering interest needs no confirmation BECAUSE it is reversible — and
+   * until now it wasn't, which made the argument for one tap false rather than
+   * merely optimistic.
+   *
+   * "Off the list", not "erased". The employer's notification stays: it was true
+   * when it was sent, and the available list — the thing they actually work from
+   * — loses the row immediately. The conversation stays too, because deleting a
+   * thread out from under an employer mid-exchange is worse than a stale opener.
+   * But it does not stay SILENT: a line goes into the conversation, so an agency
+   * finds out where they are rather than by messaging into a void and waiting.
+   */
+  const withdrawInterest = async (post: TempPost) => {
+    if (post.isExample || !userId) return
+    if (!myInterest.has(post.id) || busyInterest === post.id) return
+    setBusyInterest(post.id)
+
+    // Optimistic, with a rollback — the badge is the only feedback there is.
+    setMyInterest(prev => { const n = new Set(prev); n.delete(post.id); return n })
+
+    const { error } = await supabase.from('temp_interest')
+      .delete().eq('temp_post_id', post.id).eq('candidate_user_id', userId)
+
+    if (error) {
+      setMyInterest(prev => new Set(prev).add(post.id))
+      setBusyInterest(null)
+      flash('Could not withdraw just now. Please try again.')
+      return
+    }
+
+    setMyNoteSent(prev => { const n = new Set(prev); n.delete(post.id); return n })
+    setWithdrawnFrom(prev => new Set(prev).add(post.id))
+    flash('You’re no longer available for this shift.')
+
+    // Tell the thread, best-effort. The row is already gone; a failed system
+    // line must not make a successful withdrawal look broken.
+    try {
+      const { data: conv } = await supabase
+        .from('conversations').select('id')
+        .or(`and(participant_1.eq.${userId},participant_2.eq.${post.employer_id}),and(participant_1.eq.${post.employer_id},participant_2.eq.${userId})`)
+        .eq('related_temp_post_id', post.id)
+        .maybeSingle()
+      if (conv) {
+        // "No longer available", not "no longer interested". Same event, and the
+        // difference is the relationship: one is a scheduling fact, the other
+        // reads as rejecting the employer.
+        const line = `${myName || 'The candidate'} is no longer available for ${post.title}.`
+        await supabase.from('messages').insert({
+          conversation_id: conv.id, sender_id: userId,
+          sender_name: myName || 'A candidate', sender_role: 'candidate',
+          content: line, is_read: false,
+        })
+        await supabase.from('conversations')
+          .update({ last_message: line, last_message_at: new Date().toISOString() })
+          .eq('id', conv.id)
+      }
+    } catch (e: any) {
+      console.warn('[withdraw] could not post the system line:', e?.message)
+    }
+
     setBusyInterest(null)
   }
 
@@ -349,11 +492,7 @@ export default function TempWorkPage() {
     // post behind them.
     if (post.isExample) { setOpenThread(post.id); return }
     setOpenThread(post.id); setDraft('')
-    if (!comments[post.id]) {
-      const { data } = await supabase
-        .from('temp_post_comments').select('*').eq('post_id', post.id).order('created_at', { ascending: true })
-      setComments(prev => ({ ...prev, [post.id]: (data as TempComment[]) || [] }))
-    }
+    if (!comments[post.id]) await loadComments(post.id)
   }
 
   const sendComment = async (post: TempPost) => {
@@ -377,7 +516,12 @@ export default function TempWorkPage() {
       // Only when the commenter ISN'T the owner: the trigger already routes an
       // owner's reply to the candidates instead, and emailing an employer about
       // their own comment would be daft.
-      if (post.employer_id !== userId) {
+      // BOTH DIRECTIONS NOW. It used to email only when the commenter wasn't the
+      // owner, so an employer replying on their own post emailed nobody — the
+      // in-app notification went both ways and the email went one. A chef who
+      // isn't logged in never learned the agency had answered, and that chef is
+      // the whole point of this.
+      {
         const { data: { session } } = await supabase.auth.getSession()
         fetch('/api/temp-notify', {
           method: 'POST',
@@ -385,7 +529,14 @@ export default function TempWorkPage() {
             'Content-Type': 'application/json',
             ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
           },
-          body: JSON.stringify({ kind: 'comment', postId: post.id, actorName: (data as TempComment).author_name || myName, body }),
+          body: JSON.stringify({
+            // The owner commenting IS the reply — it goes to the candidates.
+            // Anyone else commenting goes to the employer.
+            kind: post.employer_id === userId ? 'reply' : 'comment',
+            postId: post.id,
+            actorName: (data as TempComment).author_name || myName,
+            body,
+          }),
         }).catch(() => console.warn('[temp-notify] comment email failed'))
       }
     } else {
@@ -456,7 +607,7 @@ export default function TempWorkPage() {
             <div className={styles.feedHead}>
               <div>
                 <h1 className={styles.h1}>Temp Work</h1>
-                <p className={styles.h1sub}>Short-term roles and casual shifts. Apply to a role, or comment on a shift to put your name forward.</p>
+                <p className={styles.h1sub}>Short-term roles and casual shifts. Apply to a role, or tell an employer you’re available for a shift.</p>
               </div>
               {canPost && <Link href="/temp-work/post" className={styles.feedPostBtn}>+ Post</Link>}
             </div>
@@ -482,15 +633,55 @@ export default function TempWorkPage() {
               const isOwner = !!userId && post.employer_id === userId
               const thread = comments[post.id] || []
               const threadOpen = openThread === post.id
+              // Null while the shift is live. Drives the stamp AND the wash, so
+              // a card that has stopped being available also stops looking it.
+              const retiredWord = retiredLabel(post.status)
               return (
-                <article key={post.id} id={`post-${post.id}`} className={styles.shiftItem}>
+                <article key={post.id} id={`post-${post.id}`} className={`${styles.shiftItem} ${threadOpen ? styles.shiftItemOpen : ''}`}>
                   {/* The SAME card a job gets — see lib/tempWork cardModelFromShift.
                       The description and the thread live below it, revealed on tap,
                       so the card itself stays exactly a job card's shape. */}
                   <div className={styles.jobCardWrap}>
                     <FeedCard
-                      model={cardModelFromShift(post)}
+                      model={{
+                        ...cardModelFromShift(post),
+                        badges: [
+                          ...cardModelFromShift(post).badges,
+                          // THE ACTION, ON THE CARD. One tap, mirroring
+                          // "⚡ Easy apply" on a job. Four viewer states, which
+                          // collapse to three visible ones: the owner simply
+                          // gets no action badge rather than a fourth label.
+                          ...(isEx || post.status === 'filled' || isOwner ? [] : [
+                            // THE TWO DIRECTIONS ARE NOT SYMMETRIC.
+                            //
+                            // Going IN is harmless — a name on a list you can
+                            // take off — so it stays one tap on the card.
+                            // Coming OUT is not: you would silently drop off an
+                            // agency's list, and by the time you noticed, a "no
+                            // longer available" line would already be sitting in
+                            // their inbox. Its undo is not free.
+                            //
+                            // So the registered badge OPENS the shift rather
+                            // than withdrawing. Leaving is done deliberately,
+                            // from inside, against an explicit label — which is
+                            // the job a confirmation dialog would otherwise do.
+                            myInterest.has(post.id)
+                              ? {
+                                  label: '✓ You’re available',
+                                  onClick: () => openComments(post),
+                                }
+                              : {
+                                  label: busyInterest === post.id ? 'Sending…' : '⚡ I’m available',
+                                  accent: true,
+                                  disabled: busyInterest === post.id,
+                                  onClick: () => expressInterest(post),
+                                },
+                          ]),
+                        ],
+                      }}
                       example={isEx}
+                      retired={retiredWord ? { label: retiredWord } : undefined}
+                      attached={threadOpen}
                       onSelect={() => openComments(post)}
                       controls={
                         <div className={styles.shiftControls}>
@@ -522,7 +713,20 @@ export default function TempWorkPage() {
 
                   {threadOpen && (
                     <div className={styles.shiftDetail}>
-                      {post.description && <p className={styles.desc}>{post.description}</p>}
+                      {/* THE ADVERT, NOT THE FIRST MESSAGE.
+                          Bare prose sitting directly above a run of labelled,
+                          avatared comments reads as the opening line of the
+                          conversation. It needs to look like a different KIND of
+                          thing, not just be further away — so it gets a label
+                          and a tinted panel, and the thread below keeps the
+                          avatars. Whose words these are is then obvious at a
+                          glance rather than by reading. */}
+                      {post.description && (
+                        <div className={styles.aboutBox}>
+                          <div className={styles.aboutLabel}>About this shift</div>
+                          <p className={styles.desc}>{post.description}</p>
+                        </div>
+                      )}
                       <p className={styles.detailMeta}>Posted {timeAgo(post.created_at)}</p>
                       {post.external_link && <a href={post.external_link} target="_blank" rel="noopener noreferrer" className={styles.extLink}>More details ↗</a>}
 
@@ -539,7 +743,16 @@ export default function TempWorkPage() {
                           redirect. Both are the same fault: a control that can't
                           do the thing it invites. */}
                       {!isEx && (
-                        isOwner ? (
+                        post.status === 'filled' ? (
+                          /* The action is gone, so the control goes with it —
+                             but say which it is. Someone who put themselves
+                             forward should be able to tell whether they were the
+                             one booked without having to ask. */
+                          <div className={styles.interestOwn}>
+                            This shift has been filled.
+                            {myInterest.has(post.id) && ' You were available for this one.'}
+                          </div>
+                        ) : isOwner ? (
                           <div className={styles.interestOwn}>
                             This is your shift.{' '}
                             <Link href="/temp-work/manage" className={styles.interestOwnLink}>See who’s available →</Link>
@@ -547,13 +760,41 @@ export default function TempWorkPage() {
                         ) : !userId ? (
                           <div className={styles.interestBox}>
                             <button className={styles.interestBtn} onClick={() => requireLogin()}>
-                              Log in to put yourself forward
+                              Log in to say you’re available
                             </button>
                             <span className={styles.interestHint}>Takes a minute, and the employer gets your name and availability.</span>
                           </div>
                         ) : myInterest.has(post.id) ? (
                           <div className={styles.interestDone}>
-                            ✓ You’re available for this shift. The employer has your name and note.
+                            {/* "and note" only when a note actually went. The
+                                card path deliberately sends none, so claiming one
+                                was a promise about what the employer can see. */}
+                            <span>✓ You’re available for this shift. The employer has your name{myNoteSent.has(post.id) ? ' and note' : ''}.</span>
+                            <button
+                              className={styles.withdrawBtn}
+                              disabled={busyInterest === post.id}
+                              onClick={() => withdrawInterest(post)}
+                            >
+                              {busyInterest === post.id ? 'Updating…' : 'I’m no longer available'}
+                            </button>
+                          </div>
+                        ) : withdrawnFrom.has(post.id) ? (
+                          /* A REMOVAL HAS TO SAY IT WORKED.
+                             Reverting to the starting state is indistinguishable
+                             from the tap having failed — an addition confirms
+                             itself by appearing, a removal cannot. So this
+                             persists while the shift is open rather than living
+                             in a toast that's gone before you look up, and it
+                             carries the way back. */
+                          <div className={styles.withdrawnBox}>
+                            <span>You’re no longer available for this shift.</span>
+                            <button
+                              className={styles.withdrawBtn}
+                              disabled={busyInterest === post.id}
+                              onClick={() => expressInterest(post)}
+                            >
+                              {busyInterest === post.id ? 'Updating…' : 'Make me available again'}
+                            </button>
                           </div>
                         ) : (
                           <div className={styles.interestBox}>
@@ -567,9 +808,9 @@ export default function TempWorkPage() {
                             <button
                               className={styles.interestBtn}
                               disabled={busyInterest === post.id}
-                              onClick={() => expressInterest(post)}
+                              onClick={() => expressInterest(post, true)}
                             >
-                              {busyInterest === post.id ? 'Sending…' : '⚡ I’m interested'}
+                              {busyInterest === post.id ? 'Sending…' : '⚡ I’m available'}
                             </button>
                           </div>
                         )
@@ -579,6 +820,7 @@ export default function TempWorkPage() {
 
                   {threadOpen && !isEx && (
                     <div className={styles.thread}>
+                      <p className={styles.threadHead}>Comments</p>
                       {thread.length === 0 && <p className={styles.threadEmpty}>Be the first to comment — say when you’re free.</p>}
                       {thread.map(c => {
                         // Only candidates have a profile page; the route enforces the
@@ -623,6 +865,14 @@ export default function TempWorkPage() {
                           {busyComment ? 'Posting…' : 'Comment'}
                         </button>
                       </div>
+                      {/* Said out loud because the difference is invisible and
+                          the failure is permanent: a chef who wants to be sure
+                          the agency sees them will put their phone number in a
+                          comment. Filled threads staying up for longer makes
+                          that worse, so the warning arrives with the change. */}
+                      <p className={styles.commentPrivacy}>
+                        Public — anyone can read this. Your availability note is private.
+                      </p>
                     </div>
                   )}
                 </article>

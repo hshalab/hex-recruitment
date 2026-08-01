@@ -202,15 +202,37 @@ export function cardModelFromShift(p: TempPost): FeedCardModel {
     badges: [
       { label: formatWhen(p) },
       ...(p.headcount > 1 ? [{ label: `${p.headcount} needed` }] : []),
-      // "Comment on this shift", NOT "Comment to apply", under Paul's own
-      // condition: the notification diagnosis found a comment reaches the
-      // employer's bell in realtime but sends no email, offers them no reply
-      // box, and never tells the candidate when they do reply. Promising an
-      // application route we only deliver a third of would spend a chef's first
-      // attempt. Becomes "⚡ I'm interested" once temp_interest is wired.
-      { label: '💬 Comment on this shift', accent: true },
+      // A FILLED shift keeps its when and its headcount — it is still a real
+      // thing happening on that date — but it must not advertise an action that
+      // has gone. Someone putting themselves forward for work already taken is
+      // worse than never having seen it.
+      //
+      // THE "✓ FILLED" PILL USED TO SIT HERE AND HAS BEEN REMOVED. It was the
+      // same size and treatment as the date beside it, so it read as one more
+      // detail ABOUT the shift rather than as the shift being over — you had to
+      // look for it. The stamp across the card says it instead. Saying it twice,
+      // in two registers, is the thing we just spent a round removing from the
+      // availability wording, and this badge row is where the LIVE facts are.
+
+      // The ACTION badge is appended by the feed, not here: it depends on who is
+      // looking (owner, signed out, already interested), and this module has no
+      // business knowing about the viewer or holding a click handler.
     ],
   }
+}
+
+/**
+ * The word stamped across a card that is no longer live — null while it still
+ * is. One vocabulary in one place, so the stamp, and anything that follows it,
+ * cannot drift into calling the same state two different things.
+ *
+ * The CSS uppercases it, so these stay sentence-case as data.
+ */
+export function retiredLabel(status: TempPost['status']): string | null {
+  if (status === 'filled') return 'Filled'
+  if (status === 'closed') return 'Closed'
+  if (status === 'expired') return 'Expired'
+  return null
 }
 
 export function timeAgo(iso: string): string {

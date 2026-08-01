@@ -59,6 +59,16 @@
    shift has and a job doesn't — the description, the comment thread — is
    revealed below the card on tap, which is why one column was the right call. */
 .shiftItem { margin-bottom: 1rem; }
+
+/* EXPANDED, A SHIFT IS ONE OBJECT.
+   Collapsed, the card is the whole thing and floats on its own. Expanded, the
+   card and everything under it get a single border and one radius so the
+   description, the decision and the conversation plainly belong to the post
+   rather than being three blocks that happen to follow it.
+   overflow:hidden clips the card's top corners to this radius; the card squares
+   its own bottom corners via FeedCard's `attached` prop, because it lives in a
+   different stylesheet and cannot be reached from here. */
+.shiftItemOpen { border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
 .shiftControls { position: absolute; top: 12px; right: 12px; z-index: 2; display: flex; gap: 6px; align-items: center; }
 .iconBtn { height: 34px; min-width: 34px; padding: 0 9px; border-radius: 999px; background: rgba(10,22,40,.35); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,.25); display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: #fff; cursor: pointer; font-size: 12px; font-weight: 700; }
 .iconBtn:disabled { opacity: .55; cursor: default; }
@@ -68,6 +78,15 @@
 .shiftDetail { margin-top: -0.4rem; padding: 0.85rem 1rem 0.2rem; }
 .detailMeta { font-size: 0.78rem; color: #94a3b8; margin: 0.5rem 0 0; }
 
+/* The employer's own words about the shift. Tinted and labelled so it reads as
+   the advert rather than as the first comment in the thread below it. */
+/* No tint and no box of its own any more: the outer container does the
+   containing, so a second box inside it would be a box in a box. It keeps its
+   label, which is what actually stopped it reading as the first comment. */
+.aboutBox { padding: 0; }
+.aboutLabel { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; margin-bottom: 0.3rem; }
+.aboutBox .desc { margin: 0; }
+
 /* Putting yourself forward. Deliberately the heaviest control in the expanded
    panel — it is the application, and the comment box below it is only a question. */
 .interestBox { margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.5rem; }
@@ -76,8 +95,20 @@
 .interestBtn { align-self: flex-start; padding: 0.6rem 1.1rem; background: #ffe500; color: #0f172a; font-weight: 700; font-size: 0.9rem; border: none; border-radius: 9px; cursor: pointer; }
 .interestBtn:hover:not(:disabled) { filter: brightness(0.95); }
 .interestBtn:disabled { opacity: 0.6; cursor: default; }
-.interestDone { margin-top: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 9px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 0.86rem; font-weight: 600; }
+.interestDone { margin-top: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 9px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 0.86rem; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+/* Quiet, not a danger button. Withdrawing is an ordinary thing to do and it
+   should not look like an act of vandalism. */
+.withdrawBtn { flex-shrink: 0; background: none; border: none; padding: 0; font: inherit; font-size: 0.8rem; font-weight: 700; color: #15803d; text-decoration: underline; cursor: pointer; }
+/* Neutral, not an error. Being unavailable is an ordinary state, not a problem
+   the reader has to fix — but it has to be VISIBLE, because the alternative is
+   an absence that looks exactly like a failed tap. */
+.withdrawnBox { margin-top: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 9px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-size: 0.86rem; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+.withdrawnBox .withdrawBtn { color: #0f172a; }
+.withdrawBtn:disabled { opacity: 0.6; cursor: default; }
 .interestHint { font-size: 0.78rem; color: #94a3b8; }
+/* Quiet, but always there — not a warning that only appears once someone has
+   already typed something they can't take back. */
+.commentPrivacy { font-size: 0.75rem; color: #94a3b8; margin: 0.4rem 0 0; }
 /* The owner's view of their own shift: not a control, just a way through to the
    page that can actually do something with it. */
 .interestOwn { margin-top: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 9px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-size: 0.86rem; }
@@ -124,7 +155,11 @@
 .actionBtnOn { color: #2563eb; }
 
 /* comment thread */
-.thread { border-top: 1px solid #f1f5f9; margin-top: 0.4rem; padding-top: 0.8rem; display: flex; flex-direction: column; gap: 0.7rem; }
+/* Ruled and indented so it reads as a SECTION OF this post rather than a block
+   that happens to follow it. The rule does the same job the avatars do inside
+   the thread: it marks where the boundary of the thing is. */
+.thread { border-top: 1px solid #f1f5f9; margin: 0.4rem 1rem 0; padding: 0.8rem 0 1rem 0.85rem; border-left: 3px solid #eef2f7; display: flex; flex-direction: column; gap: 0.7rem; }
+.threadHead { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; margin: 0; }
 .threadEmpty { font-size: 0.85rem; color: #94a3b8; margin: 0 0 0.2rem; }
 .comment { display: flex; gap: 0.55rem; align-items: flex-start; }
 .cAvatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: #ffe500; display: grid; place-items: center; }

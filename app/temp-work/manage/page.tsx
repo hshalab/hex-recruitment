@@ -130,6 +130,24 @@ export default function ManageTempWorkPage() {
       setComments(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), data as TempComment] }))
       setPosts(prev => prev.map(p => p.id === post.id ? { ...p, comment_count: p.comment_count + 1 } : p))
       setReplyDraft(''); setReplyTo(null)
+
+      // EMAIL THE CANDIDATES. This page sent nothing at all before — replying
+      // from here wrote the comment and fired the in-app notification, and a
+      // chef who wasn't logged in heard nothing. The feed's reply path does the
+      // same thing; both had to be wired or the gap just moves.
+      fetch('/api/temp-notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({
+          kind: 'reply',
+          postId: post.id,
+          actorName: (data as TempComment).author_name || 'The employer',
+          body,
+        }),
+      }).catch(() => console.warn('[temp-notify] reply email failed'))
     }
     setBusy(null)
   }
@@ -176,12 +194,27 @@ export default function ManageTempWorkPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                    {post.status === 'open'
-                      ? <>
-                          <button disabled={busy === post.id} style={btn('#166534')} onClick={() => setPostStatus(post, 'filled')}>Mark filled</button>
-                          <button disabled={busy === post.id} style={btn('#991b1b')} onClick={() => setPostStatus(post, 'closed')}>Close</button>
-                        </>
-                      : <button disabled={busy === post.id} style={btn('#334155')} onClick={() => setPostStatus(post, 'open')}>Re-open</button>}
+                    {/* CLOSE EXISTS IN EVERY STATE THAT ISN'T ALREADY CLOSED.
+                        It used to be offered only while a post was OPEN, so the
+                        moment you marked a shift filled the only button left was
+                        Re-open — and closing it meant re-opening first, which
+                        publicly re-lists a shift you are trying to take down.
+                        Marking filled is the step that makes closing likely, and
+                        it was the step that removed the control.
+
+                        Same fault as the reply button that only appeared once
+                        someone had replied: a control that doesn't exist in the
+                        state you're actually in. Filled is a state you close
+                        FROM, not a state you have to escape first. */}
+                    {post.status === 'open' && (
+                      <button disabled={busy === post.id} style={btn('#166534')} onClick={() => setPostStatus(post, 'filled')}>Mark filled</button>
+                    )}
+                    {post.status !== 'closed' && (
+                      <button disabled={busy === post.id} style={btn('#991b1b')} onClick={() => setPostStatus(post, 'closed')}>Close</button>
+                    )}
+                    {post.status !== 'open' && (
+                      <button disabled={busy === post.id} style={btn('#334155')} onClick={() => setPostStatus(post, 'open')}>Re-open</button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -194,7 +227,7 @@ export default function ManageTempWorkPage() {
                   {(interest[post.id] || []).length} available
                 </div>
                 {(interest[post.id] || []).length === 0 ? (
-                  <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>Nobody has put themselves forward yet.</p>
+                  <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>Nobody has said they’re available yet.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                     {(interest[post.id] || []).map(r => (
@@ -224,9 +257,16 @@ export default function ManageTempWorkPage() {
                     said nothing, and the employer wants to ask when they can
                     start. A control has to exist in the empty state or it isn't
                     a control, it's a reward for the happy path. */}
+                {/* Named and ruled so the thread declares what it belongs to.
+                    The ORDER stays: the available list sits above this, because
+                    that is the surface an agency works from and chatter must not
+                    push it down. Deliberately a different treatment from the
+                    candidate feed, which needed containment because its blocks
+                    were siblings — here they are already one box and only the
+                    labelling was missing. */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: '0.6rem' }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    {rows.length} comment{rows.length === 1 ? '' : 's'}
+                    {rows.length} comment{rows.length === 1 ? '' : 's'} on this shift
                   </div>
                   <button
                     onClick={() => { setReplyTo(replyTo === post.id ? null : post.id); setReplyDraft('') }}
@@ -236,9 +276,9 @@ export default function ManageTempWorkPage() {
                   </button>
                 </div>
                 {rows.length === 0 ? (
-                  <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>No comments yet — sit tight.</p>
+                  <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0, borderLeft: `3px solid ${C.border}`, paddingLeft: '0.85rem' }}>No comments yet — sit tight.</p>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', borderLeft: `3px solid ${C.border}`, paddingLeft: '0.85rem' }}>
                     {rows.map(c => {
                       // Candidates have a profile page (route enforces the employer gate); employers don't.
                       const profileHref = c.author_role === 'candidate' ? `/candidates/${c.user_id}` : null
@@ -295,7 +335,7 @@ export default function ManageTempWorkPage() {
                       {busy === post.id ? 'Sending…' : 'Send reply'}
                     </button>
                     <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                      Everyone who commented or put themselves forward will be notified.
+                      Everyone who commented or said they’re available will be notified.
                     </span>
                   </div>
                 )}
