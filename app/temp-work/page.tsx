@@ -7,7 +7,7 @@ import Header from '@/components/Header'
 import { ThumbsUp, MessageCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
-  ROLE_GROUPS, rolesInGroup, roleKeyFromTitle, cardModelFromShift, timeAgo, initialsOf, DISCLAIMER,
+  ROLE_GROUPS, rolesInGroup, roleKeyFromTitle, cardModelFromShift, retiredLabel, timeAgo, initialsOf, DISCLAIMER,
   type TempPost, type TempComment,
 } from '@/lib/tempWork'
 import { EXAMPLE_TEMP_POSTS } from '@/lib/tempExamples'
@@ -633,6 +633,9 @@ export default function TempWorkPage() {
               const isOwner = !!userId && post.employer_id === userId
               const thread = comments[post.id] || []
               const threadOpen = openThread === post.id
+              // Null while the shift is live. Drives the stamp AND the wash, so
+              // a card that has stopped being available also stops looking it.
+              const retiredWord = retiredLabel(post.status)
               return (
                 <article key={post.id} id={`post-${post.id}`} className={`${styles.shiftItem} ${threadOpen ? styles.shiftItemOpen : ''}`}>
                   {/* The SAME card a job gets — see lib/tempWork cardModelFromShift.
@@ -677,6 +680,7 @@ export default function TempWorkPage() {
                         ],
                       }}
                       example={isEx}
+                      retired={retiredWord ? { label: retiredWord } : undefined}
                       attached={threadOpen}
                       onSelect={() => openComments(post)}
                       controls={

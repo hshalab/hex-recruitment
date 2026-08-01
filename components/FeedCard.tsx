@@ -38,6 +38,18 @@ export interface FeedCardBadge {
   disabled?: boolean
 }
 
+/**
+ * How the "this is over" stamp is drawn. All three dim and desaturate the photo
+ * identically — they differ only in the mark laid over it.
+ */
+export type FeedCardRetiredVariant = 'stamp' | 'band' | 'watermark'
+
+export interface FeedCardRetired {
+  /** The word itself — FILLED, CLOSED, EXPIRED. Never colour alone. */
+  label: string
+  variant?: FeedCardRetiredVariant
+}
+
 export interface FeedCardModel {
   /** Used to seed the branded fallback so an employer's card looks the same each time. */
   id: string
@@ -77,16 +89,34 @@ export interface FeedCardProps {
    * in a class.
    */
   attached?: boolean
+  /**
+   * THE SHIFT IS OVER BUT THE CARD IS STILL HERE.
+   *
+   * A filled shift deliberately stays on the board until its date, so the card
+   * has two jobs that pull against each other: a chef scrolling at speed must
+   * know it's gone WITHOUT READING, while the card itself should sink in the
+   * feed rather than stand out. A louder badge does the first and the opposite
+   * of the second.
+   *
+   * So the two are split. The PHOTO does the receding — dimmed and desaturated,
+   * so a dead card is visibly quieter than a live one sitting next to it — and
+   * the MARK does the telling, laid over the top. A SOLD board outside a house:
+   * you don't look at it twice, but you know instantly.
+   *
+   * Takes a WORD, not a boolean called `filled`, because CLOSED and EXPIRED get
+   * the same treatment and nothing here should need to change to give it to them.
+   */
+  retired?: FeedCardRetired
 }
 
 export default function FeedCard({
-  model, onSelect, controls, stamps, boosted, example, attached,
+  model, onSelect, controls, stamps, boosted, example, attached, retired,
 }: FeedCardProps) {
   const initial = (model.company || '?').trim().charAt(0).toUpperCase() || '?'
 
   return (
     <div
-      className={`${styles.jobCard} ${model.banner ? '' : styles.jobCardFallback} ${boosted ? styles.jobCardBoosted : ''}`}
+      className={`${styles.jobCard} ${model.banner ? '' : styles.jobCardFallback} ${boosted ? styles.jobCardBoosted : ''} ${retired ? styles.jobCardRetired : ''}`}
       style={{
         ...(example ? { outline: '2px dashed rgba(148,163,184,.9)', outlineOffset: -2 } : {}),
         ...(attached ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, transform: 'none' } : {}),
@@ -103,8 +133,37 @@ export default function FeedCard({
           : <BrandedJobFallback company={model.company} seed={model.id} />}
       <div className={styles.cardScrim} aria-hidden="true" />
 
-      {model.isNew && <span className={styles.cardNew}>New</span>}
+      {/* THE WASH — one element that greys the photo, the branded fallback and
+          the logo fallback alike. It is a backdrop-filter rather than a filter
+          on .cardBg precisely because there are three different things that can
+          be painting the background, and this covers all of them without
+          knowing which. Where backdrop-filter is unsupported the dark wash still
+          lands, so the card still recedes; only the desaturation is lost. */}
+      {retired && <div className={styles.cardRetiredWash} aria-hidden="true" />}
+
+      {/* A filled shift is not a new one. Suppressing this matters because a
+          shift posted yesterday and filled today would otherwise carry New and
+          FILLED at the same time, which is a straight contradiction. */}
+      {model.isNew && !retired && <span className={styles.cardNew}>New</span>}
       {controls}
+
+      {/* THE MARK. Confined to the upper band of the card by the wrapper, which
+          is what keeps the promise that it never covers the company, the title
+          or the rate — those are bottom-anchored in .cardContent, and someone
+          should still be able to see what the shift WAS. */}
+      {retired && (
+        <div className={styles.cardRetiredWrap}>
+          <span
+            className={
+              retired.variant === 'band' ? styles.cardRetiredBand
+                : retired.variant === 'watermark' ? styles.cardRetiredMark
+                : styles.cardRetiredStamp
+            }
+          >
+            {retired.label}
+          </span>
+        </div>
+      )}
 
       <div className={styles.cardContent}>
         <div className={styles.cardCompanyRow}>
