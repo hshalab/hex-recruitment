@@ -406,27 +406,16 @@ function MyJobsContent() {
     }
   }
 
-  const handleToggleJobStatus = async (jobId: string) => {
-    const job = postedJobs.find(j => j.id === jobId)
-    if (!job) return
-    const newStatus = job.status === 'active' ? 'paused' : 'active'
-    try {
-      const { error } = await supabase
-        .from('jobs')
-        .update({ status: newStatus })
-        .eq('id', jobId)
-      if (error) {
-        console.error('Error updating job status:', error)
-        alert('Failed to update job status. Please try again.')
-        return
-      }
-      setPostedJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: newStatus as PostedJob['status'] } : j))
-      if (newStatus === 'active') await ensureJobArea(jobId)
-      await refreshJobs()
-    } catch (err) {
-      console.error('Error updating job status:', err)
-    }
-  }
+  // A job status toggle used to live here and has been DELETED rather than
+  // fixed. It was `job.status === 'active' ? 'paused' : 'active'` — a binary
+  // over a four-state field — so filled and archived both fell through to
+  // 'active', and a button labelled Pause would have republished a filled role.
+  // It had no call site, so the fault never shipped.
+  //
+  // Deleted rather than corrected because the wrong idea is the part worth
+  // removing: a Pause control should be written against active/paused/filled/
+  // archived deliberately, not inherited from a ternary that thinks there are
+  // two states.
 
   // Make sure a job that has just gone live has its canonical area resolved,
   // so preferred-areas matching can see it. Non-blocking and best-effort: a job
