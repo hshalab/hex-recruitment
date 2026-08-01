@@ -1,3 +1,4 @@
+import type { WorkType } from './workTypes'
 export interface JobLocation {
   addressLine1: string
   addressLine2?: string
@@ -19,7 +20,11 @@ export interface Job {
   salaryMin: number
   salaryMax: number
   salaryPeriod: 'hour' | 'year'
-  employmentType: ('Full-time' | 'Part-time' | 'Permanent' | 'Contract' | 'Temporary' | 'Flexible')[]
+  // Was its own hand-written union, and wrong in BOTH directions: it permitted
+  // 'Contract', which nothing has ever written, and omitted 'Fixed-term', which
+  // the post-job form has always offered. An `as` cast in post-job hid the
+  // second half. Now the shared vocabulary, so it cannot disagree with the form.
+  employmentType: WorkType[]
   location: string
   area: string
   /** Phase 2 (preferred areas): canonical region id resolved from the text

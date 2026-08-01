@@ -7,10 +7,16 @@ function mapEmploymentType(types: string[]): string[] {
   const map: Record<string, string> = {
     'Full-time': 'FULL_TIME',
     'Part-time': 'PART_TIME',
-    'Contract': 'CONTRACTOR',
     'Temporary': 'TEMPORARY',
     'Flexible': 'OTHER',
     'Permanent': 'FULL_TIME',
+    // Was MISSING, and post-job has always offered it — so every fixed-term
+    // role has been publishing employmentType OTHER to Google rather than
+    // CONTRACTOR, which is schema.org's value for a role with an end date.
+    'Fixed-term': 'CONTRACTOR',
+    // Retired from the vocabulary; kept as a passthrough so any historical row
+    // still maps to something sensible rather than falling to OTHER.
+    'Contract': 'CONTRACTOR',
   }
   return types.map(t => map[t] || 'OTHER')
 }

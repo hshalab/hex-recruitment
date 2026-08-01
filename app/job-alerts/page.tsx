@@ -9,10 +9,14 @@ import { categories, getCategoryLabel } from '@/lib/categories'
 import { ukCities } from '@/lib/ukCities'
 import { ALL_TAGS, TAG_CATEGORIES, getTagsByCategory, type TagCategory } from '@/lib/jobTags'
 import { type JobAlert, supabaseRowToJobAlert } from '@/lib/jobAlerts'
+import { EMPLOYMENT_TYPES, CONTRACT_TYPES } from '@/lib/workTypes'
 import styles from './page.module.css'
 
-const employmentTypes = ['Full-time', 'Part-time', 'Flexible']
-const contractTypes = ['Permanent', 'Temporary', 'Fixed-term']
+// These two were right all along — they matched the board while the profile
+// form didn't. They now come from the shared module so they cannot drift apart
+// from it again.
+const employmentTypes = EMPLOYMENT_TYPES
+const contractTypes = CONTRACT_TYPES
 
 const emptyForm = {
   alert_name: '',
