@@ -194,12 +194,27 @@ export default function ManageTempWorkPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                    {post.status === 'open'
-                      ? <>
-                          <button disabled={busy === post.id} style={btn('#166534')} onClick={() => setPostStatus(post, 'filled')}>Mark filled</button>
-                          <button disabled={busy === post.id} style={btn('#991b1b')} onClick={() => setPostStatus(post, 'closed')}>Close</button>
-                        </>
-                      : <button disabled={busy === post.id} style={btn('#334155')} onClick={() => setPostStatus(post, 'open')}>Re-open</button>}
+                    {/* CLOSE EXISTS IN EVERY STATE THAT ISN'T ALREADY CLOSED.
+                        It used to be offered only while a post was OPEN, so the
+                        moment you marked a shift filled the only button left was
+                        Re-open — and closing it meant re-opening first, which
+                        publicly re-lists a shift you are trying to take down.
+                        Marking filled is the step that makes closing likely, and
+                        it was the step that removed the control.
+
+                        Same fault as the reply button that only appeared once
+                        someone had replied: a control that doesn't exist in the
+                        state you're actually in. Filled is a state you close
+                        FROM, not a state you have to escape first. */}
+                    {post.status === 'open' && (
+                      <button disabled={busy === post.id} style={btn('#166534')} onClick={() => setPostStatus(post, 'filled')}>Mark filled</button>
+                    )}
+                    {post.status !== 'closed' && (
+                      <button disabled={busy === post.id} style={btn('#991b1b')} onClick={() => setPostStatus(post, 'closed')}>Close</button>
+                    )}
+                    {post.status !== 'open' && (
+                      <button disabled={busy === post.id} style={btn('#334155')} onClick={() => setPostStatus(post, 'open')}>Re-open</button>
+                    )}
                   </div>
                 </div>
               </div>
