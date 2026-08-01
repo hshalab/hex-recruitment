@@ -1,0 +1,39 @@
+#!/bin/sh
+# Refuses a push while the database's migration ledger holds anything this repo
+# does not.
+#
+# PRE-PUSH, NOT PRE-COMMIT, on purpose: small commits should stay cheap, and the
+# damage only escapes when it leaves the machine.
+#
+# Why a hook at all — a check that runs when someone remembers to run it is the
+# pure-discipline option we rejected, wearing a script's clothes. Four days of
+# drift happened because nothing was watching.
+#
+# Skippable deliberately: git push --no-verify
+# Removed entirely:       git config --unset core.hooksPath
+
+# Offline, or no access token? Say so and let the push through. A guard that
+# blocks work when the network is down teaches people to pass --no-verify by
+# reflex, and a reflex is exactly what we are trying not to rely on.
+if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+  echo "pre-push: SUPABASE_ACCESS_TOKEN not set — skipping the migration check."
+  echo "          Run 'npm run migrations:check' yourself before you rely on this."
+  exit 0
+fi
+
+npm run migrations:check --silent
+status=$?
+
+if [ $status -eq 2 ]; then
+  echo "pre-push: the migration check could not run (see above). Not blocking the push."
+  exit 0
+fi
+
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "PUSH BLOCKED — the database has migrations this repo does not."
+  echo "Fix with 'npm run migrations:capture', or push anyway with --no-verify."
+  exit 1
+fi
+
+exit 0
