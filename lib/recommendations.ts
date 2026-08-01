@@ -1,6 +1,7 @@
 import { Job } from './mockJobs'
 import { Candidate } from './mockCandidates'
 import { parsePreferredAreas, jobMatchesPreferredAreas } from './areas'
+import { keepKnownWorkTypes } from './workTypes'
 
 export interface RecommendedJob extends Job {
   matchPercentage: number
@@ -322,7 +323,13 @@ function calcTypeMatch(
   job: Job,
   candidate: Candidate
 ): { points: number; reason: string | null } {
-  const preferred = (candidate.preferredJobTypes || []).map(t => t.toLowerCase())
+  // READ THROUGH THE SHARED VOCABULARY, so a word that has been retired cannot
+  // be treated as a stated preference. A profile still holding 'Freelance'
+  // would otherwise count as "stated", and then score ZERO against every job on
+  // the board — strictly worse than having said nothing. Dropping unknown words
+  // lets them fall back to the neutral 8, which is what a preference nobody can
+  // express any more should be worth.
+  const preferred = keepKnownWorkTypes(candidate.preferredJobTypes).map(t => t.toLowerCase())
   const jobTypes = (Array.isArray(job.employmentType)
     ? job.employmentType
     : [job.employmentType]

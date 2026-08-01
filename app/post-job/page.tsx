@@ -12,6 +12,7 @@ import { getTagsByCategory, TAG_CATEGORIES, getTagCategory, type TagCategory } f
 import { categories } from '@/lib/categories'
 import { isEmployerEntitled } from '@/lib/foundingEntitlement'
 import { PHOTO_TIPS } from '@/lib/photoTips'
+import type { WorkType } from '@/lib/workTypes'
 import { employerLoginPath } from '@/lib/loginRedirect'
 import styles from './page.module.css'
 
@@ -558,7 +559,7 @@ function PostJobContent() {
         salaryMin: hideSalary ? 0 : parseInt(formData.salaryMin || '0'),
         salaryMax: hideSalary ? 0 : parseInt(formData.salaryMax || '0'),
         salaryPeriod: formData.salaryPeriod,
-        employmentType: employmentType as ('Full-time' | 'Part-time' | 'Permanent' | 'Contract' | 'Temporary' | 'Flexible')[],
+        employmentType: employmentType as WorkType[],
         location: formData.location,
         area: formData.area || 'London',
         venue: formData.venue.trim() || undefined,

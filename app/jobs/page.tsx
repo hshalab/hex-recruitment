@@ -16,6 +16,7 @@ import { Boost } from '@/lib/boostTypes'
 import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
 import CompanyLogo from '@/components/CompanyLogo'
 import JobCard from '@/components/JobCard'
+import { WORK_TYPES } from '@/lib/workTypes'
 import { resolveJobBanner } from '@/lib/jobBanner'
 import BrandedJobFallback from '@/components/BrandedJobFallback'
 import BrandedLogoFallback from '@/components/BrandedLogoFallback'
@@ -42,7 +43,10 @@ const emptyFilters = (): Filters => ({
 })
 
 const filterSections = [
-  { key: 'employmentType' as const, title: 'Employment Type', options: ['Full-time', 'Part-time', 'Contract', 'Temporary', 'Freelance', 'Internship', 'Apprenticeship'] },
+  // Was a seventh copy of the vocabulary, and the only place 'Apprenticeship'
+  // ever appeared. Offering a filter for a word no job carries is the same
+  // fault as the job-alert tags, where all 34 options matched zero rows.
+  { key: 'employmentType' as const, title: 'Employment Type', options: [...WORK_TYPES] },
   { key: 'experienceLevel' as const, title: 'Experience Level', options: ['No experience required', 'Entry level (0-2 years)', 'Mid level (3-5 years)', 'Senior (6-10 years)', 'Executive (10+ years)'] },
   { key: 'salaryRange' as const, title: 'Salary Range', options: ['Under £20k', '£20k-£30k', '£30k-£40k', '£40k-£50k', '£50k-£75k', '£75k-£100k', '£100k+'] },
   { key: 'postedDate' as const, title: 'Posted Date', options: ['Last 24 hours', 'Last 3 days', 'Last 7 days', 'Last 14 days', 'Last 30 days'] },
