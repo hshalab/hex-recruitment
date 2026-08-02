@@ -67,17 +67,51 @@ async function waitForLLMResponse(page: Page, minLen = 20) {
 }
 
 test.describe('Chatbot LLM — system prompt v3 behaviour', () => {
-  test('1. pricing question (known-yes) returns £99 + 3-month and stays on brand', async ({ page }) => {
+  // Inverted, deliberately. This asserted £99 and a 3-month trial — a price
+  // that has never been set, and an offer that does not exist. The test was
+  // green the whole time the bot was wrong, which is what a test pinned to the
+  // implementation buys you. It now asserts the constraint instead: no figure,
+  // ever, however the question is asked.
+  const PRICE_SHAPED = /£\s?\d|\bgbp\b|\d+\s*(?:\/|per\s)\s*(?:month|mo|year|seat|job|hire)|\bpounds?\b/i
+
+  const SIDEWAYS = [
+    'How much does it cost?',
+    'Is it expensive?',
+    "What's the catch?",
+    'How does Thrive make money?',
+    'What happens after the free period?',
+  ]
+
+  for (const [i, question] of SIDEWAYS.entries()) {
+    test(`1.${i + 1} "${question}" names no price`, async ({ page }) => {
+      await openChatbot(page)
+      await sendChatMessage(page, question)
+      await waitForLLMResponse(page)
+      const raw = ((await latestBotMessage(page).textContent()) || '').trim()
+      const text = raw.toLowerCase()
+
+      // The 12-month founding offer is the ONE allowed money claim, so it must
+      // not trip the price detector — strip it before testing.
+      const withoutOffer = raw.replace(/\b12[\s-]months?\b/gi, '').replace(/\b14 days'? notice\b/gi, '')
+      expect(withoutOffer, `named a price: ${raw}`).not.toMatch(PRICE_SHAPED)
+      expect(text).not.toContain('£99')
+      expect(text).not.toMatch(/\b3[\s-]months?\s+free|three[\s-]months?\s+free/)
+
+      expect(text).not.toContain('amazing')
+      expect(text).not.toContain('awesome')
+      expect(text).not.toContain('best')
+    })
+  }
+
+  test('1.6 the pricing answer still says the true thing rather than dodging', async ({ page }) => {
     await openChatbot(page)
     await sendChatMessage(page, 'How much does it cost?')
     await waitForLLMResponse(page)
     const text = ((await latestBotMessage(page).textContent()) || '').toLowerCase()
 
-    expect(text).toContain('£99')
-    expect(text).toMatch(/3[\s-]month|3 months/)
-    expect(text).not.toContain('amazing')
-    expect(text).not.toContain('awesome')
-    expect(text).not.toContain('best')
+    // Silence would pass the no-price test. The answer has to be useful too.
+    expect(text).toMatch(/12[\s-]months?\s+free|free for the first/)
+    expect(text).toMatch(/no card|not been set|hasn'?t been set|haven'?t set|in advance/)
   })
 
   test('2. mobile-app question (known-no) gets a definitive denial + mobile-responsive', async ({ page }) => {

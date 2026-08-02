@@ -11,12 +11,14 @@
 // replacement, so the user always gets the contextual answer too.
 //
 // All five canonical responses interpolate the same constants the
-// system prompt does (EMPLOYER_SUBSCRIPTION_PRICE, TRIAL_MONTHS,
-// EMPLOYER_COHORT_CAP) so the chip wording and the LLM wording can
-// never disagree on numbers.
+// system prompt does (EMPLOYER_COHORT_CAP, FOUNDING_PERIOD_MONTHS) so
+// the chip wording and the LLM wording can never disagree on numbers.
+//
+// NO PRICE. EMPLOYER_SUBSCRIPTION_PRICE is deliberately not imported —
+// the constant stays in lib/trialUtils for the dormant Stripe path, but
+// nothing that talks to a stranger may read it out loud. See CLAUDE.md.
 
-import { EMPLOYER_SUBSCRIPTION_PRICE, TRIAL_MONTHS } from '@/lib/trialUtils'
-import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
+import { EMPLOYER_COHORT_CAP, FOUNDING_PERIOD_MONTHS } from '@/lib/constants/cohort'
 
 export type HighStakesTopic = 'cancellation' | 'pricing' | 'trial' | 'support' | 'gdpr'
 
@@ -39,17 +41,20 @@ const TOPICS: TopicDef[] = [
   {
     topic: 'cancellation',
     pattern: /\b(cancel|cancellation|notice period)\b/i,
-    response: () => "Cancel from Settings with 14 days' notice. During your free trial, cancel any time - no charge.",
+    response: () => "Cancel from Settings with 14 days' notice. While you're on the founding offer, cancel any time - there's nothing to charge.",
   },
   {
+    // Widened past "how much". People ask the pricing question sideways more
+    // often than head-on, and the old pattern let "is it expensive", "what's
+    // the catch" and "how do you make money" fall through to the model.
     topic: 'pricing',
-    pattern: /\b(how much|price|cost|£|fee)\b/i,
-    response: () => `Single plan - £${EMPLOYER_SUBSCRIPTION_PRICE}/month. No tiers, no upsell. First ${EMPLOYER_COHORT_CAP} employers get ${TRIAL_MONTHS} months free, no card needed.`,
+    pattern: /\b(how much|price|pricing|cost|costs|£|fee|fees|charge|charged|expensive|afford|catch|make money|pay|paid|subscription|plan|tier)\b/i,
+    response: () => `The first ${EMPLOYER_COHORT_CAP} employers get ${FOUNDING_PERIOD_MONTHS} months free - no card, no catch. Candidates are free always. Pricing after that hasn't been set yet, and you'd be told well in advance.`,
   },
   {
     topic: 'trial',
-    pattern: /\b(trial|free for|how long.+free)\b/i,
-    response: () => `${TRIAL_MONTHS}-month free trial for the first ${EMPLOYER_COHORT_CAP} employers.`,
+    pattern: /\b(trial|free for|free period|how long.+free|after the free)\b/i,
+    response: () => `${FOUNDING_PERIOD_MONTHS} months free for the first ${EMPLOYER_COHORT_CAP} employers, with no card required.`,
   },
   {
     topic: 'support',
