@@ -117,6 +117,8 @@ export interface TempPost {
   company_logo: string | null
   like_count: number
   comment_count: number
+  /** Maintained by trg_temp_interest_count on INSERT and DELETE. */
+  interest_count?: number
   status: 'open' | 'filled' | 'closed' | 'expired'
   created_at: string
   isExample?: boolean

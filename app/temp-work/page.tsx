@@ -889,7 +889,11 @@ export default function TempWorkPage() {
                 <div className={styles.ctaTitle}>Hiring temp staff?</div>
                 <p className={styles.ctaSub}>Post a dated shift and see who likes and comments. Ongoing casual roles go on the job board.</p>
                 <Link href="/temp-work/post" className={styles.ctaBtn}>+ Post temp work</Link>
-                <Link href="/temp-work/manage" className={styles.ctaLink}>Your posts & comments →</Link>
+                {/* "Your shifts", not "Your posts & comments". The destination
+                    leads with who is AVAILABLE — comments are the secondary
+                    thing on it — and the old label described the page as it was
+                    before the available list existed. */}
+                <Link href="/temp-work/manage" className={styles.ctaLink}>Your shifts & who’s available →</Link>
               </div>
             ) : (
               <div className={styles.ctaCard}>
