@@ -1187,8 +1187,17 @@ export default function AnalyticsContent() {
     const hasSufficientData = employerSectors.some(sectorIsPoolable)
 
     if (!hasSufficientData) {
-      const maxSectorCount = employerSectors.reduce((max, s) => Math.max(max, (otherBySector[s] || []).length), 0)
-      return { hasEnoughData: false, minRequired: MIN_SECTOR_JOBS, currentMax: maxSectorCount } as const
+      // Report the EMPLOYER count, not the job count. The old line read "Need at
+      // least 5 jobs from other employers (currently 247)" — a message that
+      // states its own condition is met and then refuses anyway, which reads as
+      // a broken page rather than a threshold.
+      const maxSectorEmployers = employerSectors.reduce(
+        (max, s) => Math.max(max, distinctEmployers(otherBySector[s] || [])), 0)
+      return {
+        hasEnoughData: false,
+        minRequired: MIN_SECTOR_EMPLOYERS,
+        currentMax: maxSectorEmployers,
+      } as const
     }
 
     // Platform averages by sector
@@ -4079,7 +4088,9 @@ export default function AnalyticsContent() {
                   Not enough market data yet — benchmarks will become available as more employers join the platform
                 </p>
                 <p style={{ margin: 0, fontSize: '0.8rem', color: '#cbd5e1' }}>
-                  Need at least 5 jobs from other employers in the same sector (currently {marketBenchmark.currentMax})
+                  Needs at least {marketBenchmark.minRequired} other employers hiring in the same
+                  sector, so no single company&rsquo;s figures can be read off the average
+                  (currently {marketBenchmark.currentMax})
                 </p>
               </div>
             </div>
