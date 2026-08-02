@@ -12,9 +12,6 @@
       "mcp__chrome-devtools__emulate",
       "mcp__vercel__list_deployments",
       "mcp__vercel__list_teams"
-    ],
-    "additionalDirectories": [
-      "C:\\Users\\Paul Davies\\Downloads\\"
     ]
   },
   "enabledPlugins": {
