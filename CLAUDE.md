@@ -35,6 +35,21 @@ Standing rules for Claude Code on this project. These override default behaviour
 - Never run `supabase db push`.
 - Verify a captured migration by **convergence** — does the last definition of each object match what is live? — not by comparing it to the ledger it came from, which is circular.
 
+## State beats screen
+
+- **When a driven check says "nothing happened", confirm from the database before reporting it.** Twice in one session a UI check read as a clean pass when the click had never landed — once because the button label carried an icon the selector didn't expect, once because a chat widget's send button was also a `type="submit"` and won `.last()`. Both would have been written up as product faults. What settled it was counting the rows.
+- **A result too absolute to be true is the instrument, not the product.** "All six words missing", "no icon advertised at all", "the section doesn't exist" — check the tool first. Five such false alarms in one day, every one the harness.
+
+## Defaults must not make claims
+
+- **A form field may not assert something only the employer can state.** `employmentType` defaulted to Full-time, `contractType` to Permanent and `salaryPeriod` to hour — so an advert claimed a permanent full-time job nobody had chosen, and the AI generator then repeated it as a sentence in the employer's own voice.
+- Distinguish a **convenience** (right nearly always, harmless when wrong — e.g. work location in a hospitality-only board) from a **claim** (only the employer knows). Fix the second kind at the data, not in the copy or the prompt: the wrong value still reaches the row, the card, the filters and the matching.
+- **"Absurd, so someone would spot it" is only true on the page.** Six code paths annualise hourly pay before comparing, so a mis-set period misfires silently in matching long before a human reads the ad.
+
+## Correct today because of the board, not because of the product
+
+- Things that are right only because every live row is hospitality, and become wrong the day Thrive broadens: the **work-location default** ("In person"), and the **sectors filter** (32 of 33 options match nothing). Recorded so nobody has to rediscover why they were left alone.
+
 ## A habit that has earned its place
 
 - **For any control, ask which states the object can actually be in, and whether the control should exist in each.** The gate always gets written for the state in mind while building — the fresh, happy one: no comments yet, no jobs yet, shift still open. The states that come *later* are the ones nobody looked at. Three bugs so far were this exact shape: a reply button that only existed once someone had replied; a section that only rendered once a job was posted; Close only existing while a post was open.

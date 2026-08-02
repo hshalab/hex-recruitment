@@ -95,7 +95,19 @@ function PostJobContent() {
     workLocationType: 'In person' as 'In person' | 'Remote' | 'Hybrid',
     salaryMin: '',
     salaryMax: '',
-    salaryPeriod: 'hour' as 'hour' | 'year',
+    // NOT DEFAULTED EITHER, and this one is the most dangerous of the three.
+    //
+    // A figure without a period is meaningless, so defaulting looks harmless —
+    // but two of the three boxes on that row start empty, which makes the third
+    // look answered. Type 32000 for an annual salary, don't notice the
+    // selector, and the ad reads £32,000 PER HOUR.
+    //
+    // "Absurd, so someone would spot it" is only true ON THE PAGE. SIX code
+    // paths multiply hourly pay to an annual figure before comparing —
+    // jobAlerts, recommendations, rolesRoundup, two analytics charts and the
+    // salary filter on /jobs — so the row enters matching at about £66m a year
+    // and misfires silently long before a human reads the advert.
+    salaryPeriod: '' as '' | 'hour' | 'year',
     location: '',
     area: '',
     venue: '',
@@ -630,6 +642,14 @@ function PostJobContent() {
         setLoading(false)
         return
       }
+      // The period is a claim about the job, not a formatting preference — see
+      // the comment on salaryPeriod in the initial state. Named separately so
+      // the employer is told exactly which box is unanswered.
+      if (!formData.salaryPeriod) {
+        setError('Please choose whether the pay is per hour or per year')
+        setLoading(false)
+        return
+      }
       if (formData.salaryMax && parseInt(formData.salaryMin) > parseInt(formData.salaryMax)) {
         setError('Minimum salary cannot be higher than maximum salary')
         setLoading(false)
@@ -683,7 +703,9 @@ function PostJobContent() {
         jobReference,
         salaryMin: hideSalary ? 0 : parseInt(formData.salaryMin || '0'),
         salaryMax: hideSalary ? 0 : parseInt(formData.salaryMax || '0'),
-        salaryPeriod: formData.salaryPeriod,
+        // Validation above guarantees this is set; narrowed here so an empty
+        // string can never reach the column that six code paths do arithmetic on.
+        salaryPeriod: (formData.salaryPeriod || undefined) as 'hour' | 'year' | undefined,
         employmentType: employmentType as WorkType[],
         location: formData.location,
         area: formData.area || 'London',
@@ -1320,6 +1342,9 @@ function PostJobContent() {
                   onChange={handleChange}
                   className={`${styles.select} ${styles.salaryPeriodSelect}`}
                 >
+                  {/* The other two selects already had a placeholder; this one
+                      never did, because it was never unanswered. */}
+                  <option value="">Per hour or per year?</option>
                   <option value="hour">Per hour (£)</option>
                   <option value="year">Per year (£)</option>
                 </select>
@@ -1335,9 +1360,12 @@ function PostJobContent() {
                   <strong style={{ color: '#334155' }}>
                     {/* Grouped, because this line exists to demonstrate what the
                         ad will read — "£32000/yr" undercuts its own point. */}
+                    {/* Does not guess the period either. Saying "/hr" before
+                        she has chosen would be the same assertion the default
+                        used to make, just one layer down. */}
                     £{formData.salaryMin
                       ? Number(formData.salaryMin).toLocaleString('en-GB')
-                      : '32,000'}{formData.salaryPeriod === 'year' ? '/yr' : '/hr'}
+                      : '32,000'}{formData.salaryPeriod === 'year' ? '/yr' : formData.salaryPeriod === 'hour' ? '/hr' : ''}
                   </strong>
                   , not a range.
                 </p>
