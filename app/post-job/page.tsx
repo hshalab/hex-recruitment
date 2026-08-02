@@ -60,6 +60,13 @@ function PostJobContent() {
   })
   // 'guided' = show four fields, 'editor' = show Tiptap editor
   const [descView, setDescView] = useState<'guided' | 'editor'>('guided')
+
+  // "Draft my advert" — the generator, above the guided fields.
+  const [aiPanelOpen, setAiPanelOpen] = useState(true)
+  const [aiSentence, setAiSentence] = useState('')
+  const [drafting, setDrafting] = useState(false)
+  const [draftError, setDraftError] = useState('')
+  const [drafted, setDrafted] = useState(false)
   const [undoState, setUndoState] = useState<UndoState | null>(null)
 
   const [formData, setFormData] = useState({
@@ -406,6 +413,80 @@ function PostJobContent() {
   // Robust empty check for Tiptap HTML (handles <p></p>, <p><br></p>, whitespace-only)
   const descriptionHasContent = (html: string) =>
     html ? htmlToPlainText(html).length > 0 : false
+
+  /**
+   * One sentence in, three drafted fields out.
+   *
+   * Calls the EXISTING 'job-ad' branch of /api/ai-assist — the generate mode
+   * has been there since March and simply lost its caller when the old
+   * assistant panel was replaced by the inline enhance button.
+   *
+   * THE TITLE SHE TYPED IS NEVER TOUCHED. It goes IN as context so the copy
+   * knows what the role is, and the prompt is explicitly forbidden from
+   * returning one. Overwriting a decision she already made, on the screen where
+   * she is trusting us with the words, is the kind of small betrayal that stops
+   * someone using a feature twice.
+   *
+   * The result lands as ordinary editable text in the three textareas — never
+   * read-only, never a preview she has to accept.
+   */
+  const handleDraftAdvert = async () => {
+    const sentence = aiSentence.trim()
+    if (!sentence || drafting) return
+    setDrafting(true)
+    setDraftError('')
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/ai-assist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({
+          type: 'job-ad',
+          data: {
+            sentence,
+            title: formData.title,
+            company: formData.company,
+            location: formData.location,
+            salaryMin: hideSalary ? '' : formData.salaryMin,
+            salaryMax: hideSalary ? '' : formData.salaryMax,
+            salaryPeriod: formData.salaryPeriod,
+            employmentType: formData.employmentType,
+            contractType: formData.contractType,
+            category: formData.category,
+            companyDescription: employerProfile?.description || '',
+          },
+        }),
+      })
+
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Could not draft the advert')
+
+      const ad = json.jobAd || {}
+      // Defensive: if the model ever returns a title despite the prompt, it is
+      // dropped here as well. Two locks on the same door, because this is the
+      // one field we promised not to touch.
+      const next = {
+        dayToDay: typeof ad.dayToDay === 'string' ? ad.dayToDay.trim() : '',
+        experienceNeeded: typeof ad.experienceNeeded === 'string' ? ad.experienceNeeded.trim() : '',
+        whatWeOffer: typeof ad.whatWeOffer === 'string' ? ad.whatWeOffer.trim() : '',
+      }
+      if (!next.dayToDay && !next.experienceNeeded && !next.whatWeOffer) {
+        throw new Error('The draft came back empty — try describing the role in a bit more detail.')
+      }
+
+      setGuidedFields(prev => ({ ...prev, ...next }))
+      setDrafted(true)
+      setAiPanelOpen(false)
+    } catch (err: unknown) {
+      setDraftError(err instanceof Error ? err.message : 'Could not draft the advert')
+    } finally {
+      setDrafting(false)
+    }
+  }
 
   const handleEnhanceDescription = async () => {
     setEnhancing(true)
@@ -1242,13 +1323,74 @@ function PostJobContent() {
 
             {descView === 'guided' ? (
               <div>
+                {/* THE AI GOES FIRST. It used to sit BELOW these three boxes,
+                    disabled until they had content — an enhancer of work
+                    already done, which is after the work it was meant to save.
+                    This is the primary path: one sentence in, three drafted
+                    fields out, with writing it yourself as the alternative
+                    beside it rather than the default.
+                    "Enhance with AI" below is kept deliberately — different
+                    job, for tidying a draft rather than starting one. */}
+                {aiPanelOpen ? (
+                  <div className={styles.aiPanel}>
+                    <div className={styles.aiPanelHead}>
+                      <span className={styles.aiPanelBadge}>FASTEST</span>
+                      <h3 className={styles.aiPanelTitle}>
+                        Tell us about it in a sentence and we&apos;ll draft the ad
+                      </h3>
+                    </div>
+                    <input
+                      type="text"
+                      className={styles.aiPanelInput}
+                      value={aiSentence}
+                      onChange={e => setAiSentence(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleDraftAdvert() } }}
+                      placeholder="e.g. Sous chef for a 60-cover country pub, four days, no late finishes, £32k"
+                      disabled={drafting}
+                    />
+                    <div className={styles.aiPanelActions}>
+                      <button
+                        type="button"
+                        className={styles.aiPanelPrimary}
+                        onClick={handleDraftAdvert}
+                        disabled={!aiSentence.trim() || drafting}
+                        style={!aiSentence.trim() || drafting ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
+                      >
+                        {drafting ? 'Drafting…' : 'Draft my advert'}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.aiPanelQuiet}
+                        onClick={() => setAiPanelOpen(false)}
+                        disabled={drafting}
+                      >
+                        I&apos;ll write it myself
+                      </button>
+                    </div>
+                    {draftError && <p className={styles.aiPanelError}>{draftError}</p>}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.aiPanelReopen}
+                    onClick={() => setAiPanelOpen(true)}
+                  >
+                    ✨ Draft it for me instead
+                  </button>
+                )}
+
+                {drafted && (
+                  <p className={styles.aiDraftedLabel}>DRAFTED — EDIT ANYTHING</p>
+                )}
+
                 <div className={styles.formGroup}>
                   <label className={styles.label} htmlFor="desc_dayToDay">
                     What will they be doing day to day?
                   </label>
                   <textarea
                     id="desc_dayToDay"
-                    className={styles.textarea}
+                    className={`${styles.textarea} ${drafting ? styles.aiSkeleton : ''}`}
+                    disabled={drafting}
                     rows={3}
                     placeholder="e.g. Leading the kitchen team, managing suppliers, creating seasonal menus..."
                     value={guidedFields.dayToDay}
@@ -1262,7 +1404,8 @@ function PostJobContent() {
                   </label>
                   <textarea
                     id="desc_experienceNeeded"
-                    className={styles.textarea}
+                    className={`${styles.textarea} ${drafting ? styles.aiSkeleton : ''}`}
+                    disabled={drafting}
                     rows={3}
                     placeholder="e.g. 3+ years in a similar role, strong leadership skills, food hygiene certificate..."
                     value={guidedFields.experienceNeeded}
@@ -1276,7 +1419,8 @@ function PostJobContent() {
                   </label>
                   <textarea
                     id="desc_whatWeOffer"
-                    className={styles.textarea}
+                    className={`${styles.textarea} ${drafting ? styles.aiSkeleton : ''}`}
+                    disabled={drafting}
                     rows={3}
                     placeholder="e.g. £35,000 salary, 28 days holiday, staff meals, flexible hours, great team..."
                     value={guidedFields.whatWeOffer}
