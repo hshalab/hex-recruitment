@@ -39,6 +39,7 @@ Standing rules for Claude Code on this project. These override default behaviour
 
 - **When a driven check says "nothing happened", confirm from the database before reporting it.** Twice in one session a UI check read as a clean pass when the click had never landed — once because the button label carried an icon the selector didn't expect, once because a chat widget's send button was also a `type="submit"` and won `.last()`. Both would have been written up as product faults. What settled it was counting the rows.
 - **A result too absolute to be true is the instrument, not the product.** "All six words missing", "no icon advertised at all", "the section doesn't exist" — check the tool first. Five such false alarms in one day, every one the harness.
+- **When a check comes back clean on the first try, ask whether it was looking where the answer lives.** `/api/chatbot` returned `{"fallback":true}` with no price, four questions out of four — which reads as "the bot doesn't quote prices". It does; the API tells the *client* to answer, and the price is assembled in the browser. Same family as the rel-keyed icons, the closed accordion, the buffered pipe, and the chat widget swallowing a submit click. A clean pass is a claim about the instrument until you know it can see the thing.
 
 ## Defaults must not make claims
 

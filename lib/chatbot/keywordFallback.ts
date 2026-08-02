@@ -11,8 +11,24 @@
 // that wouldn't pass the LLM voice rules are kept here on purpose —
 // this path is the safety net, not the primary surface.
 
-import { EMPLOYER_SUBSCRIPTION_PRICE, TRIAL_MONTHS, trialPhraseFormal } from '@/lib/trialUtils'
 import { BRAND_FULL } from '@/lib/constants/brand'
+import { EMPLOYER_COHORT_CAP, FOUNDING_PERIOD_MONTHS } from '@/lib/constants/cohort'
+
+// THIS FILE IS THE ONE THAT ANSWERED. /api/chatbot returns {"fallback":true}
+// far more often than the "silent rescue path" framing above suggests, and the
+// browser then renders these strings — so an anonymous visitor asking "how much
+// does it cost?" on the live homepage was told "Single plan — £99/month… the
+// first 100 get 3 months free" from right here. Both halves were wrong: no
+// price has been set, and the real founding offer is 12 months, not 3.
+//
+// EMPLOYER_SUBSCRIPTION_PRICE and the trial phrasings are deliberately NOT
+// imported. The constants stay in lib/trialUtils for the dormant Stripe path;
+// nothing that talks to a stranger reads them. See CLAUDE.md.
+const PRICING_ANSWER =
+  `The first ${EMPLOYER_COHORT_CAP} employers get **${FOUNDING_PERIOD_MONTHS} months free** — no card, no catch.\n\n` +
+  `That includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\n` +
+  `Candidates use Thrive free, always.\n\n` +
+  `Pricing after the ${FOUNDING_PERIOD_MONTHS} months hasn't been set yet — you'd be told well in advance, and nothing is charged automatically.`
 
 export interface KeywordLink {
   text: string
@@ -34,7 +50,7 @@ const responsePatterns: ResponsePattern[] = [
   // ── GENERAL / ABOUT ──
   {
     keywords: ['what is thrive', 'about thrive', 'how does it work', 'tell me about', 'what does thrive do'],
-    response: `${BRAND_FULL} is the UK's recruitment platform connecting employers across all industries with qualified professionals.\n\n**For Job Seekers:** Completely free! Create your profile, upload your CV, browse jobs, and apply directly.\n\n**For Employers:** Post jobs, browse candidate profiles, schedule interviews, send offers, and track your hiring pipeline. Start with a ${trialPhraseFormal()}, then £${EMPLOYER_SUBSCRIPTION_PRICE}/month.`,
+    response: `${BRAND_FULL} is the UK's recruitment platform connecting employers across all industries with qualified professionals.\n\n**For Job Seekers:** Completely free! Create your profile, upload your CV, browse jobs, and apply directly.\n\n**For Employers:** Post jobs, browse candidate profiles, schedule interviews, send offers, and track your hiring pipeline. The first ${EMPLOYER_COHORT_CAP} employers get ${FOUNDING_PERIOD_MONTHS} months free, no card needed.`,
     links: [{ text: 'Learn More', href: '/' }]
   },
   {
@@ -53,8 +69,8 @@ const responsePatterns: ResponsePattern[] = [
   // ── REGISTRATION & LOGIN ──
   {
     keywords: ['register', 'sign up', 'create account', 'join', 'get started'],
-    response: `There are two ways to join Thrive:\n\n**Job Seekers:** Create a free profile — browse jobs, upload your CV, and apply directly. No cost, ever.\n\n**Employers:** Subscribe to a plan to post jobs and access candidate profiles. Start with a ${trialPhraseFormal()}!`,
-    links: [{ text: 'I\'m a Job Seeker', href: '/register/employee' }, { text: 'I\'m an Employer', href: '/subscribe' }]
+    response: `There are two ways to join Thrive:\n\n**Job Seekers:** Create a free profile — browse jobs, upload your CV, and apply directly. No cost, ever.\n\n**Employers:** Post jobs and browse candidate profiles. The first ${EMPLOYER_COHORT_CAP} get ${FOUNDING_PERIOD_MONTHS} months free — no card needed.`,
+    links: [{ text: 'I\'m a Job Seeker', href: '/register/employee' }, { text: 'I\'m an Employer', href: '/register/employer-free' }]
   },
   {
     keywords: ['log in', 'login', 'sign in', 'forgot password', 'reset password', 'can\'t log in'],
@@ -64,28 +80,33 @@ const responsePatterns: ResponsePattern[] = [
 
   // ── PRICING & SUBSCRIPTION ──
   {
-    keywords: ['cost', 'price', 'pay', 'how much', 'pricing', 'fee', 'charge', 'subscription', 'plan'],
-    response: `Great question! Thrive offers a **${TRIAL_MONTHS}-month FREE trial**, then just **£${EMPLOYER_SUBSCRIPTION_PRICE}/month**.\n\nYour plan includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nCancel anytime. No hidden fees.`,
-    links: [{ text: 'View Plans', href: '/subscribe' }]
+    // Widened to catch the sideways askings — "is it expensive", "what's the
+    // catch", "how does Thrive make money", "what do I pay". Every one of these
+    // is the pricing question and must not fall through to a stale answer.
+    keywords: ['cost', 'costs', 'price', 'pricing', 'pay', 'paid', 'how much', 'fee', 'fees',
+      'charge', 'charged', 'subscription', 'plan', 'expensive', 'afford', 'catch',
+      'make money', 'worth it', 'what will i pay', 'after the free'],
+    response: PRICING_ANSWER,
+    links: [{ text: 'Claim a founding place', href: '/register/employer-free' }]
   },
   {
-    keywords: ['free trial', 'trial', '3 month', 'three month', 'try free'],
-    response: `Yes! You get ${TRIAL_MONTHS} months completely FREE when you sign up as an employer. During your trial you get full access to:\n• Unlimited job listings\n• Browse all candidate profiles\n• Send and receive messages\n• Schedule interviews\n• Send job offers\n\nNo charges until your trial ends. Cancel anytime with 14 days' notice.`,
-    links: [{ text: 'Start Free Trial', href: '/subscribe' }]
+    keywords: ['free trial', 'trial', 'free period', '12 month', 'twelve month', 'try free', 'founding'],
+    response: `Yes — the first ${EMPLOYER_COHORT_CAP} employers get **${FOUNDING_PERIOD_MONTHS} months free**, with no card required. That's full access:\n• Unlimited job listings\n• Browse all candidate profiles\n• Send and receive messages\n• Schedule interviews\n• Send job offers\n\nNothing is charged automatically at the end. What happens afterwards hasn't been decided yet, and you'd hear from us well before it does.`,
+    links: [{ text: 'Claim a founding place', href: '/register/employer-free' }]
   },
   {
     keywords: ['standard plan', 'basic plan', 'starter plan', 'professional plan', 'pro plan', 'premium plan', 'unlimited', 'which plan', 'what plan', 'tier', 'tiers'],
-    response: `Thrive has **one plan: £${EMPLOYER_SUBSCRIPTION_PRICE}/month** — no tiers, no upsell. It includes:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nStart with a ${trialPhraseFormal()} — cancel anytime with 14 days' notice.`,
-    links: [{ text: 'Subscribe', href: '/subscribe' }]
+    response: `There are no tiers — everyone gets everything:\n• Unlimited job listings\n• Browse and contact candidates\n• Direct messaging & interview scheduling\n• Full analytics dashboard\n• Dedicated account support\n\nThe first ${EMPLOYER_COHORT_CAP} employers get ${FOUNDING_PERIOD_MONTHS} months of it free, no card needed. We haven't set what it costs after that.`,
+    links: [{ text: 'Claim a founding place', href: '/register/employer-free' }]
   },
   {
     keywords: ['cancel', 'unsubscribe', 'stop subscription', 'end subscription'],
-    response: "You can cancel your subscription from your Settings page with 14 days' notice. If you cancel during your free trial, you won't be charged at all. Your access continues until the end of the notice period.",
+    response: "You can cancel from your Settings page with 14 days' notice. While you're on the founding offer there's nothing to charge, so cancelling costs you nothing. Your access continues until the end of the notice period.",
     links: [{ text: 'Settings', href: '/settings' }]
   },
   {
     keywords: ['upgrade', 'change plan', 'switch plan', 'downgrade'],
-    response: `Thrive has a single plan at £${EMPLOYER_SUBSCRIPTION_PRICE}/month — there are no tiers to upgrade or downgrade between. Everything's included. If you've cancelled and want to resubscribe, you can do that from your Settings page.`,
+    response: `There are no tiers to move between — everything's included for everyone. If you've cancelled and want to come back, you can do that from your Settings page.`,
     links: [{ text: 'Settings', href: '/settings' }]
   },
 
@@ -150,7 +171,7 @@ const responsePatterns: ResponsePattern[] = [
   // ── EMPLOYER: ANALYTICS ──
   {
     keywords: ['analytics', 'dashboard', 'stats', 'statistics', 'performance', 'metrics', 'report', 'chart'],
-    response: `The Analytics dashboard gives you insights into your recruitment performance:\n\n• Job posting views and application rates\n• Candidate pipeline breakdown\n• Hiring funnel conversion rates\n• Trend charts over time\n• Top-performing job listings\n\nThe analytics dashboard is included in your plan (£${EMPLOYER_SUBSCRIPTION_PRICE}/month after ${trialPhraseFormal()}).`,
+    response: `The Analytics dashboard gives you insights into your recruitment performance:\n\n• Job posting views and application rates\n• Candidate pipeline breakdown\n• Hiring funnel conversion rates\n• Trend charts over time\n• Top-performing job listings\n\nIt's included for everyone — there's no add-on to buy.`,
     links: [{ text: 'View Analytics', href: '/dashboard/analytics' }]
   },
 
