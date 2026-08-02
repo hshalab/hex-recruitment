@@ -1,3 +1,4 @@
+import { parsePreferredAreas, jobMatchesPreferredAreas } from './areas'
 import { Job } from './mockJobs'
 
 const SECTOR_KEY_TO_LABEL: Record<string, string> = {
@@ -68,8 +69,10 @@ export function supabaseRowToJobAlert(row: any): JobAlert {
  *
  * Matching rules (ALL specified criteria must match — AND logic):
  *   - sectors:    if alert.sectors is non-empty, job.category must be in the list
- *   - locations:  if alert.locations is non-empty, job.location or job.area must
- *                 contain at least one of the alert locations (case-insensitive partial match)
+ *   - locations:  if alert.locations is non-empty, the job must fall in one of
+ *                 the chosen areas, by the SAME rule the profile uses
+ *                 (lib/areas jobMatchesPreferredAreas) — region/county tokens,
+ *                 not a substring test, and an unplaceable job is never hidden
  *   - salary:     if alert.min_salary is set, job.salaryMax must be >= alert.min_salary
  *                 if alert.max_salary is set, job.salaryMin must be <= alert.max_salary
  *   - job_types:  if alert.job_types is non-empty, at least one must appear in
@@ -87,15 +90,20 @@ export function jobMatchesAlert(job: Job, alert: JobAlert): boolean {
     }
   }
 
-  // 2. Location match (case-insensitive partial)
+  // 2. Location match — THE SAME RULE THE PROFILE USES.
+  //
+  // This was a case-insensitive SUBSTRING test against job.location, while the
+  // profile matched area tokens through lib/areas. Two location vocabularies on
+  // one side of the product, and the substring version was the worse of the two
+  // in both directions: "York" matched "New York Road", and a candidate who
+  // picked a county got nothing from a job that only knew its region.
+  //
+  // jobMatchesPreferredAreas brings the guarantees with it — an unplaceable job
+  // is never hidden, and picking a county still surfaces region-only jobs in
+  // that region.
   if (alert.locations.length > 0) {
-    const jobLocationLower = (job.location || '').toLowerCase()
-    const jobAreaLower = ((job as any).area || '').toLowerCase()
-    const locationMatch = alert.locations.some(loc => {
-      const locLower = loc.toLowerCase()
-      return jobLocationLower.includes(locLower) || jobAreaLower.includes(locLower)
-    })
-    if (!locationMatch) return false
+    const prefs = parsePreferredAreas(alert.locations)
+    if (!prefs.isEmpty && !jobMatchesPreferredAreas(job, prefs)) return false
   }
 
   // 3. Salary overlap (normalise hourly → annual using 2080 hours/year)
