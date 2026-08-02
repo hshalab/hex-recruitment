@@ -14,7 +14,11 @@ import { isEmployerEntitled } from '@/lib/foundingEntitlement'
 import { PHOTO_TIPS } from '@/lib/photoTips'
 import type { WorkType } from '@/lib/workTypes'
 import { employerLoginPath } from '@/lib/loginRedirect'
+import { EMPLOYMENT_TYPES, CONTRACT_TYPES } from '@/lib/workTypes'
+import JobCard from '@/components/JobCard'
+import { FlowAppBar, Stepper, StepProgress } from './FlowChrome'
 import styles from './page.module.css'
+import flow from './flow.module.css'
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false })
 
@@ -135,6 +139,34 @@ function PostJobContent() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [editJobId, setEditJobId] = useState<string | null>(null)
   const [loadingJobData, setLoadingJobData] = useState(false)
+
+  // ── THREE-STEP FLOW ────────────────────────────────────────────────────
+  //
+  // Re-sequencing, not a rewrite. Every field on the old form survives; what
+  // changes is the order and what has to be answered before publishing.
+  //
+  // Step 3 runs against a LIVE ad, which is the point of it: photo, tags and
+  // screening questions read as improvements to something that already exists
+  // rather than as work standing between her and being live. So `adStatus`
+  // flips at the end of step 2 and the transition happens IN PLACE — no
+  // navigate-away-and-back, because leaving the page is where people stop.
+  //
+  // Edit mode keeps the single long form. Someone editing a live ad is looking
+  // for one field, not being walked through three steps.
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [adStatus, setAdStatus] = useState<'draft' | 'live'>('draft')
+  const [publishedJobId, setPublishedJobId] = useState<string | null>(null)
+  const [publishedAt, setPublishedAt] = useState<Date | null>(null)
+  const [editingCompany, setEditingCompany] = useState(false)
+
+  // "Not now" is a DECISION, not an empty field. Recording it is what lets
+  // Manage Job Ads offer the block back later instead of silently forgetting
+  // it, and it's why this isn't just `!formData.companyBanner`.
+  const [dismissed, setDismissed] = useState<Set<'photo' | 'tags' | 'screening'>>(new Set())
+  const dismiss = (block: 'photo' | 'tags' | 'screening') =>
+    setDismissed(prev => new Set(prev).add(block))
+
+  const stepped = !isEditMode
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -601,6 +633,59 @@ function PostJobContent() {
 
   const guidedHasContent = Object.values(guidedFields).some(v => v.trim().length > 0)
 
+  /**
+   * Everything step 1 asks for, as one message naming what's missing.
+   *
+   * Returned rather than set, so "Next" and "Post this job" cannot disagree
+   * about what a publishable ad needs — the old form had one validation path
+   * because it had one button, and splitting the screen without splitting this
+   * is how a step starts letting through what the next one rejects.
+   */
+  const stepOneProblem = (): string | null => {
+    if (!formData.company) return 'Please add the company name'
+    if (!formData.title) return 'Please add a job title'
+    if (!formData.category) return 'Please choose a category'
+    if (!formData.location) return 'Please add a town or city'
+
+    // Named separately from a generic "required fields" because these are two
+    // chips that previously looked answered — see the initial-state comment.
+    if (!formData.employmentType || !formData.contractType) {
+      return !formData.employmentType && !formData.contractType
+        ? 'Please choose the employment type and the contract type'
+        : !formData.employmentType
+          ? 'Please choose an employment type — full-time, part-time or flexible'
+          : 'Please choose a contract type — permanent, temporary or fixed-term'
+    }
+
+    if (!hideSalary) {
+      // A SINGLE FIGURE IS A VALID ANSWER, and until recently it wasn't allowed.
+      // Validation required BOTH boxes, so an employer paying a flat £32,000 had
+      // no way to say so — the only route past was typing the same number twice.
+      if (!formData.salaryMin) return 'Please enter a pay figure, or choose "Pay on application"'
+      // The period is a claim about the job, not a formatting preference.
+      if (!formData.salaryPeriod) return 'Please choose whether the pay is per hour or per year'
+      if (formData.salaryMax && parseInt(formData.salaryMin) > parseInt(formData.salaryMax)) {
+        return 'The bottom of the range is higher than the top — please swap them'
+      }
+    }
+    return null
+  }
+
+  const goToStep = (next: 1 | 2 | 3) => {
+    // Back NEVER discards and never validates — the only reason someone goes
+    // back is to change something, and refusing to let them is how a form
+    // traps people.
+    if (next < step) { setError(''); setStep(next); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
+
+    if (step === 1) {
+      const problem = stepOneProblem()
+      if (problem) { setError(problem); return }
+    }
+    setError('')
+    setStep(next)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -832,6 +917,22 @@ function PostJobContent() {
         })()
       }
 
+      // PUBLISHING MOVES TO STEP 3 IN PLACE. It does not navigate away and come
+      // back, because the whole premise of step 3 is that the ad is already
+      // live and the rest is optional — a redirect to /my-jobs ends the session
+      // and the photo, the tags and the screening question never get added.
+      // The old flow redirected here, which is why those three were the fields
+      // nobody filled in.
+      if (stepped && !isEditMode && newJob?.id) {
+        setPublishedJobId(newJob.id)
+        setPublishedAt(new Date())
+        setAdStatus('live')
+        setStep(3)
+        setLoading(false)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
+      }
+
       setSuccess(true)
 
       // Redirect after short delay
@@ -842,6 +943,34 @@ function PostJobContent() {
     } catch (err: any) {
       setError(err.message || 'Something went wrong')
     } finally {
+      setLoading(false)
+    }
+  }
+
+  /**
+   * Step 3 edits an ad that is ALREADY LIVE, so each extra is an update to an
+   * existing row rather than part of the thing being created. Saved on Done
+   * rather than per-block: three separate writes to a live row for what the
+   * employer experiences as one sitting is three chances to half-apply.
+   */
+  const handleFinishExtras = async () => {
+    if (!publishedJobId) { router.push('/my-jobs'); return }
+    setLoading(true)
+    setError('')
+    try {
+      await updateJob(publishedJobId, {
+        companyBanner: formData.companyBanner || undefined,
+        tags: Array.from(formData.tags),
+        screeningQuestions: screeningQuestions.filter(q => q.question.trim()),
+        shiftSchedule: formData.shiftSchedule || undefined,
+        experienceRequired: formData.experienceRequired || undefined,
+        jobReference: formData.jobReference || undefined,
+      } as any)
+      router.push(`/jobs/${publishedJobId}`)
+    } catch (err: any) {
+      // The ad is already live, so a failure here loses the extras, not the ad.
+      // Say that, rather than letting it read as "the post failed".
+      setError(`Your ad is live, but these extras didn't save: ${err.message || 'unknown error'}`)
       setLoading(false)
     }
   }
@@ -895,22 +1024,48 @@ function PostJobContent() {
     <main>
       <Header />
 
-      <div className={styles.hero}>
-        <button className={styles.backBtn} onClick={() => router.push('/employer/dashboard')}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-          Back to Dashboard
-        </button>
-        <h1 className={styles.heroTitle}>{isEditMode ? 'Edit Job' : 'Post a Job'}</h1>
-        <p className={styles.heroSubtitle}>
-          {isEditMode
-            ? 'Update your job listing details'
-            : 'Reach thousands of professionals across the UK'}
-        </p>
-      </div>
+      {!stepped && (
+        <div className={styles.hero}>
+          <button className={styles.backBtn} onClick={() => router.push('/employer/dashboard')}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+            Back to Dashboard
+          </button>
+          <h1 className={styles.heroTitle}>{isEditMode ? 'Edit Job' : 'Post a Job'}</h1>
+          <p className={styles.heroSubtitle}>
+            {isEditMode
+              ? 'Update your job listing details'
+              : 'Reach thousands of professionals across the UK'}
+          </p>
+        </div>
+      )}
 
       {/* Form */}
-      <div className={styles.container}>
-        <form className={styles.formCard} onSubmit={handleSubmit}>
+      <div className={stepped ? '' : styles.container}>
+        <form className={stepped ? flow.shell : styles.formCard} onSubmit={handleSubmit}>
+          {stepped && (
+            <>
+              <FlowAppBar
+                onBack={() => router.push('/employer/dashboard')}
+                status={
+                  adStatus === 'live'
+                    ? {
+                        kind: 'live',
+                        text: `Live since ${(publishedAt ?? new Date()).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}${formData.title ? ` · ${formData.title}` : ''}${formData.location ? `, ${formData.location}` : ''}`,
+                      }
+                    : formData.title || formData.location
+                      ? { kind: 'saved', text: `Draft · ${[formData.title, formData.location].filter(Boolean).join(', ')}` }
+                      : { kind: 'saving', text: 'Draft' }
+                }
+              />
+            </>
+          )}
+          <div className={stepped ? flow.body : ''}>
+          {stepped && (
+            <>
+              <Stepper current={step} furthest={adStatus === 'live' ? 3 : 2} onGo={goToStep} />
+              <StepProgress current={step} />
+            </>
+          )}
           {error && <div className={styles.error}>{error}</div>}
           {success && (
             <div className={styles.success}>
@@ -923,8 +1078,29 @@ function PostJobContent() {
             </div>
           )}
 
+          {/* STEP 1 TITLE BLOCK. The company line replaces the whole Company
+              Information section as the FIRST thing on the form.
+
+              Company name, website and logo belong to the account, not to the
+              job — they were being asked for on every single post, prefilled
+              from the profile, and then re-confirmed by hand. Prefill them,
+              expose one editable line, never ask twice. Nothing is deleted:
+              "change" opens the identical block below. */}
+          {stepped && step === 1 && (
+            <div>
+              <h3 className={flow.screenTitle}>What&apos;s the role?</h3>
+              <p className={flow.postingAs}>
+                Posting as <span className={flow.postingAsName}>{formData.company || 'your company'}</span>
+                {!isOwnCompany && ' (client)'}
+                <button type="button" className={flow.postingAsChange} onClick={() => setEditingCompany(v => !v)}>
+                  {editingCompany ? 'done' : 'change'}
+                </button>
+              </p>
+            </div>
+          )}
+
           {/* Company Information */}
-          <div className={styles.section}>
+          <div className={styles.section} style={stepped && !(step === 1 && editingCompany) ? { display: 'none' } : undefined}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>
                 <span className={styles.sectionIcon}>🏢</span>
@@ -983,7 +1159,9 @@ function PostJobContent() {
                 placeholder="e.g., The Ivy Collection"
                 className={styles.input}
                 autoComplete="organization"
-                required
+                /* validated by stepOneProblem(), not the browser — this field is
+                   display:none on steps 2 and 3, and a hidden required control
+                   blocks submit with an unfocusable-element error */
               />
             </div>
 
@@ -1102,87 +1280,7 @@ function PostJobContent() {
             )}
           </div>
 
-          {/* Job Banner Image */}
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>
-              <span className={styles.sectionIcon}>🖼️</span>
-              Job Banner Image
-            </h2>
-            <p className={styles.helperText} style={{ marginBottom: '0.75rem' }}>
-              Landscape cover photo shown on your job card and detail page. Optional — if you skip it, we show a branded Thrive cover instead.
-            </p>
-
-            {/* Photo-quality tips — candidates notice the image first, so meet
-                employers with guidance right where they choose the photo. */}
-            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '0.75rem 0.9rem', marginBottom: '0.9rem' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#92400e', marginBottom: '0.4rem' }}>
-                📸 A great photo gets more applicants
-              </div>
-              <ul style={{ margin: 0, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                {PHOTO_TIPS.map((tip, i) => (
-                  <li key={i} style={{ fontSize: '0.8rem', lineHeight: 1.45, color: '#78350f' }}>{tip}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div className={styles.formGroup}>
-              <div className={styles.uploadArea}>
-                <input
-                  type="file"
-                  id="bannerUpload"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleBannerUpload}
-                  disabled={bannerUploading}
-                  className={styles.fileInput}
-                />
-                <label htmlFor="bannerUpload" className={styles.uploadLabel}>
-                  {bannerUploading ? (
-                    <span>Processing image...</span>
-                  ) : (
-                    <>
-                      <span className={styles.uploadIcon}>📁</span>
-                      <span>Choose a banner image</span>
-                      <span className={styles.uploadHint}>JPEG, PNG, WebP or GIF — landscape, ideally 1200×825px. We crop to fit.</span>
-                    </>
-                  )}
-                </label>
-              </div>
-              {bannerFileName && !bannerUploadError && (
-                <p className={styles.logoSuccess}>Uploaded: {bannerFileName}</p>
-              )}
-              {bannerUploadError && (
-                <p className={styles.uploadError}>{bannerUploadError}</p>
-              )}
-            </div>
-
-            {formData.companyBanner && (
-              <div className={styles.logoPreviewContainer}>
-                <div className={styles.logoPreview} style={{ width: '100%', maxWidth: '400px', aspectRatio: '16 / 11' }}>
-                  <img
-                    src={formData.companyBanner}
-                    alt="Banner preview"
-                    className={styles.logoPreviewImage}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </div>
-                <div className={styles.logoPreviewActions}>
-                  <button
-                    type="button"
-                    onClick={() => { setFormData(prev => ({ ...prev, companyBanner: '' })); setBannerFileName('') }}
-                    className={styles.clearLogoBtn}
-                  >
-                    ✕ Remove Banner
-                  </button>
-                </div>
-              </div>
-            )}
-            {!formData.companyBanner && (
-              <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: '0.5rem 0 0', lineHeight: 1.5 }}>
-                💡 A cover photo and a few lines of description make your job stand out — candidates see them first. Both are optional (we&apos;ll use a tasteful default image if you skip the photo), but they really help.
-              </p>
-            )}
-          </div>
-
+          {(!stepped || step === 1) && (<>
           {/* Job Details */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>
@@ -1203,7 +1301,9 @@ function PostJobContent() {
                 placeholder="e.g., Waiter / Waitress, Kitchen Porter, Head Chef"
                 className={styles.input}
                 autoComplete="off"
-                required
+                /* validated by stepOneProblem(), not the browser — this field is
+                   display:none on steps 2 and 3, and a hidden required control
+                   blocks submit with an unfocusable-element error */
               />
             </div>
 
@@ -1218,7 +1318,9 @@ function PostJobContent() {
                   value={formData.category}
                   onChange={handleChange}
                   className={styles.select}
-                  required
+                  /* validated by stepOneProblem(), not the browser — this field is
+                     display:none on steps 2 and 3, and a hidden required control
+                     blocks submit with an unfocusable-element error */
                 >
                   <option value="">Select a category</option>
                   {categories.map(cat => (
@@ -1242,7 +1344,9 @@ function PostJobContent() {
                   placeholder="e.g. London, Manchester, Edinburgh"
                   className={styles.input}
                   autoComplete="off"
-                  required
+                  /* validated by stepOneProblem(), not the browser — this field is
+                     display:none on steps 2 and 3, and a hidden required control
+                     blocks submit with an unfocusable-element error */
                 />
               </div>
             </div>
@@ -1288,37 +1392,61 @@ function PostJobContent() {
               />
             </div>
 
+            {/* CHIPS, NOT SELECTS — cosmetic only. Both still write into the
+                same single employment_type array exactly as before; no schema,
+                no migration, no work-type restructure in this ticket.
+
+                Rendering all six options at once is the actual reason for the
+                change: a closed select shows one value and hides the rest, and
+                a select whose first option reads "Select employment type" is
+                indistinguishable at a glance from one that has been answered.
+                That is precisely the fault that let Full-time and Permanent be
+                published by employers who never chose them. Chips cannot look
+                answered when they aren't.
+
+                Values come from lib/workTypes so the six here can never drift
+                from the six the rest of the product filters on. */}
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="employmentType">Employment Type <span className={styles.required}>*</span></label>
-                <select
-                  id="employmentType"
-                  name="employmentType"
-                  value={formData.employmentType}
-                  onChange={handleChange}
-                  className={styles.select}
-                >
-                  <option value="">Select employment type</option>
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Flexible">Flexible</option>
-                </select>
+                <label className={styles.label} id="employmentTypeLabel">Employment Type <span className={styles.required}>*</span></label>
+                <div className={flow.chipRow} role="group" aria-labelledby="employmentTypeLabel">
+                  {EMPLOYMENT_TYPES.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      id={t === EMPLOYMENT_TYPES[0] ? 'employmentType' : undefined}
+                      aria-pressed={formData.employmentType === t}
+                      className={`${flow.chip} ${formData.employmentType === t ? flow.chipSelected : ''}`}
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        employmentType: prev.employmentType === t ? '' : t,
+                      }))}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="contractType">Contract Type <span className={styles.required}>*</span></label>
-                <select
-                  id="contractType"
-                  name="contractType"
-                  value={formData.contractType}
-                  onChange={handleChange}
-                  className={styles.select}
-                >
-                  <option value="">Select contract type</option>
-                  <option value="Permanent">Permanent</option>
-                  <option value="Temporary">Temporary</option>
-                  <option value="Fixed-term">Fixed-term</option>
-                </select>
+                <label className={styles.label} id="contractTypeLabel">Contract Type <span className={styles.required}>*</span></label>
+                <div className={flow.chipRow} role="group" aria-labelledby="contractTypeLabel">
+                  {CONTRACT_TYPES.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      id={t === CONTRACT_TYPES[0] ? 'contractType' : undefined}
+                      aria-pressed={formData.contractType === t}
+                      className={`${flow.chip} ${formData.contractType === t ? flow.chipSelected : ''}`}
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        contractType: prev.contractType === t ? '' : t,
+                      }))}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -1343,15 +1471,33 @@ function PostJobContent() {
                 Salary Range {!hideSalary && <span className={styles.required}>*</span>}
               </label>
 
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.85rem', cursor: 'pointer', color: '#334155' }}>
-                  <input type="checkbox" checked={hideSalary} onChange={e => { setHideSalary(e.target.checked); if (e.target.checked) setSalaryNegotiable(false) }} style={{ accentColor: '#0f172a' }} />
-                  Competitive salary (don&apos;t show)
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.85rem', cursor: 'pointer', color: '#334155' }}>
-                  <input type="checkbox" checked={salaryNegotiable} onChange={e => setSalaryNegotiable(e.target.checked)} disabled={hideSalary} style={{ accentColor: '#0f172a' }} />
-                  Salary negotiable
-                </label>
+              {/* "Pay on application" is the handoff's name for what this form
+                  called "Competitive salary (don't show)". Same flag, same
+                  column, different words — the old label asserted the pay was
+                  competitive, which is a claim the employer never made, and it
+                  is the label a candidate never sees anyway. Rendered as a chip
+                  so it sits in the pay row as one of the answers rather than as
+                  a checkbox below it. */}
+              <div className={flow.chipRow} style={{ marginBottom: '0.6rem' }}>
+                <button
+                  type="button"
+                  id="payOnApplication"
+                  aria-pressed={hideSalary}
+                  className={`${flow.chip} ${hideSalary ? flow.chipSelected : ''}`}
+                  onClick={() => { const v = !hideSalary; setHideSalary(v); if (v) setSalaryNegotiable(false) }}
+                >
+                  Pay on application
+                </button>
+                {!hideSalary && (
+                  <button
+                    type="button"
+                    aria-pressed={salaryNegotiable}
+                    className={`${flow.chip} ${salaryNegotiable ? flow.chipSelected : ''}`}
+                    onClick={() => setSalaryNegotiable(v => !v)}
+                  >
+                    Negotiable
+                  </button>
+                )}
               </div>
 
               {!hideSalary && (
@@ -1422,7 +1568,21 @@ function PostJobContent() {
               )}
             </div>
           </div>
+          </>)}
+          {stepped && step === 1 && (
+            <div className={flow.stepFooter}>
+              <p className={flow.stepFooterNote}>Everything here can be edited after the ad is live.</p>
+              <button type="button" className={flow.textBtn} onClick={() => router.push('/my-jobs')}>Save &amp; finish later</button>
+              <button type="button" className={flow.primaryBtn} onClick={() => goToStep(2)}>Next — the advert →</button>
+            </div>
+          )}
 
+          {(!stepped || step === 2) && (<>
+          {stepped && (
+            <div>
+              <h3 className={flow.screenTitle}>Now the words</h3>
+            </div>
+          )}
           {/* Description */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>
@@ -1613,6 +1773,117 @@ function PostJobContent() {
               </div>
             )}
           </div>
+          </>)}
+          {stepped && step === 2 && (
+            <div className={flow.publishRow}>
+              <div className={flow.publishCopy}>
+                <p className={flow.publishLead}>That&apos;s enough to go live.</p>
+                <p className={flow.publishSub}>Photos, tags and screening questions can be added while it&apos;s running.</p>
+              </div>
+              <button type="button" className={flow.outlineBtn} onClick={() => goToStep(1)}>← Back</button>
+              <button type="submit" className={flow.primaryBtn} disabled={loading || loadingJobData}>
+                {loading ? 'Posting…' : 'Post this job'}
+              </button>
+            </div>
+          )}
+
+          {(!stepped || step === 3) && (<>
+          {stepped && (
+            <div>
+              <h3 className={flow.screenTitle}>Your ad is live. Three things that make it work harder.</h3>
+              <p className={flow.screenSub}>All optional. You can close this and come back from Manage Job Ads whenever.</p>
+            </div>
+          )}
+          {/* Job Banner Image */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              <span className={styles.sectionIcon}>🖼️</span>
+              Job Banner Image
+            </h2>
+            {stepped && step === 3 && (
+              dismissed.has('photo') ? (
+                <p className={flow.dismissedNote}>
+                  A photo — not now.
+                  <button type="button" className={flow.undoLink} onClick={() => setDismissed(prev => { const n = new Set(prev); n.delete('photo'); return n })}>Change my mind</button>
+                </p>
+              ) : (
+                <button type="button" className={flow.notNow} style={{ marginBottom: '0.75rem' }} onClick={() => dismiss('photo')}>Not now</button>
+              )
+            )}
+            <p className={styles.helperText} style={{ marginBottom: '0.75rem' }}>
+              Landscape cover photo shown on your job card and detail page. Optional — if you skip it, we show a branded Thrive cover instead.
+            </p>
+
+            {/* Photo-quality tips — candidates notice the image first, so meet
+                employers with guidance right where they choose the photo. */}
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '0.75rem 0.9rem', marginBottom: '0.9rem' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#92400e', marginBottom: '0.4rem' }}>
+                📸 A great photo gets more applicants
+              </div>
+              <ul style={{ margin: 0, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                {PHOTO_TIPS.map((tip, i) => (
+                  <li key={i} style={{ fontSize: '0.8rem', lineHeight: 1.45, color: '#78350f' }}>{tip}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className={styles.formGroup}>
+              <div className={styles.uploadArea}>
+                <input
+                  type="file"
+                  id="bannerUpload"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleBannerUpload}
+                  disabled={bannerUploading}
+                  className={styles.fileInput}
+                />
+                <label htmlFor="bannerUpload" className={styles.uploadLabel}>
+                  {bannerUploading ? (
+                    <span>Processing image...</span>
+                  ) : (
+                    <>
+                      <span className={styles.uploadIcon}>📁</span>
+                      <span>Choose a banner image</span>
+                      <span className={styles.uploadHint}>JPEG, PNG, WebP or GIF — landscape, ideally 1200×825px. We crop to fit.</span>
+                    </>
+                  )}
+                </label>
+              </div>
+              {bannerFileName && !bannerUploadError && (
+                <p className={styles.logoSuccess}>Uploaded: {bannerFileName}</p>
+              )}
+              {bannerUploadError && (
+                <p className={styles.uploadError}>{bannerUploadError}</p>
+              )}
+            </div>
+
+            {formData.companyBanner && (
+              <div className={styles.logoPreviewContainer}>
+                <div className={styles.logoPreview} style={{ width: '100%', maxWidth: '400px', aspectRatio: '16 / 11' }}>
+                  <img
+                    src={formData.companyBanner}
+                    alt="Banner preview"
+                    className={styles.logoPreviewImage}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                </div>
+                <div className={styles.logoPreviewActions}>
+                  <button
+                    type="button"
+                    onClick={() => { setFormData(prev => ({ ...prev, companyBanner: '' })); setBannerFileName('') }}
+                    className={styles.clearLogoBtn}
+                  >
+                    ✕ Remove Banner
+                  </button>
+                </div>
+              </div>
+            )}
+            {!formData.companyBanner && (
+              <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: '0.5rem 0 0', lineHeight: 1.5 }}>
+                💡 A cover photo and a few lines of description make your job stand out — candidates see them first. Both are optional (we&apos;ll use a tasteful default image if you skip the photo), but they really help.
+              </p>
+            )}
+          </div>
 
           {/* Requirements & Details */}
           <div className={styles.section}>
@@ -1691,6 +1962,16 @@ function PostJobContent() {
               <span className={styles.sectionIcon}>❓</span>
               Pre-screening Questions (optional)
             </h2>
+            {stepped && step === 3 && (
+              dismissed.has('screening') ? (
+                <p className={flow.dismissedNote}>
+                  A screening question — not now.
+                  <button type="button" className={flow.undoLink} onClick={() => setDismissed(prev => { const n = new Set(prev); n.delete('screening'); return n })}>Change my mind</button>
+                </p>
+              ) : (
+                <button type="button" className={flow.notNow} style={{ marginBottom: '0.75rem' }} onClick={() => dismiss('screening')}>Not now</button>
+              )
+            )}
             {/* THE EXAMPLE IS ABOUT THE CRAFT, DELIBERATELY. The form had no
                 suggested question at all, and the obvious one to reach for is
                 right-to-work — which is the line we drew when those tags came
@@ -1759,6 +2040,16 @@ function PostJobContent() {
               <span className={styles.sectionIcon}>🏷️</span>
               Job Tags
             </h2>
+            {stepped && step === 3 && (
+              dismissed.has('tags') ? (
+                <p className={flow.dismissedNote}>
+                  Tags — not now.
+                  <button type="button" className={flow.undoLink} onClick={() => setDismissed(prev => { const n = new Set(prev); n.delete('tags'); return n })}>Change my mind</button>
+                </p>
+              ) : (
+                <button type="button" className={flow.notNow} style={{ marginBottom: '0.75rem' }} onClick={() => dismiss('tags')}>Not now</button>
+              )
+            )}
             <p className={styles.helperText} style={{ marginBottom: '1rem' }}>
               Select tags that apply to this role. These help candidates find your job.
             </p>
@@ -1871,8 +2162,19 @@ function PostJobContent() {
               </div>
             </div>
           )}
+          {stepped && step === 3 && (
+            <div className={flow.stepFooter}>
+              <p className={flow.stepFooterNote}>Reference and expiry date are on the ad&apos;s settings — set automatically if you leave them.</p>
+              <button type="button" className={flow.navyBtn} onClick={handleFinishExtras} disabled={loading}>
+                {loading ? 'Saving…' : 'Done — view my ad'}
+              </button>
+            </div>
+          )}
+          </>)}
 
-          {/* Submit */}
+          {/* Submit — the single-button path, kept for EDIT MODE. The three-step
+              flow publishes from the end of step 2 instead. */}
+          {!stepped && (
           <div className={styles.submitGroup}>
             <button
               type="button"
@@ -1888,6 +2190,8 @@ function PostJobContent() {
                   ? (isEditMode ? 'Updated!' : 'Posted!')
                   : (isEditMode ? '⬡ Update Job' : '⬡ Post Job')}
             </button>
+          </div>
+          )}
           </div>
         </form>
       </div>
