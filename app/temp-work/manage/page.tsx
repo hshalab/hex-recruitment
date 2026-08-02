@@ -167,7 +167,20 @@ export default function ManageTempWorkPage() {
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: C.ink }}>Your temp work</h1>
           <Link href="/temp-work/post" style={{ padding: '9px 16px', background: C.yellow, color: C.ink, fontWeight: 700, fontSize: '0.9rem', borderRadius: 9, textDecoration: 'none' }}>+ Post</Link>
         </div>
-        <p style={{ color: C.sub, fontSize: '0.9rem', marginBottom: '1.5rem' }}>Who’s available for each shift, and what’s been asked. The <strong>available</strong> list is the one to work from — comments are usually questions. Reply and they’ll be told straight away.</p>
+        {/* TWO STATES, TWO SENTENCES.
+            One line ran here regardless, explaining how to work a list of
+            people — the available list, the comments, replying. Good copy for
+            someone with three shifts running, and the wrong sentence entirely
+            for someone with none, which is what an employer's FIRST view of
+            this page always is.
+
+            Fourth instance of the same fault this week: a sentence describing a
+            state the page isn't in. */}
+        <p style={{ color: C.sub, fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+          {posts.length === 0
+            ? <>Post a shift and people put their names down here. You’ll see who’s available and be able to answer their questions, without handing out your number.</>
+            : <>Who’s available for each shift, and what’s been asked. The <strong>available</strong> list is the one to work from — comments are usually questions. Reply and they’ll be told straight away.</>}
+        </p>
 
         {posts.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#94a3b8', padding: '2.5rem 1rem' }}>
