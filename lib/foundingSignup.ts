@@ -8,6 +8,42 @@ import { sendEmail } from '@/lib/email'
 import { emailLayout, ctaButton } from '@/emails/layout'
 
 /**
+ * Sets approval_status ONLY when it has not already been decided.
+ *
+ * Why this exists, and why `ignoreDuplicates` alone is not the whole fix.
+ *
+ * The upserts below used to run with a plain `{ onConflict: 'user_id' }`, which
+ * REWRITES the row every time. Since provisioning runs on every trip through
+ * /auth/confirm — email confirmation, a magic link, a password reset — an
+ * employer who had been manually approved was silently returned to 'pending' and
+ * bounced to /account-under-review with no explanation. The comment above the
+ * upsert already claimed ignoreDuplicates was in use; it wasn't.
+ *
+ * But ignoreDuplicates on its own opens a hole in the other direction. The PAID
+ * signup form writes an employer_profiles row at submit time WITHOUT an
+ * approval_status. If provisioning then declines to touch the existing row, that
+ * row keeps approval_status NULL — and app/employer/layout.tsx treats NULL as
+ * "legacy, allow". A freemail employer would sail past the manual review they
+ * are supposed to be held for.
+ *
+ * So: don't clobber a decision that exists, and do settle one that doesn't.
+ * `is null` in the WHERE clause is the whole guarantee — it can only ever move a
+ * row from undecided to decided, never between two decisions.
+ */
+async function settleApprovalStatus(
+  admin: SupabaseClient,
+  userId: string,
+  status: 'approved' | 'pending',
+): Promise<void> {
+  const { error } = await admin
+    .from('employer_profiles')
+    .update({ approval_status: status })
+    .eq('user_id', userId)
+    .is('approval_status', null)
+  if (error) console.error('[foundingSignup] settleApprovalStatus failed', error)
+}
+
+/**
  * Single source of truth for what happens at email-confirmation time
  * for a brand-new employer. Called from:
  *   - lib/authCallback.ts (email-link signup flow via /auth/confirm)
@@ -90,8 +126,9 @@ export async function provisionFoundingEmployer({
 
   if (classification === 'business') {
     // Approved on the spot. Write the profile (marked approved) and the
-    // founding subscription row. Both upserts use ignoreDuplicates so a
-    // returning confirmed user doesn't clobber edited fields.
+    // founding subscription row. BOTH upserts use ignoreDuplicates so a
+    // returning confirmed user doesn't clobber edited fields — see
+    // settleApprovalStatus below for why that alone isn't enough.
     await admin
       .from('employer_profiles')
       .upsert(
@@ -103,8 +140,9 @@ export async function provisionFoundingEmployer({
           approval_status: 'approved',
           ...attr,
         },
-        { onConflict: 'user_id' },
+        { onConflict: 'user_id', ignoreDuplicates: true },
       )
+    await settleApprovalStatus(admin, userId, 'approved')
 
     await admin.from('employer_subscriptions').upsert(
       {
@@ -131,8 +169,9 @@ export async function provisionFoundingEmployer({
         approval_status: 'pending',
         ...attr,
       },
-      { onConflict: 'user_id' },
+      { onConflict: 'user_id', ignoreDuplicates: true },
     )
+  await settleApprovalStatus(admin, userId, 'pending')
 
   // Approval email — result captured and returned. Email failure does
   // NOT block the founding-row/profile write: the user is genuinely

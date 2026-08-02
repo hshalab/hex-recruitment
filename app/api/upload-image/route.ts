@@ -14,6 +14,9 @@ const MIN_HEIGHT = 300
 // preview reflects the true result. 1200px wide keeps it crisp on desktop/retina.
 const TARGET_WIDTH = 1200
 const TARGET_HEIGHT = 825
+// Company logos: square, contained on white, matching what the old client-side
+// canvas produced so nothing changes visually when the storage moves.
+const LOGO_SIZE = 200
 const WEBP_QUALITY = 80
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
@@ -30,7 +33,9 @@ export async function POST(request: NextRequest) {
     // Optional target bucket (allowlisted). Defaults to job banners so the
     // existing post-job flow is unchanged; the Temp Work composer passes 'temp-posts'.
     const bucketParam = (formData.get('bucket') as string) || ''
-    const targetBucket = bucketParam === 'temp-posts' ? 'temp-posts' : BANNER_BUCKET
+    const targetBucket = bucketParam === 'temp-posts' ? 'temp-posts'
+      : bucketParam === 'company-logos' ? 'company-logos'
+      : BANNER_BUCKET
 
     if (!file) {
       return NextResponse.json(
@@ -40,6 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     const isTempPost = targetBucket === 'temp-posts'
+    const isLogo = targetBucket === 'company-logos'
     // Temp Work accepts any common photo (incl. phone HEIC); banners stay strict.
     const allowedTypes = isTempPost
       ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif']
@@ -81,8 +87,9 @@ export async function POST(request: NextRequest) {
 
     // Banners must meet a minimum so the fixed job-card slot stays crisp. Temp
     // Work posts have no size requirement — the person posting a Saturday shift
-    // is on a phone and should not meet a dimensions error.
-    if (!isTempPost && (srcW < MIN_WIDTH || srcH < MIN_HEIGHT)) {
+    // is on a phone and should not meet a dimensions error. Nor do logos: a small
+    // square logo is a perfectly good logo.
+    if (!isTempPost && !isLogo && (srcW < MIN_WIDTH || srcH < MIN_HEIGHT)) {
       return NextResponse.json(
         {
           error: `Image is too small (${srcW}x${srcH}px). Minimum size is ${MIN_WIDTH}x${MIN_HEIGHT}px — smaller images will look blurry.`
@@ -107,14 +114,27 @@ export async function POST(request: NextRequest) {
     // withoutEnlargement, which skips the crop when the source is smaller than
     // the target — guarantees the stored image is exactly 16:11, so the card
     // shows it uncropped and the composer's preview is an exact match.
-    const fitW = Math.min(TARGET_WIDTH, srcW, Math.floor((srcH * TARGET_WIDTH) / TARGET_HEIGHT))
-    const outW = Math.max(1, fitW)
-    const outH = Math.max(1, Math.round((outW * TARGET_HEIGHT) / TARGET_WIDTH))
-    const processedBuffer = await sharp(buffer)
-      .rotate() // honour EXIF orientation from phone photos
-      .resize(outW, outH, { fit: 'cover', position: 'attention' })
-      .webp({ quality: WEBP_QUALITY })
-      .toBuffer()
+    let processedBuffer: Buffer
+    if (isLogo) {
+      // A LOGO IS NOT A BANNER. Cropping one to 16:11 would cut the top and
+      // bottom off a square mark. Contain it in a 200x200 square on white —
+      // deliberately the same geometry the old canvas code produced, so existing
+      // logos are unchanged in appearance and only their storage moves.
+      processedBuffer = await sharp(buffer)
+        .rotate()
+        .resize(LOGO_SIZE, LOGO_SIZE, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
+        .webp({ quality: WEBP_QUALITY })
+        .toBuffer()
+    } else {
+      const fitW = Math.min(TARGET_WIDTH, srcW, Math.floor((srcH * TARGET_WIDTH) / TARGET_HEIGHT))
+      const outW = Math.max(1, fitW)
+      const outH = Math.max(1, Math.round((outW * TARGET_HEIGHT) / TARGET_WIDTH))
+      processedBuffer = await sharp(buffer)
+        .rotate() // honour EXIF orientation from phone photos
+        .resize(outW, outH, { fit: 'cover', position: 'attention' })
+        .webp({ quality: WEBP_QUALITY })
+        .toBuffer()
+    }
 
     // Store the processed banner as a file in the public 'job-banners' bucket and
     // return its public URL. Falls back to an inline base64 data URL if Storage

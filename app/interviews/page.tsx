@@ -430,15 +430,39 @@ export default function InterviewsPage() {
         )}
 
         {/* Upcoming Interviews */}
+        {/* TWO DIFFERENT EMPTINESSES, AND THEY ARE NOT THE SAME SENTENCE.
+            This block fired on `upcoming` alone, so an employer with a dozen
+            finished interviews read "No interviews scheduled" sitting directly
+            on top of "Past Interviews (12)" — a sentence describing a state the
+            page is not in. Nothing was hidden; the wording was just wrong.
+
+            Nothing yet     -> explain what the page is for, and offer the way
+                               to start: the job ads.
+            None coming up  -> say the interviews happened. The Manage Job Ads
+                               link is dropped here on purpose; someone who has
+                               been interviewing does not need to be told where
+                               jobs live, and the past list below is the useful
+                               thing to look at. */}
         {upcoming.length === 0 ? (
-          <div className={styles.emptyState}>
-            <span className={styles.emptyIcon}>📅</span>
-            <h2 className={styles.emptyTitle}>No interviews scheduled</h2>
-            <p className={styles.emptyText}>
-              When you schedule interviews with candidates they will appear here.
-            </p>
-            <Link href="/my-jobs" className={styles.emptyLink}>Manage Job Ads</Link>
-          </div>
+          past.length > 0 ? (
+            <div className={styles.emptyState}>
+              <span className={styles.emptyIcon}>📅</span>
+              <h2 className={styles.emptyTitle}>Nothing coming up</h2>
+              <p className={styles.emptyText}>
+                Your {past.length === 1 ? 'interview has' : `${past.length} interviews have`} all
+                taken place. Anything you schedule next will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              <span className={styles.emptyIcon}>📅</span>
+              <h2 className={styles.emptyTitle}>No interviews yet</h2>
+              <p className={styles.emptyText}>
+                When you schedule interviews with candidates they will appear here.
+              </p>
+              <Link href="/my-jobs" className={styles.emptyLink}>Manage Job Ads</Link>
+            </div>
+          )
         ) : filteredUpcoming.length === 0 ? (
           <div className={styles.emptyState}>
             <span className={styles.emptyIcon}>📅</span>

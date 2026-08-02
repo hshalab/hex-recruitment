@@ -243,9 +243,14 @@ export async function handleAuthCallback(
     // hit (not just !existingRole) because email signups stamp the role
     // into user_metadata at signUp time, so the user reaches /auth/confirm
     // with existingRole already set and the new-user gate skips. The
-    // provisioning function is idempotent (upsert with ignoreDuplicates
-    // on the subscription, onConflict on the profile), so re-runs on a
+    // provisioning function is idempotent — every upsert uses
+    // ignoreDuplicates, and approval_status is settled through a guarded
+    // update that only fires when it is still NULL. So re-runs on a
     // returning user are no-ops.
+    //
+    // This claimed idempotency BEFORE it was true: the profile upsert used a
+    // bare onConflict, which rewrites, so every sign-in reset approval_status
+    // and bounced an approved employer to /account-under-review.
     // Under FREE_FOUNDING_MODE this is the FIRST and ONLY place a founding
     // row is written — form submit no longer creates one. The
     // classification stamped in user_metadata by /api/auth/employer-signup

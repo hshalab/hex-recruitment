@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "clean": "rm -rf .next node_modules/.cache || rmdir /s /q .next node_modules\\.cache 2>nul || echo Cache cleared"
+    "clean": "rm -rf .next node_modules/.cache || rmdir /s /q .next node_modules\\.cache 2>nul || echo Cache cleared",
+    "migrations:check": "node scripts/check-migrations.js",
+    "migrations:capture": "node scripts/capture-migrations.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",

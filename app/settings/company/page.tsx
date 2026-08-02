@@ -402,31 +402,36 @@ export default function CompanySettingsPage() {
     setLogoUploadError('')
 
     try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => {
-          const img = new window.Image()
-          img.onload = () => {
-            const canvas = document.createElement('canvas')
-            canvas.width = 200
-            canvas.height = 200
-            const ctx = canvas.getContext('2d')!
-            ctx.fillStyle = '#ffffff'
-            ctx.fillRect(0, 0, 200, 200)
-            const scale = Math.min(200 / img.width, 200 / img.height)
-            const w = img.width * scale
-            const h = img.height * scale
-            ctx.drawImage(img, (200 - w) / 2, (200 - h) / 2, w, h)
-            resolve(canvas.toDataURL('image/png'))
-          }
-          img.onerror = reject
-          img.src = reader.result as string
-        }
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      })
+      // THE LOGO IS A FILE, NOT A STRING.
+      //
+      // This used to draw the image onto a canvas and keep canvas.toDataURL() —
+      // roughly 34KB of base64 — which was then stored in the database AND
+      // written into user_metadata, where it rode inside the auth cookie on
+      // every request until Vercel refused them. It was the one image in the
+      // product that never went to Storage.
+      //
+      // Same endpoint as banners and temp posts now, with the same 200x200
+      // contain-on-white geometry the canvas produced, so existing logos look
+      // identical and only where they live has changed.
+      const fd = new FormData()
+      fd.append('image', file)
+      fd.append('bucket', 'company-logos')
+      const res = await fetch('/api/upload-image', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (!res.ok) {
+        setLogoUploadError(json.error || 'Failed to upload logo.')
+        return
+      }
+      if (!json.storedToBucket) {
+        // The route falls back to a base64 data URL when Storage is unavailable.
+        // For a banner that is a reasonable degradation; for the logo it is the
+        // exact failure we just fixed, so refuse it rather than quietly
+        // reintroducing a 34KB string.
+        setLogoUploadError('Could not reach image storage. Please try again in a moment.')
+        return
+      }
 
-      setFormData(prev => ({ ...prev, logoUrl: dataUrl }))
+      setFormData(prev => ({ ...prev, logoUrl: json.url }))
       setLogoFileName(file.name)
       setIsDirty(true)
     } catch {

@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase'
 import { getSessionWithRetry } from '@/lib/getSessionWithRetry'
 import { Candidate, devMockCandidates } from '@/lib/mockCandidates'
 import { DEV_MODE } from '@/lib/mockAuth'
+import { WORK_TYPES } from '@/lib/workTypes'
 import { supabaseProfileToCandidate } from '@/lib/types'
 import {
   MapPin, Clock, Briefcase, GraduationCap, User, Wrench,
@@ -43,7 +44,10 @@ const emptyFilters = (): Filters => ({
 const candidateFilterSections = [
   { key: 'availability' as const, title: 'Availability', options: ['Available immediately', '2 weeks notice', '1 month notice', 'Flexible'] },
   { key: 'experienceLevel' as const, title: 'Experience Level', options: ['No experience', 'Entry level (0-2 years)', 'Mid level (3-5 years)', 'Senior (6-10 years)', 'Executive (10+ years)'] },
-  { key: 'workPreference' as const, title: 'Work Preference', options: ['Full-time', 'Part-time', 'Contract', 'Temporary', 'Freelance'] },
+  // Filters CANDIDATES on their stated preferredJobTypes, so it has to speak the
+  // same language the profile form offers — otherwise an employer filters on
+  // Contract and Freelance, which no candidate can pick any more.
+  { key: 'workPreference' as const, title: 'Work Preference', options: [...WORK_TYPES] },
   { key: 'skills' as const, title: 'Key Skills', options: ['Right to Work', 'NI Number', 'Food Hygiene', 'First Aid', 'DBS Checked', 'Driving Licence', 'Language Skills', 'Management Experience'] },
 ]
 

@@ -1,18 +1,23 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
 import { categories, getCategoryLabel } from '@/lib/categories'
-import { ukCities } from '@/lib/ukCities'
+import PreferredAreasPicker from '@/components/PreferredAreasPicker'
+import { describePreferredAreas } from '@/lib/areas'
 import { ALL_TAGS, TAG_CATEGORIES, getTagsByCategory, type TagCategory } from '@/lib/jobTags'
 import { type JobAlert, supabaseRowToJobAlert } from '@/lib/jobAlerts'
+import { EMPLOYMENT_TYPES, CONTRACT_TYPES } from '@/lib/workTypes'
 import styles from './page.module.css'
 
-const employmentTypes = ['Full-time', 'Part-time', 'Flexible']
-const contractTypes = ['Permanent', 'Temporary', 'Fixed-term']
+// These two were right all along — they matched the board while the profile
+// form didn't. They now come from the shared module so they cannot drift apart
+// from it again.
+const employmentTypes = EMPLOYMENT_TYPES
+const contractTypes = CONTRACT_TYPES
 
 const emptyForm = {
   alert_name: '',
@@ -36,11 +41,8 @@ export default function JobAlertsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingAlert, setEditingAlert] = useState<JobAlert | null>(null)
   const [formData, setFormData] = useState({ ...emptyForm, sectors: new Set<string>(), locations: new Set<string>(), job_types: new Set<string>(), tags: new Set<string>() })
-  const [locationSearch, setLocationSearch] = useState('')
-  const [showLocationDropdown, setShowLocationDropdown] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  const locationRef = useRef<HTMLDivElement>(null)
 
   // Auth check
   useEffect(() => {
@@ -83,25 +85,6 @@ export default function JobAlertsPage() {
     fetchAlerts()
   }, [user])
 
-  // Close location dropdown on outside click
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (locationRef.current && !locationRef.current.contains(e.target as Node)) {
-        setShowLocationDropdown(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
-  // Location search filter
-  const filteredCities = locationSearch.length >= 2
-    ? ukCities.filter(city =>
-        city.toLowerCase().includes(locationSearch.toLowerCase()) &&
-        !formData.locations.has(city)
-      ).slice(0, 15)
-    : []
-
   // Toggle a value in a Set within formData
   const toggleSetValue = (field: 'sectors' | 'locations' | 'job_types' | 'tags', value: string) => {
     setFormData(prev => {
@@ -112,24 +95,6 @@ export default function JobAlertsPage() {
         newSet.add(value)
       }
       return { ...prev, [field]: newSet }
-    })
-  }
-
-  const addLocation = (city: string) => {
-    setFormData(prev => {
-      const newSet = new Set(prev.locations)
-      newSet.add(city)
-      return { ...prev, locations: newSet }
-    })
-    setLocationSearch('')
-    setShowLocationDropdown(false)
-  }
-
-  const removeLocation = (city: string) => {
-    setFormData(prev => {
-      const newSet = new Set(prev.locations)
-      newSet.delete(city)
-      return { ...prev, locations: newSet }
     })
   }
 
@@ -255,7 +220,9 @@ export default function JobAlertsPage() {
   const getCriteriaSummary = (alert: JobAlert): string[] => {
     const chips: string[] = []
     alert.sectors.forEach(s => chips.push(getCategoryLabel(s)))
-    alert.locations.forEach(l => chips.push(l))
+    // Stored as area tokens now, so humanise them — a chip reading
+    // "region:london" is the sort of thing that ships when nobody looks.
+    describePreferredAreas(alert.locations).forEach(l => chips.push(l))
     if (alert.min_salary || alert.max_salary) {
       const min = alert.min_salary ? `${(alert.min_salary / 1000).toFixed(0)}k` : '0'
       const max = alert.max_salary ? `${(alert.max_salary / 1000).toFixed(0)}k` : '+'
@@ -357,53 +324,26 @@ export default function JobAlertsPage() {
               </div>
             </div>
 
-            {/* Locations */}
+            {/* Locations — THE SAME PICKER THE PROFILE USES.
+                This was a flat UK city list matched by substring against
+                job.location, while the profile stored area tokens matched
+                through lib/areas with the county-to-region rule. Two location
+                vocabularies on one side of the product, so "London" meant a
+                different thing depending on which form a candidate had filled
+                in. Now there is one.
+
+                The cost, taken knowingly: area tokens are region/county
+                granularity, so "Brighton specifically" is no longer expressible.
+                Nobody is downgraded by that, because job_alerts had zero rows —
+                nobody HAD that precision. */}
             <div className={styles.formGroup}>
-              <label className={styles.label}>Locations</label>
-              {formData.locations.size > 0 && (
-                <div className={styles.locationChips}>
-                  {Array.from(formData.locations).map(loc => (
-                    <span key={loc} className={styles.locationChip}>
-                      {loc}
-                      <button
-                        type="button"
-                        className={styles.locationChipRemove}
-                        onClick={() => removeLocation(loc)}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              <div className={styles.locationSearch} ref={locationRef}>
-                <input
-                  type="text"
-                  className={styles.input}
-                  placeholder="Search UK cities..."
-                  value={locationSearch}
-                  onChange={e => {
-                    setLocationSearch(e.target.value)
-                    setShowLocationDropdown(e.target.value.length >= 2)
-                  }}
-                  onFocus={() => {
-                    if (locationSearch.length >= 2) setShowLocationDropdown(true)
-                  }}
-                />
-                {showLocationDropdown && filteredCities.length > 0 && (
-                  <div className={styles.locationDropdown}>
-                    {filteredCities.map(city => (
-                      <div
-                        key={city}
-                        className={styles.locationOption}
-                        onClick={() => addLocation(city)}
-                      >
-                        {city}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <PreferredAreasPicker
+                value={Array.from(formData.locations)}
+                onChange={areas =>
+                  setFormData(prev => ({ ...prev, locations: new Set(areas) }))
+                }
+                hint="Alerts will only include jobs in the areas you pick. Leave it empty to hear about everywhere."
+              />
             </div>
 
             {/* Salary Range */}

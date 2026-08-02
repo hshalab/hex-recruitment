@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { DEV_MODE } from '@/lib/mockAuth'
 import { calculateTrialExpiry } from '@/lib/trialUtils'
 import { popularNationalities, allNationalities } from '@/lib/nationalities'
+import { WORK_TYPES } from '@/lib/workTypes'
 import DatePicker from './DatePicker'
 import PostcodeLookup, { type AddressData } from './PostcodeLookup'
 import PasswordInput from './PasswordInput'
@@ -1838,7 +1839,7 @@ export default function JobSeekerProfileForm({ mode, existingData, userId }: Job
       <div className={styles.formGroup}>
         <label className={styles.label}>Preferred Job Types</label>
         <div className={styles.skillsGrid}>
-          {['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'].map(type => (
+          {WORK_TYPES.map(type => (
             <button
               key={type}
               type="button"

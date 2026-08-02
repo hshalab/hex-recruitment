@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { resolveEmployerEmail } from '@/lib/employerEmail'
-import { tempInterestEmail, tempCommentEmail } from '@/emails/temp-shift'
+import { tempInterestEmail, tempCommentEmail, tempReplyEmail } from '@/emails/temp-shift'
 import { formatWhen, type TempPost } from '@/lib/tempWork'
 
 /**
@@ -35,8 +35,8 @@ export async function POST(req: Request) {
     }
 
     const { kind, postId, actorName, body: commentBody, note } = await req.json()
-    if (kind !== 'interest' && kind !== 'comment') {
-      return NextResponse.json({ error: 'kind must be interest or comment' }, { status: 400 })
+    if (kind !== 'interest' && kind !== 'comment' && kind !== 'reply') {
+      return NextResponse.json({ error: 'kind must be interest, comment or reply' }, { status: 400 })
     }
     if (!postId) return NextResponse.json({ error: 'postId required' }, { status: 400 })
 
@@ -48,6 +48,49 @@ export async function POST(req: Request) {
       .eq('id', postId)
       .maybeSingle()
     if (!post) return NextResponse.json({ error: 'post not found' }, { status: 404 })
+
+    // A REPLY GOES THE OTHER WAY — to the candidates, not the employer.
+    //
+    // The in-app notification has always gone both directions; the email only
+    // went one. So a chef who wasn't logged in never learned the agency had
+    // answered them, which is the exact person this feature exists for.
+    //
+    // Recipients are the same set the database trigger notifies: everyone who
+    // commented on the post or registered interest, minus the owner. Resolved
+    // server-side from the post id — the client never names who gets an email.
+    if (kind === 'reply') {
+      const [{ data: commenters }, { data: interested }] = await Promise.all([
+        admin.from('temp_post_comments').select('user_id').eq('post_id', postId),
+        admin.from('temp_interest').select('candidate_user_id').eq('temp_post_id', postId),
+      ])
+      const ids = Array.from(new Set([
+        ...((commenters as { user_id: string }[] | null) || []).map(r => r.user_id),
+        ...((interested as { candidate_user_id: string }[] | null) || []).map(r => r.candidate_user_id),
+      ])).filter(id => id && id !== post.employer_id)
+
+      if (!ids.length) return NextResponse.json({ success: true, emailed: 0, reason: 'nobody to tell' })
+
+      const { subject, html } = tempReplyEmail(
+        (actorName || '').trim() || 'The employer',
+        post.title,
+        String(commentBody || '').slice(0, 500),
+        post.id,
+      )
+
+      let sent = 0
+      const failures: string[] = []
+      for (const id of ids) {
+        const { data } = await admin.auth.admin.getUserById(id)
+        const addr = data?.user?.email
+        if (!addr) { failures.push(`${id}: no address`); continue }
+        const r = await sendEmail(addr, subject, html)
+        if (r.success) sent++
+        else failures.push(`${id}: ${r.error}`)
+      }
+      // Report what happened rather than a bare success — a reply nobody
+      // received is the failure this whole change is about.
+      return NextResponse.json({ success: true, emailed: sent, of: ids.length, failures })
+    }
 
     const to = await resolveEmployerEmail(post.employer_id)
     if (!to) {
