@@ -337,6 +337,14 @@ export default function JobAlertsPage() {
                 Nobody is downgraded by that, because job_alerts had zero rows —
                 nobody HAD that precision. */}
             <div className={styles.formGroup}>
+              {/* THE HEADING IS THE FIX, not the hint's position.
+                  The hint read orphaned here because this form had no label
+                  above the picker — I dropped the old "Locations" one when the
+                  city search went. The profile has always had its own
+                  ("Where are you willing to work?"), which is why the identical
+                  component reads fine there. Restoring the heading fixes both
+                  screens without moving anything inside the shared component. */}
+              <label className={styles.label}>Locations</label>
               <PreferredAreasPicker
                 value={Array.from(formData.locations)}
                 onChange={areas =>
