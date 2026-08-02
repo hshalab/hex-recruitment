@@ -60,7 +60,29 @@ ${data.additionalContext ? `Additional context: ${data.additionalContext}` : ''}
 
       systemPrompt = isEnhance
         ? `You are a UK recruitment copywriter. The user will give you rough notes about a job. Write a compelling, professional job advertisement with these sections: About the Role, Key Responsibilities, What We're Looking For, What We Offer. Be concise and engaging. Respond ONLY with a valid JSON object in this exact format, no markdown, no extra text: {"description": "full html formatted job ad here"}`
-        : `You are an expert UK recruitment copywriter covering all job sectors. Write a compelling, professional UK job advertisement. Return ONLY a valid JSON object with these fields: title (string), description (string, HTML formatted with <p> and <ul>/<li> tags), requirements (string, HTML formatted), benefits (string, HTML formatted or empty string). No markdown fences, no extra text outside the JSON object.`
+        // GENERATE returns the THREE FIELDS THE FORM ACTUALLY HAS, not the old
+        // title/description/requirements/benefits shape.
+        //
+        // IT MUST NOT RETURN A TITLE. By the time this runs the employer has
+        // already typed one, and overwriting it would be a small betrayal on
+        // the screen where trust matters most — she asked for help with the
+        // words, not with the decision she had already made. The title is fed
+        // IN as context instead: a generator that knows the role is a sous chef
+        // writes better copy than one inferring it from a sentence.
+        //
+        // Plain text, not HTML: these three land in <textarea>s she edits by
+        // hand, and HTML tags in a textarea are noise she has to delete.
+        : `You are a UK hospitality recruitment copywriter. The employer will give you one sentence about a role, plus the structured details they have already entered. Write the three parts of a job advert in PLAIN TEXT (no HTML, no markdown, no bullet characters).
+
+Return ONLY a valid JSON object with exactly these three fields:
+  dayToDay        — what the person will actually be doing day to day. 2-4 sentences, concrete and specific to this kitchen or venue.
+  experienceNeeded — the experience and skills genuinely needed. 2-3 sentences. Do not invent qualifications the employer did not mention.
+  whatWeOffer     — what the employer offers: pay, hours, progression, the team, anything stated. 2-3 sentences.
+
+Rules:
+- Do NOT return a title, a company name, or a salary figure the employer did not give you.
+- Do NOT invent benefits, certifications or requirements. If the sentence is thin, write less rather than padding.
+- Write in plain British English, second person about the candidate ("You'll be running…"). No bullet lists, no headings, no markdown fences.`
 
       if (isEnhance) {
         userPrompt = `Write a job ad from these notes:
@@ -70,17 +92,20 @@ Salary: ${data.salaryMin ? `£${data.salaryMin}${data.salaryMax ? ` - £${data.s
 Employment Type: ${data.employmentType || 'Full-time'}
 ${data.description || ''}`
       } else {
-        userPrompt = `Write a job advertisement and return as JSON:
+        userPrompt = `The employer described the role in their own words:
+"${data.sentence || data.bulletPoints || ''}"
+
+Details they have already entered — treat these as facts, do not contradict or repeat them verbatim:
 Job Title: ${data.title || 'Not specified'}
 Company: ${data.company || 'Not specified'}
 Location: ${data.location || 'Not specified'}
-Salary: ${data.salaryMin ? `£${data.salaryMin}${data.salaryMax ? ` - £${data.salaryMax}` : ''} per ${data.salaryPeriod || 'hour'}` : 'Competitive'}
-Employment Type: ${data.employmentType || 'Full-time'}
-Work Type: ${data.workLocationType || 'In person'}
+Pay: ${data.salaryMin ? `£${data.salaryMin}${data.salaryMax && data.salaryMax !== data.salaryMin ? ` - £${data.salaryMax}` : ''} per ${data.salaryPeriod || 'hour'}` : 'Not stated'}
+Employment Type: ${data.employmentType || 'Not specified'}
+Contract: ${data.contractType || 'Not specified'}
 Category: ${data.category || 'Not specified'}
+${data.companyDescription ? `About the company: ${data.companyDescription}` : ''}
 
-${data.bulletPoints ? `Key points to include:\n${data.bulletPoints}` : ''}
-${data.companyDescription ? `About the company: ${data.companyDescription}` : ''}`
+Return the three fields as JSON.`
       }
 
       const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
