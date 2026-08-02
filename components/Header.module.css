@@ -769,3 +769,16 @@
     font-size: 0.5rem;
   }
 }
+
+/* THE LOCKUP replaces the old mark + <span>Thrive</span> pair. Height-driven so
+   it scales like the text it replaced; width auto so the aspect never distorts. */
+.logoLockup {
+  height: 42px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .logoLockup { height: 34px; }
+}
