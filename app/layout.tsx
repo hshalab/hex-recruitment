@@ -7,7 +7,8 @@ import { MessagesProvider } from '@/lib/MessagesContext'
 import type { Metadata } from 'next'
 import { Inter, Dancing_Script, Fraunces } from 'next/font/google'
 import { Providers } from './providers'
-import { EMPLOYER_SUBSCRIPTION_PRICE, trialPhraseFormal } from '@/lib/trialUtils'
+import { foundingPhraseShort } from '@/lib/trialUtils'
+import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
 import { BRAND_FULL } from '@/lib/constants/brand'
 import './globals.css'
 
@@ -52,7 +53,17 @@ export const metadata: Metadata = {
     default: BRAND_FULL,
     template: '%s | Thrive',
   },
-  description: `Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations. £${EMPLOYER_SUBSCRIPTION_PRICE}/month, ${trialPhraseFormal()}.`,
+  // NO PRICE. The tier structure isn't decided, so any figure here is one we
+  // would have to walk back — and walking a price back is worse than never
+  // naming one, especially to the founding employers signing up this month.
+  // The founding offer is different: it is an offer actually being run and can
+  // be honoured, so it is the only money claim allowed. Same rule everywhere;
+  // see CLAUDE.md.
+  //
+  // This string is not just the homepage. It is the ROOT description, so it is
+  // also served on /waitlist and on every 404 — including /pricing,
+  // /for-employers and /employers, which do not exist as routes.
+  description: `Hire faster for restaurants, hotels and hospitality groups. Manage applicants across kitchen, front of house, sales and operations. The first ${EMPLOYER_COHORT_CAP} employers get ${foundingPhraseShort()}.`,
   keywords: ['hospitality jobs UK', 'restaurant jobs London', 'hotel jobs UK', 'chef jobs London', 'front of house jobs', 'hospitality hiring platform', 'restaurant hiring software', 'Thrive'],
   authors: [{ name: 'Thrive' }],
   creator: 'Thrive',
