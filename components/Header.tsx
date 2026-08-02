@@ -11,7 +11,6 @@ import { isAdmin } from '@/lib/admin-client'
 import { Bot, ShieldCheck } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const NotificationBell = dynamic(() => import('./NotificationBell'), { ssr: false })
-import ThriveMark from './ThriveMark'
 const EmployerSidebar = dynamic(() => import('./EmployerSidebar'), { ssr: false })
 const CandidateSidebar = dynamic(() => import('./CandidateSidebar'), { ssr: false })
 import styles from './Header.module.css'
@@ -599,8 +598,22 @@ export default function Header() {
         <div className={(showSidebar || showCandidateSidebar) ? styles.headerFull : 'container'}>
           <div className={styles.headerContent}>
             <Link href={logoHref} className={styles.logo} {...((showSidebar || showCandidateSidebar) ? { 'data-sidebar-logo': '' } : {})}>
-              <ThriveMark size={42} className={styles.logoIcon} />
-              <span className={styles.logoText}>Thrive</span>
+              {/* THE LOCKUP IS ONE ASSET NOW, not a mark plus HTML text.
+                  The wordmark used to be a <span> in the site's own font, so
+                  the spacing and weight next to the mark were whatever the CSS
+                  happened to say. The signed-off lockup has the wordmark
+                  outlined into paths, which is the point of it — it renders the
+                  same everywhere and cannot drift from the mark beside it.
+
+                  White version, because this bar is navy. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo/thrive-lockup-white.svg"
+                alt="Thrive"
+                className={styles.logoLockup}
+                width={171}
+                height={42}
+              />
             </Link>
 
             <nav className={styles.nav}>

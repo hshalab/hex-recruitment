@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <path id="mark-knockout" fill-rule="evenodd" fill="#0F172A" d="M0 22 A22 22 0 0 1 22 0 H78 A22 22 0 0 1 100 22 V78 A22 22 0 0 1 78 100 H22 A22 22 0 0 1 0 78 Z M26 27 V41 H44 V71 H56 V41 H74 V27 Z"></path>
+</svg>
