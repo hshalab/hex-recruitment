@@ -1215,7 +1215,11 @@ function PostJobContent() {
                 <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.4rem 0 0' }}>
                   Leave the second box empty for a single figure — the ad will read{' '}
                   <strong style={{ color: '#334155' }}>
-                    £{formData.salaryMin || '32,000'}{formData.salaryPeriod === 'year' ? '/yr' : '/hr'}
+                    {/* Grouped, because this line exists to demonstrate what the
+                        ad will read — "£32000/yr" undercuts its own point. */}
+                    £{formData.salaryMin
+                      ? Number(formData.salaryMin).toLocaleString('en-GB')
+                      : '32,000'}{formData.salaryPeriod === 'year' ? '/yr' : '/hr'}
                   </strong>
                   , not a range.
                 </p>
