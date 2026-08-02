@@ -17,6 +17,7 @@ import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
 import CompanyLogo from '@/components/CompanyLogo'
 import JobCard from '@/components/JobCard'
 import { WORK_TYPES } from '@/lib/workTypes'
+import { annualisedOrNull } from '@/lib/salaryInput'
 import { resolveJobBanner } from '@/lib/jobBanner'
 import BrandedJobFallback from '@/components/BrandedJobFallback'
 import BrandedLogoFallback from '@/components/BrandedLogoFallback'
@@ -504,19 +505,40 @@ function JobsPageContent() {
       }
 
       // Salary Range filter
+      //
+      // THE ONE PLACE WHERE "DON'T EXCLUDE IT" AND "IT'S A FILTER" PULL APART.
+      // Everywhere else an untrustworthy figure means unranked on pay. Here the
+      // question is a yes/no against a bracket, and there is no honest bracket
+      // for a number we cannot read.
+      //
+      // It PASSES, following the rule the area filter already sets: an
+      // unplaceable job is never hidden. A chef sees a real job whose pay we
+      // could not parse and reads it for themselves; the alternative silently
+      // deletes it from the board, which is the worse of the two mistakes and
+      // invisible when it happens.
+      //
+      // Today this affects one live row — a Goldenkeys listing stored 0/0,
+      // meaning no salary given, which the old arithmetic answered as £0 and
+      // filed under "Under £20k".
       if (filters.salaryRange.size > 0) {
-        const yearSalary = job.salaryPeriod === 'hour' ? job.salaryMax * 2080 : job.salaryMax
-        let matches = false
-        for (const range of Array.from(filters.salaryRange)) {
-          if (range === 'Under £20k' && yearSalary < 20000) matches = true
-          if (range === '£20k-£30k' && yearSalary >= 20000 && yearSalary <= 30000) matches = true
-          if (range === '£30k-£40k' && yearSalary >= 30000 && yearSalary <= 40000) matches = true
-          if (range === '£40k-£50k' && yearSalary >= 40000 && yearSalary <= 50000) matches = true
-          if (range === '£50k-£75k' && yearSalary >= 50000 && yearSalary <= 75000) matches = true
-          if (range === '£75k-£100k' && yearSalary >= 75000 && yearSalary <= 100000) matches = true
-          if (range === '£100k+' && yearSalary >= 100000) matches = true
+        const yearSalary = annualisedOrNull(job.salaryMax, job.salaryPeriod)
+          ?? annualisedOrNull(job.salaryMin, job.salaryPeriod)
+        // Skip THIS test only — not the ones after it. An early `return true`
+        // here would pass the job straight out of the predicate and silently
+        // bypass the posted-date and remaining filters below.
+        if (yearSalary !== null) {
+          let matches = false
+          for (const range of Array.from(filters.salaryRange)) {
+            if (range === 'Under £20k' && yearSalary < 20000) matches = true
+            if (range === '£20k-£30k' && yearSalary >= 20000 && yearSalary <= 30000) matches = true
+            if (range === '£30k-£40k' && yearSalary >= 30000 && yearSalary <= 40000) matches = true
+            if (range === '£40k-£50k' && yearSalary >= 40000 && yearSalary <= 50000) matches = true
+            if (range === '£50k-£75k' && yearSalary >= 50000 && yearSalary <= 75000) matches = true
+            if (range === '£75k-£100k' && yearSalary >= 75000 && yearSalary <= 100000) matches = true
+            if (range === '£100k+' && yearSalary >= 100000) matches = true
+          }
+          if (!matches) return false
         }
-        if (!matches) return false
       }
 
       // Posted Date filter

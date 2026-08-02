@@ -230,6 +230,12 @@ export const AGENCY_HAIRCUT = 0.85
 export function annualPayOf(job: DigestJobRow): number | null {
   const top = Number(job.salary_max ?? job.salary_min)
   if (!Number.isFinite(top) || top <= 0) return null
+  // Guarded on the JOB side too. annualAskOf below has always checked what the
+  // candidate typed; this function, which reads what the EMPLOYER typed, only
+  // checked for zero — so the roundup was half protected and read as fully
+  // protected. Same bounds, applied to the side that reaches the email subject
+  // line: a role whose period is wrong ranks first in every chef's roundup.
+  if (!isCredibleAnnualAsk(top, job.salary_type)) return null
   if (job.salary_type === 'hourly') return top * ASSUMED_WEEKLY_HOURS * 52 * AGENCY_HAIRCUT
   return top
 }

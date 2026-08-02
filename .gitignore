@@ -47,3 +47,6 @@ scripts/.goldenkeys/
 credentials.json
 gcp-oauth.keys.json
 token.json
+
+# scratch output from npm run guard:prove
+.guardproof/

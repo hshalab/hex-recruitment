@@ -2,6 +2,7 @@ import { Job } from './mockJobs'
 import { Candidate } from './mockCandidates'
 import { parsePreferredAreas, jobMatchesPreferredAreas } from './areas'
 import { keepKnownWorkTypes } from './workTypes'
+import { annualisedOrNull } from './salaryInput'
 
 export interface RecommendedJob extends Job {
   matchPercentage: number
@@ -368,17 +369,30 @@ function calcSalaryMatch(
 
   if (!candMin && !candMax) return { points: 8, reason: null }
 
-  // Convert to annual for comparison
-  const toAnnual = (val: number, period: string) =>
-    period === 'hour' ? val * 2080 : val // 40hrs * 52 weeks
+  // Convert to annual for comparison — GUARDED, both sides.
+  //
+  // A figure that cannot mean what it says is worth less than no figure at all,
+  // because the score treats it as a real ask. The £38-a-year profile that
+  // prompted lib/salaryInput.ts would score the entire board as a wild
+  // overpayment; a job whose period was left on hourly enters at £66m and
+  // overlaps nobody. Both now read as "not stated" and fall to the same neutral
+  // 8 points as a candidate who never filled the field in — unranked on pay
+  // rather than ranked on a number we know is wrong.
+  const jobMinAnnual = annualisedOrNull(job.salaryMin, job.salaryPeriod)
+  const jobMaxAnnual = annualisedOrNull(job.salaryMax, job.salaryPeriod)
+  if (jobMinAnnual === null && jobMaxAnnual === null) return { points: 8, reason: null }
 
-  const jobMinAnnual = toAnnual(job.salaryMin, job.salaryPeriod)
-  const jobMaxAnnual = toAnnual(job.salaryMax, job.salaryPeriod)
-  const candMinAnnual = toAnnual(candMin!, candPeriod)
-  const candMaxAnnual = candMax ? toAnnual(candMax, candPeriod) : Infinity
+  const candMinRaw = annualisedOrNull(candMin, candPeriod)
+  const candMaxRaw = candMax ? annualisedOrNull(candMax, candPeriod) : null
+  if (candMinRaw === null && candMaxRaw === null) return { points: 8, reason: null }
+
+  const jobLo = jobMinAnnual ?? (jobMaxAnnual as number)
+  const jobHi = jobMaxAnnual ?? (jobMinAnnual as number)
+  const candMinAnnual = candMinRaw ?? (candMaxRaw as number)
+  const candMaxAnnual = candMaxRaw ?? Infinity
 
   // Check overlap between ranges
-  const hasOverlap = jobMaxAnnual >= candMinAnnual && jobMinAnnual <= candMaxAnnual
+  const hasOverlap = jobHi >= candMinAnnual && jobLo <= candMaxAnnual
 
   if (hasOverlap) {
     return { points: 15, reason: 'Salary matches your range' }
@@ -386,8 +400,8 @@ function calcSalaryMatch(
 
   // Partial credit if close (within 20%)
   const gap = Math.min(
-    Math.abs(jobMaxAnnual - candMinAnnual),
-    Math.abs(jobMinAnnual - candMaxAnnual)
+    Math.abs(jobHi - candMinAnnual),
+    Math.abs(jobLo - candMaxAnnual)
   )
   const midpoint = (candMinAnnual + (candMaxAnnual === Infinity ? candMinAnnual * 2 : candMaxAnnual)) / 2
   if (midpoint > 0 && gap / midpoint < 0.2) {
