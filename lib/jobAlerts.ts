@@ -1,4 +1,5 @@
 import { parsePreferredAreas, jobMatchesPreferredAreas } from './areas'
+import { annualisedOrNull } from './salaryInput'
 import { Job } from './mockJobs'
 
 const SECTOR_KEY_TO_LABEL: Record<string, string> = {
@@ -107,13 +108,28 @@ export function jobMatchesAlert(job: Job, alert: JobAlert): boolean {
   }
 
   // 3. Salary overlap (normalise hourly → annual using 2080 hours/year)
-  const annualMin = job.salaryPeriod === 'hour' ? job.salaryMin * 2080 : job.salaryMin
-  const annualMax = job.salaryPeriod === 'hour' ? job.salaryMax * 2080 : job.salaryMax
-  if (alert.min_salary !== null && alert.min_salary > 0) {
-    if (annualMax < alert.min_salary) return false
-  }
-  if (alert.max_salary !== null && alert.max_salary > 0) {
-    if (annualMin > alert.max_salary) return false
+  //
+  // GUARDED, because the arithmetic amplifies a wrong period by 2080. A row
+  // stored as £32,000 with the period left on hourly entered this test at £66m
+  // and cleared every min_salary an alert could carry. The same multiplication
+  // sends a £0 row to £0, which fails every alert with a floor — so both ends
+  // of the mistake were being answered confidently.
+  //
+  // An untrustworthy figure means "no salary stated", and a job whose pay we
+  // cannot read is NOT hidden from someone who set a salary band. Same rule as
+  // the area filter: we do not silently drop a real job because a column is bad.
+  const annualMin = annualisedOrNull(job.salaryMin, job.salaryPeriod)
+  const annualMax = annualisedOrNull(job.salaryMax, job.salaryPeriod)
+  if (annualMin !== null || annualMax !== null) {
+    // One credible end still bounds the range; fall back to it for both.
+    const lo = annualMin ?? (annualMax as number)
+    const hi = annualMax ?? (annualMin as number)
+    if (alert.min_salary !== null && alert.min_salary > 0) {
+      if (hi < alert.min_salary) return false
+    }
+    if (alert.max_salary !== null && alert.max_salary > 0) {
+      if (lo > alert.max_salary) return false
+    }
   }
 
   // 4. Job type match (at least one overlap)

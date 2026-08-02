@@ -117,6 +117,39 @@ export function validateSalaryInput(input: SalaryInput): SalaryProblem | null {
  */
 export function isCredibleAnnualAsk(value: number | null | undefined, period?: string | null): boolean {
   if (value === null || value === undefined || !Number.isFinite(value) || value <= 0) return false
-  if (period === 'hour') return value >= MIN_CREDIBLE_HOURLY && value <= MAX_CREDIBLE_HOURLY
+  if (isHourly(period)) return value >= MIN_CREDIBLE_HOURLY && value <= MAX_CREDIBLE_HOURLY
   return value >= MIN_CREDIBLE_ANNUAL && value <= MAX_CREDIBLE_ANNUAL
+}
+
+/**
+ * The period is spelled two ways. jobs.salary_type holds 'hourly'/'annual'; the
+ * client-side Job type and the candidate profile hold 'hour'/'year'. The only
+ * caller so far passed 'hour', so the narrow `period === 'hour'` test was never
+ * wrong — but the paths being wired up here read salary_type, and 'hourly'
+ * falling through to the annual branch would apply the £5,000 floor to an
+ * hourly rate and reject every real one. Centralised before that can happen.
+ */
+export function isHourly(period?: string | null): boolean {
+  return period === 'hour' || period === 'hourly'
+}
+
+/** 40 hours × 52 weeks. The figure every annualising path already assumed. */
+export const ASSUMED_ANNUAL_HOURS = 2080
+
+/**
+ * An annual figure, or null when the stored value cannot be trusted as one.
+ *
+ * THE POINT OF RETURNING NULL RATHER THAN A NUMBER. Six code paths annualise
+ * hourly pay before comparing, so a row whose period is wrong doesn't look
+ * wrong — it looks like £66m a year and outranks everything. Callers must
+ * decide what "no salary stated" means for them, which is a decision they can
+ * only make if the absence is representable. A silent 0, or an untouched
+ * 66,560,000, is not.
+ */
+export function annualisedOrNull(
+  value: number | null | undefined,
+  period?: string | null,
+): number | null {
+  if (!isCredibleAnnualAsk(value, period)) return null
+  return isHourly(period) ? (value as number) * ASSUMED_ANNUAL_HOURS : (value as number)
 }

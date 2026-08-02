@@ -8,11 +8,36 @@ import { supabase } from '@/lib/supabase'
 import { getCategoryLabel } from '@/lib/categories'
 import { EMPLOYER_SUBSCRIPTION_PRICE } from '@/lib/trialUtils'
 import { employerLoginPath } from '@/lib/loginRedirect'
+import { annualisedOrNull } from '@/lib/salaryInput'
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts'
 import styles from './page.module.css'
+
+/**
+ * A job's pay as an annual figure, or null when the row cannot be read as one.
+ *
+ * ONE COPY, DELIBERATELY. This function existed twice — once in the salary
+ * brackets memo, once in market benchmarking — byte-identical, which is how two
+ * charts stay in step only until someone edits one of them. Both callers drop
+ * the job when this returns null, so an unreadable row is absent from the chart
+ * rather than counted in a bracket it does not belong in.
+ *
+ * The `salMin <= 0` test it already carried caught only the zero case. The
+ * credibility bounds catch the one that actually distorts a chart: an hourly
+ * period on an annual figure, which lands in £100k+ at 2080× its real value and
+ * takes the sector average with it.
+ */
+function getAnnualSalary(job: any): number | null {
+  const period = job.salary_type || job.salary_period || 'annual'
+  const salMin = parseFloat(job.salary_min)
+  const salMax = parseFloat(job.salary_max || job.salary_min)
+  const lo = annualisedOrNull(salMin, period)
+  const hi = annualisedOrNull(salMax, period)
+  if (lo === null && hi === null) return null
+  return ((lo ?? (hi as number)) + (hi ?? (lo as number))) / 2
+}
 
 const PIE_COLORS = ['#FFE500', '#1e293b', '#3b82f6', '#16a34a', '#f59e0b', '#8b5cf6', '#dc2626', '#64748b']
 
@@ -291,7 +316,13 @@ export default function AnalyticsContent() {
       // Get all jobs (not just this employer's) with key fields
       const { data: allJobsData } = await supabase
         .from('jobs')
-        .select('id, employer_id, title, category, salary_min, salary_max, salary_type, salary_period, location, area, status, posted_at, view_count, application_count')
+        // jobs.salary_period DOES NOT EXIST. The column is salary_type, and
+        // PostgREST rejects the whole select — so platformJobs was ALWAYS
+        // empty and Market Benchmarking has always rendered "not enough data",
+        // for every employer, regardless of how much data the platform holds.
+        // Found while wiring the credibility guard into the memo below, which
+        // would otherwise have been a guard on code that never runs.
+        .select('id, employer_id, title, category, salary_min, salary_max, salary_type, location, area, status, posted_at, view_count, application_count')
         .in('status', ['active', 'filled', 'expired'])
 
       const allJobs = allJobsData || []
@@ -734,16 +765,6 @@ export default function AnalyticsContent() {
       { label: '£100k+', min: 100000, max: Infinity },
     ]
 
-    const getAnnualSalary = (job: any): number | null => {
-      const salMin = parseFloat(job.salary_min)
-      if (isNaN(salMin) || salMin <= 0) return null
-      const salMax = parseFloat(job.salary_max || job.salary_min)
-      const mid = (salMin + salMax) / 2
-      const type = job.salary_type || job.salary_period || 'annual'
-      if (type === 'hourly' || type === 'hour') return mid * 2080
-      return mid
-    }
-
     const getBracket = (annual: number) => {
       return BRACKETS.find(b => annual >= b.min && annual < b.max) || BRACKETS[BRACKETS.length - 1]
     }
@@ -1121,16 +1142,6 @@ export default function AnalyticsContent() {
     if (jobs.length === 0) return null
 
     const MIN_SECTOR_JOBS = 5
-
-    const getAnnualSalary = (job: any): number | null => {
-      const salMin = parseFloat(job.salary_min)
-      if (isNaN(salMin) || salMin <= 0) return null
-      const salMax = parseFloat(job.salary_max || job.salary_min)
-      const mid = (salMin + salMax) / 2
-      const type = job.salary_type || job.salary_period || 'annual'
-      if (type === 'hourly' || type === 'hour') return mid * 2080
-      return mid
-    }
 
     // Get the employer's ID from the first job
     const employerId = jobs[0]?.employer_id

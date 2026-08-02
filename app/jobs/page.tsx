@@ -17,6 +17,7 @@ import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
 import CompanyLogo from '@/components/CompanyLogo'
 import JobCard from '@/components/JobCard'
 import { WORK_TYPES } from '@/lib/workTypes'
+import { annualisedOrNull } from '@/lib/salaryInput'
 import { resolveJobBanner } from '@/lib/jobBanner'
 import BrandedJobFallback from '@/components/BrandedJobFallback'
 import BrandedLogoFallback from '@/components/BrandedLogoFallback'
@@ -504,8 +505,27 @@ function JobsPageContent() {
       }
 
       // Salary Range filter
+      //
+      // AN UNPRICED JOB MATCHES NO BRACKET. Not every bracket — that was the
+      // first version, following the area rule, and the area rule is right for
+      // AREA precisely because an unplaceable job is common and hiding it would
+      // empty the list.
+      //
+      // Salary differs in one way that decides it: "pay on application" is a
+      // legitimate answer on the form, so unpriced roles become ordinary rather
+      // than staying the single anomaly they are today. At forty of them, a chef
+      // asking for £75k-£100k and being shown jobs with no salary is not being
+      // answered. An employer who won't state pay loses reach instead — an
+      // honest incentive, and the one we would give them anyway.
+      //
+      // This is also how a null salary has always behaved here. What changes is
+      // which rows count as unpriced: a figure that cannot mean what it says now
+      // joins them, rather than being answered confidently as "£0" and filed
+      // under Under £20k — which is where the one live 0/0 row has been sitting.
       if (filters.salaryRange.size > 0) {
-        const yearSalary = job.salaryPeriod === 'hour' ? job.salaryMax * 2080 : job.salaryMax
+        const yearSalary = annualisedOrNull(job.salaryMax, job.salaryPeriod)
+          ?? annualisedOrNull(job.salaryMin, job.salaryPeriod)
+        if (yearSalary === null) return false
         let matches = false
         for (const range of Array.from(filters.salaryRange)) {
           if (range === 'Under £20k' && yearSalary < 20000) matches = true
