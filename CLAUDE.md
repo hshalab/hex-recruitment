@@ -48,7 +48,15 @@ Standing rules for Claude Code on this project. These override default behaviour
 
 ## Correct today because of the board, not because of the product
 
-- Things that are right only because every live row is hospitality, and become wrong the day Thrive broadens: the **work-location default** ("In person"), and the **sectors filter** (32 of 33 options match nothing). Recorded so nobody has to rediscover why they were left alone.
+- Things that are right only because every live row is hospitality, and become wrong the day Thrive broadens: the **work-location default** ("In person"), the **sectors filter** (32 of 33 options match nothing), and the **site meta description** ("for restaurants, hotels and hospitality groups"). Hospitality is the starting vertical because that is where the contacts are, not what the product is. Recorded so nobody has to rediscover why they were left alone.
+
+## No prices, anywhere
+
+- **Publish no price, no monthly rate, and no trial length.** The tier structure is undecided and will stay undecided until the platform has many more users — possibly a year. Any figure published now is one that has to be walked back, and walking a price back is worse than never naming one, especially to the founding employers being signed up now, who will remember what they were told.
+- A **trial length is a price claim in disguise** — "3 months free" only means something against what happens in month four. So is anything of the shape "free for X, then Y".
+- **The one allowed money claim is the founding-cohort offer**, because it is an offer actually being run and can be honoured: *the first 100 employers get 12 months free, no card needed*. Free-while-we-build is fine.
+- This covers page copy, meta and Open Graph descriptions, JSON-LD, email templates, the chatbot, and Stripe product descriptions — anywhere a number can reach a stranger.
+- **Check the deployed HTML, not the source.** The £99 that reached Google sat in the ROOT description, so it was served on the homepage, on `/waitlist`, and on every 404 — including `/pricing`, `/for-employers` and `/employers`, which are not routes at all.
 
 ## A habit that has earned its place
 
