@@ -678,8 +678,34 @@ function PostJobContent() {
       // Banner: use provided or empty (detail panel hides if empty)
       const companyBanner = formData.companyBanner || ''
 
+      // THE GUIDED FIELDS NEVER REACHED THE ROW. This is not part of the
+      // re-sequencing — it is a live fault on main, found by reading the
+      // published row instead of the screen.
+      //
+      // The payload has always been built from formData.description, and
+      // NOTHING has ever written guidedFields into it. The three boxes feed the
+      // AI-enhance request and the render, and stop there. descView defaults to
+      // 'guided', so the default path publishes an ad with an EMPTY
+      // description — including everything "Draft my advert" writes.
+      //
+      // Invisible until now because all 247 live rows were imported: nobody has
+      // ever posted through this form. The first person to would have been
+      // Cristina, and she would have published three blank adverts.
+      //
+      // Composed as HTML because the editor path stores HTML in the same
+      // column, and the detail page renders it as such.
+      const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      const para = (s: string) => s.trim().split(/\n{2,}/).map(b => `<p>${esc(b.trim()).replace(/\n/g, '<br />')}</p>`).join('')
+      const composedDescription = descView === 'guided'
+        ? [
+            guidedFields.dayToDay && `<h3>What you&rsquo;ll be doing</h3>${para(guidedFields.dayToDay)}`,
+            guidedFields.experienceNeeded && `<h3>Experience or skills needed</h3>${para(guidedFields.experienceNeeded)}`,
+            guidedFields.whatWeOffer && `<h3>What we offer</h3>${para(guidedFields.whatWeOffer)}`,
+          ].filter(Boolean).join('')
+        : formData.description
+
       // Auto-generate short description from first 150 characters (strip HTML tags)
-      const plainText = formData.description.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\n+/g, ' ').trim()
+      const plainText = composedDescription.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\n+/g, ' ').trim()
       const shortDescription = plainText.slice(0, 150) + (plainText.length > 150 ? '...' : '')
 
       // Build employment type array: e.g. ["Full-time", "Permanent"]
@@ -716,7 +742,7 @@ function PostJobContent() {
           postcode: formData.postcode || '',
         },
         description: shortDescription,
-        fullDescription: formData.description || '',
+        fullDescription: composedDescription || '',
         tags: [...tags, ...(salaryNegotiable ? ['Salary negotiable'] : []), ...(hideSalary ? ['Competitive salary'] : [])],
         urgent: formData.tags.has('Urgent hire') || formData.tags.has('Immediate start') || formData.tags.has('Interviews this week'),
         noExperience: formData.tags.has('No experience required'),
