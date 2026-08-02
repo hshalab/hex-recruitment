@@ -1142,6 +1142,27 @@ export default function AnalyticsContent() {
     if (jobs.length === 0) return null
 
     const MIN_SECTOR_JOBS = 5
+    /**
+     * AND AT LEAST THIS MANY DISTINCT OTHER EMPLOYERS. Without it the threshold
+     * counts JOBS, so five adverts from ONE company pass — and the "platform
+     * average" shown to everybody else IS that one company's numbers, wearing a
+     * label that says otherwise.
+     *
+     * That is not hypothetical here. Every job on the platform is category
+     * 'hospitality' and belongs to one of TWO employers, so "all jobs except
+     * mine" resolves to exactly the other one. Goldenkeys would have been shown
+     * Host Staffing's average salary, views per job, applications per job,
+     * conversion rate and time-to-first-application, and Host the same for
+     * Goldenkeys. The adverts are public and their salaries with them, but the
+     * ENGAGEMENT figures are not — those are each customer's own commercial data
+     * about how their listings perform.
+     *
+     * This chart has never rendered in its life: it selected a column that does
+     * not exist, PostgREST rejected the whole query, and platformJobs was always
+     * empty. Fixing that select is what would have switched the disclosure on.
+     */
+    const MIN_SECTOR_EMPLOYERS = 3
+    const distinctEmployers = (rows: any[]) => new Set(rows.map(j => j.employer_id)).size
 
     // Get the employer's ID from the first job
     const employerId = jobs[0]?.employer_id
@@ -1159,7 +1180,11 @@ export default function AnalyticsContent() {
 
     // Check which of employer's sectors have enough platform data
     const employerSectors = Array.from(new Set(jobs.map((j: any) => j.category || 'uncategorised')))
-    const hasSufficientData = employerSectors.some(s => (otherBySector[s] || []).length >= MIN_SECTOR_JOBS)
+    const sectorIsPoolable = (s: string) => {
+      const rows = otherBySector[s] || []
+      return rows.length >= MIN_SECTOR_JOBS && distinctEmployers(rows) >= MIN_SECTOR_EMPLOYERS
+    }
+    const hasSufficientData = employerSectors.some(sectorIsPoolable)
 
     if (!hasSufficientData) {
       const maxSectorCount = employerSectors.reduce((max, s) => Math.max(max, (otherBySector[s] || []).length), 0)
@@ -1170,7 +1195,7 @@ export default function AnalyticsContent() {
     const sectorAverages: Record<string, { avgSalary: number; avgViews: number; avgApps: number; avgConversion: number; avgTimeToFirstApp: number | null; jobCount: number }> = {}
 
     Object.entries(otherBySector).forEach(([sector, sectorJobs]) => {
-      if (sectorJobs.length < MIN_SECTOR_JOBS) return
+      if (!sectorIsPoolable(sector)) return
 
       const salaries = sectorJobs.map(getAnnualSalary).filter((s): s is number => s !== null)
       const avgSalary = salaries.length > 0 ? salaries.reduce((a, b) => a + b, 0) / salaries.length : 0
