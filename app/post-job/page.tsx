@@ -76,8 +76,22 @@ function PostJobContent() {
     companyBanner: '',
     title: '',
     category: '',
-    employmentType: 'Full-time' as 'Full-time' | 'Part-time' | 'Flexible',
-    contractType: 'Permanent' as 'Permanent' | 'Temporary' | 'Fixed-term',
+    // NOTHING PRE-SELECTED. These two used to default to Full-time and
+    // Permanent, so an employer who never touched them published an advert
+    // asserting a permanent full-time job — and since the AI generator repeats
+    // what the form tells it, that assertion started appearing as a SENTENCE in
+    // the advert, in her voice.
+    //
+    // The next real employer to use this form runs a temp agency. Ongoing
+    // agency work is neither permanent nor necessarily full-time. She would have
+    // filled in a title, a rate and a sentence, never thought to touch two chips
+    // that already looked answered, and published the opposite of what she was
+    // advertising.
+    //
+    // Fixing this in the prompt would have treated the symptom: the wrong value
+    // still lands in the row, still shows on the card, still drives matching.
+    employmentType: '' as '' | 'Full-time' | 'Part-time' | 'Flexible',
+    contractType: '' as '' | 'Permanent' | 'Temporary' | 'Fixed-term',
     workLocationType: 'In person' as 'In person' | 'Remote' | 'Hybrid',
     salaryMin: '',
     salaryMax: '',
@@ -201,9 +215,12 @@ function PostJobContent() {
       const jobToEdit = getJobById(editId)
       if (jobToEdit) {
         // Determine employment type from array
+        // Empty, not 'Full-time'. Editing a row whose array is missing would
+        // otherwise re-assert Full-time on save — the same default this change
+        // removes, arriving through the back door.
         const employmentType = Array.isArray(jobToEdit.employmentType) && jobToEdit.employmentType.length > 0
           ? jobToEdit.employmentType[0]
-          : 'Full-time'
+          : ''
 
         // Build tags set from tags array
         const tags = new Set<string>(jobToEdit.tags || [])
@@ -245,7 +262,9 @@ function PostJobContent() {
           title: jobToEdit.title || '',
           category: jobToEdit.category || '',
           employmentType: employmentType as 'Full-time' | 'Part-time' | 'Flexible',
-          contractType: (foundContract || 'Permanent') as 'Permanent' | 'Temporary' | 'Fixed-term',
+          // Same reasoning as employmentType above: no contract word in the
+          // row means the employer must pick one, not inherit 'Permanent'.
+          contractType: (foundContract || '') as '' | 'Permanent' | 'Temporary' | 'Fixed-term',
           workLocationType: (jobToEdit.workLocationType || 'In person') as 'In person' | 'Remote' | 'Hybrid',
           salaryMin: jobToEdit.salaryMin?.toString() || '',
           salaryMax: jobToEdit.salaryMax?.toString() || '',
@@ -582,6 +601,22 @@ function PostJobContent() {
       return
     }
 
+    // BOTH ARE A CHOICE NOW, NOT A DEFAULT. Named separately from the generic
+    // message above so the employer is told WHICH answer is missing — these are
+    // two chips that previously looked answered, so "required fields" alone
+    // would send someone hunting.
+    if (!formData.employmentType || !formData.contractType) {
+      setError(
+        !formData.employmentType && !formData.contractType
+          ? 'Please choose the employment type and the contract type'
+          : !formData.employmentType
+            ? 'Please choose an employment type — full-time, part-time or flexible'
+            : 'Please choose a contract type — permanent, temporary or fixed-term',
+      )
+      setLoading(false)
+      return
+    }
+
     if (!hideSalary) {
       // A SINGLE FIGURE IS A VALID ANSWER, and until now it wasn't allowed.
       // This required BOTH boxes, so an employer paying a flat £32,000 had no
@@ -628,10 +663,12 @@ function PostJobContent() {
       const shortDescription = plainText.slice(0, 150) + (plainText.length > 150 ? '...' : '')
 
       // Build employment type array: e.g. ["Full-time", "Permanent"]
-      const employmentType: string[] = [formData.employmentType]
-      if (formData.contractType) {
-        employmentType.push(formData.contractType)
-      }
+      // Filtered rather than assumed: validation above guarantees both are set,
+      // but this array is what lands in the row and drives the card, the filters
+      // and matching. An empty string reaching it would be a silent bad value in
+      // the one field this whole change exists to keep honest.
+      const employmentType: string[] = [formData.employmentType, formData.contractType]
+        .filter(v => Boolean(v))
 
       const jobReference = formData.jobReference || `JOB-${Date.now().toString(36).toUpperCase()}`
       const employerId = currentUser?.id || 'unknown'
@@ -1187,7 +1224,7 @@ function PostJobContent() {
 
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="employmentType">Employment Type</label>
+                <label className={styles.label} htmlFor="employmentType">Employment Type <span className={styles.required}>*</span></label>
                 <select
                   id="employmentType"
                   name="employmentType"
@@ -1203,7 +1240,7 @@ function PostJobContent() {
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="contractType">Contract Type</label>
+                <label className={styles.label} htmlFor="contractType">Contract Type <span className={styles.required}>*</span></label>
                 <select
                   id="contractType"
                   name="contractType"
