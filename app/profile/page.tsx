@@ -9,6 +9,7 @@ import SignedLink from '@/components/SignedLink'
 import JobSeekerProfileForm from '@/components/JobSeekerProfileForm'
 import { supabase } from '@/lib/supabase'
 import { DEV_MODE, getMockUser } from '@/lib/mockAuth'
+import { describePreferredAreas } from '@/lib/areas'
 import { FaLinkedinIn } from 'react-icons/fa'
 import styles from './page.module.css'
 
@@ -375,6 +376,50 @@ export default function ProfilePage() {
                     <span className={styles.infoValue}>{profileData.yearsExperience} {profileData.yearsExperience === 1 ? 'year' : 'years'}</span>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* WHAT WE MATCH YOU ON.
+
+                Both of these were already collected, already stored and already
+                driving matching — and neither was ever shown back. They were
+                loaded into this component's state and never rendered.
+
+                preferred_areas is the one that matters. It is the ONLY HARD
+                filter in candidate matching: the single field that can empty a
+                candidate's list entirely. A chef could not see the thing
+                deciding whether they hear about any job at all.
+
+                Rendered TOGETHER and named for what they do, rather than
+                scattered among the other facts, because the useful thing is not
+                "here are two more fields" — it is "this is what we use".
+
+                An empty one is a PROMPT, not a missing row. 26 of 40 candidates
+                have no preferred areas set; a blank tells them nothing, and an
+                absent section tells them less. */}
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>What we match you on</h2>
+              <div className={styles.infoGrid}>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Where you&apos;ll work</span>
+                  <span className={styles.infoValue}>
+                    {describePreferredAreas(profileData?.preferredAreas).length > 0
+                      ? describePreferredAreas(profileData?.preferredAreas).join(' · ')
+                      : <button type="button" className={styles.matchPrompt} onClick={() => setEditMode(true)}>
+                          Not set — you&apos;ll be shown jobs anywhere. Choose your areas →
+                        </button>}
+                  </span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Type of work</span>
+                  <span className={styles.infoValue}>
+                    {profileData?.preferredJobTypes?.length > 0
+                      ? profileData.preferredJobTypes.join(' · ')
+                      : <button type="button" className={styles.matchPrompt} onClick={() => setEditMode(true)}>
+                          Not set — add full-time, part-time or flexible →
+                        </button>}
+                  </span>
+                </div>
               </div>
             </div>
 
