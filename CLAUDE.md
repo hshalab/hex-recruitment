@@ -20,6 +20,7 @@ Standing rules for Claude Code on this project. These override default behaviour
 - **The 247 live listings, and all Host and Goldenkeys data, are READ ONLY.** Real employer and candidate rows are read-only too, without Paul's explicit per-task authorisation naming the rows.
 - **The preview shares production's database AND a live Resend key.** So the dangerous surface is not the UI, it is the triggers. Before any action that could notify or email, check from the rows *who it would reach*. Never send to an address that isn't Paul's or a test account's.
 - Guard destructive writes with a condition that makes the wrong target impossible (`and status = 'filled'`, an explicit id list), and count dependent rows **before and after** so "nothing cascaded" is a measurement, not a hope.
+- **Before publishing a test job with `status = 'active'`, check `job_alerts` is empty — and if it isn't, STOP and ask.** Posting fires `/api/job-alerts/match`, so the moment that table has rows a test post can email real candidates. It is empty today, which is the only reason publishing a throwaway ad to verify step 3 is safe; the marketing push is what will put rows in it. The rule is "check first", not "test posts are fine". Keep the row live for seconds, count dependents before deleting, and prove the board is back to 247 afterwards.
 - **Clean up what you create**, and state in every report what was made and whether it still exists.
 
 ## Previews and secrets
