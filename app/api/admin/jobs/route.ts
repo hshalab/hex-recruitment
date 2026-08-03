@@ -70,9 +70,23 @@ export async function GET(req: Request) {
   const to = from + PAGE_SIZE - 1
 
   try {
+    // READS THE COLUMNS THE APP ACTUALLY MAINTAINS.
+    //
+    // This selected application_count and view_count. NOTHING WRITES EITHER.
+    // Across 284 jobs both are zero on every real row, so the admin console has
+    // shown 0 views and 0 applications for every job since it was built — while
+    // the employer dashboard, reading jobs.views off the same rows, showed the
+    // true figure. Two consoles, two columns, one of them dead.
+    //
+    // jobs.views is the live one: 64 jobs carry a value summing to 122, against
+    // 123 rows in job_views. Applications have no counter at all, so they are
+    // counted from job_applications directly.
+    //
+    // The dead columns are left in place — dropping them is a migration and can
+    // ride with the next one. This just stops reading them.
     let query = db
       .from('jobs')
-      .select('id, title, company, category, location, status, posted_at, expires_at, application_count, view_count, urgent, employer_id', { count: 'exact' })
+      .select('id, title, company, category, location, status, posted_at, expires_at, views, urgent, employer_id', { count: 'exact' })
 
     if (search) {
       query = query.or(`title.ilike.%${search}%,company.ilike.%${search}%`)
@@ -84,11 +98,46 @@ export async function GET(req: Request) {
       query = query.eq('category', sector)
     }
 
-    const sortField = sort === 'title' ? 'title' : sort === 'company' ? 'company' : sort === 'application_count' ? 'application_count' : sort === 'view_count' ? 'view_count' : 'posted_at'
-    query = query.order(sortField, { ascending: dir === 'asc' }).range(from, to)
+    // Applications have no maintained counter, so sorting by them cannot be
+    // done in the database without an aggregate the client can't express. The
+    // count map is small — one row per application that exists, 33 today — so
+    // it is built up front and used for both the display value and the sort.
+    const { data: appRows } = await db.from('job_applications').select('job_id')
+    const appCounts = new Map<string, number>()
+    for (const r of (appRows || [])) appCounts.set(r.job_id, (appCounts.get(r.job_id) || 0) + 1)
 
-    const { data, count, error } = await query
-    if (error) throw error
+    const sortField = sort === 'title' ? 'title' : sort === 'company' ? 'company' : sort === 'view_count' || sort === 'views' ? 'views' : 'posted_at'
+
+    let data: any[] | null = null
+    let count: number | null = null
+
+    if (sort === 'application_count') {
+      // Sorting by a computed value means the whole filtered set has to be
+      // ordered before it can be paged — sorting one page would only reorder
+      // the twenty rows that happened to arrive. Fine at 284 jobs; revisit if
+      // this table ever reaches five figures.
+      const { data: all, error: allErr, count: allCount } = await query.order('posted_at', { ascending: false })
+      if (allErr) throw allErr
+      const sorted = (all || []).sort((a, b) => {
+        const d = (appCounts.get(a.id) || 0) - (appCounts.get(b.id) || 0)
+        return dir === 'asc' ? d : -d
+      })
+      data = sorted.slice(from, to + 1)
+      count = allCount ?? sorted.length
+    } else {
+      const res = await query.order(sortField, { ascending: dir === 'asc' }).range(from, to)
+      if (res.error) throw res.error
+      data = res.data
+      count = res.count
+    }
+
+    // Keep the response shape the table already expects, so the column keys and
+    // the sort parameters do not have to change in two places.
+    data = (data || []).map(j => ({
+      ...j,
+      view_count: j.views || 0,
+      application_count: appCounts.get(j.id) || 0,
+    }))
 
     // Get distinct sectors for filter dropdown
     const { data: sectors } = await db.from('jobs').select('category').not('category', 'is', null)

@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ThriveMark from '@/components/ThriveMark'
 import { EMPLOYER_COHORT_CAP } from '@/lib/constants/cohort'
-import { TRIAL_MONTHS, foundingPhraseShort } from '@/lib/trialUtils'
+import { foundingPhraseShort } from '@/lib/trialUtils'
 import styles from './page.module.css'
 
 export default function WaitlistPage() {
@@ -148,7 +148,12 @@ function WaitlistContent() {
               {loading ? 'Claiming...' : 'Claim my free spot →'}
             </button>
             {error && <p className={styles.error}>{error}</p>}
-            <p className={styles.fine}>No credit card. No catch. Free for {TRIAL_MONTHS} months.</p>
+            {/* foundingPhraseShort(), NOT TRIAL_MONTHS. This read "Free for 3
+              months" — the DORMANT Stripe trial constant — on a page whose
+              headline and subheadline both say 12. It understated the live
+              founding offer by nine months, in the fine print, to the exact
+              people being signed up for it. Same fault as the chatbot. */}
+            <p className={styles.fine}>No credit card. No catch. {foundingPhraseShort().replace(/^./, c => c.toUpperCase())}.</p>
           </form>
         ) : (
           <div className={styles.card}>
