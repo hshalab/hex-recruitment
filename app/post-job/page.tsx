@@ -2095,12 +2095,26 @@ function PostJobContent() {
           </div>
 
           {/* Requirements & Details */}
-          <div className={styles.section}>
+          <div className={stepped ? flow.extrasCard : styles.section}>
             {!stepped && (
             <h2 className={styles.sectionTitle}>
               <span className={styles.sectionIcon}>ℹ️</span>
               Requirements & Details
             </h2>
+            )}
+            {/* These four had their emoji heading hidden with the rest, which
+                left them floating in step 3 with no card and no label — worse
+                than the heading was. The footer already says reference and
+                expiry are set automatically if left, so this says the same
+                thing where the fields are rather than only underneath them. */}
+            {stepped && (
+              <>
+                <h3 className={flow.extrasHeading}>Details, if you want them</h3>
+                <p className={flow.extrasBody} style={{ marginBottom: 18 }}>
+                  All four are optional. Leave the reference and the expiry date
+                  and we set them for you.
+                </p>
+              </>
             )}
 
             <div className={styles.formRow}>
