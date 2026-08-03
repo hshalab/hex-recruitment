@@ -660,3 +660,20 @@
     font-size: 1rem;
   }
 }
+
+/* The empty state for a matching field. A prompt, not a blank — the point is
+   that a candidate who has not set their areas is being matched on nothing,
+   and an absent row communicates that less well than an absent value does. */
+.matchPrompt {
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: #64748b;
+  font-style: italic;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.matchPrompt:hover { color: #0f172a; }
