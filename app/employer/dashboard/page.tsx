@@ -1231,10 +1231,13 @@ export default function EmployerDashboardPage() {
                     {totalJobs === 0 ? (
                       <p>No active jobs. Post your first listing!</p>
                     ) : (
-                      <p>
-                        Nothing live right now — your {totalJobs === 1 ? 'role is' : `${totalJobs} roles are`} filled or closed.
-                        They&apos;re still on Manage Job Ads whenever you want to repost.
-                      </p>
+                      /* One line. The first draft added "They're still on
+                         Manage Job Ads whenever you want to repost" — true, and
+                         a three-line paragraph on a phone, pointing at a
+                         "Manage Jobs" link that sits in this card's own header
+                         two centimetres above it. Every other empty state on
+                         this page is four words. */
+                      <p>Nothing live right now — your {totalJobs === 1 ? 'role is' : `${totalJobs} roles are`} filled or closed.</p>
                     )}
                     <Link href="/post-job" className={styles.cardLink}>
                       {totalJobs === 0 ? 'Post a Job' : 'Post another role'} &rarr;
