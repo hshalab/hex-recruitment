@@ -53,6 +53,7 @@ Standing rules for Claude Code on this project. These override default behaviour
 ## Correct today because of the board, not because of the product
 
 - Things that are right only because every live row is hospitality, and become wrong the day Thrive broadens: the **work-location default** ("In person"), the **sectors filter** (32 of 33 options match nothing), and the **site meta description** ("for restaurants, hotels and hospitality groups"). Hospitality is the starting vertical because that is where the contacts are, not what the product is. Recorded so nobody has to rediscover why they were left alone.
+- **Three urgency tags carry one meaning.** `Immediate start`, `Urgent hire` and `Interviews this week` all set the same `urgent` flag on the row, so a candidate filtering for interviews-this-week gets everything marked urgent, and an employer picking between the three is choosing a label with no distinct effect. Defensible while nobody has set a tag at all — every live row was imported — and it needs revisiting before tag filtering means anything.
 
 ## No prices, anywhere
 
