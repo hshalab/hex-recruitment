@@ -2550,7 +2550,16 @@ function PostJobContent() {
           )}
           {stepped && step === 3 && (
             <div className={flow.stepFooter}>
-              <p className={flow.stepFooterNote}>Reference and expiry date are on the ad&apos;s settings — set automatically if you leave them.</p>
+              {/* THE EXPIRY HALF OF THIS WAS A FALSE CLAIM. It read "Reference
+                  and expiry date ... set automatically if you leave them". The
+                  reference genuinely is — `JOB-${Date.now()}` in the payload.
+                  The expiry is not: jobs.expires_at is null on all 284 rows and
+                  nothing in the codebase writes it. The only expires_at writers
+                  are boosts and team invites, different tables.
+
+                  So the form promised an automatic expiry that does not exist.
+                  Employer-posted ads never expire at all — see CLAUDE.md. */}
+              <p className={flow.stepFooterNote}>The reference is on the ad&apos;s settings — generated for you if you leave it blank.</p>
               <button type="button" className={flow.navyBtn} onClick={handleFinishExtras} disabled={loading}>
                 {loading ? 'Saving…' : 'Done — view my ad'}
               </button>
