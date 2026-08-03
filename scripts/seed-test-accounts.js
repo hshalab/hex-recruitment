@@ -178,6 +178,12 @@ async function seed() {
     // alert-match call.
     status: 'filled',
     job_reference: SEED_MARK,
+    // BOTH view columns, because the product has two and they disagree.
+    // jobs.views is what the EMPLOYER DASHBOARD reads and what the app
+    // maintains; jobs.view_count is what the ADMIN console reads and nothing
+    // writes. Seeding only view_count is why the dashboard showed 0 views
+    // against four jobs carrying hundreds — my artefact, not a product fault.
+    views: [124, 87, 213, 41][JOBS.indexOf(j)],
     view_count: [124, 87, 213, 41][JOBS.indexOf(j)],
     application_count: 0,
   }))
