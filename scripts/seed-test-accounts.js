@@ -86,7 +86,7 @@ const JOBS = [
 // single applicant each at different stages, and one with none.
 const APPLICATION_PLAN = [
   { jobIndex: 0, status: 'shortlisted' },
-  { jobIndex: 1, status: 'interviewing' },
+  { jobIndex: 1, status: 'interview' },   // 'interview' is canonical — see StageId
   { jobIndex: 2, status: 'pending' },
 ]
 
