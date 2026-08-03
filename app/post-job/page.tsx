@@ -13,6 +13,7 @@ import { categories } from '@/lib/categories'
 import { isEmployerEntitled } from '@/lib/foundingEntitlement'
 import { PHOTO_TIPS } from '@/lib/photoTips'
 import type { WorkType } from '@/lib/workTypes'
+import type { Job as JobType } from '@/lib/mockJobs'
 import { employerLoginPath } from '@/lib/loginRedirect'
 import { EMPLOYMENT_TYPES, CONTRACT_TYPES } from '@/lib/workTypes'
 import JobCard from '@/components/JobCard'
@@ -158,6 +159,7 @@ function PostJobContent() {
   const [publishedJobId, setPublishedJobId] = useState<string | null>(null)
   const [publishedAt, setPublishedAt] = useState<Date | null>(null)
   const [editingCompany, setEditingCompany] = useState(false)
+  const [showPhotoTips, setShowPhotoTips] = useState(false)
 
   // "Not now" is a DECISION, not an empty field. Recording it is what lets
   // Manage Job Ads offer the block back later instead of silently forgetting
@@ -167,6 +169,135 @@ function PostJobContent() {
     setDismissed(prev => new Set(prev).add(block))
 
   const stepped = !isEditMode
+
+  // ── AUTOSAVE ───────────────────────────────────────────────────────────
+  //
+  // CLIENT-SIDE ONLY, deliberately. A drafts table would need a status, RLS,
+  // a cleanup story for rows nobody ever finishes, and a decision about what
+  // an abandoned draft means to the rest of the product — for a problem whose
+  // whole shape is "she was interrupted and came back on the same machine".
+  // localStorage answers that, and answers it without touching the database.
+  //
+  // What it does NOT survive: a different device, or a cleared browser. That's
+  // the honest limit of it and it's the right trade for now.
+  //
+  // Restored ONCE, before the employer has typed anything — restoring later
+  // would overwrite live keystrokes with an older snapshot.
+  const DRAFT_KEY = 'thrive:post-job:draft:v1'
+  const [restored, setRestored] = useState(false)
+  const [savedAt, setSavedAt] = useState<Date | null>(null)
+
+  useEffect(() => {
+    if (!stepped || restored) return
+    setRestored(true)
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY)
+      if (!raw) return
+      const d = JSON.parse(raw)
+      // A draft that has already been published is finished, not abandoned.
+      if (!d || d.adStatus === 'live') { window.localStorage.removeItem(DRAFT_KEY); return }
+      if (d.formData) {
+        setFormData(prev => ({
+          ...prev,
+          ...d.formData,
+          // Sets don't survive JSON. Rebuilt rather than spread, or tags
+          // becomes a plain array and every .has() on it throws.
+          tags: new Set<string>(Array.isArray(d.formData.tags) ? d.formData.tags : []),
+          // The company block is filled from the account on load; a stale
+          // snapshot must not overwrite it with an older company name.
+          company: prev.company || d.formData.company || '',
+          companyLogo: prev.companyLogo || d.formData.companyLogo || '',
+          companyWebsite: prev.companyWebsite || d.formData.companyWebsite || '',
+        }))
+      }
+      if (d.guidedFields) setGuidedFields(d.guidedFields)
+      if (d.screeningQuestions) setScreeningQuestions(d.screeningQuestions)
+      if (typeof d.hideSalary === 'boolean') setHideSalary(d.hideSalary)
+      if (typeof d.salaryNegotiable === 'boolean') setSalaryNegotiable(d.salaryNegotiable)
+      if (d.step === 1 || d.step === 2) setStep(d.step)
+      if (d.savedAt) setSavedAt(new Date(d.savedAt))
+    } catch {
+      // A corrupt draft must never block posting a job. Drop it and carry on.
+      try { window.localStorage.removeItem(DRAFT_KEY) } catch {}
+    }
+  }, [stepped, restored])
+
+  useEffect(() => {
+    if (!stepped || !restored || adStatus === 'live') return
+    // Nothing typed yet — don't write an empty draft over a real one.
+    if (!formData.title && !formData.location && !formData.salaryMin) return
+    const t = setTimeout(() => {
+      try {
+        const when = new Date()
+        window.localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          savedAt: when.toISOString(),
+          step,
+          adStatus,
+          hideSalary,
+          salaryNegotiable,
+          guidedFields,
+          screeningQuestions,
+          formData: { ...formData, tags: Array.from(formData.tags) },
+        }))
+        setSavedAt(when)
+      } catch {
+        // Quota, private mode, or a disabled store. Autosave is a convenience;
+        // it may not become a reason the form stops working.
+      }
+    }, 600)
+    return () => clearTimeout(t)
+  }, [stepped, restored, adStatus, step, formData, guidedFields, screeningQuestions, hideSalary, salaryNegotiable])
+
+  const clearDraft = () => { try { window.localStorage.removeItem(DRAFT_KEY) } catch {} }
+
+  /**
+   * The draft as a Job, so step 3 can render THE REAL CARD rather than a
+   * placeholder.
+   *
+   * This is the point of the photo block: she is choosing an image for a card,
+   * and the only honest way to show what that buys her is the card itself,
+   * updating as she picks. A striped rectangle demonstrates nothing — and it is
+   * the easiest thing in the world to leave as a placeholder forever, which is
+   * why the handoff calls it out explicitly.
+   *
+   * Built through the same fields the payload uses, so what she sees here is
+   * what the board will show, including the pay formatter collapsing a single
+   * figure and falling back to "Competitive salary".
+   */
+  const draftJob: JobType = {
+    id: publishedJobId || 'draft',
+    company: formData.company,
+    companyLogo: formData.companyLogo || '',
+    companyBanner: formData.companyBanner || '',
+    companyWebsite: formData.companyWebsite || '',
+    employerId: currentUser?.id,
+    title: formData.title || 'Your job title',
+    jobReference: formData.jobReference || '',
+    salaryMin: hideSalary ? 0 : parseInt(formData.salaryMin || '0'),
+    salaryMax: hideSalary ? 0 : parseInt(formData.salaryMax || '0'),
+    salaryPeriod: (formData.salaryPeriod || 'year') as 'hour' | 'year',
+    employmentType: [formData.employmentType, formData.contractType].filter(Boolean) as WorkType[],
+    location: formData.location || 'Location',
+    area: formData.area || '',
+    venue: formData.venue || undefined,
+    fullLocation: { addressLine1: formData.location, city: formData.city || '', postcode: formData.postcode || '' },
+    shiftSchedule: formData.shiftSchedule || '',
+    description: '',
+    fullDescription: '',
+    responsibilities: [], requirements: [], benefits: [], skillsRequired: [],
+    experienceRequired: formData.experienceRequired || '',
+    workAuthorization: [],
+    workLocationType: formData.workLocationType,
+    tags: Array.from(formData.tags),
+    urgent: formData.tags.has('Urgent hire') || formData.tags.has('Immediate start'),
+    noExperience: formData.tags.has('No experience required'),
+    postedAt: (publishedAt ?? new Date()).toISOString(),
+    postedDate: (publishedAt ?? new Date()).toISOString(),
+    category: formData.category,
+    viewCount: 0,
+    applicationCount: 0,
+    status: 'active',
+  }
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -924,6 +1055,10 @@ function PostJobContent() {
       // The old flow redirected here, which is why those three were the fields
       // nobody filled in.
       if (stepped && !isEditMode && newJob?.id) {
+        // The draft is finished, not abandoned. Leaving it would offer her the
+        // ad she just published back as unfinished work the next time she
+        // opens the form.
+        clearDraft()
         setPublishedJobId(newJob.id)
         setPublishedAt(new Date())
         setAdStatus('live')
@@ -1022,7 +1157,17 @@ function PostJobContent() {
 
   return (
     <main>
-      <Header />
+      {/* ONE NAVY BAR, NOT TWO. The flow carries its own app bar with the back
+          arrow, the draft status and the live indicator — none of which the
+          site header can show — so rendering both stacked two navy bars on top
+          of each other and read as a bug rather than a choice.
+
+          The site header is what normally provides the way out, so the flow's
+          back arrow has to do that job from every step. It does not just call
+          router.back(): after publishing, the previous entry is step 2 of a
+          form for an ad that is already live, which is a confusing place to
+          land. See onBack below. */}
+      {!stepped && <Header />}
 
       {!stepped && (
         <div className={styles.hero}>
@@ -1045,16 +1190,26 @@ function PostJobContent() {
           {stepped && (
             <>
               <FlowAppBar
-                onBack={() => router.push('/employer/dashboard')}
+                // Where "back" goes depends on what exists. Once the ad is
+                // live, the useful destination is the ad itself — she has just
+                // published it and the thing she'd want is to see it. Before
+                // that there is nothing to look at, so it's the dashboard.
+                onBack={() => router.push(
+                  adStatus === 'live' && publishedJobId ? `/jobs/${publishedJobId}` : '/employer/dashboard',
+                )}
+                // The ONLY place she is told her work is safe. She will be
+                // interrupted mid-form — this is what makes that survivable,
+                // so it says "Draft saved" once something has actually been
+                // written, not before.
                 status={
                   adStatus === 'live'
                     ? {
                         kind: 'live',
                         text: `Live since ${(publishedAt ?? new Date()).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}${formData.title ? ` · ${formData.title}` : ''}${formData.location ? `, ${formData.location}` : ''}`,
                       }
-                    : formData.title || formData.location
-                      ? { kind: 'saved', text: `Draft · ${[formData.title, formData.location].filter(Boolean).join(', ')}` }
-                      : { kind: 'saving', text: 'Draft' }
+                    : savedAt
+                      ? { kind: 'saved', text: `Draft saved${[formData.title, formData.location].filter(Boolean).length ? ` · ${[formData.title, formData.location].filter(Boolean).join(', ')}` : ''}` }
+                      : { kind: 'saving', text: 'Saving as you go · draft' }
                 }
               />
             </>
@@ -1282,11 +1437,13 @@ function PostJobContent() {
 
           {(!stepped || step === 1) && (<>
           {/* Job Details */}
-          <div className={styles.section}>
+          <div className={stepped ? flow.formCard : styles.section}>
+            {!stepped && (
             <h2 className={styles.sectionTitle}>
               <span className={styles.sectionIcon}>💼</span>
               Job Details
             </h2>
+            )}
 
             <div className={styles.formGroup}>
               <label className={styles.label} htmlFor="title">
@@ -1795,27 +1952,46 @@ function PostJobContent() {
             </div>
           )}
           {/* Job Banner Image */}
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>
-              <span className={styles.sectionIcon}>🖼️</span>
-              Job Banner Image
-            </h2>
-            {stepped && step === 3 && (
-              dismissed.has('photo') ? (
-                <p className={flow.dismissedNote}>
-                  A photo — not now.
-                  <button type="button" className={flow.undoLink} onClick={() => setDismissed(prev => { const n = new Set(prev); n.delete('photo'); return n })}>Change my mind</button>
+          <div className={stepped ? flow.extrasCard : styles.section}>
+            <div className={stepped ? flow.extrasSplit : ''}>
+            <div>
+            {stepped ? (
+              <>
+                <h3 className={flow.extrasHeading}>
+                  Add a photo of the place
+                  <span className={flow.badgeEffect}>BIGGEST EFFECT</span>
+                </h3>
+                <p className={flow.extrasBody}>
+                  Chefs judge a job by the room. A real photo of the kitchen tells a
+                  chef more than a logo does.{' '}
+                  <button type="button" className={flow.extrasLink} onClick={() => setShowPhotoTips(v => !v)}>
+                    {showPhotoTips ? 'Hide the guidance' : 'What makes a good photo →'}
+                  </button>
                 </p>
-              ) : (
-                <button type="button" className={flow.notNow} style={{ marginBottom: '0.75rem' }} onClick={() => dismiss('photo')}>Not now</button>
-              )
+              </>
+            ) : (
+              <h2 className={styles.sectionTitle}>
+                <span className={styles.sectionIcon}>🖼️</span>
+                Job Banner Image
+              </h2>
             )}
-            <p className={styles.helperText} style={{ marginBottom: '0.75rem' }}>
-              Landscape cover photo shown on your job card and detail page. Optional — if you skip it, we show a branded Thrive cover instead.
-            </p>
+            {stepped && step === 3 && dismissed.has('photo') && (
+              <p className={flow.dismissedNote}>
+                A photo — not now.
+                <button type="button" className={flow.undoLink} onClick={() => setDismissed(prev => { const n = new Set(prev); n.delete('photo'); return n })}>Change my mind</button>
+              </p>
+            )}
+            {!stepped && (
+              <p className={styles.helperText} style={{ marginBottom: '0.75rem' }}>
+                Landscape cover photo shown on your job card and detail page. Optional — if you skip it, we show a branded Thrive cover instead.
+              </p>
+            )}
 
-            {/* Photo-quality tips — candidates notice the image first, so meet
-                employers with guidance right where they choose the photo. */}
+            {/* The five-bullet brief moves BEHIND a link. It is good guidance and
+                too long to sit in front of someone who has already published —
+                the handoff puts it behind "What makes a good photo", where it
+                can be as long as it likes. */}
+            {(!stepped || showPhotoTips) && (
             <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '0.75rem 0.9rem', marginBottom: '0.9rem' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#92400e', marginBottom: '0.4rem' }}>
                 📸 A great photo gets more applicants
@@ -1826,8 +2002,15 @@ function PostJobContent() {
                 ))}
               </ul>
             </div>
+            )}
 
-            <div className={styles.formGroup}>
+            {stepped && !dismissed.has('photo') && (
+              <div className={flow.extrasActions} style={{ marginBottom: '0.9rem' }}>
+                <button type="button" className={flow.notNow} onClick={() => dismiss('photo')}>Not now</button>
+              </div>
+            )}
+
+            <div className={styles.formGroup} style={stepped && dismissed.has('photo') ? { display: 'none' } : undefined}>
               <div className={styles.uploadArea}>
                 <input
                   type="file"
@@ -1857,7 +2040,7 @@ function PostJobContent() {
               )}
             </div>
 
-            {formData.companyBanner && (
+            {formData.companyBanner && !stepped && (
               <div className={styles.logoPreviewContainer}>
                 <div className={styles.logoPreview} style={{ width: '100%', maxWidth: '400px', aspectRatio: '16 / 11' }}>
                   <img
@@ -1878,19 +2061,47 @@ function PostJobContent() {
                 </div>
               </div>
             )}
-            {!formData.companyBanner && (
+            {!formData.companyBanner && !stepped && (
               <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: '0.5rem 0 0', lineHeight: 1.5 }}>
                 💡 A cover photo and a few lines of description make your job stand out — candidates see them first. Both are optional (we&apos;ll use a tasteful default image if you skip the photo), but they really help.
               </p>
             )}
+            </div>
+
+            {/* THE REAL CARD, NOT A PLACEHOLDER. She is choosing an image for
+                this card, so this is the only honest way to show what the
+                choice buys her — it redraws as she picks, and it is the same
+                component the board renders, so the pay formatter and the
+                fallback cover are the real ones. */}
+            {stepped && (
+              <div>
+                <p className={flow.sectionLabel}>How it looks on the board</p>
+                <div className={flow.cardPreviewFrame}>
+                  <JobCard job={draftJob} />
+                </div>
+                {formData.companyBanner && (
+                  <button
+                    type="button"
+                    className={flow.notNow}
+                    style={{ marginTop: '0.6rem' }}
+                    onClick={() => { setFormData(prev => ({ ...prev, companyBanner: '' })); setBannerFileName('') }}
+                  >
+                    Remove this photo
+                  </button>
+                )}
+              </div>
+            )}
+            </div>
           </div>
 
           {/* Requirements & Details */}
           <div className={styles.section}>
+            {!stepped && (
             <h2 className={styles.sectionTitle}>
               <span className={styles.sectionIcon}>ℹ️</span>
               Requirements & Details
             </h2>
+            )}
 
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
@@ -1956,12 +2167,17 @@ function PostJobContent() {
             </div>
           </div>
 
+          <div className={stepped ? flow.extrasPair : ""}>
           {/* Pre-screening Questions */}
-          <div className={styles.section}>
+          <div className={stepped ? flow.extrasCard : styles.section}>
+            {stepped ? (
+              <h3 className={flow.extrasHeading}>Ask one screening question</h3>
+            ) : (
             <h2 className={styles.sectionTitle}>
               <span className={styles.sectionIcon}>❓</span>
               Pre-screening Questions (optional)
             </h2>
+            )}
             {stepped && step === 3 && (
               dismissed.has('screening') ? (
                 <p className={flow.dismissedNote}>
@@ -2035,11 +2251,15 @@ function PostJobContent() {
           </div>
 
           {/* Tags */}
-          <div className={styles.section}>
+          <div className={stepped ? flow.extrasCard : styles.section}>
+            {stepped ? (
+              <h3 className={flow.extrasHeading}>Tag the role</h3>
+            ) : (
             <h2 className={styles.sectionTitle}>
               <span className={styles.sectionIcon}>🏷️</span>
               Job Tags
             </h2>
+            )}
             {stepped && step === 3 && (
               dismissed.has('tags') ? (
                 <p className={flow.dismissedNote}>
@@ -2080,8 +2300,9 @@ function PostJobContent() {
             ))}
           </div>
 
+          </div>
           {/* Preview Section */}
-          {showPreview && (
+          {!stepped && showPreview && (
             <div className={styles.previewSection}>
               <div className={styles.previewSectionHeader}>
                 <h2 className={styles.sectionTitle}>
