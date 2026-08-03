@@ -12,7 +12,7 @@ import { DEV_MODE, getMockUser, getMockUserType } from '@/lib/mockAuth'
 import { useMessages } from '@/lib/MessagesContext'
 import Header from '@/components/Header'
 import { supabaseJobToJob } from '@/lib/types'
-import { STAGE_COLORS, STAGE_LABELS } from '@/lib/constants/pipelineStages'
+import { STAGE_COLORS, STAGE_LABELS, stageForStatus } from '@/lib/constants/pipelineStages'
 import StageDurationBadge from '@/components/StageDurationBadge'
 import JobCardLink from '@/components/JobCardLink'
 import CandidateCard from '@/components/CandidateCard'
@@ -897,25 +897,34 @@ export default function EmployerDashboardPage() {
 
   // ── Derived data ────────────────────────────────────────
 
+  // BUCKETED THROUGH THE DECLARED MAPPER, not the raw string.
+  //
+  // Both of these used to key straight off application.status and send anything
+  // unrecognised to 'pending' — silently. So a status this widget hasn't heard
+  // of doesn't go missing, which would at least be visible; it appears in
+  // Applied, which looks correct and is wrong.
+  //
+  // stageForStatus is the same mapper /pipeline and the applications header use,
+  // so all three now agree by construction rather than by three copies of a
+  // switch happening to match. 'pending' is deliberately not one of its stages —
+  // it returns null — so the fallback stays explicit here rather than implied.
+  const bucketOf = (status: string | null | undefined): string => {
+    const s = (status || '').toLowerCase()
+    if (s === 'pending' || s === 'applied' || !s) return 'pending'
+    return stageForStatus(s) ?? 'pending'
+  }
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     PIPELINE_STAGES.forEach(s => { counts[s] = 0 })
-    applications.forEach(a => {
-      const s = (a.status || 'pending').toLowerCase()
-      if (counts[s] !== undefined) counts[s]++
-      else counts['pending']++
-    })
+    applications.forEach(a => { counts[bucketOf(a.status)]++ })
     return counts
   }, [applications])
 
   const candidatesByStage = useMemo(() => {
     const map: Record<string, typeof applications> = {}
     PIPELINE_STAGES.forEach(s => { map[s] = [] })
-    applications.forEach(app => {
-      const s = (app.status || 'pending').toLowerCase()
-      if (map[s]) map[s].push(app)
-      else map['pending'].push(app)
-    })
+    applications.forEach(app => { map[bucketOf(app.status)].push(app) })
     return map
   }, [applications])
 
@@ -1205,10 +1214,34 @@ export default function EmployerDashboardPage() {
                 {activeJobsList.length > 0 ? (
                   <ActiveJobsScroller jobs={activeJobsList} styles={styles} />
                 ) : (
+                  /* TWO STATES, NOT ONE. "Post your first listing" was shown to
+                     every employer with nothing ACTIVE — including one with four
+                     jobs and three applicants on screen directly above it, whose
+                     roles were simply all filled.
+
+                     Telling someone who has hired to post their first job is the
+                     fifth instance of copy describing a state the account is not
+                     in, after the reply button, the /my-jobs section, the
+                     interviews empty state and the manage-page subtitle.
+
+                     totalJobs is already loaded for the tour and the checklist,
+                     so the two states were always distinguishable. */
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>&#128188;</div>
-                    <p>No active jobs. Post your first listing!</p>
-                    <Link href="/post-job" className={styles.cardLink}>Post a Job &rarr;</Link>
+                    {totalJobs === 0 ? (
+                      <p>No active jobs. Post your first listing!</p>
+                    ) : (
+                      /* One line. The first draft added "They're still on
+                         Manage Job Ads whenever you want to repost" — true, and
+                         a three-line paragraph on a phone, pointing at a
+                         "Manage Jobs" link that sits in this card's own header
+                         two centimetres above it. Every other empty state on
+                         this page is four words. */
+                      <p>Nothing live right now — your {totalJobs === 1 ? 'role is' : `${totalJobs} roles are`} filled or closed.</p>
+                    )}
+                    <Link href="/post-job" className={styles.cardLink}>
+                      {totalJobs === 0 ? 'Post a Job' : 'Post another role'} &rarr;
+                    </Link>
                   </div>
                 )}
               </div>

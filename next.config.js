@@ -24,7 +24,23 @@ const nextConfig = {
   // to /register/employer/payment and this block would bounce them
   // straight back out to the free signup. Change both together, in the
   // same commit. The full explanation is in the comment above that flag.
+  // THREE URLS THAT WERE NEVER ROUTES. /pricing, /for-employers and /employers
+  // returned 404 while serving robots="index, follow" — a 404 still renders the
+  // root layout, so Google was being invited to index three pages that don't
+  // exist, carrying the £99 that used to sit in the root description.
+  //
+  // 308s rather than noindex, deliberately. noindex is more correct in the
+  // abstract and throws away whatever link equity those URLs have picked up; a
+  // permanent redirect consolidates it onto a page that exists. /pricing goes
+  // home because there IS no pricing page and won't be one until the tiers are
+  // decided; the two employer URLs go to the signup they were clearly aiming at.
+  //
+  // permanent: true (308) here, unlike the four below — these are not a switch
+  // that gets flipped back, they are URLs that will never be routes.
   redirects: async () => [
+    { source: '/pricing', destination: '/', permanent: true },
+    { source: '/for-employers', destination: '/register/employer-free', permanent: true },
+    { source: '/employers', destination: '/register/employer-free', permanent: true },
     { source: '/register', destination: '/register/employer-free', permanent: false },
     { source: '/subscribe', destination: '/register/employer-free', permanent: false },
     { source: '/register/employer/payment', destination: '/register/employer-free', permanent: false },
