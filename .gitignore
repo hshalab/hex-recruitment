@@ -50,3 +50,6 @@ token.json
 
 # scratch output from npm run guard:prove
 .guardproof/
+
+# one-off codemod scratch
+.surface.js

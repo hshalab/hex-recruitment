@@ -1,0 +1,423 @@
+/* Three-step post-a-job flow.
+ *
+ * Values taken from the design handoff's token table rather than eyeballed
+ * from the reference frames. Kept in its own module so the existing
+ * page.module.css (1,067 lines, shared with the edit path) doesn't have to be
+ * unpicked in the same ticket.
+ *
+ * navy #0F172A · navy-raised #1B2740 · navy-border #2D3E5C · yellow #FFE500
+ * yellow-hover #F0D800 · page #F8FAFC · border #E2E8F0 · border-strong #CBD5E1
+ * border-frame #D8DDE5 · text-body #475569 · text-muted #64748B
+ * text-faint #94A3B8 · on-navy-muted #93A3B8
+ */
+
+.shell {
+  max-width: 940px;
+  margin: 0 auto 3rem;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+/* ── App bar ─────────────────────────────────────────────────────────── */
+.appBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: #0f172a;
+}
+
+.appBarBack {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: -6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #93a3b8;
+  cursor: pointer;
+}
+.appBarBack:hover { background: #1b2740; color: #fff; }
+
+.appBarMark { display: inline-flex; line-height: 0; }
+
+.appBarWordmark {
+  font-family: var(--font-fraunces, 'Bricolage Grotesque'), Georgia, serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.appBarStatus {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 500;
+  color: #93a3b8;
+  white-space: nowrap;
+}
+.appBarStatusLive { color: #ffe500; }
+.liveDot { margin-right: 6px; font-size: 10px; }
+
+/* ── Body ────────────────────────────────────────────────────────────── */
+.body {
+  padding: 30px 34px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Stepper ─────────────────────────────────────────────────────────── */
+.stepper { display: flex; align-items: center; }
+.stepperCell { display: flex; align-items: center; flex: 1; }
+.stepperCell:last-child { flex: none; }
+
+.stepItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+  background: none;
+  white-space: nowrap;
+}
+.stepItem:not(:disabled) { cursor: pointer; }
+.stepItem_active { opacity: 1; }
+.stepItem_complete { opacity: 0.55; }
+.stepItem_complete:hover:not(:disabled) { opacity: 0.85; }
+.stepItem_upcoming { opacity: 0.45; }
+
+.stepDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+.stepDot_active { background: #ffe500; color: #0f172a; }
+.stepDot_complete { background: #0f172a; color: #fff; }
+.stepDot_upcoming { border: 1.5px solid #94a3b8; color: #475569; }
+
+.stepLabel { font-size: 14px; font-weight: 600; color: #0f172a; }
+
+.stepRule { flex: 1; height: 2px; margin: 0 14px; background: #d8dde5; border-radius: 2px; }
+.stepRuleDone { background: #0f172a; }
+
+/* Phone progress */
+.phoneProgress { display: none; }
+.phoneProgressHead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.phoneStepName { font-size: 14px; font-weight: 600; color: #0f172a; }
+.phoneCount {
+  font-family: var(--font-mono, 'IBM Plex Mono'), ui-monospace, monospace;
+  font-size: 12px;
+  color: #64748b;
+}
+.phoneTrack { height: 3px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+.phoneFill { height: 100%; background: #ffe500; transition: width 0.3s ease; }
+
+/* ── Title block ─────────────────────────────────────────────────────── */
+.screenTitle {
+  font-family: var(--font-fraunces, 'Bricolage Grotesque'), Georgia, serif;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+  margin: 0;
+}
+
+.postingAs { font-size: 14px; color: #64748b; margin: 8px 0 0; }
+.postingAsName { color: #0f172a; font-weight: 600; }
+.postingAsChange {
+  background: none;
+  border: 0;
+  padding: 0 0 0 4px;
+  color: #475569;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.postingAsChange:hover { color: #0f172a; }
+
+.screenSub { font-size: 15px; color: #475569; margin: 10px 0 0; line-height: 1.55; }
+
+/* ── Chips ───────────────────────────────────────────────────────────── */
+.chipRow { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.chip {
+  border-radius: 99px;
+  padding: 9px 15px;
+  font-size: 13.5px;
+  font-weight: 500;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.chip:hover { border-color: #94a3b8; }
+.chipSelected {
+  border: 1.5px solid #0f172a;
+  background: #0f172a;
+  color: #fff;
+  padding: 8.5px 14.5px; /* keep the box the same size as the 1px state */
+}
+.chipSelected:hover { border-color: #0f172a; background: #1b2740; }
+
+/* ── Step footers ────────────────────────────────────────────────────── */
+.stepFooter {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 4px;
+}
+.stepFooterNote { font-size: 13.5px; color: #64748b; margin: 0; flex: 1; }
+
+.textBtn {
+  padding: 13px 16px;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  border-radius: 9px;
+}
+.textBtn:hover { background: #eef2f7; color: #0f172a; }
+
+.primaryBtn {
+  padding: 14px 26px;
+  border: 0;
+  border-radius: 9px;
+  background: #ffe500;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.primaryBtn:hover:not(:disabled) { background: #f0d800; }
+.primaryBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.outlineBtn {
+  padding: 13px 20px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.outlineBtn:hover { border-color: #94a3b8; }
+
+.navyBtn {
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 9px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.navyBtn:hover:not(:disabled) { background: #1b2740; }
+.navyBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ── Publish moment (end of step 2) ──────────────────────────────────── */
+.publishRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px solid #d8dde5;
+  padding-top: 22px;
+  margin-top: 2px;
+}
+.publishCopy { flex: 1; }
+.publishLead { font-size: 15px; font-weight: 600; color: #0f172a; margin: 0; }
+.publishSub { font-size: 13.5px; color: #64748b; margin: 4px 0 0; }
+
+/* ── Step 3 ──────────────────────────────────────────────────────────── */
+.extrasCard {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px 26px;
+}
+
+.extrasSplit { display: grid; grid-template-columns: 1fr 300px; gap: 26px; align-items: start; }
+
+.extrasPair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.extrasHeading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-family: var(--font-fraunces, 'Bricolage Grotesque'), Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.badgeEffect {
+  background: #fff7cc;
+  border: 1px solid #ebd98a;
+  color: #7a6a0a;
+  font-family: var(--font-mono, 'IBM Plex Mono'), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 5px;
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+
+.extrasBody {
+  max-width: 440px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: #475569;
+  margin: 0 0 14px;
+}
+
+.extrasLink {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #0f172a;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.extrasActions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.notNow {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+}
+.notNow:hover { color: #0f172a; text-decoration: underline; text-underline-offset: 3px; }
+
+/* A dismissed block collapses to a line that says so — "Not now" is a
+   decision and the employer should be able to see she made it, and undo it. */
+.dismissedNote {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #64748b;
+}
+.undoLink {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.addQuestion {
+  border: 1px dashed #cbd5e1;
+  border-radius: 9px;
+  padding: 12px 14px;
+  color: #94a3b8;
+  font-size: 14px;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.addQuestion:hover { border-color: #94a3b8; color: #64748b; }
+
+.sectionLabel {
+  font-family: var(--font-mono, 'IBM Plex Mono'), ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+/* Live card preview — the real card, at the size the handoff draws it. */
+.cardPreviewFrame { width: 300px; }
+.cardPreviewFrame :global(article) { width: 100% !important; }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .extrasSplit { grid-template-columns: 1fr; }
+  .cardPreviewFrame { width: 100%; max-width: 340px; }
+}
+
+@media (max-width: 860px) {
+  .extrasPair { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .shell { border-radius: 0; border-left: 0; border-right: 0; margin-bottom: 0; }
+  .appBar { padding: 12px 16px; }
+  .body { padding: 18px 18px 96px; gap: 16px; }
+  .stepper { display: none; }
+  .phoneProgress { display: block; }
+  .screenTitle { font-size: 24px; }
+  .extrasCard { padding: 16px 18px; }
+
+  /* Sticky action bar. The footer buttons on a phone are otherwise below a
+     scroll the employer has no reason to think is there. */
+  .stepFooter {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    padding: 14px 18px;
+    gap: 10px;
+    margin: 0;
+  }
+  .stepFooterNote { display: none; }
+  .stepFooter .primaryBtn,
+  .stepFooter .navyBtn,
+  .stepFooter .outlineBtn { flex: 1; padding: 15px; border-radius: 10px; }
+  .publishRow { flex-direction: column; align-items: stretch; }
+}
+
+/* The step-1 form card. The handoff draws one white card holding the six
+   fields, rather than the stacked bordered sections the old long form used. */
+.formCard {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.formCard > * { margin-bottom: 0 !important; }
+
+@media (max-width: 768px) {
+  .formCard { padding: 16px 18px; gap: 16px; }
+}
