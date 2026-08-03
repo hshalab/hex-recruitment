@@ -698,14 +698,32 @@ function PostJobContent() {
       const para = (s: string) => s.trim().split(/\n{2,}/).map(b => `<p>${esc(b.trim()).replace(/\n/g, '<br />')}</p>`).join('')
       const composedDescription = descView === 'guided'
         ? [
-            guidedFields.dayToDay && `<h3>What you&rsquo;ll be doing</h3>${para(guidedFields.dayToDay)}`,
+            guidedFields.dayToDay && `<h3>What you’ll be doing</h3>${para(guidedFields.dayToDay)}`,
             guidedFields.experienceNeeded && `<h3>Experience or skills needed</h3>${para(guidedFields.experienceNeeded)}`,
             guidedFields.whatWeOffer && `<h3>What we offer</h3>${para(guidedFields.whatWeOffer)}`,
           ].filter(Boolean).join('')
         : formData.description
 
-      // Auto-generate short description from first 150 characters (strip HTML tags)
-      const plainText = composedDescription.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\n+/g, ' ').trim()
+      // Auto-generate short description from first 150 characters.
+      //
+      // Tags become a SPACE, not nothing. Stripping them outright ran the
+      // blocks together — the card summary read "What you'll be doingCovering
+      // chef de partie shifts", because </h3><p> collapsed to no separator.
+      // Caught by reading the published row, not the form.
+      //
+      // Entities are decoded rather than left raw for the same reason: this
+      // string is plain text on a card, so "you&rsquo;ll" would be printed
+      // literally. &nbsp; was already handled; the rest were not.
+      const plainText = composedDescription
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&rsquo;/g, '’').replace(/&lsquo;/g, '‘')
+        .replace(/&rdquo;/g, '”').replace(/&ldquo;/g, '“')
+        .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')   // last, so it can't re-create another entity
+        .replace(/\s+/g, ' ')
+        .trim()
       const shortDescription = plainText.slice(0, 150) + (plainText.length > 150 ? '...' : '')
 
       // Build employment type array: e.g. ["Full-time", "Permanent"]
