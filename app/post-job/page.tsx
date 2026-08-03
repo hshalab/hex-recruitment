@@ -635,16 +635,40 @@ function PostJobContent() {
    * The result lands as ordinary editable text in the three textareas — never
    * read-only, never a preview she has to accept.
    */
+  /**
+   * The client-side deadline, in ms.
+   *
+   * THE SERVER ALREADY CAPS THIS AT 30s — app/api/ai-assist/route.ts sets
+   * `maxDuration = 30`, so a generation that overruns comes back as an error
+   * response and the catch below renders it. That path works.
+   *
+   * What has no cap is a request that never answers at all: a dropped
+   * connection, a proxy holding the socket, a device going to sleep mid-call.
+   * There was no AbortController, so `drafting` stayed true forever — the
+   * button and the input both stay disabled while drafting, so a hung request
+   * left her looking at "Drafting…" with no way to retry and no way to reach
+   * "I'll write it myself" either. That is the actual silent failure.
+   *
+   * Set just PAST the server's own limit rather than under it. Cutting the
+   * client off at 20s would kill generations that were about to succeed, and
+   * the server's error is a better message than ours because it knows what
+   * went wrong.
+   */
+  const DRAFT_TIMEOUT_MS = 35_000
+
   const handleDraftAdvert = async () => {
     const sentence = aiSentence.trim()
     if (!sentence || drafting) return
     setDrafting(true)
     setDraftError('')
 
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), DRAFT_TIMEOUT_MS)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/ai-assist', {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
@@ -687,8 +711,21 @@ function PostJobContent() {
       setDrafted(true)
       setAiPanelOpen(false)
     } catch (err: unknown) {
-      setDraftError(err instanceof Error ? err.message : 'Could not draft the advert')
+      // A TIMEOUT AND A FAILURE GET THE SAME TREATMENT, because she does not
+      // care which it was — she cares that it didn't happen and what to do now.
+      // The only difference is the wording, and only because "took longer than
+      // expected" is true and useful where a generic failure line isn't.
+      const aborted = err instanceof DOMException && err.name === 'AbortError'
+      setDraftError(
+        aborted
+          ? 'That took longer than expected — the draft didn’t come back.'
+          : err instanceof Error ? err.message : 'The draft didn’t come back.',
+      )
     } finally {
+      clearTimeout(timer)
+      // Cleared in every case, including the abort. This is what re-enables the
+      // input, "Draft my advert" and "I'll write it myself" — all three are
+      // disabled while drafting, so leaving it true is what stranded her.
       setDrafting(false)
     }
   }
@@ -1780,7 +1817,27 @@ function PostJobContent() {
                         I&apos;ll write it myself
                       </button>
                     </div>
-                    {draftError && <p className={styles.aiPanelError}>{draftError}</p>}
+                    {/* THE FALLBACK EXISTS; SHE JUST CAN'T SEE IT AT THE MOMENT
+                        SHE NEEDS IT. "I'll write it myself" is sitting right
+                        there, but nothing connects it to what just happened, so
+                        the honest read of a bare error line is "this is broken"
+                        rather than "use the other door".
+
+                        So the message names both ways forward. The sentence she
+                        typed is untouched — the input keeps its value through
+                        the failure, because she is not retyping it — and the
+                        three guided fields stay empty and editable rather than
+                        half-filled or locked. */}
+                    {draftError && (
+                      <div className={styles.aiPanelError} role="status">
+                        <p style={{ margin: 0 }}>{draftError}</p>
+                        <p style={{ margin: '0.35rem 0 0', opacity: 0.9 }}>
+                          Your sentence is still here — press{' '}
+                          <strong>Draft my advert</strong> to try again, or write it
+                          yourself and keep going.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <button
