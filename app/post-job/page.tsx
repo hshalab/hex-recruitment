@@ -8,7 +8,7 @@ import Header from '@/components/Header'
 import PostcodeLookup, { type AddressData } from '@/components/PostcodeLookup'
 import { supabase } from '@/lib/supabase'
 import { useJobs } from '@/lib/JobsContext'
-import { getTagsByCategory, TAG_CATEGORIES, getTagCategory, type TagCategory } from '@/lib/jobTags'
+import { getTagsByCategory, TAG_CATEGORIES, getTagCategory, ALL_TAGS, type TagCategory } from '@/lib/jobTags'
 import { categories } from '@/lib/categories'
 import { isEmployerEntitled } from '@/lib/foundingEntitlement'
 import { PHOTO_TIPS } from '@/lib/photoTips'
@@ -22,6 +22,16 @@ import styles from './page.module.css'
 import flow from './flow.module.css'
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false })
+
+/** The four tags shown before "+N more". See the long note at the render site
+ *  for why these four and why it is openly a guess. */
+const FEATURED_TAGS = [
+  'Immediate start',
+  'No experience required',
+  'Training provided',
+  'Career progression',
+] as const
+const ALL_TAG_COUNT = ALL_TAGS.length
 
 const defaultImages = [
   'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&h=627&fit=crop',
@@ -160,6 +170,7 @@ function PostJobContent() {
   const [publishedAt, setPublishedAt] = useState<Date | null>(null)
   const [editingCompany, setEditingCompany] = useState(false)
   const [showPhotoTips, setShowPhotoTips] = useState(false)
+  const [tagsExpanded, setTagsExpanded] = useState(false)
 
   // "Not now" is a DECISION, not an empty field. Recording it is what lets
   // Manage Job Ads offer the block back later instead of silently forgetting
@@ -1093,6 +1104,10 @@ function PostJobContent() {
     setLoading(true)
     setError('')
     try {
+      // Everything step 3 can change. A field that only APPEARS here is a field
+      // that only SAVES here — venue and work location moved into this step, so
+      // leaving them out would have made them silently uneditable rather than
+      // optional.
       await updateJob(publishedJobId, {
         companyBanner: formData.companyBanner || undefined,
         tags: Array.from(formData.tags),
@@ -1100,6 +1115,8 @@ function PostJobContent() {
         shiftSchedule: formData.shiftSchedule || undefined,
         experienceRequired: formData.experienceRequired || undefined,
         jobReference: formData.jobReference || undefined,
+        venue: formData.venue.trim() || undefined,
+        workLocationType: formData.workLocationType,
       } as any)
       router.push(`/jobs/${publishedJobId}`)
     } catch (err: any) {
@@ -1534,21 +1551,6 @@ function PostJobContent() {
               )}
             </div>
 
-            <div className={styles.formGroup}>
-              <label className={styles.label} htmlFor="venue">Venue (optional)</label>
-              <input
-                type="text"
-                id="venue"
-                name="venue"
-                value={formData.venue}
-                onChange={handleChange}
-                placeholder="e.g. Shoreditch House, LSEG, Ham Yard Hotel"
-                className={styles.input}
-                autoComplete="off"
-                maxLength={80}
-              />
-            </div>
-
             {/* CHIPS, NOT SELECTS — cosmetic only. Both still write into the
                 same single employment_type array exactly as before; no schema,
                 no migration, no work-type restructure in this ticket.
@@ -1607,21 +1609,6 @@ function PostJobContent() {
               </div>
             </div>
 
-            <div className={styles.formGroup}>
-              <label className={styles.label} htmlFor="workLocationType">Work Location</label>
-              <select
-                id="workLocationType"
-                name="workLocationType"
-                value={formData.workLocationType}
-                onChange={handleChange}
-                className={styles.select}
-              >
-                <option value="">Select work location</option>
-                <option value="In person">In person</option>
-                <option value="Remote">Remote</option>
-                <option value="Hybrid">Hybrid</option>
-              </select>
-            </div>
 
             <div className={styles.formGroup}>
               <label className={styles.label} htmlFor="salaryMin">
@@ -2117,6 +2104,51 @@ function PostJobContent() {
               </>
             )}
 
+            {/* VENUE AND WORK LOCATION LIVE HERE NOW, not in step 1.
+                Neither is a decision that gates publishing. Work location is
+                "In person" for essentially every role this board will carry —
+                a genuine convenience, which is exactly why it does not belong
+                on the screen that decides whether the ad can go live. Venue is
+                detail rather than decision.
+
+                Moving work location out of step 1 breaks nothing: it is not in
+                stepOneProblem(), it keeps its default, and the payload reads
+                formData.workLocationType either way. The one thing it DID need
+                was adding to handleFinishExtras — step 3 saves against a live
+                row, so a field that only appears here is a field that only
+                saves here. Same for venue. */}
+
+            <div className={styles.formGroup}>
+              <label className={styles.label} htmlFor="venue">Venue (optional)</label>
+              <input
+                type="text"
+                id="venue"
+                name="venue"
+                value={formData.venue}
+                onChange={handleChange}
+                placeholder="e.g. Shoreditch House, LSEG, Ham Yard Hotel"
+                className={styles.input}
+                autoComplete="off"
+                maxLength={80}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label} htmlFor="workLocationType">Work Location</label>
+              <select
+                id="workLocationType"
+                name="workLocationType"
+                value={formData.workLocationType}
+                onChange={handleChange}
+                className={styles.select}
+              >
+                <option value="">Select work location</option>
+                <option value="In person">In person</option>
+                <option value="Remote">Remote</option>
+                <option value="Hybrid">Hybrid</option>
+              </select>
+            </div>
+
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="experienceRequired">Experience Required</label>
@@ -2284,10 +2316,70 @@ function PostJobContent() {
                 <button type="button" className={flow.notNow} style={{ marginBottom: '0.75rem' }} onClick={() => dismiss('tags')}>Not now</button>
               )
             )}
-            <p className={styles.helperText} style={{ marginBottom: '1rem' }}>
-              Select tags that apply to this role. These help candidates find your job.
-            </p>
+            {stepped ? (
+              <p className={flow.extrasBody}>
+                Tags are how candidates filter. Immediate start and no experience
+                required are the two that move applications most.
+              </p>
+            ) : (
+              <p className={styles.helperText} style={{ marginBottom: '1rem' }}>
+                Select tags that apply to this role. These help candidates find your job.
+              </p>
+            )}
 
+            {/* FOUR CHIPS AND A "+N MORE", not the whole wall. All nineteen
+                across five categories made this column about four times the
+                height of the screening block beside it, and a wall of checkboxes
+                is a worse invitation than four things worth ticking.
+
+                WHICH FOUR IS A GUESS, and openly so — no employer has ever set a
+                tag on this platform, because every live row was imported. So the
+                usage data to pick on does not exist yet and these get revisited
+                once real posts say something.
+
+                The reasoning behind the guess:
+                  Immediate start / No experience required — named in the design
+                    handoff as the two that move applications most, and the
+                    second is one of the few tags with a real filter behind it
+                    (job.noExperience on the board).
+                  Training provided / Career progression — the two benefits a
+                    kitchen actually competes on when the rate is the same. The
+                    rest of that category (pension, health insurance, bonus) is
+                    admin a chef assumes rather than chooses on.
+                Deliberately NOT a second urgency tag: "Urgent hire" and
+                "Interviews this week" set the same `urgent` flag Immediate start
+                already sets, so featuring them adds a chip and no new meaning.
+
+                Nothing is cut — all nineteen are one click away. The taxonomy is
+                fine; it is the imported board that is empty, not the feature. */}
+            {stepped && !tagsExpanded ? (
+              <div className={flow.chipRow}>
+                {FEATURED_TAGS.map(label => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={formData.tags.has(label)}
+                    className={`${flow.chip} ${formData.tags.has(label) ? flow.chipSelected : ''}`}
+                    onClick={() => handleTagChange(label)}
+                  >
+                    {label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className={flow.chip}
+                  onClick={() => setTagsExpanded(true)}
+                >
+                  + {ALL_TAG_COUNT - FEATURED_TAGS.length} more
+                </button>
+              </div>
+            ) : (
+            <>
+            {stepped && (
+              <button type="button" className={flow.notNow} style={{ marginBottom: '0.9rem' }} onClick={() => setTagsExpanded(false)}>
+                Show fewer
+              </button>
+            )}
             {(Object.keys(TAG_CATEGORIES) as TagCategory[]).map(catKey => (
               <div key={catKey} className={styles.tagCategoryGroup}>
                 <h4 className={styles.tagCategoryTitle}>
@@ -2312,6 +2404,8 @@ function PostJobContent() {
                 </div>
               </div>
             ))}
+            </>
+            )}
           </div>
 
           </div>
