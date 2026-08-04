@@ -1,4 +1,5 @@
-import { ANSWER_LINE_STALL_DAYS, viewCountsAreComparable } from '@/lib/constants/dashboard'
+import { ANSWER_LINE_STALL_DAYS, CANDIDATE_NO_NEWS_DAYS, viewCountsAreComparable } from '@/lib/constants/dashboard'
+import { daysInStage } from '@/lib/stageDuration'
 import type { AnswerLineModel } from '@/components/AnswerLine'
 
 // THE EMPLOYER SENTENCE TABLE. Evaluated in order; the first true row wins.
@@ -174,5 +175,133 @@ export function employerAnswerLine(state: EmployerAnswerState): AnswerLineModel 
     sentence: showViews
       ? `All quiet. ${adsClause}, ${state.viewsThisWeek} ${plural(state.viewsThisWeek!, 'view', 'views')} this week.`
       : `All quiet. ${adsClause}.`,
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// THE CANDIDATE SENTENCE TABLE
+// ══════════════════════════════════════════════════════════════════════
+//
+// Same component as the employer side, different table — which is the whole
+// reason item 1 was built as a table plus a presentation component rather than
+// as one page-shaped lump. The employer's question is "what needs me today";
+// the candidate's is "what do I do next". Neither page answered its own
+// question above the fold.
+//
+// Evaluated in order; the first true row wins. The ORDER IS THE PRODUCT
+// DECISION, and it should be arguable by reading it rather than by tracing JSX.
+
+export interface CandidateAnswerState {
+  /** Applications this candidate has made, any status. */
+  applicationCount: number
+  /** Most recent status change, if any — the newest row of statusChangeEvents. */
+  lastStatusChange?: { jobTitle: string | null; company: string | null; status: string; at: string } | null
+  /** The next interview on the books, if one is scheduled. */
+  nextInterview?: { company: string | null; jobTitle: string | null; date: string | null } | null
+  /** Unread messages across all conversations. */
+  unreadMessages: number
+  /** 0–100. Rows 5 and 6 split on whether this is finished. */
+  profileCompletionPct: number
+  /** Roles matching this candidate posted in the last 7 days. Already computed
+   *  for the recommendations panel — row 4 costs no new query. */
+  newMatchesThisWeek: number
+}
+
+const STATUS_SENTENCE: Record<string, string> = {
+  reviewing: 'is being reviewed',
+  shortlisted: 'has been shortlisted',
+  interview: 'has moved to interview',
+  offered: 'has an offer',
+  hired: 'has been accepted',
+  rejected: 'was not taken forward',
+}
+
+/** A company or role name, or null — same mess tolerance as the employer side. */
+function cleanName(raw: string | null | undefined): string | null {
+  const s = (raw || '').trim()
+  if (!s || s.toLowerCase() === 'undefined' || s.toLowerCase() === 'null') return null
+  return s
+}
+
+export function candidateAnswerLine(state: CandidateAnswerState): AnswerLineModel {
+  // ROW 1 — SOMETHING MOVED. The single most useful thing a job-seeker can be
+  // told, and the thing they open the page hoping for. Fourteen days, not the
+  // employer's three: a fortnight of silence is normal in hiring, and calling an
+  // application stalled after three days would alarm rather than help. Both
+  // numbers are declared side by side in lib/constants/dashboard.ts.
+  if (state.lastStatusChange && daysInStage(state.lastStatusChange.at) <= CANDIDATE_NO_NEWS_DAYS) {
+    const what = STATUS_SENTENCE[state.lastStatusChange.status?.toLowerCase()] || 'has been updated'
+    const where = cleanName(state.lastStatusChange.company) || cleanName(state.lastStatusChange.jobTitle)
+    return {
+      eyebrow: 'Today',
+      sentence: where
+        ? `Your application to ${where} ${what}.`
+        : `One of your applications ${what}.`,
+      action: { label: 'View applications', href: '/applications' },
+    }
+  }
+
+  // ROW 2 — AN INTERVIEW IS BOOKED. Below a status change only because a status
+  // change is news and this is a commitment they already know about; it still
+  // outranks everything below.
+  if (state.nextInterview) {
+    const who = cleanName(state.nextInterview.company) || cleanName(state.nextInterview.jobTitle)
+    return {
+      eyebrow: 'Today',
+      sentence: who ? `You have an interview with ${who} coming up.` : 'You have an interview coming up.',
+      action: { label: 'See details', href: '/applications' },
+    }
+  }
+
+  // ROW 3 — UNREAD MESSAGES. An employer has written and is waiting.
+  if (state.unreadMessages > 0) {
+    const n = state.unreadMessages
+    return {
+      eyebrow: 'Today',
+      sentence: `${n} unread ${plural(n, 'message', 'messages')}.`,
+      action: { label: 'Open messages', href: '/messages' },
+    }
+  }
+
+  // ROW 5 — NOTHING APPLIED FOR, PROFILE UNFINISHED. Names the blocker rather
+  // than the absence: an incomplete profile is why the matching is poor, and
+  // "browse jobs" would send them off to be badly matched.
+  if (state.applicationCount === 0 && state.profileCompletionPct < 100) {
+    return {
+      eyebrow: 'Today',
+      sentence: `Your profile is ${state.profileCompletionPct}% complete. Finishing it is what gets you matched.`,
+      action: { label: 'Finish profile', href: '/profile' },
+    }
+  }
+
+  // ROW 6 — NOTHING APPLIED FOR, PROFILE DONE. They have done everything asked
+  // of them, so the only honest next step is the board.
+  if (state.applicationCount === 0) {
+    return {
+      eyebrow: 'Today',
+      sentence: 'Your profile is ready. Now find a role worth applying for.',
+      action: { label: 'Browse jobs', href: '/jobs' },
+    }
+  }
+
+  // ROW 4 — APPLICATIONS IN, NO NEWS. THE COMMON CASE, and the reason this
+  // table is worth having at all: with a board that is mostly scraped listings
+  // and few employers replying, most candidates most weeks are here. An empty
+  // panel says "nothing happened"; this says what did, and pivots to the one
+  // thing still worth doing.
+  //
+  // Last rather than first because every row above it is actual news. This is
+  // the honest answer when there is none.
+  const n = state.applicationCount
+  const m = state.newMatchesThisWeek
+  const first = `${n} ${plural(n, 'application', 'applications')}, no news yet.`
+  return {
+    eyebrow: 'Today',
+    sentence: m > 0
+      ? `${first} ${m} new ${plural(m, 'role', 'roles')} ${plural(m, 'matches', 'match')} you this week.`
+      : first,
+    action: m > 0
+      ? { label: 'See matches', href: '/jobs' }
+      : { label: 'Browse jobs', href: '/jobs' },
   }
 }

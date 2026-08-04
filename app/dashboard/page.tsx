@@ -28,6 +28,10 @@ import SignedImage from '@/components/SignedImage'
 import CandidateCard from '@/components/CandidateCard'
 import ProfileNudge from '@/components/ProfileNudge'
 import { STAGE_COLORS } from '@/lib/constants/pipelineStages'
+// The SAME component the employer dashboard uses, with a different sentence
+// table — which is what item 1 was built as table-plus-presentation for.
+import AnswerLine from '@/components/AnswerLine'
+import { candidateAnswerLine } from '@/lib/answerLine'
 import styles from './page.module.css'
 
 // ── Helpers ─────────────────────────────────────────────
@@ -568,6 +572,47 @@ export default function DashboardPage() {
       .slice(0, 10)
   }, [candidate, jobs, applications, dismissedJobIds])
 
+  // ── THE ANSWER LINE ──────────────────────────────────────────────
+  //
+  // NO NEW QUERIES. Every input is already loaded for a panel further down:
+  //   statusChangeEvents  the activity feed          -> row 1
+  //   upcomingInterviews  the interviews panel       -> row 2
+  //   totalUnreadCount    useMessages()              -> row 3
+  //   applications        the applications panel     -> row 4
+  //   jobs + candidate    the recommendations panel  -> row 4's match count
+  //   completionPct       the profile card           -> rows 5 and 6
+  //
+  // ROW 4 THEREFORE COSTS NOTHING, which is why it is here rather than held
+  // back the way the employer's rows 3 and 4 were. It is also the row most
+  // candidates will actually see.
+  const answerLine = useMemo(() => {
+    const latest = statusChangeEvents[0]
+    const next = upcomingInterviews[0]
+
+    // "New this week" is a filter over the ALREADY-RANKED recommendations, not
+    // a second matching pass — scoreAndRankJobs has done the work, and running
+    // matching twice with two different definitions of "matches you" is how the
+    // number in the sentence stops agreeing with the panel below it.
+    const weekAgo = Date.now() - 7 * 86400000
+    const newMatchesThisWeek = recommendedJobs.filter(j => {
+      const t = new Date((j as any).posted_at || (j as any).created_at || '').getTime()
+      return Number.isFinite(t) && t >= weekAgo
+    }).length
+
+    return candidateAnswerLine({
+      applicationCount: applications.length,
+      lastStatusChange: latest
+        ? { jobTitle: latest.job_title ?? null, company: latest.company ?? null, status: latest.status, at: latest.updated_at }
+        : null,
+      nextInterview: next
+        ? { company: next.jobs?.company ?? null, jobTitle: next.jobs?.title ?? null, date: next.interview_date ?? null }
+        : null,
+      unreadMessages: totalUnreadCount || 0,
+      profileCompletionPct: completionPct,
+      newMatchesThisWeek,
+    })
+  }, [applications, statusChangeEvents, upcomingInterviews, totalUnreadCount, completionPct, recommendedJobs])
+
   // Recent conversations (top 3)
   const recentConversations = useMemo(() => {
     return [...conversations]
@@ -792,6 +837,18 @@ export default function DashboardPage() {
       <Header />
 
       <div className={styles.dashboardWrap}>
+        {/* ── THE ANSWER LINE — FIRST, AND THE ONLY ACCENT ON THE PAGE ──
+            "What do I do next", in one sentence generated from state. The
+            employer side asks "what needs me today"; this is the same component
+            and a different sentence table, which is what item 1 was built as a
+            table plus a presentation component FOR.
+
+            The greeting stays here, demoted below it: on the candidate side it
+            is the only thing carrying the person's name, and unlike the
+            employer's "Good morning, Test" banner it is one small line rather
+            than the largest type on the page. ── */}
+        <AnswerLine model={answerLine} />
+
         {/* ── 1. LIGHT GREETING (no boxed header band) ────────── */}
         <div className={styles.greetingRow}>
           <div>

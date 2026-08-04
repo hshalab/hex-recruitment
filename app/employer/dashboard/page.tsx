@@ -199,17 +199,19 @@ function PipelineSlider({ stages, stageColors, statusCounts, candidatesByStage, 
   )
 }
 
-// ── Active Jobs horizontal scroller — the employer's own posts as fixed-width
-// tiles in a native scroll-snap row. Each tile taps to that post's management
-// (its applicants view), NOT the candidate apply page. Desktop ‹ › arrows are
-// hidden on mobile via CSS (native swipe). Shared by the desktop + mobile cards.
+// ── Active Jobs — the employer's own posts. A VERTICAL LIST on a phone, a
+// 3-up grid on desktop; nothing scrolls sideways at either. Each tile taps to
+// that post's management (its applicants view), NOT the candidate apply page.
+//
+// THE ‹ › ARROWS ARE GONE, not hidden. They existed to nudge a horizontal
+// scroller that no longer exists at any width — CSS already hid them above 961
+// and below 768, so they were live in a 192px band and dead everywhere else.
+// Two aria-labelled buttons that scroll nothing are worse than no buttons: a
+// screen reader still announces "Scroll jobs left".
 function ActiveJobsScroller({ jobs, styles }: { jobs: any[]; styles: Record<string, string> }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 240, behavior: 'smooth' })
   return (
     <div className={styles.jobScrollWrap}>
-      <button type="button" className={`${styles.jobNav} ${styles.jobNavPrev}`} aria-label="Scroll jobs left" onClick={() => scroll(-1)}>&lsaquo;</button>
-      <div className={styles.jobScroller} ref={ref}>
+      <div className={styles.jobScroller}>
         {jobs.map((job: any) => (
           // The real image-led job card; tap MANAGES the post (edit), not apply.
           // The overlay keeps the management stats (apps · views) visible.
@@ -218,7 +220,6 @@ function ActiveJobsScroller({ jobs, styles }: { jobs: any[]; styles: Record<stri
           </JobCardLink>
         ))}
       </div>
-      <button type="button" className={`${styles.jobNav} ${styles.jobNavNext}`} aria-label="Scroll jobs right" onClick={() => scroll(1)}>&rsaquo;</button>
     </div>
   )
 }

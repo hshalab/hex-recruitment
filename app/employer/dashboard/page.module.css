@@ -819,21 +819,29 @@
   .dashboardWrap { padding: 0.5rem; }
 }
 
-/* ── Active Jobs — horizontal scroll-snap row of post tiles ──────────── */
+/* ── Active Jobs — A VERTICAL LIST ON A PHONE, a 3-up grid on desktop ──────
+ *
+ * THE THIRD HORIZONTAL SCROLLER. The 390 finding was "two nested horizontal
+ * scrollers"; the pipeline and Recent Applicants were the two named, and this
+ * was a third nobody had counted — 490px of tiles inside 350px of viewport,
+ * +140px of sideways swipe inside a page that scrolls vertically.
+ *
+ * IT HID BEHIND THE TEST DATA. Every one of the test employer's ads is filled,
+ * so Active Jobs renders its empty state and this element is never mounted. It
+ * is only reachable when an employer HAS ACTIVE JOBS — which is every real
+ * employer and none of our fixtures. It would have survived any future check
+ * that did not deliberately go looking for it.
+ *
+ * The default below is the PHONE case (a column); the min-width:961px block
+ * further down still turns it into the 3-column desktop grid, untouched. */
 .jobScrollWrap { position: relative; }
 .jobScroller {
   display: flex;
+  flex-direction: column;
   gap: 0.6rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 4px;
-  scrollbar-width: thin;
+  /* No overflow-x, no scroll-snap: nothing to scroll sideways any more. */
+  overflow: visible;
 }
-.jobScroller::-webkit-scrollbar { height: 6px; }
-.jobScroller::-webkit-scrollbar-thumb { background: #d6dae0; border-radius: 999px; }
-.jobScroller::-webkit-scrollbar-track { background: transparent; }
 .jobTile {
   flex: 0 0 auto;
   width: 200px;
@@ -875,7 +883,10 @@
 
 /* Active Jobs: the real image-led JobCardLink as a scroll-snap item + the
    management overlay (apps · views) so stats aren't lost. */
-.jobCardItem { flex: 0 0 auto; width: 240px; max-width: 80%; scroll-snap-align: start; text-decoration: none; }
+/* Full width in the phone column. The 240px/80% was the scroll-snap tile size;
+   with nothing scrolling sideways there is no reason for a card to stop short
+   of the edge and imply there is more to the right. */
+.jobCardItem { width: 100%; max-width: none; text-decoration: none; }
 /* The shared BrandedJobFallback paints a top-left Thrive lockup (mark + "Thrive"
    wordmark + slogan) to brand candidate-facing job cards. On the employer's OWN
    compact Active Jobs cards that lockup (a) doesn't belong and (b) lands in the
