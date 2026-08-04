@@ -190,9 +190,12 @@ function JobAnalyticsContent() {
   // Summary metrics
   const summary = useMemo(() => {
     const totalViews = views.length || (job?.view_count || 0)
-    const uniqueViewers = new Map<string, boolean>()
-    views.forEach(v => uniqueViewers.set(v.viewer_id, true))
-    const uniqueViews = uniqueViewers.size || totalViews
+    // Same fault as the dashboard: keying a Map on viewer_id folded every
+    // signed-out view into one entry, because they are all null. Signed-in
+    // viewers dedupe by id; anonymous ones each count once.
+    const signedInViewers = new Set(views.map(v => v.viewer_id).filter(Boolean))
+    const anonymousViews = views.filter(v => !v.viewer_id).length
+    const uniqueViews = (signedInViewers.size + anonymousViews) || totalViews
     const totalApps = applications.length
     const totalImpressions = impressions.length
     const conversionRate = totalApps > 0 && totalViews > 0
