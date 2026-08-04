@@ -95,13 +95,26 @@ jobs:
           # was typed, defaulting to dry-run.
           #
           # This does mean the confirmation token stops protecting the SCHEDULED
-          # path. What protects it instead:
-          #   1. the schedule block above is COMMENTED OUT — enabling it is a
-          #      deliberate act by a person editing this file
-          #   2. isDue() gives each candidate a 7-day cadence, so even a schedule
-          #      misconfigured to fire hourly cannot mail anyone twice in a week
-          #   3. CRON_SECRET is still required to reach the send path at all
-          #   4. the manual path still needs BOTH keys
+          # path. What protects it instead — CORRECTED 4 Aug 2026, and read this
+          # list rather than the one it replaces:
+          #   1. CRON_SECRET is required to reach the send path at all
+          #   2. isDue() gives each candidate a 7-day cadence (lib/rolesRoundup.ts,
+          #      CADENCE_DAYS minus CADENCE_SLACK_DAYS = 6.0 days), so even a
+          #      schedule misconfigured to fire hourly cannot mail anyone twice
+          #      in a week — and a manual dispatch followed by a late scheduled
+          #      run cannot double-send, because markSent() stamps each recipient
+          #      as it goes and the second run finds nobody due
+          #   3. the manual path still needs BOTH keys
+          #
+          # WHAT USED TO BE ITEM 1 AND IS NO LONGER TRUE: "the schedule block
+          # above is COMMENTED OUT — enabling it is a deliberate act by a person
+          # editing this file". It was armed on 29 Jul 2026 and this list was not
+          # updated, so for six days the file named a rail that did not exist, on
+          # the one path that emails real candidates. A stale comment is worse
+          # than no comment: the next person reading at speed counts it.
+          #
+          # If the schedule is ever disarmed again, fix this list in the same
+          # commit.
           if [ "$EVENT_NAME" = "schedule" ]; then
             MODE="send"
             CONFIRM="SEND"
