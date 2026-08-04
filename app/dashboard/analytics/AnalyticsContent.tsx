@@ -697,8 +697,15 @@ export default function AnalyticsContent() {
 
       // Unique views from job_views table
       const jobViewRecords = jobViews.filter((v: any) => v.job_id === job.id)
-      const uniqueViewers = new Set(jobViewRecords.map((v: any) => v.viewer_id))
-      const uniqueViewCount = uniqueViewers.size
+      // ANONYMOUS VIEWS ARE NOT ONE PERSON. viewer_id is null for a signed-out
+      // visitor, and a plain Set collapses every null to a single entry — so
+      // five hundred people arriving from a shared link would have counted as
+      // one unique viewer. Signed-in viewers still dedupe by id; anonymous ones
+      // each count once, which is the honest reading of "we cannot tell them
+      // apart and are not trying to".
+      const signedIn = new Set(jobViewRecords.map((v: any) => v.viewer_id).filter(Boolean))
+      const anonymous = jobViewRecords.filter((v: any) => !v.viewer_id).length
+      const uniqueViewCount = signedIn.size + anonymous
 
       // CTR: applications / views
       const ctr = viewCount > 0

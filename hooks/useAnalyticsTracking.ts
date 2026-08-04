@@ -36,45 +36,55 @@ export function useAnalyticsTracking() {
 
   const trackJobView = useCallback(
     async (jobId: string, source: ViewSource) => {
-      if (!userId) {
-        console.warn('[Analytics] trackJobView skipped — no userId yet')
-        return
-      }
+      // ANONYMOUS VIEWS COUNT NOW, and they go through the server.
+      //
+      // This used to return early when there was no session, so a signed-out
+      // visitor was never counted on any path — and everyone arriving from a
+      // shared link is signed out. The number measured signed-in browsing while
+      // being read as reach.
+      //
+      // It also cannot be fixed on the client: the only INSERT policy on
+      // job_views is granted to `authenticated`, and anon has no EXECUTE on
+      // increment_job_views. A signed-out write fails twice, silently. So it
+      // moved to /api/jobs/[id]/view, which needs no policy change and no
+      // migration — see the long note there.
+      //
+      // NOTHING IDENTIFYING IS STORED. viewer_id is the signed-in user or null.
+      // No cookie, no IP, no fingerprint. The debounce below is an in-memory Map
+      // for the life of the page and is never persisted, so a signed-out view is
+      // a bare increment.
+      //
+      // WHAT NOT DEDUPLICATING COSTS: a reload counts again, and the same person
+      // reading an ad on two days counts twice. The figure is an honest
+      // over-count of OPENS, not a count of PEOPLE. See CLAUDE.md.
 
-      // Debounce: skip if same job was viewed in the last 30 seconds
+      // Debounce: skip if the same job was opened in the last 30 seconds
       const now = Date.now()
       const lastView = recentViews.current.get(jobId)
       if (lastView && now - lastView < 30_000) return
-
       recentViews.current.set(jobId, now)
 
-      const device = getDeviceType()
-
-      const { error } = await supabase.from('job_views').insert({
-        job_id: jobId,
-        viewer_id: userId,
-        source,
-        device_type: device,
-      })
-
-      // Also increment the counter on the jobs table (used by dashboard)
-      supabase.rpc('increment_job_views', { p_job_id: jobId }).then()
-
-      if (error) {
-        console.error('[Analytics] trackJobView insert failed:', error.message, { jobId, userId, source, device })
-        // Fallback: try with only base columns
-        const { error: fallbackError } = await supabase.from('job_views').insert({
-          job_id: jobId,
-          viewer_id: userId,
+      try {
+        // Read the token at call time rather than trusting the userId state.
+        // The session resolves asynchronously, so a signed-in candidate who
+        // opened a job quickly used to be skipped entirely — the old code's own
+        // warning said "no userId yet".
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch(`/api/jobs/${jobId}/view`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ source, device: getDeviceType() }),
         })
-        if (fallbackError) {
-          console.error('[Analytics] trackJobView fallback also failed:', fallbackError.message)
-        }
-      } else {
-        console.log('[Analytics] trackJobView success:', { jobId, source, device })
+        if (!res.ok) console.error('[Analytics] trackJobView failed:', res.status)
+      } catch (err) {
+        // Tracking must never be the reason a page breaks.
+        console.error('[Analytics] trackJobView error:', err)
       }
     },
-    [userId],
+    [],
   )
 
   const trackClickEvent = useCallback(

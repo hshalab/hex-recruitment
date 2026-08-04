@@ -200,7 +200,6 @@ function JobsPageContent() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
-  const viewIncrementedForRef = useRef<string | null>(null)
 
   // Apply flow state
   const [showApplyModal, setShowApplyModal] = useState(false)
@@ -419,16 +418,16 @@ function JobsPageContent() {
       const job = jobs.find(j => j.id === jobId)
       if (job) {
         setSelectedJob(job)
-        // Track view for candidates navigating directly via URL (?id=)
-        // Uses ref to prevent double-increment if selectJob already fired (mobile)
-        if (currentUserRole !== 'employee') {
-          // Skip view tracking for non-candidates
-        } else if (viewIncrementedForRef.current === job.id) {
-          // Already tracked for this job
-        } else {
-          viewIncrementedForRef.current = job.id
-          supabase.rpc('increment_job_views', { p_job_id: job.id })
-        }
+        // ONE PATH FOR VIEWS: trackJobView, always. This used to call
+        // increment_job_views directly as well — and trackJobView calls that
+        // RPC itself, so a single click added TWO to jobs.views while adding
+        // one row to job_views. That is why the two never reconciled.
+        //
+        // It also carried its own deduplication — a single ref holding only the
+        // LAST job id, so A -> B -> A counted A twice — competing with the
+        // hook's 30-second per-job debounce. Two rules, neither authoritative.
+        // The hook's is the one that survives.
+        trackJobView(job.id, 'direct')
       }
     } else if (!isMobile && !selectedJob) {
       // Don't clear selection on desktop - keep current or auto-select will handle
@@ -601,16 +600,9 @@ function JobsPageContent() {
 
   // Job selection handlers
   const selectJob = async (job: Job) => {
+    // trackJobView increments jobs.views itself. The direct RPC that used to
+    // sit here doubled every click. See the note in the ?id= effect above.
     trackJobView(job.id, 'search')
-    // Increment view counter for candidate users who explicitly click a job
-    if (currentUserRole !== 'employee') {
-      // Skip view tracking for non-candidates
-    } else if (viewIncrementedForRef.current === job.id) {
-      // Already tracked for this job
-    } else {
-      viewIncrementedForRef.current = job.id
-      supabase.rpc('increment_job_views', { p_job_id: job.id })
-    }
     setSelectedJob(job)
     router.push(`/jobs?id=${job.id}`, { scroll: false })
   }
