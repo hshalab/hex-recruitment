@@ -1263,7 +1263,23 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* ── 7. BOOST STATUS ─────────────────────────── */}
+            {/* ── 7. BOOST STATUS ───────────────────────────
+                GATED BEHIND profileViews > 0. "Stand out to employers — appear
+                first in search results" sold next to two zeroes was the worst
+                thing on this page: you cannot boost something that has not
+                happened, and offering to amplify nothing reads as a charge for
+                a problem we created.
+
+                An ACTIVE boost always shows, whatever the view count — someone
+                who has already paid must be able to see what they bought, and
+                that state is exactly the one a naive `views > 0` gate would
+                have hidden on a quiet week. The gate is on the OFFER, not on
+                the panel.
+
+                30 days rather than 7: a week of zero views is normal noise on a
+                board this size, and hiding the offer on that basis would make
+                it flicker in and out. */}
+            {(profileViews30d > 0 || !!activeBoost) && (
             <div className={`${styles.card} ${styles.aYellow} ${styles.mBoost}`}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Profile Boost</h2>
@@ -1291,15 +1307,19 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+            )}
 
-            {/* ── 8. SAVED JOBS ───────────────────────────── */}
+            {/* ── 8. SAVED JOBS ─────────────────────────────
+                "View →" pointed at /jobs — the whole board — from a panel
+                counting the jobs this person had SAVED. /saved-jobs exists, is
+                candidate-only, and is what the link always meant. */}
             <div className={`${styles.card} ${styles.aGrey} ${styles.mSaved}`}>
               <div className={styles.cardBody} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--black)' }}>{savedCount}</span>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginLeft: '0.5rem' }}>Saved Jobs</span>
                 </div>
-                <Link href="/jobs" className={styles.cardLink}>View &rarr;</Link>
+                <Link href="/saved-jobs" className={styles.cardLink}>View &rarr;</Link>
               </div>
             </div>
 

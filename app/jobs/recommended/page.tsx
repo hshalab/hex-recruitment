@@ -13,7 +13,7 @@ import { Candidate } from '@/lib/mockCandidates'
 import { useJobs } from '@/lib/JobsContext'
 import { supabaseProfileToCandidate } from '@/lib/types'
 import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
-import { scoreAndRankJobs, hasRelevanceSignal, RecommendedJob } from '@/lib/recommendations'
+import { scoreAndRankJobs, RecommendedJob } from '@/lib/recommendations'
 import { supabase } from '@/lib/supabase'
 import { useSavedJobs } from '@/lib/useSavedJobs'
 import { getTagCategory, WORK_STYLE_TAGS } from '@/lib/jobTags'
@@ -121,11 +121,20 @@ export default function RecommendedJobsPage() {
     return scoreAndRankJobs(jobs, candidate, appliedJobIds, viewedJobs)
   }, [jobs, candidate, appliedJobIds, viewedJobs, jobsLoading])
 
-  // Does the percentage mean anything for this person? Same question, and the
-  // same one function, as the dashboard's "Recommended for You" / "Latest
-  // roles" heading — so the two pages cannot end up disagreeing about whether
-  // we know enough to make a claim.
-  const showMatchPercent = hasRelevanceSignal(candidate)
+  // TWO DIFFERENT QUESTIONS, and they belong at two different scopes.
+  //
+  // The dashboard HEADING asks about the PERSON — "have you told us anything we
+  // can match on" — and uses hasRelevanceSignal, because a heading covers the
+  // whole list.
+  //
+  // The PERCENTAGE asks about the ROW — "did this particular job match anything
+  // about your fit" — and uses relevancePoints, which now counts only points
+  // that were earned. That is stricter, and deliberately so: a candidate WITH a
+  // job title can still earn nothing on a given advert (their title does not
+  // overlap it and neither side classifies into a sector), and "45% Match" on
+  // that row is just as untrue as it is for an empty profile. Per-row is what
+  // "show it only when title, skills or sector contributed something" means.
+  const showMatchPercent = (job: RecommendedJob) => job.relevancePoints > 0
 
   // Auto-select first job on desktop
   useEffect(() => {
@@ -361,7 +370,7 @@ export default function RecommendedJobsPage() {
                           us nothing to match on. See the note on the detail
                           banner below — one rule, two render sites, and the
                           same condition as the dashboard heading. */}
-                      {showMatchPercent && (
+                      {showMatchPercent(job) && (
                         <span className={styles.listCardMatch}>{job.matchPercentage}%</span>
                       )}
                     </div>
@@ -407,7 +416,7 @@ export default function RecommendedJobsPage() {
                           be fooled by a neutral default. */}
                       {selectedJobMatch && (
                         <div className={styles.detailMatchBanner}>
-                          {showMatchPercent && (
+                          {showMatchPercent(selectedJobMatch) && (
                           <div className={styles.detailMatchLeft}>
                             <span className={styles.detailMatchPercent}>{selectedJobMatch.matchPercentage}% Match</span>
                             <span className={styles.detailMatchLabel}>Compatibility Score</span>

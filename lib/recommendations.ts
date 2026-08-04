@@ -8,23 +8,20 @@ export interface RecommendedJob extends Job {
   matchPercentage: number
   matchReasons: string[]
   /**
-   * Points from the title, skills and sector components.
+   * RELEVANCE POINTS THIS JOB ACTUALLY EARNED — title, skills and sector, with
+   * every neutral payout excluded. Zero means "nothing about job fit was
+   * matched", and now genuinely means it.
    *
-   * READ THE WARNING BEFORE USING THIS AS A CONFIDENCE MEASURE. It is NOT
-   * "how much we actually matched", because those components PAY OUT FOR
-   * MISSING DATA rather than scoring zero:
+   * An earlier version summed the raw breakdown and was worthless as a
+   * confidence measure: those components pay out for MISSING data, so a
+   * completely empty profile arrived with 20 points it had done nothing to
+   * earn, and any gate of the form `relevancePoints > 0` was true for
+   * everybody. See ComponentScore for the four neutrals.
    *
-   *   calcTitleMatch       no candidate title or history at all  -> 10
-   *   calcSkillMatch       the JOB lists no skills               ->  5
-   *   calcSectorMatch      no candidate sector and no title      ->  5
-   *
-   * So a completely empty profile arrives here with 20 relevance points it did
-   * nothing to earn, which is most of why it also clears the 25-point
-   * threshold and gets the full list rather than the MIN_RESULTS backfill.
-   *
-   * Gate user-facing claims on hasRelevanceSignal(candidate) instead — the
-   * question "did this person tell us anything" is answerable from the profile
-   * and cannot be confused by a neutral default.
+   * THE RANKING DOES NOT READ THIS. The neutral points still count towards
+   * `score` and `matchPercentage`, so every list is ordered exactly as before —
+   * this figure exists so a CLAIM can be honest without changing what anyone is
+   * shown.
    */
   relevancePoints: number
 }
@@ -54,6 +51,33 @@ export function hasRelevanceSignal(candidate: Candidate | null | undefined): boo
     // Nobody is in that state today (all 23 empty profiles have no history
     // either), which is precisely why it would have gone unnoticed.
     || (candidate.workHistory || []).some(w => !!(w?.title || '').trim())
+}
+
+/**
+ * What one scoring component returns.
+ *
+ * `unearned` MARKS A NEUTRAL PAYOUT — points awarded because something was
+ * MISSING rather than because anything matched. Four of them exist:
+ *
+ *   calcTitleMatch    10   no candidate title and no work history
+ *   calcTitleMatch     8   neither side could be classified into a sector
+ *   calcSkillMatch     5   the JOB lists no skills — true of all 246 live rows
+ *   calcSectorMatch    5   no candidate sector and no title to infer one from
+ *
+ * The points still count towards `score`, so RANKING IS COMPLETELY UNCHANGED.
+ * The flag exists only so a user-facing CLAIM can ask "did we actually match
+ * anything" without the answer being yes by default.
+ *
+ * WHY A FLAG AND NOT `reason === null`: because that is not the same question.
+ * calcExperienceLevelMatch pays 8 for a genuine adjacent-band match with a null
+ * reason, and calcRecencyBonus pays 2 for a real one-week-old job the same way.
+ * Reading the absence of a reason as "unearned" would have marked both of those
+ * as nothing, which is how the last version of this went wrong.
+ */
+interface ComponentScore {
+  points: number
+  reason: string | null
+  unearned?: true
 }
 
 // Points added when a job sits explicitly inside one of the candidate's chosen
@@ -121,7 +145,7 @@ export function scoreAndRankJobs(
   }
 
   const scored = eligibleJobs.map(job => {
-    const { score, reasons, breakdown } = calculateMatchScore(job, candidate, viewedJobs, jobs)
+    const { score, relevanceEarned, reasons, breakdown } = calculateMatchScore(job, candidate, viewedJobs, jobs)
 
     // Rank an explicit area match above a job we couldn't place. Stated in
     // full rather than inferred from "it survived the filter", so it stays
@@ -136,10 +160,7 @@ export function scoreAndRankJobs(
       ...job,
       matchPercentage: Math.min(Math.round(score + areaBonus), 99),
       matchReasons: inPickedArea ? [...reasons, 'In your preferred area'] : reasons,
-      // The three relevance components, carried out so callers can ask whether
-      // the percentage was built from anything about the JOB FIT rather than
-      // from the candidate's preferences and the posting date.
-      relevancePoints: (breakdown.title || 0) + (breakdown.skills || 0) + (breakdown.sector || 0),
+      relevancePoints: relevanceEarned,
       _breakdown: { ...breakdown, area: areaBonus },
     }
   })
@@ -172,8 +193,9 @@ function calculateMatchScore(
   candidate: Candidate,
   viewedJobs: JobView[],
   allJobs: Job[]
-): { score: number; reasons: string[]; breakdown: Record<string, number> } {
+): { score: number; relevanceEarned: number; reasons: string[]; breakdown: Record<string, number> } {
   let score = 0
+  let relevanceEarned = 0
   const reasons: string[] = []
   const breakdown: Record<string, number> = {}
 
@@ -183,11 +205,20 @@ function calculateMatchScore(
   breakdown.title = titleScore.points
   if (titleScore.reason) reasons.push(titleScore.reason)
 
+  // THE HONEST RELEVANCE TOTAL. Title, skills and sector are the three
+  // components that say something about whether this person can do this job —
+  // but only when they actually MATCHED. A neutral payout adds to `score` (so
+  // the ranking is untouched) and contributes nothing here (so the claim is
+  // true). See ComponentScore for the four neutrals and why the flag is
+  // explicit rather than inferred from a null reason.
+  if (!titleScore.unearned) relevanceEarned += titleScore.points
+
   // 2. Skills match (max 35 points)
   const skillScore = calcSkillMatch(job, candidate)
   score += skillScore.points
   breakdown.skills = skillScore.points
   if (skillScore.reason) reasons.push(skillScore.reason)
+  if (!skillScore.unearned) relevanceEarned += skillScore.points
 
   // 3. Job type / employment type match (max 15 points)
   const typeScore = calcTypeMatch(job, candidate)
@@ -212,6 +243,7 @@ function calculateMatchScore(
   score += sectorScore.points
   breakdown.sector = sectorScore.points
   if (sectorScore.reason) reasons.push(sectorScore.reason)
+  if (!sectorScore.unearned) relevanceEarned += sectorScore.points
 
   // 7. Browsing pattern bonus (max 5 points)
   const browsingScore = calcBrowsingBonus(job, viewedJobs)
@@ -243,7 +275,7 @@ function calculateMatchScore(
   breakdown.expLevel = expLevelScore.points
   if (expLevelScore.reason) reasons.push(expLevelScore.reason)
 
-  return { score, reasons, breakdown }
+  return { score, relevanceEarned, reasons, breakdown }
 }
 
 // ─── Individual scoring components ──────────────────────────────
@@ -285,7 +317,7 @@ function inferSectors(text: string): Set<string> {
 function calcTitleMatch(
   job: Job,
   candidate: Candidate
-): { points: number; reason: string | null } {
+): ComponentScore {
   const candidateTitle = (candidate.jobTitle || '').toLowerCase().trim()
 
   // Collect all title sources: current title + work history roles
@@ -296,7 +328,7 @@ function calcTitleMatch(
   const allCandidateTitles = [candidateTitle, ...historyTitles].filter(Boolean)
 
   // No title info at all — neutral, don't penalise
-  if (allCandidateTitles.length === 0) return { points: 10, reason: null }
+  if (allCandidateTitles.length === 0) return { points: 10, reason: null, unearned: true }
 
   const jobTitle = (job.title || '').toLowerCase()
   const jobCategory = (job.category || '').toLowerCase()
@@ -341,19 +373,19 @@ function calcTitleMatch(
   }
 
   // One or both sides unclassified — neutral
-  return { points: 8, reason: null }
+  return { points: 8, reason: null, unearned: true }
 }
 
 function calcSkillMatch(
   job: Job,
   candidate: Candidate
-): { points: number; reason: string | null } {
+): ComponentScore {
   const jobSkills = (job.skillsRequired || []).map(s => s.toLowerCase().trim())
   const candidateSkills = (candidate.skills || []).map(s => s.toLowerCase().trim())
 
   if (jobSkills.length === 0) {
     // No skills required — small neutral credit, not a match signal
-    return { points: 5, reason: null }
+    return { points: 5, reason: null, unearned: true }
   }
 
   const matchedSkills = jobSkills.filter(js =>
@@ -374,7 +406,7 @@ function calcSkillMatch(
 function calcTypeMatch(
   job: Job,
   candidate: Candidate
-): { points: number; reason: string | null } {
+): ComponentScore {
   // READ THROUGH THE SHARED VOCABULARY, so a word that has been retired cannot
   // be treated as a stated preference. A profile still holding 'Freelance'
   // would otherwise count as "stated", and then score ZERO against every job on
@@ -399,7 +431,7 @@ function calcTypeMatch(
 function calcSalaryMatch(
   job: Job,
   candidate: Candidate
-): { points: number; reason: string | null } {
+): ComponentScore {
   const candPeriod = candidate.salaryPeriod || 'year'
 
   let candMin = candidate.salaryMin ? Number(candidate.salaryMin) : null
@@ -465,7 +497,7 @@ function calcSalaryMatch(
 function calcLocationMatch(
   job: Job,
   candidate: Candidate
-): { points: number; reason: string | null } {
+): ComponentScore {
   const candLocation = (candidate.location || '').toLowerCase()
   const candPreferred = (candidate.preferredLocations || '').toLowerCase()
   const jobLocation = (job.location || '').toLowerCase()
@@ -529,13 +561,13 @@ const GENERIC_ROLE_WORDS = new Set([
 function calcSectorMatch(
   job: Job,
   candidate: Candidate
-): { points: number; reason: string | null } {
+): ComponentScore {
   const candSector = (candidate.jobSector || '').toLowerCase().trim()
   const candTitle = (candidate.jobTitle || '').toLowerCase().trim()
   const jobCategory = (job.category || '').toLowerCase()
   const jobTitle = (job.title || '').toLowerCase()
 
-  if (!candSector && !candTitle) return { points: 5, reason: null }
+  if (!candSector && !candTitle) return { points: 5, reason: null, unearned: true }
 
   // Direct sector match
   if (candSector && jobCategory) {
@@ -565,7 +597,7 @@ function calcSectorMatch(
 function calcBrowsingBonus(
   job: Job,
   viewedJobs: JobView[]
-): { points: number; reason: string | null } {
+): ComponentScore {
   if (viewedJobs.length === 0) return { points: 0, reason: null }
 
   // Check if they viewed this specific job before
@@ -577,7 +609,7 @@ function calcBrowsingBonus(
   return { points: 0, reason: null }
 }
 
-function calcRecencyBonus(job: Job): { points: number; reason: string | null } {
+function calcRecencyBonus(job: Job): ComponentScore {
   const postedLower = (job.postedAt || '').toLowerCase()
 
   if (postedLower.includes('just') || postedLower.includes('hour')) {
@@ -606,7 +638,7 @@ function calcTagAffinity(
   job: Job,
   viewedJobs: JobView[],
   allJobs: Job[]
-): { points: number; reason: string | null } {
+): ComponentScore {
   const jobTags = job.tags || []
   if (jobTags.length === 0 || viewedJobs.length === 0) return { points: 0, reason: null }
 
@@ -642,7 +674,7 @@ function calcTagAffinity(
 function calcWorkStyleTagMatch(
   job: Job,
   candidate: Candidate
-): { points: number; reason: string | null } {
+): ComponentScore {
   const prefs = (candidate.workLocationPreferences || []).map(p => p.toLowerCase())
   if (prefs.length === 0) return { points: 0, reason: null }
 
@@ -675,7 +707,7 @@ const EXPERIENCE_LEVELS = [
 function calcExperienceLevelMatch(
   job: Job,
   candidate: Candidate
-): { points: number; reason: string | null } {
+): ComponentScore {
   const years = candidate.yearsExperience != null ? Number(candidate.yearsExperience) : null
   if (years === null) return { points: 5, reason: null }
 
