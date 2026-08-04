@@ -1,5 +1,7 @@
 'use client'
 
+import { daysInStage } from '@/lib/stageDuration'
+
 // "N days in [Stage]" badge that renders on every pipeline card. Live-
 // computed from stage_entered_at — never stored as an integer so the
 // label is always current relative to the user's clock rather than
@@ -32,25 +34,12 @@ interface StageDurationBadgeProps {
   stageColor?: string
 }
 
-// Date-only days between (UTC midnight semantics) so a card moved at
-// 23:59 yesterday reads as "1 day" rather than "Today" through to
-// "23:59 today". Math.floor on ms-since-epoch can off-by-one for
-// cards that cross local midnight; toDateString() collapses to the
-// calendar day in the local timezone, which is what employers expect.
-function dayDifference(fromIso: string, now: Date = new Date()): number {
-  const from = new Date(fromIso)
-  // Normalise both to the local calendar day. UTC math would split
-  // cards by the timezone offset, e.g. a card moved at 01:00 GMT
-  // shows as "1 day" rather than "Today" for a UK user immediately
-  // after the move.
-  const fromMidnight = new Date(from.getFullYear(), from.getMonth(), from.getDate()).getTime()
-  const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
-  const days = Math.round((nowMidnight - fromMidnight) / 86400000)
-  return Math.max(0, days)
-}
-
 export default function StageDurationBadge({ stageEnteredAt, stageLabel, stageColor }: StageDurationBadgeProps) {
-  const days = dayDifference(stageEnteredAt)
+  // Moved to lib/stageDuration.ts so the phone pipeline's "waiting 4d" note is
+  // the SAME number as this badge's "4 days in Shortlisted" rather than a
+  // second implementation of it. The local-midnight semantics are subtle
+  // enough that two copies would have drifted.
+  const days = daysInStage(stageEnteredAt)
 
   let label: string
   if (days === 0) label = 'Today'

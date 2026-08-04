@@ -32,6 +32,11 @@ tsconfig.tsbuildinfo
 .claude/settings.local.json
 .claude/credentials.local.json
 .claude/scheduled_tasks.lock
+# Timestamped backups the CLI leaves behind when it rewrites settings. One got
+# swept into a commit by `git add -A` on 4 Aug 2026 — it held only a permissions
+# allow-list, but the same file can carry MCP definitions, so it is ignored by
+# pattern rather than remembered by hand.
+.claude/*.bak*
 
 # Claude Code's own config. It normally lives in the home directory, but it
 # holds MCP server definitions which can carry access tokens — so if one is
