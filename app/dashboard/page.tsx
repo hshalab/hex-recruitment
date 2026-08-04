@@ -593,9 +593,17 @@ export default function DashboardPage() {
     // a second matching pass — scoreAndRankJobs has done the work, and running
     // matching twice with two different definitions of "matches you" is how the
     // number in the sentence stops agreeing with the panel below it.
+    //
+    // postedDate, NOT posted_at. RecommendedJob extends the MAPPED Job type,
+    // where the raw row's posted_at has already become `postedDate` (an ISO
+    // yyyy-mm-dd) and `postedAt` (the human string "2 days ago"). The first
+    // draft read j.posted_at, which is undefined on every mapped job — so the
+    // count was silently always 0 and this clause could never render. Caught by
+    // the screenshot: the Activity feed listed three new matches while the
+    // sentence above it claimed none.
     const weekAgo = Date.now() - 7 * 86400000
     const newMatchesThisWeek = recommendedJobs.filter(j => {
-      const t = new Date((j as any).posted_at || (j as any).created_at || '').getTime()
+      const t = new Date(j.postedDate).getTime()
       return Number.isFinite(t) && t >= weekAgo
     }).length
 
