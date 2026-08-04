@@ -7,6 +7,39 @@ import { annualisedOrNull } from './salaryInput'
 export interface RecommendedJob extends Job {
   matchPercentage: number
   matchReasons: string[]
+  /**
+   * Points from title, skills and sector ONLY — the three components that say
+   * something about whether this person can do this job. Everything else in the
+   * score (salary, location, work style, experience level, recency) is either
+   * about the candidate's preferences or about the job alone, and none of it
+   * varies much between rows.
+   *
+   * WHY IT IS EXPOSED: a match percentage built entirely from those is a number
+   * that looks computed and is, but from inputs constant across every job —
+   * which is why a thin profile saw the SAME percentage on every row of
+   * /jobs/recommended. Callers use this to decide whether the percentage means
+   * anything at all, rather than rendering one regardless.
+   */
+  relevancePoints: number
+}
+
+/**
+ * Does this candidate carry anything the matching can use for RELEVANCE?
+ *
+ * Title, sector, skills. Deliberately NOT location, salary, experience,
+ * preferred areas, job types or work style: those are worth up to 70 of the
+ * ~130 points and will happily clear the threshold, but a salary expectation is
+ * not a reason to believe a job suits someone. Calling the result of that a
+ * recommendation is the claim this exists to stop.
+ *
+ * One definition, because the dashboard heading and /jobs/recommended's
+ * percentage both hang off the same question and must not drift.
+ */
+export function hasRelevanceSignal(candidate: Candidate | null | undefined): boolean {
+  if (!candidate) return false
+  return !!(candidate.jobTitle || '').trim()
+    || !!(candidate.jobSector || '').trim()
+    || (candidate.skills || []).length > 0
 }
 
 // Points added when a job sits explicitly inside one of the candidate's chosen
@@ -89,6 +122,10 @@ export function scoreAndRankJobs(
       ...job,
       matchPercentage: Math.min(Math.round(score + areaBonus), 99),
       matchReasons: inPickedArea ? [...reasons, 'In your preferred area'] : reasons,
+      // The three relevance components, carried out so callers can ask whether
+      // the percentage was built from anything about the JOB FIT rather than
+      // from the candidate's preferences and the posting date.
+      relevancePoints: (breakdown.title || 0) + (breakdown.skills || 0) + (breakdown.sector || 0),
       _breakdown: { ...breakdown, area: areaBonus },
     }
   })

@@ -351,7 +351,12 @@ export default function RecommendedJobsPage() {
                       {shortlistedJobIds.has(job.id) && (
                         <span className={styles.listCardStamp}>SHORTLISTED</span>
                       )}
-                      <span className={styles.listCardMatch}>{job.matchPercentage}%</span>
+                      {/* NOTHING WHERE THE NUMBER WAS, when nothing about job
+                          fit went into it. See the note on the detail banner
+                          below — one rule, two render sites. */}
+                      {job.relevancePoints > 0 && (
+                        <span className={styles.listCardMatch}>{job.matchPercentage}%</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -363,12 +368,34 @@ export default function RecommendedJobsPage() {
                     <div className={styles.detailInner}>
 
                       {/* Match banner at top of detail */}
+                      {/* THE PERCENTAGE IS WITHHELD WHEN IT MEANS NOTHING.
+                          matchPercentage is real arithmetic, but for a
+                          candidate with no title, sector or skills every point
+                          in it comes from salary, location, work style,
+                          experience and the posting date — inputs that barely
+                          vary between jobs. That is why a thin profile saw the
+                          SAME number on every row: computed, just computed from
+                          constants.
+
+                          NOTHING IS SHOWN IN ITS PLACE, deliberately. Any
+                          replacement badge is a second claim, and the honest
+                          content — "we don't know enough about you yet" — is
+                          already the job of the profile prompt on this page. An
+                          absent score reads as no score, which is exactly true;
+                          a qualitative word would be inventing a new vocabulary
+                          for the same absence.
+
+                          The reasons list stays either way: "Salary matches
+                          your expectations" is true and specific, and it never
+                          claimed to be a compatibility score. */}
                       {selectedJobMatch && (
                         <div className={styles.detailMatchBanner}>
+                          {selectedJobMatch.relevancePoints > 0 && (
                           <div className={styles.detailMatchLeft}>
                             <span className={styles.detailMatchPercent}>{selectedJobMatch.matchPercentage}% Match</span>
                             <span className={styles.detailMatchLabel}>Compatibility Score</span>
                           </div>
+                          )}
                           <div className={styles.detailMatchReasons}>
                             {selectedJobMatch.matchReasons.slice(0, 3).map((reason, i) => (
                               <span key={i} className={styles.detailMatchReason}>✓ {reason}</span>

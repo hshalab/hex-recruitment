@@ -10,7 +10,7 @@ import { Candidate } from '@/lib/mockCandidates'
 import { useJobs } from '@/lib/JobsContext'
 import { useMessages } from '@/lib/MessagesContext'
 import { useSavedJobs } from '@/lib/useSavedJobs'
-import { scoreAndRankJobs, RecommendedJob } from '@/lib/recommendations'
+import { scoreAndRankJobs, hasRelevanceSignal, RecommendedJob } from '@/lib/recommendations'
 import JobCardLink from '@/components/JobCardLink'
 import { Boost, getDaysRemaining } from '@/lib/boostTypes'
 import { Notification, formatNotificationTime } from '@/lib/mockNotifications'
@@ -952,7 +952,20 @@ export default function DashboardPage() {
             {/* ── 4. RECOMMENDED JOBS ─────────────────────── */}
             <div className={`${styles.card} ${styles.aViolet} ${styles.mRecommended}`}>
               <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Recommended for You</h2>
+                {/* "Recommended for You" IS A CLAIM, and for 23 of 43 real
+                    candidates it is false: they carry no title, no sector and
+                    no skills, so nothing in the score comes from job fit,
+                    nothing clears the 25-point threshold, and MIN_RESULTS hands
+                    them the three most recently posted roles. That is a useful
+                    thing to show — better than a form on a job board — but it
+                    is not a recommendation, and saying so costs nothing.
+
+                    The condition is RELEVANCE signals only. A candidate with a
+                    salary expectation and nothing else is still someone we
+                    cannot match. */}
+                <h2 className={styles.cardTitle}>
+                  {hasRelevanceSignal(candidate) ? 'Recommended for You' : 'Latest roles'}
+                </h2>
                 <Link href="/jobs?browse=all" className={styles.cardLink}>View All</Link>
               </div>
               <div className={styles.cardBody}>
