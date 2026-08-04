@@ -66,10 +66,13 @@ function withinRateLimit(jobId: string): boolean {
   recent.set(jobId, hits)
 
   // Keep the map from growing without bound on a long-lived instance.
+  // Array.from rather than iterating the Map directly — the build targets ES5
+  // and a for..of over a Map needs downlevelIteration.
   if (recent.size > 5000) {
-    for (const [k, v] of recent) {
-      if (v.every(t => now - t >= WINDOW_MS)) recent.delete(k)
-    }
+    Array.from(recent.keys()).forEach(k => {
+      const v = recent.get(k)
+      if (v && v.every((t: number) => now - t >= WINDOW_MS)) recent.delete(k)
+    })
   }
   return true
 }
