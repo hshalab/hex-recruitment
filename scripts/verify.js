@@ -79,20 +79,31 @@ for (const check of CHECKS) {
   // reports that as a null status, which is falsy in all the wrong ways.
   const status = r.error ? null : r.status
   const skipped = check.couldNotRun !== undefined && status === check.couldNotRun
-  const passed = status === 0 || skipped
+
+  // A SKIP IS TOLERATED ON A PUSH AND FATAL AT A MERGE, and the difference is
+  // deliberate rather than inherited.
+  //
+  // A push is work in progress: blocking one because the network is down teaches
+  // the --no-verify reflex this exists not to rely on. A merge is a DECISION,
+  // and there a check that never ran is a hole — saying "all 4 passed" over the
+  // top of it would be exactly the false label this whole script was built to
+  // kill, just one level up.
+  const passed = status === 0 || (skipped && FAST)
   results.push({ name: check.name, status, passed, skipped, out: `${r.stdout || ''}${r.stderr || ''}`, error: r.error })
   console.log(
-    skipped ? `exit ${status} — could not run, not blocking`
+    skipped ? `exit ${status} — could not run${FAST ? ', not blocking a push' : ' — NOT VERIFIED'}`
       : passed ? 'exit 0'
         : `exit ${status === null ? '(failed to start)' : status}`,
   )
 }
 
 const failed = results.filter(r => !r.passed)
+const skippedNow = results.filter(r => r.skipped)
 
 if (failed.length) {
   for (const f of failed) {
-    console.log(`\n${'='.repeat(64)}\n${f.name} FAILED — exit ${f.status === null ? '(failed to start)' : f.status}\n${'='.repeat(64)}`)
+    const label = f.skipped ? 'COULD NOT RUN' : 'FAILED'
+    console.log(`\n${'='.repeat(64)}\n${f.name} ${label} — exit ${f.status === null ? '(failed to start)' : f.status}\n${'='.repeat(64)}`)
     if (f.error) console.log(String(f.error.message))
     // The last 60 lines: enough to see the error, not the whole build log.
     const lines = f.out.split(/\r?\n/).filter(Boolean)
@@ -104,8 +115,27 @@ console.log(`\n${'-'.repeat(64)}`)
 for (const r of results) console.log(`  ${r.skipped ? 'SKIP' : r.passed ? 'PASS' : 'FAIL'}  ${r.name}`)
 console.log(`${'-'.repeat(64)}`)
 const secs = ((Date.now() - startedAt) / 1000).toFixed(1)
-console.log(failed.length
-  ? `${failed.length} of ${results.length} FAILED: ${failed.map(f => f.name).join(', ')}   (${secs}s)`
-  : `all ${results.length} passed${FAST ? ' (fast — build not run; use npm run verify before merging)' : ''}   (${secs}s)`)
+
+// NEVER SAY "ALL PASSED" OVER A CHECK THAT DID NOT RUN. The whole point of this
+// script is that its summary line is derived, not written — so the wording has
+// to distinguish "everything was checked and was fine" from "some of it was
+// never looked at".
+if (failed.length) {
+  const ranAndFailed = failed.filter(f => !f.skipped)
+  const parts = []
+  if (ranAndFailed.length) parts.push(`FAILED: ${ranAndFailed.map(f => f.name).join(', ')}`)
+  if (skippedNow.length && !FAST) parts.push(`NOT VERIFIED: ${skippedNow.map(f => f.name).join(', ')} could not run`)
+  console.log(`${parts.join('   |   ')}   (${secs}s)`)
+  if (skippedNow.length && !FAST) {
+    console.log('')
+    console.log('NOT VERIFIED — a check could not run, so this is not a clean result.')
+    console.log('A push tolerates that; a merge should not. Fix the cause, or run the')
+    console.log('missing check yourself and say so out loud.')
+  }
+} else if (skippedNow.length) {
+  console.log(`${results.length - skippedNow.length} passed, ${skippedNow.map(f => f.name).join(', ')} SKIPPED (fast — build not run)   (${secs}s)`)
+} else {
+  console.log(`all ${results.length} passed${FAST ? ' (fast — build not run; use npm run verify before merging)' : ''}   (${secs}s)`)
+}
 
 process.exit(failed.length ? 1 : 0)
