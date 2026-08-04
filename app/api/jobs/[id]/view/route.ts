@@ -27,14 +27,65 @@ import { createClient } from '@supabase/supabase-js'
  * one and null otherwise. No cookie is set, no IP is recorded, no fingerprint is
  * derived. An anonymous view is a bare increment.
  *
- * NOT RATE LIMITED YET. It is exactly as abusable as the authenticated path it
- * replaces — anyone can call it in a loop and inflate a count. Worth doing
- * before the number is used for anything beyond curiosity.
+ * RATE LIMITED PER JOB, DELIBERATELY NOT PER CALLER.
+ *
+ * Per-IP would be more precise. It would also mean holding an IP address, even
+ * transiently, to decide whether to accept a request — and the standing rule
+ * here is that a view stores nothing about the person viewing. Applying that to
+ * deduplication and then quietly breaking it for rate limiting would be
+ * choosing the convenient reading of my own constraint.
+ *
+ * So the cap is on the JOB, which is the thing being protected. Nothing about
+ * the caller is read, hashed or held. The harm this exists to bound is "one
+ * advert's count gets inflated", and a per-job ceiling bounds exactly that.
+ *
+ * WHAT IT DOES NOT STOP: a caller spreading requests thinly across many adverts
+ * still adds volume, and the limit is per serverless instance, so the real
+ * ceiling is the cap times however many instances are warm. Both are accepted:
+ * the number that matters is per advert, and no individual advert can be run up.
+ *
+ * The window is generous on purpose. A single job genuinely taking more than
+ * this many opens a minute would be remarkable at current scale, so a real
+ * surge is never truncated — only a loop is.
  */
+const MAX_VIEWS_PER_JOB_PER_WINDOW = 60
+const WINDOW_MS = 60_000
+
+// jobId → timestamps within the current window. In memory only; never
+// persisted, gone on cold start, and keyed on the JOB rather than the caller.
+const recent = new Map<string, number[]>()
+
+function withinRateLimit(jobId: string): boolean {
+  const now = Date.now()
+  const hits = (recent.get(jobId) || []).filter(t => now - t < WINDOW_MS)
+  if (hits.length >= MAX_VIEWS_PER_JOB_PER_WINDOW) {
+    recent.set(jobId, hits)
+    return false
+  }
+  hits.push(now)
+  recent.set(jobId, hits)
+
+  // Keep the map from growing without bound on a long-lived instance.
+  // Array.from rather than iterating the Map directly — the build targets ES5
+  // and a for..of over a Map needs downlevelIteration.
+  if (recent.size > 5000) {
+    Array.from(recent.keys()).forEach(k => {
+      const v = recent.get(k)
+      if (v && v.every((t: number) => now - t >= WINDOW_MS)) recent.delete(k)
+    })
+  }
+  return true
+}
+
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const jobId = params.id
   if (!jobId || !/^[0-9a-f-]{36}$/i.test(jobId)) {
     return NextResponse.json({ error: 'bad job id' }, { status: 400 })
+  }
+
+  // Checked before any database work, so a loop costs nothing downstream.
+  if (!withinRateLimit(jobId)) {
+    return NextResponse.json({ ok: false, reason: 'rate-limited' }, { status: 429 })
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
