@@ -102,16 +102,26 @@ export function employerAnswerLine(state: EmployerAnswerState): AnswerLineModel 
   // August a seven-day window straddles the morning anonymous views started
   // counting, and "{v} views this week" would read as a result when most of it
   // is the instrument being fixed. The sentence is complete without it.
+  // ZERO ACTIVE ADS IS A STATE I DID NOT DRIVE, AND IT SHIPPED READING
+  // "All quiet. nothing running right now." — a lowercase word after a full
+  // stop. Row 6 was built and driven with an ad running; the state that comes
+  // LATER, once every ad is filled, is the one nobody looked at. Exactly the
+  // shape CLAUDE.md already records three times over.
+  //
+  // Clause-cased rather than sentence-cased, so it cannot happen again the next
+  // time this string is reused mid-sentence: the views variant appends
+  // ", {v} views this week" after it, where a capital would be wrong.
   const ads = state.activeJobs
   const adsClause = ads > 0
     ? `${ads} ${plural(ads, 'ad', 'ads')} running`
     : 'nothing running right now'
+  const adsSentence = adsClause.charAt(0).toUpperCase() + adsClause.slice(1)
 
   const showViews = viewCountsAreComparable() && typeof state.viewsThisWeek === 'number' && state.viewsThisWeek > 0
   return {
     eyebrow: 'Today',
     sentence: showViews
-      ? `All quiet. ${adsClause}, ${state.viewsThisWeek} ${plural(state.viewsThisWeek!, 'view', 'views')} this week.`
-      : `All quiet. ${adsClause}.`,
+      ? `All quiet. ${adsSentence}, ${state.viewsThisWeek} ${plural(state.viewsThisWeek!, 'view', 'views')} this week.`
+      : `All quiet. ${adsSentence}.`,
   }
 }
