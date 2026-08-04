@@ -1,0 +1,60 @@
+/* Handoff values. Quiet on purpose — this is the thing that used to shout in
+ * three separate blocks, and demoting it is the whole point of the change. */
+
+.strip {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.label {
+  font-family: var(--font-mono, 'IBM Plex Mono'), ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.dismiss {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+}
+.dismiss:hover { color: #0f172a; text-decoration: underline; text-underline-offset: 3px; }
+
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.chip {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 99px;
+  padding: 7px 13px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #0f172a;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.chip:hover { border-color: #94a3b8; }
+
+@media (max-width: 768px) {
+  .strip { padding: 14px 16px; }
+  .chip { font-size: 12px; }
+}
