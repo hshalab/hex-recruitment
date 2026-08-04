@@ -527,8 +527,62 @@
 .recNav:hover { background: #f8fafc; border-color: #cbd5e1; }
 .recNavPrev { left: -10px; }
 .recNavNext { right: -10px; }
-@media (max-width: 768px) {
+
+/* ── THE FOURTH HORIZONTAL SCROLLER, and the worst of them ──────────────
+ *
+ * "Recommended for You" held 2,699px of cards inside a 316px viewport at 390 —
+ * eight and a half screens of sideways swipe inside a page that scrolls
+ * vertically. Unlike the Active Jobs row it never hid: it is on EVERY candidate
+ * dashboard at that width regardless of data, so every candidate who has opened
+ * this page on a phone has met it.
+ *
+ * Below 1100 the cards become a vertical list. 1100 rather than 768 because
+ * that is where .grid already collapses to a single column — the width at which
+ * this stops being a desktop layout at all. Above it, nothing changes: the
+ * scroller, the snap points and the arrows are exactly as they were.
+ *
+ * THEY STAY CARDS. This is the one panel that is never empty and the reason the
+ * page is worth opening, so the image-led job card is kept at full width rather
+ * than flattened into a text row — the pipeline became rows because six counts
+ * ARE a list; nine job adverts are not.
+ *
+ * THE ARROWS ARE HIDDEN HERE, NOT DELETED, and that is a deliberate departure
+ * from what was done to the Active Jobs pair. Those two were dead at every
+ * width, so deleting them was the only honest option. These are still live and
+ * still useful above 1100. `display: none` removes an element from the
+ * accessibility tree as well as the layout, so the screen-reader objection —
+ * "Scroll recommended jobs left" announced on a button that scrolls nothing —
+ * does not apply at the widths where they are hidden. */
+@media (max-width: 1100px) {
+  .recScroller {
+    flex-direction: column;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding-bottom: 0;
+  }
+  .recItem {
+    width: 100%;
+    max-width: none;
+    scroll-snap-align: none;
+  }
+  /* The lift-on-hover was for a mouse over a horizontal rail; in a stacked list
+     on a touch screen it only ever fires as a flicker mid-scroll. */
+  .recItem:hover { transform: none; }
   .recNav { display: none; }
+
+  /* FOUR CARDS, NOT TEN. Stacking all ten made a 2,381px panel on a page the
+     design structures as at most three — a panel four times the height of
+     everything else has stopped being one of three and become the page, with
+     Applications and Activity pushed 2,000px down.
+     Four plus the "View All" link this panel already carries gets the quality
+     across and keeps the rest of the dashboard reachable.
+
+     CSS RATHER THAN A SLICE IN THE COMPONENT. The slice would be honester in
+     the DOM, but it needs the width at render time, and width detection during
+     hydration is a real bug risk for a cosmetic gain. Six extra small cards in
+     the DOM cost nothing measurable. Above 1100 all ten are still there, in the
+     scroller they were designed for. */
+  .recItem:nth-child(n + 5) { display: none; }
 }
 
 /* ── Stat card (profile views, saved jobs) ───────────── */
