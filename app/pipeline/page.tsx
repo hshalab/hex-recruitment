@@ -555,6 +555,13 @@ export default function PipelinePage() {
             return (
               <div
                 key={stage.id}
+                // Anchor target for the dashboard's phone pipeline rows, which
+                // link to /pipeline#stage-<id>. Native anchor scrolling brings
+                // the right column into view inside the horizontally scrolling
+                // board — no query param, no router state, nothing to keep in
+                // sync. A row tap that always landed on "Applied" would have
+                // made five of the six rows lie about where they go.
+                id={`stage-${stage.id}`}
                 className={`${styles.column} ${isDeclined ? styles.columnDeclined : ''}`}
                 // --rs-accent cascades into the count badge, stage CTA,
                 // and any other quiet stage-tinted element in the column.

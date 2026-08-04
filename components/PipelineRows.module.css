@@ -1,0 +1,70 @@
+/* Handoff values, taken literally. */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid #e2e8f0;
+  /* ≥48px so it is a real tap target on a phone. The padding alone gets close;
+     this makes it true regardless of the line-height the font resolves to. */
+  min-height: 48px;
+  box-sizing: border-box;
+  text-decoration: none;
+  color: inherit;
+  /* The row is the target, not the text inside it. */
+  -webkit-tap-highlight-color: rgba(15, 23, 42, 0.06);
+}
+
+/* The card supplies the rule above the first row. */
+.row:first-child { border-top: 0; }
+
+.count {
+  font-family: var(--font-display, 'Bricolage Grotesque'), Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+  /* FIXED WIDTH so the counts form a column and can be compared down the page
+     rather than jittering with the digit width. */
+  width: 26px;
+  flex-shrink: 0;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
+}
+
+.label {
+  font-size: 14px;
+  /* Takes the slack, so the note and chevron stay right-aligned. */
+  flex: 1;
+  min-width: 0;
+}
+
+.note {
+  font-size: 13px;
+  color: #64748b;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chevron {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ── non-zero: something is here ── */
+.rowActive { background: #fffbea; }
+.rowActive .label { font-weight: 600; color: #0f172a; }
+.rowActive .chevron { color: #94a3b8; }
+
+/* ── zero: quieter, but still a row and still tappable ── */
+.rowEmpty { background: #fff; }
+.rowEmpty .label { font-weight: 500; color: #64748b; }
+.rowEmpty .count { color: #94a3b8; }
+.rowEmpty .chevron { color: #cbd5e1; }

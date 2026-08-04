@@ -18,6 +18,10 @@ import SetupStrip from '@/components/SetupStrip'
 // nothingLiveShort is the panel register of the sentence the answer line's row
 // 5b says in full at the top of this page. One root string, two lengths.
 import { employerAnswerLine, nothingLiveShort } from '@/lib/answerLine'
+import PipelineRows from '@/components/PipelineRows'
+// The same function StageDurationBadge uses, so "waiting 4d" on a phone and
+// "4 days in Shortlisted" on desktop can never disagree.
+import { daysInStage } from '@/lib/stageDuration'
 import StageDurationBadge from '@/components/StageDurationBadge'
 import JobCardLink from '@/components/JobCardLink'
 import CandidateCard from '@/components/CandidateCard'
@@ -219,40 +223,12 @@ function ActiveJobsScroller({ jobs, styles }: { jobs: any[]; styles: Record<stri
   )
 }
 
-// ── Recent applicants — horizontal row of the real /candidates CandidateCard
-// (employer mode = ghost INITIALS, never the candidate's photo) + a Message
-// action. Tap the card → the candidate's profile. Shared by desktop + mobile.
-function ApplicantScroller({ apps, styles, router }: { apps: any[]; styles: Record<string, string>; router: ReturnType<typeof useRouter> }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 270, behavior: 'smooth' })
-  return (
-    <div className={styles.jobScrollWrap}>
-      <button type="button" className={`${styles.jobNav} ${styles.jobNavPrev}`} aria-label="Scroll applicants left" onClick={() => scroll(-1)}>&lsaquo;</button>
-      <div className={styles.applicantScroller} ref={ref}>
-        {apps.map((app: any) => {
-          const candidate = {
-            id: app.candidate_id,
-            fullName: app.candidate_name || 'Candidate',
-            jobTitle: app.candidate_job_title || app.job_title || '',
-            headline: app.candidate_sector || undefined,
-            location: app.candidate_city || '',
-            yearsExperience: app.candidate_years_exp || 0,
-            availability: app.candidate_availability || '',
-            cvUrl: app.candidate_cv_url || null,
-            skills: Array.isArray(app.candidate_skills) ? app.candidate_skills : [],
-          } as unknown as Candidate
-          return (
-            <div key={app.id} className={styles.applicantItem}>
-              <CandidateCard candidate={candidate} mode="employer" onOpen={() => router.push(`/candidates/${app.candidate_id}`)} />
-              <Link href={`/messages?candidate=${app.candidate_id}`} className={styles.applicantMsg} onClick={(e: any) => e.stopPropagation()}>Message</Link>
-            </div>
-          )
-        })}
-      </div>
-      <button type="button" className={`${styles.jobNav} ${styles.jobNavNext}`} aria-label="Scroll applicants right" onClick={() => scroll(1)}>&rsaquo;</button>
-    </div>
-  )
-}
+// ApplicantScroller lived here — the horizontal row of CandidateCards used by
+// the Recent Applicants panel. DELETED WITH ITS ONLY TWO CALL SITES rather than
+// left orphaned: an unused component that still compiles is the thing someone
+// re-mounts in six months without knowing it was removed on purpose. The people
+// it showed are in the pipeline's own columns on desktop and one tap away on
+// phone. Recoverable from git if the panel ever comes back.
 
 // ── Candidate profile card slider (swipe one at a time) ──
 function CandidateCardSlider({ apps, totalApplications, styles }: {
@@ -1011,7 +987,57 @@ export default function EmployerDashboardPage() {
     return map
   }, [applications])
 
-  const recentApps = useMemo(() => applications.slice(0, 10), [applications])
+  // ── The phone pipeline's six rows ────────────────────────────────
+  //
+  // Same counts as the desktop columns, from the same statusCounts — this does
+  // not recompute the pipeline, it re-renders it.
+  //
+  // THE NOTE IS PLAIN LANGUAGE, NOT A SECOND COUNT. "2 new" and "waiting 4d"
+  // tell an employer something the number on the left does not; "3 candidates"
+  // would just be the number again in words.
+  //
+  // Rendered only where it is TRUE and USEFUL, in that order of preference:
+  //   "N new"      applications that arrived since they last opened this page
+  //   "waiting Nd" otherwise, the LONGEST anyone has sat in this stage — the
+  //                one that has been waiting longest is the one that matters,
+  //                not the average
+  // and nothing at all for an empty stage, or for a stage where everyone
+  // arrived today. An empty note reads better than a padded one.
+  const pipelineRows = useMemo(() => {
+    const since = lastSeenAt ? new Date(lastSeenAt).getTime() : null
+    return PIPELINE_STAGES.filter(s => s !== 'rejected').map(s => {
+      const label = s === 'pending' ? 'Applied' : (STAGE_LABELS[s as keyof typeof STAGE_LABELS] || STATUS_LABELS[s] || s)
+      const inStage = candidatesByStage[s] || []
+      const count = statusCounts[s] || 0
+
+      let note: string | null = null
+      if (count > 0) {
+        const fresh = since === null ? 0 : inStage.filter(a => {
+          const t = new Date(a.created_at || a.appliedAt || '').getTime()
+          return Number.isFinite(t) && t > since
+        }).length
+        if (fresh > 0) {
+          note = `${fresh} new`
+        } else {
+          // daysInStage is the same function StageDurationBadge uses, so this
+          // cannot disagree with the "N days in Shortlisted" pill on desktop.
+          const longest = inStage.reduce((max, a) =>
+            a.stage_entered_at ? Math.max(max, daysInStage(a.stage_entered_at)) : max, 0)
+          if (longest > 0) note = `waiting ${longest}d`
+        }
+      }
+
+      return {
+        key: s,
+        label,
+        count,
+        note,
+        // Lands on the pipeline board with that column scrolled into view.
+        // Zero-count stages route too — an empty stage list is a real answer.
+        href: `/pipeline#stage-${s}`,
+      }
+    })
+  }, [candidatesByStage, statusCounts, lastSeenAt])
 
   const activeJobsList = useMemo(() =>
     jobsData.filter(j => j.status === 'active').slice(0, 10)
@@ -1138,7 +1164,16 @@ export default function EmployerDashboardPage() {
                 <h2 className={styles.cardTitle}>Application Pipeline</h2>
                 <Link href="/pipeline" className={styles.cardLink}>View All</Link>
               </div>
-              <div className={styles.cardBody}>
+              {/* PHONE: six full-width rows. DESKTOP: the Kanban columns,
+                  untouched. Two renderings of one pipeline, switched on the
+                  same isMobile the rest of this page uses — not a CSS
+                  display:none pair, because the desktop columns mount real
+                  candidate cards and rendering both would double the work on
+                  the device least able to afford it. */}
+              <div className={styles.cardBody} style={isMobile ? { padding: 0 } : undefined}>
+                {isMobile ? (
+                  <PipelineRows rows={pipelineRows} />
+                ) : (
                 <div className={styles.pipelineScroller}>
                   {PIPELINE_STAGES.filter(s => s !== 'rejected').map(s => {
                     // Mirror the /pipeline board: a stage column (coloured header +
@@ -1178,6 +1213,7 @@ export default function EmployerDashboardPage() {
                     )
                   })}
                 </div>
+                )}
               </div>
             </div>
           </div>
@@ -1289,25 +1325,19 @@ export default function EmployerDashboardPage() {
           {/* ── Recent Applicants — WIDE left column: the rich CandidateCard scroller
               needs the width (it was cramped in the narrow right column), and it sits
               under the full-width Active Jobs row. ── */}
-          <div className={styles.colLeft}>
-            <div className={`${styles.card} ${styles.aViolet}`}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Recent Applicants</h2>
-                <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
-              </div>
-              <div className={styles.cardBody}>
-                {applications.length > 0 ? (
-                  <ApplicantScroller apps={recentApps} styles={styles} router={router} />
-                ) : (
-                  <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>&#128196;</div>
-                    <p>No applications yet.</p>
-                    <Link href="/post-job" className={styles.cardLink}>Post a Job &rarr;</Link>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          {/* ── Recent Applicants: ABSORBED, NOT DELETED ──────────────────
+              The named candidate cards live inside the Applied and Shortlisted
+              columns of the pipeline above on desktop, and behind a row tap on
+              phone. This card showed the same people a second time, in a
+              second horizontal scroller.
+
+              TWO NESTED HORIZONTAL SCROLLERS ON ONE 390 SCREEN was the actual
+              failure — a sideways swipe inside a vertically scrolling page,
+              twice. Converting the pipeline to rows and leaving this one in
+              place would have halved the problem and called it fixed.
+
+              Both renderings go: this desktop column and the isMobile block
+              that used to repeat it below. ── */}
 
           {/* ── Recent Messages — narrow right column (a list fits cleanly here) ── */}
           <div className={styles.colRight}>
@@ -1353,27 +1383,10 @@ export default function EmployerDashboardPage() {
               .jobScroller, which is a scroller ≤960). No separate mobile block —
               a duplicate one previously rendered Active Jobs twice on mobile. */}
 
-          {/* ── MOBILE ONLY: Candidate card slider ── */}
-          {isMobile && (
-            <div className={styles.colFull}>
-              <div className={`${styles.card} ${styles.aViolet}`}>
-                <div className={styles.cardHeader}>
-                  <h2 className={styles.cardTitle}>Recent Applicants</h2>
-                  <Link href="/my-jobs" className={styles.cardLink}>View All</Link>
-                </div>
-                <div className={styles.cardBody}>
-                  {applications.length > 0 ? (
-                    <ApplicantScroller apps={recentApps} styles={styles} router={router} />
-                  ) : (
-                    <div className={styles.emptyState}>
-                      <div className={styles.emptyIcon}>&#128196;</div>
-                      <p>No applications yet.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* The mobile Candidate card slider was the SECOND of the two nested
+              horizontal scrollers. Removed with its desktop twin — see the note
+              where that column used to be. The people it showed are one tap
+              away through the pipeline rows above. */}
 
           {/* ── MOBILE ONLY: Messages stacked list ── */}
           {isMobile && (
