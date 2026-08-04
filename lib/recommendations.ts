@@ -8,17 +8,23 @@ export interface RecommendedJob extends Job {
   matchPercentage: number
   matchReasons: string[]
   /**
-   * Points from title, skills and sector ONLY — the three components that say
-   * something about whether this person can do this job. Everything else in the
-   * score (salary, location, work style, experience level, recency) is either
-   * about the candidate's preferences or about the job alone, and none of it
-   * varies much between rows.
+   * Points from the title, skills and sector components.
    *
-   * WHY IT IS EXPOSED: a match percentage built entirely from those is a number
-   * that looks computed and is, but from inputs constant across every job —
-   * which is why a thin profile saw the SAME percentage on every row of
-   * /jobs/recommended. Callers use this to decide whether the percentage means
-   * anything at all, rather than rendering one regardless.
+   * READ THE WARNING BEFORE USING THIS AS A CONFIDENCE MEASURE. It is NOT
+   * "how much we actually matched", because those components PAY OUT FOR
+   * MISSING DATA rather than scoring zero:
+   *
+   *   calcTitleMatch       no candidate title or history at all  -> 10
+   *   calcSkillMatch       the JOB lists no skills               ->  5
+   *   calcSectorMatch      no candidate sector and no title      ->  5
+   *
+   * So a completely empty profile arrives here with 20 relevance points it did
+   * nothing to earn, which is most of why it also clears the 25-point
+   * threshold and gets the full list rather than the MIN_RESULTS backfill.
+   *
+   * Gate user-facing claims on hasRelevanceSignal(candidate) instead — the
+   * question "did this person tell us anything" is answerable from the profile
+   * and cannot be confused by a neutral default.
    */
   relevancePoints: number
 }

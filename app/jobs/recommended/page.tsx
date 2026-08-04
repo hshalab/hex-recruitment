@@ -13,7 +13,7 @@ import { Candidate } from '@/lib/mockCandidates'
 import { useJobs } from '@/lib/JobsContext'
 import { supabaseProfileToCandidate } from '@/lib/types'
 import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
-import { scoreAndRankJobs, RecommendedJob } from '@/lib/recommendations'
+import { scoreAndRankJobs, hasRelevanceSignal, RecommendedJob } from '@/lib/recommendations'
 import { supabase } from '@/lib/supabase'
 import { useSavedJobs } from '@/lib/useSavedJobs'
 import { getTagCategory, WORK_STYLE_TAGS } from '@/lib/jobTags'
@@ -120,6 +120,12 @@ export default function RecommendedJobsPage() {
     if (!candidate || jobsLoading || jobs.length === 0) return []
     return scoreAndRankJobs(jobs, candidate, appliedJobIds, viewedJobs)
   }, [jobs, candidate, appliedJobIds, viewedJobs, jobsLoading])
+
+  // Does the percentage mean anything for this person? Same question, and the
+  // same one function, as the dashboard's "Recommended for You" / "Latest
+  // roles" heading — so the two pages cannot end up disagreeing about whether
+  // we know enough to make a claim.
+  const showMatchPercent = hasRelevanceSignal(candidate)
 
   // Auto-select first job on desktop
   useEffect(() => {
@@ -351,10 +357,11 @@ export default function RecommendedJobsPage() {
                       {shortlistedJobIds.has(job.id) && (
                         <span className={styles.listCardStamp}>SHORTLISTED</span>
                       )}
-                      {/* NOTHING WHERE THE NUMBER WAS, when nothing about job
-                          fit went into it. See the note on the detail banner
-                          below — one rule, two render sites. */}
-                      {job.relevancePoints > 0 && (
+                      {/* NOTHING WHERE THE NUMBER WAS, when the candidate told
+                          us nothing to match on. See the note on the detail
+                          banner below — one rule, two render sites, and the
+                          same condition as the dashboard heading. */}
+                      {showMatchPercent && (
                         <span className={styles.listCardMatch}>{job.matchPercentage}%</span>
                       )}
                     </div>
@@ -387,10 +394,20 @@ export default function RecommendedJobsPage() {
 
                           The reasons list stays either way: "Salary matches
                           your expectations" is true and specific, and it never
-                          claimed to be a compatibility score. */}
+                          claimed to be a compatibility score.
+
+                          GATED ON THE PROFILE, NOT ON THE SCORE. The first
+                          draft gated on relevancePoints > 0 and it never fired,
+                          because calcTitleMatch pays 10 points when there is no
+                          title to compare, calcSkillMatch 5 when the JOB lists
+                          no skills, and calcSectorMatch 5 when there is neither
+                          sector nor title. An empty profile therefore arrives
+                          with 20 "relevance" points it did nothing to earn.
+                          Asking the profile whether it told us anything cannot
+                          be fooled by a neutral default. */}
                       {selectedJobMatch && (
                         <div className={styles.detailMatchBanner}>
-                          {selectedJobMatch.relevancePoints > 0 && (
+                          {showMatchPercent && (
                           <div className={styles.detailMatchLeft}>
                             <span className={styles.detailMatchPercent}>{selectedJobMatch.matchPercentage}% Match</span>
                             <span className={styles.detailMatchLabel}>Compatibility Score</span>
