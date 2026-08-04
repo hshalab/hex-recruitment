@@ -42,6 +42,24 @@ function personName(raw: string | null | undefined): string | null {
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many)
 
+/**
+ * "Nothing live right now — your 4 roles are filled or closed."
+ *
+ * ONE DEFINITION, TWO PLACES ON THE SAME PAGE. This sentence was written for
+ * the Active Jobs panel's empty state; the answer line's row 5b now says the
+ * same thing about the same state, higher up the page. Writing it twice is how
+ * two sentences about one fact drift apart — the fault this project has now hit
+ * five times — so the panel imports it from here rather than owning a copy.
+ *
+ * It is exported for that import. It is NOT a general-purpose formatter: it
+ * assumes the caller has already established that the employer has posted
+ * before and has nothing live now.
+ */
+export function nothingLiveSentence(totalJobs: number): string {
+  const roles = totalJobs === 1 ? 'role is' : `${totalJobs} roles are`
+  return `Nothing live right now — your ${roles} filled or closed.`
+}
+
 export function employerAnswerLine(state: EmployerAnswerState): AnswerLineModel {
   const name = personName(state.stalled?.name)
   const stalledDays = state.stalled?.days ?? 0
@@ -94,34 +112,52 @@ export function employerAnswerLine(state: EmployerAnswerState): AnswerLineModel 
     }
   }
 
+  // ROW 5b — POSTED BEFORE, NOTHING LIVE NOW. A row of its own, sitting between
+  // 5 and 6 because it belongs to neither.
+  //
+  // It shipped inside row 6 and read "All quiet. nothing running right now." —
+  // a lowercase word after a full stop, which is how it was noticed. But the
+  // capital was the smaller half of the fault. Row 6's contract is SILENCE IS A
+  // LEGITIMATE ANSWER, DELIBERATELY NO BUTTON, and that was written for ads
+  // live with nothing pending. An employer with an empty board is not in that
+  // state: they have the single most important thing on the platform to do, and
+  // answering them with "all quiet" and no action tells them to relax at the
+  // exact moment the page should be handing them a button.
+  //
+  // The state that comes LATER — every ad eventually filled — is the one nobody
+  // looked at, which CLAUDE.md now records for the fourth time.
+  if (state.activeJobs === 0) {
+    return {
+      eyebrow: 'Today',
+      sentence: nothingLiveSentence(state.totalJobs),
+      action: { label: 'Post a job', href: '/post-job' },
+    }
+  }
+
   // ROW 6 — SILENCE IS A LEGITIMATE ANSWER AND TAKES ONE LINE, NOT FIVE PANELS.
   // Deliberately no button: there is nothing to do, and offering an action
-  // would manufacture one.
+  // would manufacture one. That claim is only true now that 5b has taken the
+  // empty-board case out from under it.
+  //
+  // ads IS GUARANTEED >= 1 HERE — row 5 returned on totalJobs === 0 and row 5b
+  // on activeJobs === 0. The zero branch that used to live in this clause is
+  // deleted rather than left as a defensive fallback: an unreachable branch is
+  // exactly what this one was mistaken for while it was quietly reachable, and
+  // keeping a second, worse sentence for a state 5b now owns is how the two
+  // drift apart.
   //
   // The views clause is held until view counts are comparable — before 11
   // August a seven-day window straddles the morning anonymous views started
   // counting, and "{v} views this week" would read as a result when most of it
   // is the instrument being fixed. The sentence is complete without it.
-  // ZERO ACTIVE ADS IS A STATE I DID NOT DRIVE, AND IT SHIPPED READING
-  // "All quiet. nothing running right now." — a lowercase word after a full
-  // stop. Row 6 was built and driven with an ad running; the state that comes
-  // LATER, once every ad is filled, is the one nobody looked at. Exactly the
-  // shape CLAUDE.md already records three times over.
-  //
-  // Clause-cased rather than sentence-cased, so it cannot happen again the next
-  // time this string is reused mid-sentence: the views variant appends
-  // ", {v} views this week" after it, where a capital would be wrong.
   const ads = state.activeJobs
-  const adsClause = ads > 0
-    ? `${ads} ${plural(ads, 'ad', 'ads')} running`
-    : 'nothing running right now'
-  const adsSentence = adsClause.charAt(0).toUpperCase() + adsClause.slice(1)
+  const adsClause = `${ads} ${plural(ads, 'ad', 'ads')} running`
 
   const showViews = viewCountsAreComparable() && typeof state.viewsThisWeek === 'number' && state.viewsThisWeek > 0
   return {
     eyebrow: 'Today',
     sentence: showViews
-      ? `All quiet. ${adsSentence}, ${state.viewsThisWeek} ${plural(state.viewsThisWeek!, 'view', 'views')} this week.`
-      : `All quiet. ${adsSentence}.`,
+      ? `All quiet. ${adsClause}, ${state.viewsThisWeek} ${plural(state.viewsThisWeek!, 'view', 'views')} this week.`
+      : `All quiet. ${adsClause}.`,
   }
 }

@@ -15,7 +15,9 @@ import { supabaseJobToJob } from '@/lib/types'
 import { STAGE_COLORS, STAGE_LABELS, stageForStatus } from '@/lib/constants/pipelineStages'
 import AnswerLine from '@/components/AnswerLine'
 import SetupStrip from '@/components/SetupStrip'
-import { employerAnswerLine } from '@/lib/answerLine'
+// nothingLiveSentence is shared with the answer line's row 5b, which says the
+// same thing about the same state higher up this page. One definition.
+import { employerAnswerLine, nothingLiveSentence } from '@/lib/answerLine'
 import StageDurationBadge from '@/components/StageDurationBadge'
 import JobCardLink from '@/components/JobCardLink'
 import CandidateCard from '@/components/CandidateCard'
@@ -1266,7 +1268,7 @@ export default function EmployerDashboardPage() {
                          "Manage Jobs" link that sits in this card's own header
                          two centimetres above it. Every other empty state on
                          this page is four words. */
-                      <p>Nothing live right now — your {totalJobs === 1 ? 'role is' : `${totalJobs} roles are`} filled or closed.</p>
+                      <p>{nothingLiveSentence(totalJobs)}</p>
                     )}
                     <Link href="/post-job" className={styles.cardLink}>
                       {totalJobs === 0 ? 'Post a Job' : 'Post another role'} &rarr;
