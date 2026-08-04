@@ -13,7 +13,7 @@ import { Candidate } from '@/lib/mockCandidates'
 import { useJobs } from '@/lib/JobsContext'
 import { supabaseProfileToCandidate } from '@/lib/types'
 import CompanyReviewsSummary from '@/components/CompanyReviewsSummary'
-import { scoreAndRankJobs, RecommendedJob } from '@/lib/recommendations'
+import { scoreAndRankJobs, hasRelevanceSignal, RecommendedJob } from '@/lib/recommendations'
 import { supabase } from '@/lib/supabase'
 import { useSavedJobs } from '@/lib/useSavedJobs'
 import { getTagCategory, WORK_STYLE_TAGS } from '@/lib/jobTags'
@@ -120,6 +120,12 @@ export default function RecommendedJobsPage() {
     if (!candidate || jobsLoading || jobs.length === 0) return []
     return scoreAndRankJobs(jobs, candidate, appliedJobIds, viewedJobs)
   }, [jobs, candidate, appliedJobIds, viewedJobs, jobsLoading])
+
+  // Does the percentage mean anything for this person? Same question, and the
+  // same one function, as the dashboard's "Recommended for You" / "Latest
+  // roles" heading — so the two pages cannot end up disagreeing about whether
+  // we know enough to make a claim.
+  const showMatchPercent = hasRelevanceSignal(candidate)
 
   // Auto-select first job on desktop
   useEffect(() => {
@@ -351,7 +357,13 @@ export default function RecommendedJobsPage() {
                       {shortlistedJobIds.has(job.id) && (
                         <span className={styles.listCardStamp}>SHORTLISTED</span>
                       )}
-                      <span className={styles.listCardMatch}>{job.matchPercentage}%</span>
+                      {/* NOTHING WHERE THE NUMBER WAS, when the candidate told
+                          us nothing to match on. See the note on the detail
+                          banner below — one rule, two render sites, and the
+                          same condition as the dashboard heading. */}
+                      {showMatchPercent && (
+                        <span className={styles.listCardMatch}>{job.matchPercentage}%</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -363,12 +375,44 @@ export default function RecommendedJobsPage() {
                     <div className={styles.detailInner}>
 
                       {/* Match banner at top of detail */}
+                      {/* THE PERCENTAGE IS WITHHELD WHEN IT MEANS NOTHING.
+                          matchPercentage is real arithmetic, but for a
+                          candidate with no title, sector or skills every point
+                          in it comes from salary, location, work style,
+                          experience and the posting date — inputs that barely
+                          vary between jobs. That is why a thin profile saw the
+                          SAME number on every row: computed, just computed from
+                          constants.
+
+                          NOTHING IS SHOWN IN ITS PLACE, deliberately. Any
+                          replacement badge is a second claim, and the honest
+                          content — "we don't know enough about you yet" — is
+                          already the job of the profile prompt on this page. An
+                          absent score reads as no score, which is exactly true;
+                          a qualitative word would be inventing a new vocabulary
+                          for the same absence.
+
+                          The reasons list stays either way: "Salary matches
+                          your expectations" is true and specific, and it never
+                          claimed to be a compatibility score.
+
+                          GATED ON THE PROFILE, NOT ON THE SCORE. The first
+                          draft gated on relevancePoints > 0 and it never fired,
+                          because calcTitleMatch pays 10 points when there is no
+                          title to compare, calcSkillMatch 5 when the JOB lists
+                          no skills, and calcSectorMatch 5 when there is neither
+                          sector nor title. An empty profile therefore arrives
+                          with 20 "relevance" points it did nothing to earn.
+                          Asking the profile whether it told us anything cannot
+                          be fooled by a neutral default. */}
                       {selectedJobMatch && (
                         <div className={styles.detailMatchBanner}>
+                          {showMatchPercent && (
                           <div className={styles.detailMatchLeft}>
                             <span className={styles.detailMatchPercent}>{selectedJobMatch.matchPercentage}% Match</span>
                             <span className={styles.detailMatchLabel}>Compatibility Score</span>
                           </div>
+                          )}
                           <div className={styles.detailMatchReasons}>
                             {selectedJobMatch.matchReasons.slice(0, 3).map((reason, i) => (
                               <span key={i} className={styles.detailMatchReason}>✓ {reason}</span>

@@ -7,6 +7,53 @@ import { annualisedOrNull } from './salaryInput'
 export interface RecommendedJob extends Job {
   matchPercentage: number
   matchReasons: string[]
+  /**
+   * Points from the title, skills and sector components.
+   *
+   * READ THE WARNING BEFORE USING THIS AS A CONFIDENCE MEASURE. It is NOT
+   * "how much we actually matched", because those components PAY OUT FOR
+   * MISSING DATA rather than scoring zero:
+   *
+   *   calcTitleMatch       no candidate title or history at all  -> 10
+   *   calcSkillMatch       the JOB lists no skills               ->  5
+   *   calcSectorMatch      no candidate sector and no title      ->  5
+   *
+   * So a completely empty profile arrives here with 20 relevance points it did
+   * nothing to earn, which is most of why it also clears the 25-point
+   * threshold and gets the full list rather than the MIN_RESULTS backfill.
+   *
+   * Gate user-facing claims on hasRelevanceSignal(candidate) instead — the
+   * question "did this person tell us anything" is answerable from the profile
+   * and cannot be confused by a neutral default.
+   */
+  relevancePoints: number
+}
+
+/**
+ * Does this candidate carry anything the matching can use for RELEVANCE?
+ *
+ * Title, sector, skills. Deliberately NOT location, salary, experience,
+ * preferred areas, job types or work style: those are worth up to 70 of the
+ * ~130 points and will happily clear the threshold, but a salary expectation is
+ * not a reason to believe a job suits someone. Calling the result of that a
+ * recommendation is the claim this exists to stop.
+ *
+ * One definition, because the dashboard heading and /jobs/recommended's
+ * percentage both hang off the same question and must not drift.
+ */
+export function hasRelevanceSignal(candidate: Candidate | null | undefined): boolean {
+  if (!candidate) return false
+  return !!(candidate.jobTitle || '').trim()
+    || !!(candidate.jobSector || '').trim()
+    || (candidate.skills || []).length > 0
+    // WORK HISTORY COUNTS, and leaving it out was a bug in the first draft of
+    // this function. calcTitleMatch scores against `[candidateTitle,
+    // ...historyTitles]`, so someone with no job title but three previous roles
+    // listed IS matched on relevance — and would have been told "Latest roles"
+    // while the scorer was doing exactly the work the heading denies.
+    // Nobody is in that state today (all 23 empty profiles have no history
+    // either), which is precisely why it would have gone unnoticed.
+    || (candidate.workHistory || []).some(w => !!(w?.title || '').trim())
 }
 
 // Points added when a job sits explicitly inside one of the candidate's chosen
@@ -89,6 +136,10 @@ export function scoreAndRankJobs(
       ...job,
       matchPercentage: Math.min(Math.round(score + areaBonus), 99),
       matchReasons: inPickedArea ? [...reasons, 'In your preferred area'] : reasons,
+      // The three relevance components, carried out so callers can ask whether
+      // the percentage was built from anything about the JOB FIT rather than
+      // from the candidate's preferences and the posting date.
+      relevancePoints: (breakdown.title || 0) + (breakdown.skills || 0) + (breakdown.sector || 0),
       _breakdown: { ...breakdown, area: areaBonus },
     }
   })
