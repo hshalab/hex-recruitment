@@ -13,6 +13,8 @@ import { useMessages } from '@/lib/MessagesContext'
 import Header from '@/components/Header'
 import { supabaseJobToJob } from '@/lib/types'
 import { STAGE_COLORS, STAGE_LABELS, stageForStatus } from '@/lib/constants/pipelineStages'
+import AnswerLine from '@/components/AnswerLine'
+import { employerAnswerLine } from '@/lib/answerLine'
 import StageDurationBadge from '@/components/StageDurationBadge'
 import JobCardLink from '@/components/JobCardLink'
 import CandidateCard from '@/components/CandidateCard'
@@ -583,6 +585,18 @@ export default function EmployerDashboardPage() {
 
   // Data
   const [applications, setApplications] = useState<any[]>([])
+
+  // THE "NEW SINCE LAST VISIT" ANCHOR.
+  //
+  // Read once on load and then immediately overwritten with now(), so the
+  // comparison is against the PREVIOUS visit rather than this one. Held in
+  // state because the write has to happen before the page can render — read it
+  // late and every application looks old the moment you arrive.
+  //
+  // Lives in employer_profiles.ui_state, a jsonb blob added for exactly this
+  // and for the setup strip's dismissal. Not notification_preferences, which is
+  // about what we send.
+  const [lastSeenAt, setLastSeenAt] = useState<string | null>(null)
   const [jobsData, setJobsData] = useState<any[]>([])
 
   // Show the onboarding example showcase only while the tour is running.
@@ -624,9 +638,19 @@ export default function EmployerDashboardPage() {
       try {
         const { data: empProfile } = await supabase
           .from('employer_profiles')
-          .select('company_name, logo_url, description')
+          .select('company_name, logo_url, description, ui_state')
           .eq('user_id', userId)
           .maybeSingle()
+
+        // Read the previous visit, then stamp this one. Order matters: the
+        // answer line compares against the value read here, so writing first
+        // would make every application look old the instant you arrived.
+        const seen = (empProfile?.ui_state as Record<string, string> | null)?.dashboardSeenAt || null
+        setLastSeenAt(seen)
+        supabase.from('employer_profiles')
+          .update({ ui_state: { ...((empProfile?.ui_state as object) || {}), dashboardSeenAt: new Date().toISOString() } })
+          .eq('user_id', userId)
+          .then(undefined, () => { /* a failed stamp must never break the page */ })
         if (empProfile?.company_name) {
           setCompanyName(empProfile.company_name)
         }
@@ -914,6 +938,43 @@ export default function EmployerDashboardPage() {
     return stageForStatus(s) ?? 'pending'
   }
 
+  // THE ANSWER LINE'S STATE. Everything here comes from data the page already
+  // loads — the applications query already selects status, created_at and
+  // stage_entered_at, and candidate names are already resolved for the Recent
+  // Applicants cards. Rows 1, 2, 5 and 6 therefore cost no new queries.
+  //
+  // Rows 3 and 4 (interview today/tomorrow, unread messages) are not wired:
+  // this page queries neither interviews nor conversations, so each would add
+  // one. Four rows working beats six half-wired.
+  const answerLineModel = useMemo(() => {
+    // Longest-stalled shortlisted candidate. Longest rather than first, because
+    // the one that has waited most is the one not deciding has hurt most.
+    let stalled: { name: string; days: number } | null = null
+    for (const a of applications) {
+      if ((a.status || '').toLowerCase() !== 'shortlisted') continue
+      const entered = a.stage_entered_at || a.status_updated_at || a.created_at
+      if (!entered) continue
+      // Date-only difference, so a card moved late yesterday reads as 1 day
+      // rather than 0 — matching StageDurationBadge's semantics on the same page.
+      const d = Math.floor((Date.now() - new Date(entered).getTime()) / 86_400_000)
+      if (!stalled || d > stalled.days) stalled = { name: a.candidate_name, days: d }
+    }
+
+    const newApplications = lastSeenAt
+      ? applications.filter(a => a.created_at && new Date(a.created_at) > new Date(lastSeenAt)).length
+      : 0
+
+    return employerAnswerLine({
+      stalled,
+      newApplications,
+      totalJobs,
+      activeJobs,
+      // Held back until 11 August — see VIEWS_COMPARABLE_FROM. Passed anyway so
+      // the clause turns itself on rather than needing a code change.
+      viewsThisWeek: null,
+    })
+  }, [applications, lastSeenAt, totalJobs, activeJobs])
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     PIPELINE_STAGES.forEach(s => { counts[s] = 0 })
@@ -987,6 +1048,19 @@ export default function EmployerDashboardPage() {
       <Header />
 
       <div className={styles.dashboardWrap}>
+        {/* ── THE ANSWER LINE ────────────────────────────────
+            First thing on the page, above the greeting banner and the KPI
+            strip. The dashboard's job is to answer "what needs me today" and
+            it previously took five blocks before any news.
+
+            Item 1 of the handoff's build order: it lands here without touching
+            anything below it, which is why it ships first and alone. The five
+            blocks it is meant to replace are still present — collapsing them is
+            item 3, deliberately a separate change. */}
+        <div style={{ marginBottom: '1rem' }}>
+          <AnswerLine model={answerLineModel} />
+        </div>
+
         {/* ── WELCOME HEADER ─────────────────────────────── */}
         <div className={styles.welcomeHeader}>
           <div className={styles.welcomeLeft}>
