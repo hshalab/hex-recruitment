@@ -569,6 +569,20 @@
      on a touch screen it only ever fires as a flicker mid-scroll. */
   .recItem:hover { transform: none; }
   .recNav { display: none; }
+
+  /* FOUR CARDS, NOT TEN. Stacking all ten made a 2,381px panel on a page the
+     design structures as at most three — a panel four times the height of
+     everything else has stopped being one of three and become the page, with
+     Applications and Activity pushed 2,000px down.
+     Four plus the "View All" link this panel already carries gets the quality
+     across and keeps the rest of the dashboard reachable.
+
+     CSS RATHER THAN A SLICE IN THE COMPONENT. The slice would be honester in
+     the DOM, but it needs the width at render time, and width detection during
+     hydration is a real bug risk for a cosmetic gain. Six extra small cards in
+     the DOM cost nothing measurable. Above 1100 all ten are still there, in the
+     scroller they were designed for. */
+  .recItem:nth-child(n + 5) { display: none; }
 }
 
 /* ── Stat card (profile views, saved jobs) ───────────── */
