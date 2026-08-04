@@ -1,38 +1,52 @@
 #!/bin/sh
-# Refuses a push while the database's migration ledger holds anything this repo
-# does not.
+# Refuses a push that does not compile, or whose migration ledger this repo does
+# not hold.
 #
 # PRE-PUSH, NOT PRE-COMMIT, on purpose: small commits should stay cheap, and the
 # damage only escapes when it leaves the machine.
 #
 # Why a hook at all — a check that runs when someone remembers to run it is the
 # pure-discipline option we rejected, wearing a script's clothes. Four days of
-# drift happened because nothing was watching.
+# migration drift happened because nothing was watching, and a commit went out
+# broken because a hand-written `&& echo "tsc ok"` printed success over two real
+# type errors.
+#
+# WHAT RUNS HERE, AND WHAT DELIBERATELY DOES NOT:
+#   here             tsc, migrations:check, guard:prove     every push
+#   npm run verify   those plus the production build        before a merge
+#
+# SPLIT BY COST, NOT IMPORTANCE. The broken commit failed tsc first; types catch
+# that class of fault, and if they compile the build almost always follows. The
+# build is the expensive check and the least likely to fail on its own, so it
+# earns being deliberate. Putting it here would add ~90s to every push and would
+# only teach everyone to reach for --no-verify — and a guard people are trained
+# to skip is worse than no guard at all.
 #
 # Skippable deliberately: git push --no-verify
 # Removed entirely:       git config --unset core.hooksPath
 
-# Offline, or no access token? Say so and let the push through. A guard that
-# blocks work when the network is down teaches people to pass --no-verify by
-# reflex, and a reflex is exactly what we are trying not to rely on.
+# Offline, or no access token? Only the migration half needs the network. It
+# reports "could not run" and verify treats that as SKIP rather than FAIL, so
+# the compile checks still apply and the push is not blocked by a dead
+# connection.
 if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
-  echo "pre-push: SUPABASE_ACCESS_TOKEN not set — skipping the migration check."
-  echo "          Run 'npm run migrations:check' yourself before you rely on this."
-  exit 0
+  echo "pre-push: SUPABASE_ACCESS_TOKEN not set — the migration check will skip."
+  echo "          The compile checks still apply."
 fi
 
-npm run migrations:check --silent
+npm run verify:fast --silent
 status=$?
-
-if [ $status -eq 2 ]; then
-  echo "pre-push: the migration check could not run (see above). Not blocking the push."
-  exit 0
-fi
 
 if [ $status -ne 0 ]; then
   echo ""
-  echo "PUSH BLOCKED — the database has migrations this repo does not."
-  echo "Fix with 'npm run migrations:capture', or push anyway with --no-verify."
+  echo "PUSH BLOCKED — see the failures above."
+  echo ""
+  echo "  tsc          fix the type errors."
+  echo "  migrations   'npm run migrations:capture' writes the missing files."
+  echo "  guard:prove  a salary-credibility check is failing — read what it says."
+  echo ""
+  echo "The production build is NOT run here. Before merging: npm run verify"
+  echo "Push anyway with: git push --no-verify"
   exit 1
 fi
 
