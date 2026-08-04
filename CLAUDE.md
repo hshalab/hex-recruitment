@@ -28,6 +28,13 @@ Standing rules for Claude Code on this project. These override default behaviour
 - **Use `VERCEL_AUTOMATION_BYPASS_SECRET` as a header, never a share link.** Share links are bound to one URL, die on the next deployment, and have expired mid-session. Drive previews with the repo's own Playwright.
 - **Read secrets from the environment inside a script.** No credential may reach a URL, a log, a commit message, a report or a Gmail draft. If one ever appears in a diff about to be committed, stop and say so.
 
+## Verify with `npm run verify`, not with ad-hoc lines
+
+- **One command: `npm run verify`.** tsc, the production build, `migrations:check` and `guard:prove`. Every check runs even if an earlier one fails, so one run gives the whole picture, and the process exits non-zero if any failed.
+- **Nothing it prints is a label anyone wrote — every PASS/FAIL comes from an exit status.** A commit went out broken because `npx tsc --noEmit 2>&1 | head -5 && echo "tsc ok"` prints "tsc ok" directly underneath two real errors: `head` exits 0 whatever tsc did, so the `&&` fires. Reading your own echo instead of the exit code is the root of the whole harness family — the buffered pipe, the rel-keyed icons, the closed accordion, the CSS-uppercased selector, the stdin parser, the guessed hostname.
+- **Never pipe a check into `head` or `tail` to decide whether it passed.** The pipe's exit status is the pipe's, not the check's, and truncation is how a failure becomes silence.
+- Watched failing on purpose (a deliberate type error): exit 1, three of four named, the real compiler error shown. Then green again on restore.
+
 ## Migrations
 
 - **Apply, capture, commit.** `apply_migration` writes the database and the ledger but never a `.sql` file, which is how six migrations once went four days unfiled — including the one creating a bucket the app fails closed without.
