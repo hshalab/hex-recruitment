@@ -12,7 +12,8 @@
     "migrations:check": "node scripts/check-migrations.js",
     "migrations:capture": "node scripts/capture-migrations.js",
     "guard:prove": "node scripts/prove-credibility-guard.js",
-    "verify": "node scripts/verify.js"
+    "verify": "node scripts/verify.js",
+    "verify:fast": "node scripts/verify.js --fast"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",

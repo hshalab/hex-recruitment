@@ -34,14 +34,35 @@ const path = require('path')
 const ROOT = path.resolve(__dirname, '..')
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 
-const CHECKS = [
+// --fast omits the production build. Used by the pre-push hook.
+//
+// THE SPLIT IS BY COST, NOT BY IMPORTANCE. The broken commit failed tsc FIRST;
+// types are what catch that class of fault, and if they compile the build
+// almost always follows. The build is the expensive check and the least likely
+// to fail alone, so it earns being deliberate rather than automatic — ninety
+// seconds on every push would only teach everyone to pass --no-verify, and a
+// guard people are trained to skip is worse than no guard.
+//
+// Both modes are this one list, so the hook and the manual command can never
+// drift into checking different things.
+const FAST = process.argv.includes('--fast')
+
+const ALL = [
   { name: 'tsc', cmd: process.execPath, args: [path.join(ROOT, 'node_modules', 'typescript', 'bin', 'tsc'), '--noEmit'] },
-  { name: 'build', cmd: npm, args: ['run', 'build'] },
-  { name: 'migrations', cmd: process.execPath, args: [path.join(ROOT, 'scripts', 'check-migrations.js')] },
+  { name: 'build', cmd: npm, args: ['run', 'build'], slow: true },
+  // Exit 2 from the migration check means "could not run" — no token, no
+  // network — as opposed to "found drift". Treated as SKIPPED, not FAILED,
+  // because a guard that blocks a push when the network is down teaches people
+  // to reach for --no-verify by reflex, and a reflex is what this exists not to
+  // rely on. That distinction was already in the pre-push hook; keeping it here
+  // means the hook can defer to this script without losing it.
+  { name: 'migrations', cmd: process.execPath, args: [path.join(ROOT, 'scripts', 'check-migrations.js')], couldNotRun: 2 },
   { name: 'guard:prove', cmd: process.execPath, args: [path.join(ROOT, 'scripts', 'prove-credibility-guard.js')] },
 ]
+const CHECKS = FAST ? ALL.filter(c => !c.slow) : ALL
 
 const results = []
+const startedAt = Date.now()
 
 for (const check of CHECKS) {
   process.stdout.write(`running ${check.name} ... `)
@@ -57,16 +78,32 @@ for (const check of CHECKS) {
   // A check that could not be STARTED is a failure, not a pass. spawnSync
   // reports that as a null status, which is falsy in all the wrong ways.
   const status = r.error ? null : r.status
-  const passed = status === 0
-  results.push({ name: check.name, status, passed, out: `${r.stdout || ''}${r.stderr || ''}`, error: r.error })
-  console.log(passed ? 'exit 0' : `exit ${status === null ? '(failed to start)' : status}`)
+  const skipped = check.couldNotRun !== undefined && status === check.couldNotRun
+
+  // A SKIP IS TOLERATED ON A PUSH AND FATAL AT A MERGE, and the difference is
+  // deliberate rather than inherited.
+  //
+  // A push is work in progress: blocking one because the network is down teaches
+  // the --no-verify reflex this exists not to rely on. A merge is a DECISION,
+  // and there a check that never ran is a hole — saying "all 4 passed" over the
+  // top of it would be exactly the false label this whole script was built to
+  // kill, just one level up.
+  const passed = status === 0 || (skipped && FAST)
+  results.push({ name: check.name, status, passed, skipped, out: `${r.stdout || ''}${r.stderr || ''}`, error: r.error })
+  console.log(
+    skipped ? `exit ${status} — could not run${FAST ? ', not blocking a push' : ' — NOT VERIFIED'}`
+      : passed ? 'exit 0'
+        : `exit ${status === null ? '(failed to start)' : status}`,
+  )
 }
 
 const failed = results.filter(r => !r.passed)
+const skippedNow = results.filter(r => r.skipped)
 
 if (failed.length) {
   for (const f of failed) {
-    console.log(`\n${'='.repeat(64)}\n${f.name} FAILED — exit ${f.status === null ? '(failed to start)' : f.status}\n${'='.repeat(64)}`)
+    const label = f.skipped ? 'COULD NOT RUN' : 'FAILED'
+    console.log(`\n${'='.repeat(64)}\n${f.name} ${label} — exit ${f.status === null ? '(failed to start)' : f.status}\n${'='.repeat(64)}`)
     if (f.error) console.log(String(f.error.message))
     // The last 60 lines: enough to see the error, not the whole build log.
     const lines = f.out.split(/\r?\n/).filter(Boolean)
@@ -75,10 +112,30 @@ if (failed.length) {
 }
 
 console.log(`\n${'-'.repeat(64)}`)
-for (const r of results) console.log(`  ${r.passed ? 'PASS' : 'FAIL'}  ${r.name}`)
+for (const r of results) console.log(`  ${r.skipped ? 'SKIP' : r.passed ? 'PASS' : 'FAIL'}  ${r.name}`)
 console.log(`${'-'.repeat(64)}`)
-console.log(failed.length
-  ? `${failed.length} of ${results.length} FAILED: ${failed.map(f => f.name).join(', ')}`
-  : `all ${results.length} passed`)
+const secs = ((Date.now() - startedAt) / 1000).toFixed(1)
+
+// NEVER SAY "ALL PASSED" OVER A CHECK THAT DID NOT RUN. The whole point of this
+// script is that its summary line is derived, not written — so the wording has
+// to distinguish "everything was checked and was fine" from "some of it was
+// never looked at".
+if (failed.length) {
+  const ranAndFailed = failed.filter(f => !f.skipped)
+  const parts = []
+  if (ranAndFailed.length) parts.push(`FAILED: ${ranAndFailed.map(f => f.name).join(', ')}`)
+  if (skippedNow.length && !FAST) parts.push(`NOT VERIFIED: ${skippedNow.map(f => f.name).join(', ')} could not run`)
+  console.log(`${parts.join('   |   ')}   (${secs}s)`)
+  if (skippedNow.length && !FAST) {
+    console.log('')
+    console.log('NOT VERIFIED — a check could not run, so this is not a clean result.')
+    console.log('A push tolerates that; a merge should not. Fix the cause, or run the')
+    console.log('missing check yourself and say so out loud.')
+  }
+} else if (skippedNow.length) {
+  console.log(`${results.length - skippedNow.length} passed, ${skippedNow.map(f => f.name).join(', ')} SKIPPED (fast — build not run)   (${secs}s)`)
+} else {
+  console.log(`all ${results.length} passed${FAST ? ' (fast — build not run; use npm run verify before merging)' : ''}   (${secs}s)`)
+}
 
 process.exit(failed.length ? 1 : 0)
