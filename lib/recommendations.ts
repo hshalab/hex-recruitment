@@ -40,6 +40,14 @@ export function hasRelevanceSignal(candidate: Candidate | null | undefined): boo
   return !!(candidate.jobTitle || '').trim()
     || !!(candidate.jobSector || '').trim()
     || (candidate.skills || []).length > 0
+    // WORK HISTORY COUNTS, and leaving it out was a bug in the first draft of
+    // this function. calcTitleMatch scores against `[candidateTitle,
+    // ...historyTitles]`, so someone with no job title but three previous roles
+    // listed IS matched on relevance — and would have been told "Latest roles"
+    // while the scorer was doing exactly the work the heading denies.
+    // Nobody is in that state today (all 23 empty profiles have no history
+    // either), which is precisely why it would have gone unnoticed.
+    || (candidate.workHistory || []).some(w => !!(w?.title || '').trim())
 }
 
 // Points added when a job sits explicitly inside one of the candidate's chosen
