@@ -15,9 +15,9 @@ import { supabaseJobToJob } from '@/lib/types'
 import { STAGE_COLORS, STAGE_LABELS, stageForStatus } from '@/lib/constants/pipelineStages'
 import AnswerLine from '@/components/AnswerLine'
 import SetupStrip from '@/components/SetupStrip'
-// nothingLiveSentence is shared with the answer line's row 5b, which says the
-// same thing about the same state higher up this page. One definition.
-import { employerAnswerLine, nothingLiveSentence } from '@/lib/answerLine'
+// nothingLiveShort is the panel register of the sentence the answer line's row
+// 5b says in full at the top of this page. One root string, two lengths.
+import { employerAnswerLine, nothingLiveShort } from '@/lib/answerLine'
 import StageDurationBadge from '@/components/StageDurationBadge'
 import JobCardLink from '@/components/JobCardLink'
 import CandidateCard from '@/components/CandidateCard'
@@ -1262,13 +1262,20 @@ export default function EmployerDashboardPage() {
                     {totalJobs === 0 ? (
                       <p>No active jobs. Post your first listing!</p>
                     ) : (
-                      /* One line. The first draft added "They're still on
-                         Manage Job Ads whenever you want to repost" — true, and
-                         a three-line paragraph on a phone, pointing at a
-                         "Manage Jobs" link that sits in this card's own header
-                         two centimetres above it. Every other empty state on
-                         this page is four words. */
-                      <p>{nothingLiveSentence(totalJobs)}</p>
+                      /* FOUR WORDS, and shorter than it used to be. The answer
+                         line at the top of this page now carries the full
+                         sentence naming the cause; this is the same fact 800px
+                         further down, and saying it twice at length is
+                         repetition on a page built to remove it. Same root
+                         string as the answer line, so they cannot drift.
+
+                         The register was already argued once here: an earlier
+                         draft added "They're still on Manage Job Ads whenever
+                         you want to repost" — true, and a three-line paragraph
+                         on a phone, pointing at a "Manage Jobs" link two
+                         centimetres above it in this card's own header. Every
+                         other empty state in this column is four words. */
+                      <p>{nothingLiveShort()}</p>
                     )}
                     <Link href="/post-job" className={styles.cardLink}>
                       {totalJobs === 0 ? 'Post a Job' : 'Post another role'} &rarr;

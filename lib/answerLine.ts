@@ -42,22 +42,37 @@ function personName(raw: string | null | undefined): string | null {
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many)
 
+// ── "nothing live right now", in two registers ──────────────────────
+//
+// ONE FACT, TWO PLACES ON THE SAME PAGE, ONE ROOT STRING. The answer line says
+// it at the top; the Active Jobs panel's empty state says it again ~800px down.
+//
+// The first draft shared the WHOLE sentence, which fixed drift and created
+// repetition: the same twenty-word line twice on a page whose entire purpose is
+// to say things once. So the panel now takes the short form. They share the
+// opening clause, which is what makes them read as the same fact rather than
+// two — and they cannot drift, because there is one definition of that clause.
+//
+// The register is set by the neighbours, not by taste: every other empty state
+// in that column is "No messages yet." and "No candidates".
+const NOTHING_LIVE = 'Nothing live right now'
+
+/** Panel register. Four words, to sit beside "No messages yet." */
+export function nothingLiveShort(): string {
+  return `${NOTHING_LIVE}.`
+}
+
 /**
- * "Nothing live right now — your 4 roles are filled or closed."
+ * Answer-line register: "Nothing live right now — your 4 roles are filled or
+ * closed." Names the cause, because this is the line that has to carry the
+ * whole state on its own.
  *
- * ONE DEFINITION, TWO PLACES ON THE SAME PAGE. This sentence was written for
- * the Active Jobs panel's empty state; the answer line's row 5b now says the
- * same thing about the same state, higher up the page. Writing it twice is how
- * two sentences about one fact drift apart — the fault this project has now hit
- * five times — so the panel imports it from here rather than owning a copy.
- *
- * It is exported for that import. It is NOT a general-purpose formatter: it
- * assumes the caller has already established that the employer has posted
- * before and has nothing live now.
+ * NOT a general-purpose formatter — it assumes the caller has established that
+ * the employer has posted before and has nothing live now.
  */
 export function nothingLiveSentence(totalJobs: number): string {
   const roles = totalJobs === 1 ? 'role is' : `${totalJobs} roles are`
-  return `Nothing live right now — your ${roles} filled or closed.`
+  return `${NOTHING_LIVE} — your ${roles} filled or closed.`
 }
 
 export function employerAnswerLine(state: EmployerAnswerState): AnswerLineModel {
