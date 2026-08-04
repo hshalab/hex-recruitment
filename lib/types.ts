@@ -137,7 +137,16 @@ export function supabaseJobToJob(row: any): Job {
     postedDate: row.posted_at ? new Date(row.posted_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     expiresDate: row.expires_at || undefined,
     category: row.category || '',
-    viewCount: row.view_count || 0,
+    // THE LIVE COLUMNS, NOT THE DEAD ONES. This read view_count and
+    // application_count. Nothing writes either: view_count is 0 on every real
+    // row and application_count is 0 despite 33 applications existing. So every
+    // Job built through this mapper carried viewCount 0 and applicationCount 0,
+    // forever, and any screen showing them showed a zero that looked like data.
+    //
+    // jobs.views is the maintained counter. Applications have no counter at
+    // all, so applicationCount stays best-effort here — callers that need a
+    // true number count job_applications, as the admin route now does.
+    viewCount: row.views || row.view_count || 0,
     applicationCount: row.application_count || 0,
     status: row.status || 'active',
     screeningQuestions: row.screening_questions || [],
