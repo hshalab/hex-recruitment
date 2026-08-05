@@ -103,7 +103,32 @@ export async function POST(req: NextRequest) {
   }
 
   const hidden = rows.filter(r => !r.is_discoverable)
-  const eligible = hidden.filter(isEligibleForNotice)
+  const allEligible = hidden.filter(isEligibleForNotice)
+
+  // ── onlyEmail: SEND TO EXACTLY ONE PERSON ─────────────────────────
+  //
+  // Without this there is no way to test the real send path. `testTo` belongs
+  // to test mode, which mints the all-zero token — so the only way to exercise
+  // a REAL token was to mail the whole cohort. That is how a proposed
+  // one-person experiment turned out to be a dispatch to thirteen real
+  // candidates who would not have included the person asking for it.
+  //
+  // IT REFUSES RATHER THAN FALLING THROUGH. If the address matches nobody the
+  // request is rejected with the eligible count, and NOT ONE email is sent. A
+  // scoping parameter that silently does not apply is worse than no parameter:
+  // the failure mode is the exact accident it exists to prevent.
+  const onlyEmail = typeof body?.onlyEmail === 'string' ? body.onlyEmail.trim().toLowerCase() : null
+  const eligible = onlyEmail
+    ? allEligible.filter(r => (r.email || '').trim().toLowerCase() === onlyEmail)
+    : allEligible
+
+  if (onlyEmail && eligible.length === 0) {
+    return NextResponse.json({
+      error: `onlyEmail '${onlyEmail}' matched none of the ${allEligible.length} eligible candidates — refusing to send.`,
+      eligibleCount: allEligible.length,
+      sent: 0,
+    }, { status: 400 })
+  }
 
   // Counts by reason — "13 excluded" only means something if you can say why.
   const excluded: Record<ExclusionReason, number> = {
