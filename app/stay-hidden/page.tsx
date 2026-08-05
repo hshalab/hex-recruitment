@@ -18,8 +18,20 @@ const MESSAGES: Record<Status, { heading: string; body: string }> = {
     body: 'We had already recorded this, so there was nothing to change. Your profile is not shown to employers.',
   },
   invalid: {
-    heading: 'That link has expired',
-    body: 'Opt-out links stop working after a few weeks. You can still control this yourself: sign in and use the "Hide my profile" switch at the top of your dashboard.',
+    // SAY WHAT HAPPENED OR SAY NOTHING — NEVER INVENT A REASON.
+    //
+    // This used to read "That link has expired / Opt-out links stop working
+    // after a few weeks." It was shown for a link with TWELVE DAYS still to
+    // run, and the real cause was a signature that could not be verified. The
+    // wrong explanation sent two people looking at expiry rather than at the
+    // signature, and cost most of a day.
+    //
+    // `invalid` is returned for several distinct reasons and this page cannot
+    // tell them apart. So it no longer tries. What it says instead is true in
+    // every one of those cases, including the ones not yet found — and it still
+    // gets the person to the thing that always works.
+    heading: "That link didn't work",
+    body: 'Sorry — we couldn’t action that one. You can do it yourself in a couple of taps: sign in and use the "Hide my profile" switch at the top of your dashboard.',
   },
   notfound: {
     heading: "We couldn't find that profile",
