@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { discoverabilityNoticeEmail } from '@/emails/discoverability-notice'
-import { generateStayHiddenToken } from '@/lib/stayHiddenToken'
+import { generateStayHiddenToken, stayHiddenUrl } from '@/lib/stayHiddenToken'
 import {
   parseNotice,
   markNotified,
@@ -13,7 +13,6 @@ import {
   type CandidateNoticeRow,
   type ExclusionReason,
 } from '@/lib/discoverabilityNotice'
-import { BASE_URL } from '@/emails/layout'
 
 // STEP ONE of notify-then-flip: send the notice. This route never changes
 // anybody's visibility — it only tells them it's going to change and records
@@ -159,7 +158,7 @@ export async function POST(req: NextRequest) {
           deadlineText: formatDeadline(sampleDeadline),
           // A deliberately unusable placeholder: a dry run must not mint a
           // working opt-out link for a real candidate.
-          stayHiddenUrl: `${BASE_URL}/api/candidate/stay-hidden?token=SAMPLE_TOKEN_NOT_VALID`,
+          stayHiddenUrl: stayHiddenUrl('SAMPLE_TOKEN_NOT_VALID'),
         })
       : null
     return NextResponse.json({
@@ -179,7 +178,7 @@ export async function POST(req: NextRequest) {
       deadlineText: formatDeadline(deadline),
       // Signed for a non-existent user so the link is genuinely clickable and
       // exercises the real route, but cannot opt anybody out.
-      stayHiddenUrl: `${BASE_URL}/api/candidate/stay-hidden?token=${generateStayHiddenToken('00000000-0000-0000-0000-000000000000')}`,
+      stayHiddenUrl: stayHiddenUrl(generateStayHiddenToken('00000000-0000-0000-0000-000000000000')),
     })
     const result = await sendEmail(body.testTo, subject, html)
     return NextResponse.json({
@@ -200,7 +199,7 @@ export async function POST(req: NextRequest) {
     const { subject, html } = discoverabilityNoticeEmail({
       candidateName: row.full_name,
       deadlineText: formatDeadline(notice.deadlineAt!),
-      stayHiddenUrl: `${BASE_URL}/stay-hidden?token=${generateStayHiddenToken(row.user_id)}`,
+      stayHiddenUrl: stayHiddenUrl(generateStayHiddenToken(row.user_id)),
     })
 
     const result = await sendEmail(row.email!, subject, html)

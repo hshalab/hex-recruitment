@@ -1,8 +1,12 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 // Confirmation for the one-click opt-out. Pure render — the write happens in
 // /api/candidate/stay-hidden, which redirects here, so refreshing this page
 // can't re-run anything.
+//
+// WITH ONE EXCEPTION, AND IT IS A REPAIR RATHER THAN A DESIGN: a request that
+// arrives here CARRYING A TOKEN is forwarded to the verifier. See below.
 
 export const metadata = { title: 'Your profile stays hidden — Thrive' }
 
@@ -46,9 +50,37 @@ const MESSAGES: Record<Status, { heading: string; body: string }> = {
 export default async function StayHiddenPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>
+  searchParams: Promise<{ status?: string; token?: string }>
 }) {
-  const { status } = await searchParams
+  const { status, token } = await searchParams
+
+  // ── THE FORWARD ────────────────────────────────────────────────────
+  //
+  // The notice sent on 26 July linked NINE PEOPLE here — to this page — with
+  // their token in the query string, because the send path built a different
+  // URL from the one the test paths built. This page reads `status`, so the
+  // token was never looked at, and every one of those clicks fell through to
+  // the 'invalid' default below. The button was wired to nothing for fourteen
+  // days.
+  //
+  // Fixing the sender fixes the NEXT send and does nothing for the emails
+  // already sitting in nine inboxes. Those links cannot be edited. So a token
+  // arriving here is handed to the route that can actually use it, and their
+  // existing emails start working retroactively.
+  //
+  // A FORWARD, NOT A SECOND IMPLEMENTATION. One place verifies tokens. This
+  // page never learns what a signature is.
+  //
+  // No loop is possible: the verifier redirects back with `status` and never a
+  // `token`, and this branch requires a token and no status.
+  if (token && !status) {
+    // The page says nothing about any of this — a candidate arriving from a
+    // July email should just have it work, not be told our routing was wrong.
+    // The record goes here, where it belongs.
+    console.warn('[stay-hidden] token-bearing request hit the PAGE — forwarding to the verifier (pre-fix link)')
+    redirect(`/api/candidate/stay-hidden?token=${encodeURIComponent(token)}`)
+  }
+
   const key: Status = (['ok', 'already', 'invalid', 'notfound', 'error'] as const).includes(status as Status)
     ? (status as Status)
     : 'invalid'

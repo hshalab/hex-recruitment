@@ -1,5 +1,31 @@
 import 'server-only'
 import { createHmac, timingSafeEqual } from 'crypto'
+import { BASE_URL } from '@/emails/layout'
+
+/**
+ * THE ONE PLACE THAT BUILDS AN OPT-OUT LINK.
+ *
+ * It used to be built by hand in three places in the notice route, and the one
+ * that mattered was the odd one out: dry-run and test pointed at
+ * /api/candidate/stay-hidden — the route that actually verifies a token —
+ * while the REAL SEND pointed at /stay-hidden, which is the results PAGE. The
+ * page reads only a `status` param, so a real recipient's token was never
+ * looked at and every click rendered "invalid" by construction. Nine people
+ * were told one click would keep them hidden; the button was wired to nothing
+ * for fourteen days.
+ *
+ * A TEST MODE THAT EXERCISES A DIFFERENT URL FROM THE ONE CANDIDATES RECEIVE
+ * CANNOT CATCH THAT — the same shape as testing a freshly minted token when
+ * the question is about the one already in somebody's inbox. So there is now
+ * one function, and the three modes are identical by construction rather than
+ * by someone noticing.
+ *
+ * It lives beside the token rather than in the route because a route.ts may
+ * only export handlers.
+ */
+export function stayHiddenUrl(token: string): string {
+  return `${BASE_URL}/api/candidate/stay-hidden?token=${token}`
+}
 
 /**
  * Tamper-proof "keep me hidden" tokens for the discoverability notice.
